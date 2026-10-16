@@ -4,7 +4,7 @@ A source-grounded research workspace for case files, claims, source references, 
 
 ## Live app (Supabase Edge Functions)
 
-**Current release:** v1.2.0 (research watch dashboard, source verification queue, private review state).
+**Current release:** v1.3.0 (140 indexed cases, imported bibliographies, clickable case citations, 3-topic Research Watch).
 
 **Open Evidence Atlas:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas
 
@@ -35,7 +35,8 @@ This repository is **public**. Never add passwords, private research exports, se
 ## Features
 
 - Research overview and evidence coverage
-- Case, people, organization and source library
+- Searchable 140-case master index, owner-only working drafts, people, organization and source library
+- 147 bibliography register entries and 219 case-to-source references with original PDF source-page provenance
 - Source-linked claims and evidence status filters
 - Schematic relationship map (links ≠ causation)
 - Date-based timeline
@@ -54,11 +55,17 @@ This repository is **public**. Never add passwords, private research exports, se
 
 Maintained as a private-data application served from a public-code repository.
 
-## Import the larger case catalog
+## Imported master index and future CSV imports
+
+**Import completed 16 October 2026:** The uploaded *Documented Government Operations Master Index 1-140* was parsed and imported directly into the connected Supabase project. All case numbers 1–140 are accounted for: existing case #1 was kept without rewriting; 139 additional cases are private drafts. The 147 bibliography register entries from three separate source-register namespaces have been inserted and mapped to the 140 cases via 219 documented citations. Source listings and the original 40-page PDF are not independent verification of their contents or link availability.
+
+**Important:** The original working index deliberately retains repeated/cross-referenced case titles and distinguishes documented events, disputed attribution, and unsupported murder/suppression theories. Do not interpret the network map or a case/source link as proof of culpability or causation.
+
+For future collections, the CSV import workflow still works:
 
 In **Workspace → Import a case catalog**, choose a UTF-8 CSV with a `title` header. Supported optional headers: `summary`, `description`, `category`, `country`, `start_date`, `end_date`, `official_finding`, and `disputed_questions`. Dates must use `YYYY-MM-DD`. Review the preview and confirm before writing. Imports will assign new case numbers, skip duplicate titles, and mark every imported case as a private draft pending review. Never import records that have not been fact-checked as verified claims.
 
-The complete 120–140+ historical case corpus is not stored in this repo or Supabase yet; obtain the original master research material before importing, rather than generating purported findings from memory.
+The original master PDF is preserved in the user’s uploaded conversation; its contents have been imported into Supabase, not published into this public GitHub repository. The existing case UI allows title/number search and shows source register citations under each case.
 
 ## Daily discovery schedule
 
