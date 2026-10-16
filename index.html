@@ -78,6 +78,56 @@ async function enterDemo(){state.demo=true;state.dataset=demoData();state.ready=
 async function enterLive(){state.demo=false;setAuthed(true);await loadData();}
 function signedInLabel(){return state.demo?'SAMPLE DATA — NOT SAVED':'LIVE DATABASE / OWNER ACCESS';}
 function guardWrite(){if(state.demo){toast('Sample preview is read-only. Sign in to add records.');return false}if(!client){toast('The connection library is unavailable. Connect to the internet and reopen the app.');return false}return true}
+function networkScreenV2(){
+  const all=rows("cases");
+  const chosen=all.find(c=>String(c.id)===String(state.caseId))||all[0];
+  if(!chosen)return intro("RELATIONSHIP ANALYSIS","Connections Map","No case records yet.")+blank("No case files","Create your first case.");
+  state.caseId=chosen.id;
+  const originals=state.dataset;
+  const caseid=String(chosen.id);
+  const matched=(x)=>String(x.case_id)===caseid;
+  const links=rows("case_source_references").filter(matched);
+  const refs=rows("master_source_register");
+  const refIds=new Set(links.map(l=>String(l.register_id)));
+  const reg=refs.filter(x=>refIds.has(String(x.id)));
+  const sourceIds=new Set(reg.map(x=>String(x.source_id)));
+  const claims=rows("claims").filter(matched);
+  const claimIds=new Set(claims.map(x=>String(x.id)));
+  const claimSource=rows("claim_sources").filter(x=>claimIds.has(String(x.claim_id)));
+  claimSource.forEach(x=>sourceIds.add(String(x.source_id)));
+  const casePeople=rows("case_people").filter(matched),caseOrgs=rows("case_organizations").filter(matched);
+  const personIds=new Set(casePeople.map(x=>String(x.person_id))),orgIds=new Set(caseOrgs.map(x=>String(x.organization_id)));
+  const citations=reg.map(x=>({source_type:"case",source_id:chosen.id,target_type:"source",target_id:x.source_id,relationship_type:"Cited in master index"}));
+  const direct=rows("relationships").filter(x=>(x.source_type==="case"&&String(x.source_id)===caseid)||(x.target_type==="case"&&String(x.target_id)===caseid));
+  const subset={...originals,cases:[chosen],claims,claim_sources:claimSource,sources:rows("sources").filter(x=>sourceIds.has(String(x.id))),case_people:casePeople,case_organizations:caseOrgs,people:rows("people").filter(x=>personIds.has(String(x.id))),organizations:rows("organizations").filter(x=>orgIds.has(String(x.id))),relationships:[...direct,...citations]};
+  let graph;
+  try{state.dataset=subset;graph=networkScreen();}
+  finally{state.dataset=originals;}
+  const select=`<select id="networkCaseSelect" class="filter-select" aria-label="Select a case to map" style="max-width:480px">${all.map(x=>`<option value="${x.id}" ${String(x.id)===caseid?"selected":""}>#${esc(x.case_number||x.id)} · ${esc(cut(x.title,70))}</option>`).join("")}</select>`;
+  const shared=new Map();
+  for(const link of rows("case_source_references")){
+    const rf=refs.find(x=>String(x.id)===String(link.register_id));if(!rf)continue;
+    const sid=String(rf.source_id);if(!shared.has(sid))shared.set(sid,new Set());
+    shared.get(sid).add(String(link.case_id));
+  }
+  const overlap=[...shared.entries()].filter(x=>x[1].size>1).sort((a,b)=>b[1].size-a[1].size).slice(0,8);
+  const overlapHtml=overlap.map(([sid,ids])=>{
+    const s=rows("sources").find(x=>String(x.id)===sid);
+    const cases=all.filter(c=>ids.has(String(c.id)));
+    return `<div class="mini-card"><strong class="mini-title">${esc(s?.title||"Shared citation")}</strong><div class="mini-meta">${cases.length} cases citing the same document</div><p class="mini-desc">${cases.map(c=>`<button class="muted-link" data-action="open-case" data-id="${c.id}">#${esc(c.case_number)} ${esc(cut(c.title,33))}</button>`).join(" · ")}</p></div>`;
+  }).join("");
+  const cited=reg.map(r=>{
+    const s=rows("sources").find(x=>String(x.id)===String(r.source_id));
+    return `<div class="mini-card"><strong class="mini-title">${esc(r.reference_code)} — ${esc(s?.title||"Source reference")}</strong><div class="mini-desc">${s?.url?sourceAnchor(s,"Open original reference ↗"):"URL unavailable"} · PDF page ${r.original_pdf_page}</div></div>`;
+  }).join("");
+  return `<div class="filterbar"><label class="mini-desc" for="networkCaseSelect">Focus the map on a case</label>${select}</div>`
+    +graph
+    +`<div class="network-note">This map is limited to one case for readability. Its source edges mean “cited in the uploaded index”—not causation, coordination, culpability, or independently verified facts.</div>`
+    +`<div class="two-up" style="margin-top:21px">`
+    +panel("Case bibliography",cited?`<div class="panel-body">${cited}</div>`:blank("No citations","Add a source reference for this case."))
+    +panel("Sources shared between cases",overlapHtml?`<div class="panel-body">${overlapHtml}</div>`:blank("No shared source entries","A shared reference alone does not prove a deeper connection."))
+    +`</div>`;
+}
 function render(){initNav();const counts={cases:rows('cases').length,claims:rows('claims').length,sources:rows('sources').length,people:rows('people').length,solutions:rows('solution_candidates').length,watch:rows('research_inbox').filter(x=>x.review_status==='pending').length};document.querySelectorAll('[data-navcount]').forEach(el=>{const v=counts[el.dataset.navcount];el.textContent=v||'';el.hidden=!v});$('breadcrumbName').textContent=(NAV.find(x=>x[0]===state.screen)||NAV[0])[2];let body='';if(state.errors.length)body+=`<div class="error-box"><strong>Some data could not be loaded.</strong> ${esc(state.errors.slice(0,3).join(' • '))}. Check this account's table permissions in Supabase, then retry.</div>`;
 const builders={dashboard:dashboardScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,watch:watchScreen,settings:settingsScreen};$('screen').innerHTML=body+builders[state.screen]();}
 function dashboardScreen(){const c=rows('cases').length,cl=rows('claims').length,s=rows('sources').length,p=rows('people').length,linked=rows('claims').filter(x=>countLinked(x.id)>0).length,pct=cl?Math.round(linked/cl*100):0;
@@ -454,56 +504,7 @@ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=
 </script>
 
 <script>
-function networkScreenV2(){
-  const all=rows("cases");
-  const chosen=all.find(c=>String(c.id)===String(state.caseId))||all[0];
-  if(!chosen)return intro("RELATIONSHIP ANALYSIS","Connections Map","No case records yet.")+blank("No case files","Create your first case.");
-  state.caseId=chosen.id;
-  const originals=state.dataset;
-  const caseid=String(chosen.id);
-  const matched=(x)=>String(x.case_id)===caseid;
-  const links=rows("case_source_references").filter(matched);
-  const refs=rows("master_source_register");
-  const refIds=new Set(links.map(l=>String(l.register_id)));
-  const reg=refs.filter(x=>refIds.has(String(x.id)));
-  const sourceIds=new Set(reg.map(x=>String(x.source_id)));
-  const claims=rows("claims").filter(matched);
-  const claimIds=new Set(claims.map(x=>String(x.id)));
-  const claimSource=rows("claim_sources").filter(x=>claimIds.has(String(x.claim_id)));
-  claimSource.forEach(x=>sourceIds.add(String(x.source_id)));
-  const casePeople=rows("case_people").filter(matched),caseOrgs=rows("case_organizations").filter(matched);
-  const personIds=new Set(casePeople.map(x=>String(x.person_id))),orgIds=new Set(caseOrgs.map(x=>String(x.organization_id)));
-  const citations=reg.map(x=>({source_type:"case",source_id:chosen.id,target_type:"source",target_id:x.source_id,relationship_type:"Cited in master index"}));
-  const direct=rows("relationships").filter(x=>(x.source_type==="case"&&String(x.source_id)===caseid)||(x.target_type==="case"&&String(x.target_id)===caseid));
-  const subset={...originals,cases:[chosen],claims,claim_sources:claimSource,sources:rows("sources").filter(x=>sourceIds.has(String(x.id))),case_people:casePeople,case_organizations:caseOrgs,people:rows("people").filter(x=>personIds.has(String(x.id))),organizations:rows("organizations").filter(x=>orgIds.has(String(x.id))),relationships:[...direct,...citations]};
-  let graph;
-  try{state.dataset=subset;graph=networkScreen();}
-  finally{state.dataset=originals;}
-  const select=`<select id="networkCaseSelect" class="filter-select" aria-label="Select a case to map" style="max-width:480px">${all.map(x=>`<option value="${x.id}" ${String(x.id)===caseid?"selected":""}>#${esc(x.case_number||x.id)} · ${esc(cut(x.title,70))}</option>`).join("")}</select>`;
-  const shared=new Map();
-  for(const link of rows("case_source_references")){
-    const rf=refs.find(x=>String(x.id)===String(link.register_id));if(!rf)continue;
-    const sid=String(rf.source_id);if(!shared.has(sid))shared.set(sid,new Set());
-    shared.get(sid).add(String(link.case_id));
-  }
-  const overlap=[...shared.entries()].filter(x=>x[1].size>1).sort((a,b)=>b[1].size-a[1].size).slice(0,8);
-  const overlapHtml=overlap.map(([sid,ids])=>{
-    const s=rows("sources").find(x=>String(x.id)===sid);
-    const cases=all.filter(c=>ids.has(String(c.id)));
-    return `<div class="mini-card"><strong class="mini-title">${esc(s?.title||"Shared citation")}</strong><div class="mini-meta">${cases.length} cases citing the same document</div><p class="mini-desc">${cases.map(c=>`<button class="muted-link" data-action="open-case" data-id="${c.id}">#${esc(c.case_number)} ${esc(cut(c.title,33))}</button>`).join(" · ")}</p></div>`;
-  }).join("");
-  const cited=reg.map(r=>{
-    const s=rows("sources").find(x=>String(x.id)===String(r.source_id));
-    return `<div class="mini-card"><strong class="mini-title">${esc(r.reference_code)} — ${esc(s?.title||"Source reference")}</strong><div class="mini-desc">${s?.url?sourceAnchor(s,"Open original reference ↗"):"URL unavailable"} · PDF page ${r.original_pdf_page}</div></div>`;
-  }).join("");
-  return `<div class="filterbar"><label class="mini-desc" for="networkCaseSelect">Focus the map on a case</label>${select}</div>`
-    +graph
-    +`<div class="network-note">This map is limited to one case for readability. Its source edges mean “cited in the uploaded index”—not causation, coordination, culpability, or independently verified facts.</div>`
-    +`<div class="two-up" style="margin-top:21px">`
-    +panel("Case bibliography",cited?`<div class="panel-body">${cited}</div>`:blank("No citations","Add a source reference for this case."))
-    +panel("Sources shared between cases",overlapHtml?`<div class="panel-body">${overlapHtml}</div>`:blank("No shared source entries","A shared reference alone does not prove a deeper connection."))
-    +`</div>`;
-}
+
 document.addEventListener("change",e=>{if(e.target&&e.target.id==="networkCaseSelect"){state.caseId=Number(e.target.value);render();}});
 </script>
 </body>
