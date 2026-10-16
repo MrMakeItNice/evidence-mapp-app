@@ -42,10 +42,10 @@ const OWNER_USER_ID = 'cdfff424-d750-4f82-baa3-d17a6113af53';
 const client = window.supabase?.createClient?.(PROJECT_URL, PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 }) || null;
-const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox','master_source_register','case_source_references'];
+const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox','master_source_register','case_source_references','investigation_groups','investigation_group_topics','investigation_group_sources','investigation_group_cases','investigation_group_events'];
 const emptyData = () => Object.fromEntries(TABLES.map(t => [t, []]));
 const state = { screen:'dashboard', dataset:emptyData(), demo:false, ready:false, busy:false, caseId:null, search:'', filter:'all', errors:[], owner:null };
-const NAV=[['dashboard','▦','Overview'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['watch','◉','Research Watch'],['settings','⚙','Workspace']];
+const NAV=[['dashboard','▦','Overview'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['epstein-files','♧','Epstein Files'],['covid-19','✳','COVID-19'],['palestine-gaza','⚖','Palestine / Gaza'],['watch','◉','Research Watch'],['settings','⚙','Workspace']];
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date = s => s ? new Date(`${s}T12:00:00Z`).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : 'Not dated';
@@ -128,8 +128,67 @@ function networkScreenV2(){
     +panel("Sources shared between cases",overlapHtml?`<div class="panel-body">${overlapHtml}</div>`:blank("No shared source entries","A shared reference alone does not prove a deeper connection."))
     +`</div>`;
 }
+function groupScreen(slug){
+ const group=rows("investigation_groups").find(g=>g.slug===slug);
+ if(!group)return intro("INDEPENDENT INVESTIGATIONS","Research group unavailable","The group is unavailable in sample mode or has not yet synchronized.")+blank("No group data","Sign in as the owner and refresh your data.");
+ const topics=rows("investigation_group_topics").filter(x=>x.group_slug===slug).sort((a,b)=>a.display_order-b.display_order);
+ const linked=rows("investigation_group_sources").filter(x=>x.group_slug===slug);
+ const events=rows("investigation_group_events").filter(x=>x.group_slug===slug).slice().sort((a,b)=>a.event_date.localeCompare(b.event_date));
+ const prior=rows("investigation_group_cases").filter(x=>x.group_slug===slug);
+ const sourceMap=new Map(rows("sources").map(x=>[String(x.id),x]));
+ const sourceList=linked.map(link=>({...link,source:sourceMap.get(String(link.source_id))})).filter(x=>x.source);
+ const groupAccent={"epstein-files":"#5174a4","covid-19":"#188f79","palestine-gaza":"#937347"}[slug]||"#168a88";
+ const tag=slug==="epstein-files"?"Court records & official disclosures":slug==="covid-19"?"Scientific research & policy oversight":"International humanitarian law & accountability";
+ const title=slug==="palestine-gaza"?"Palestine / Gaza":group.title;
+ const topicStatuses={unassessed:"Not yet assessed",documented:"Documented core",attributed_finding:"Attributed finding",allegation:"Allegation",contested:"Contested",resolved:"Resolved"};
+ const topicItem=t=>{
+  const f=sourceList.filter(x=>String(x.topic_id)===String(t.id));
+  return `<article class="record-card"><div class="record-head"><div class="eyebrow">RESEARCH SECTION · ${esc(String(t.display_order||"").padStart(2,"0"))}</div>${label(topicStatuses[t.finding_status]||"Unassessed",t.finding_status==="contested"?"orange":t.finding_status==="documented"?"teal":"blue")}</div>
+  <h3>${esc(t.title)}</h3><p>${esc(t.summary)}</p><div class="mini-desc"><strong>Research question:</strong> ${esc(t.research_question)}</div>
+  <div class="record-foot"><span>${f.length} linked source${f.length===1?"":"s"}</span><span>Review: ${esc(t.review_state)}</span></div>
+  ${f.length?`<div class="divider"></div><div class="mini-meta">${f.slice(0,4).map(z=>`<span>${sourceAnchor(z.source,cut(z.source.title,45))}</span>`).join(" · ")}</div>`:""}
+  </article>`;
+ };
+ const sourceItem=(x)=>{
+  const t=topics.find(t=>String(t.id)===String(x.topic_id));
+  return `<div class="mini-card"><div class="record-head"><strong class="mini-title">${esc(x.source.title)}</strong>${label(x.reviewed?"Reviewed":"Source to review",x.reviewed?"teal":"orange")}</div>
+    <div class="mini-meta">${esc(x.source.publisher||"Publisher unrecorded")} · ${esc(x.evidence_role.replaceAll("_"," "))}${t?` · ${esc(t.title)}`:""}</div>
+    <p class="mini-desc">${esc(x.relevance_notes||"Source supplied for consideration, not independently verified.")}</p>
+    <div class="actions" style="margin-top:8px">
+      ${sourceAnchor(x.source,"Open original source ↗")}
+      ${state.demo?"":`<button type="button" class="text-btn" data-action="group-toggle-reviewed" data-group="${esc(slug)}" data-id="${esc(x.source_id)}">${x.reviewed?"Return to review":"Mark source reviewed"}</button>`}
+    </div>
+  </div>`;
+ };
+ const eventItem=(e)=>{
+  const s=e.source_id?sourceMap.get(String(e.source_id)):null;
+  return `<div class="timeline-item"><div class="timeline-date">${esc(e.event_date)} · ${esc(e.event_kind.replaceAll("_"," "))}</div><h3>${esc(e.title)}</h3><p>${esc(e.description)}</p>${s?`<p>${sourceAnchor(s,"Event documentation ↗")}</p>`:""}</div>`;
+ };
+ const linkedCases=prior.map(c=>{
+  const x=one("cases",c.case_id);return x?`<div class="mini-card"><button class="muted-link" data-action="open-case" data-id="${x.id}">#${esc(x.case_number)} · ${esc(x.title)} ↗</button><p class="mini-desc">${esc(c.notes||"Existing master index record cross-reference.")}</p></div>`:"";
+ }).join("");
+ const controls=state.demo?"":
+ `<button type="button" class="primary" data-action="group-add-source" data-group="${esc(slug)}">＋ Add document</button>
+  <button type="button" class="secondary" data-action="group-add-topic" data-group="${esc(slug)}">＋ Research section</button>
+  <button type="button" class="secondary" data-action="group-add-event" data-group="${esc(slug)}">＋ Timeline event</button>`;
+ return `<div class="screen-intro"><div><div class="eyebrow">${esc(tag)}</div><h1>${esc(title)}</h1><p>${esc(group.subtitle)}</p></div></div>
+ <section class="panel" style="margin-bottom:20px;border-top:3px solid ${groupAccent}"><div class="panel-body">
+ <div class="eyebrow">GROUP MISSION</div><p style="line-height:1.75;color:#465970;font-size:13px">${esc(group.scope_notes)}</p>
+ <p class="mini-desc"><strong>Evidence standards:</strong> ${esc(group.research_policy)}</p>
+ <div class="actions" style="margin-top:16px">${controls}<button class="secondary" type="button" data-action="nav" data-page="watch">◉ Research Watch</button></div>
+ </div></section>
+ <div class="stat-grid">${[[topics.length,"Research sections","▤"],[sourceList.length,"Source references","⌁"],[events.length,"Dated events","◷"],[prior.length,"Linked master cases","⬡"]].map(([v,k,icon])=>`<div class="stat-card"><div class="stat-ic">${icon}</div><div class="stat-label">${k}</div><div class="stat-number">${v}</div></div>`).join("")}</div>
+ ${panel("Research sections",topics.length?`<div class="panel-body"><div class="two-up">${topics.map(topicItem).join("")}</div></div>`:blank("No sections","Create your first research section."))}
+ <div class="two-up" style="margin-top:20px">
+  ${panel("Document & evidence library",sourceList.length?`<div class="panel-body">${sourceList.map(sourceItem).join("")}</div>`:blank("No documents yet","Add primary records or independently sourced reports."))}
+  <div class="stack">${panel("Event & legal timeline",events.length?`<div class="panel-body"><div class="timeline">${events.map(eventItem).join("")}</div></div>`:blank("No timeline events","Add dated events with original documentation."))}
+  ${panel("Links to original 140-case index",linkedCases?`<div class="panel-body">${linkedCases}</div>`:`<div class="panel-body"><p class="mini-desc">This is a new, separate investigation. No previous master-index cases are linked.</p></div>`)}
+  </div>
+ </div>
+ <div class="network-note">Independent workspace: these sections, sources and events are private drafts. They do not alter the evidence grades in the original 140-case index. The connection of a person or institution to an event does not, by itself, prove guilt or causation.</div>`;
+}
 function render(){initNav();const counts={cases:rows('cases').length,claims:rows('claims').length,sources:rows('sources').length,people:rows('people').length,solutions:rows('solution_candidates').length,watch:rows('research_inbox').filter(x=>x.review_status==='pending').length};document.querySelectorAll('[data-navcount]').forEach(el=>{const v=counts[el.dataset.navcount];el.textContent=v||'';el.hidden=!v});$('breadcrumbName').textContent=(NAV.find(x=>x[0]===state.screen)||NAV[0])[2];let body='';if(state.errors.length)body+=`<div class="error-box"><strong>Some data could not be loaded.</strong> ${esc(state.errors.slice(0,3).join(' • '))}. Check this account's table permissions in Supabase, then retry.</div>`;
-const builders={dashboard:dashboardScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,watch:watchScreen,settings:settingsScreen};$('screen').innerHTML=body+builders[state.screen]();}
+const builders={dashboard:dashboardScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,'epstein-files':()=>groupScreen('epstein-files'),'covid-19':()=>groupScreen('covid-19'),'palestine-gaza':()=>groupScreen('palestine-gaza'),watch:watchScreen,settings:settingsScreen};$('screen').innerHTML=body+builders[state.screen]();}
 function dashboardScreen(){const c=rows('cases').length,cl=rows('claims').length,s=rows('sources').length,p=rows('people').length,linked=rows('claims').filter(x=>countLinked(x.id)>0).length,pct=cl?Math.round(linked/cl*100):0;
 return intro('RESEARCH INTELLIGENCE','Overview','A clear view of your investigations and the evidence behind them.',action('new-case','＋ New case'))+
 `<div class="stat-grid">${[[c,'Active case files','▤','Across the workspace'],[cl,'Recorded claims','≡','Assessments kept separate'],[s,'Source documents','⌁','References in your library'],[p,'People indexed','♙','Connected people']].map(([v,n,i,foot])=>`<div class="stat-card"><div class="stat-ic">${i}</div><div class="stat-label">${n}</div><div class="stat-number">${v}</div><div class="stat-note">${foot}</div></div>`).join('')}</div>
@@ -506,6 +565,78 @@ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=
 <script>
 
 document.addEventListener("change",e=>{if(e.target&&e.target.id==="networkCaseSelect"){state.caseId=Number(e.target.value);render();}});
+</script>
+
+<script>
+(function setupInvestigationGroupControls(){
+ function currentGroup(slug){return rows("investigation_groups").find(g=>g.slug===slug);}
+ function groupModal(title,fields,handler){
+  if(!guardWrite())return;
+  $("modalRoot").innerHTML=`<div class="modal-backdrop" role="presentation"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="groupModalTitle"><div class="modal-header"><h2 id="groupModalTitle">${esc(title)}</h2><button class="modal-close" type="button" data-action="close-modal" aria-label="Close">×</button></div><form id="groupForm">${fields}<div id="groupError" role="alert"></div><div class="modal-actions"><button type="button" class="secondary" data-action="close-modal">Cancel</button><button id="groupSave" class="primary" type="submit">Save to group</button></div></form></section></div>`;
+  $("groupForm").addEventListener("submit",async e=>{
+    e.preventDefault();if(!guardWrite())return;
+    let save=$("groupSave");save.disabled=true;save.textContent="Saving…";
+    try{await handler(Object.fromEntries(new FormData(e.currentTarget)));}catch(err){$("groupError").textContent=err?.message||"Unable to save.";save.disabled=false;save.textContent="Save to group";}
+  });
+ }
+ async function finalize(){closeModal();await loadData();toast("Saved to your private investigation group.");}
+ function topicOpts(slug){return `<option value="">General group source</option>`+rows("investigation_group_topics").filter(t=>t.group_slug===slug).map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join("");}
+ function addTopic(slug){if(!currentGroup(slug))return;
+  const fields=field("title","Research section title","text",true)+field("summary","Scope and existing information","textarea",true)+field("research_question","What should we establish?","textarea",true);
+  groupModal("New research section",fields,async d=>{
+   const values={group_slug:slug,title:d.title.trim(),summary:d.summary.trim(),research_question:d.research_question.trim(),finding_status:"unassessed",review_state:"draft"};
+   const {error}=await client.from("investigation_group_topics").insert(values);
+   if(error)throw error;await finalize();
+  });
+ }
+ function addSource(slug){if(!currentGroup(slug))return;
+  const fields=field("title","Original document title","text",true)+field("url","Original source URL","url",true)+field("publisher","Publisher or archive","text",true)+field("topic_id","Research section","select",false,topicOpts(slug))+field("relevance_notes","What the document supports and its limits","textarea",true);
+  groupModal("Add document to group",fields,async d=>{
+   const url=new URL(String(d.url).trim());if(!["https:","http:"].includes(url.protocol))throw Error("Use an HTTP or HTTPS source URL.");
+   let {data:existing,error:err}=await client.from("sources").select("id").eq("url",url.href).limit(1);
+   if(err)throw err;
+   let sourceId=existing?.[0]?.id;
+   if(!sourceId){
+    const saved=await client.from("sources").insert({title:d.title.trim(),url:url.href,publisher:d.publisher.trim(),source_type:"investigation_group_reference",public_notes:"Group source awaiting independent review.",published:false}).select("id").single();
+    if(saved.error)throw saved.error;sourceId=saved.data.id;
+   }
+   const row={group_slug:slug,source_id:sourceId,evidence_role:"primary_reference",relevance_notes:d.relevance_notes.trim(),reviewed:false};
+   if(d.topic_id)row.topic_id=Number(d.topic_id);
+   const added=await client.from("investigation_group_sources").insert(row);
+   if(added.error)throw added.error;
+   await finalize();
+  });
+ }
+ function addEvent(slug){if(!currentGroup(slug))return;
+  const options='<option value="">No linked reference</option>'+rows("investigation_group_sources").filter(x=>x.group_slug===slug).map(x=>{
+   const s=one("sources",x.source_id);return `<option value="${x.source_id}">${esc(cut(s?.title||"Source",95))}</option>`;
+  }).join("");
+  const fields=field("title","Event title","text",true)+field("event_date","Date (YYYY-MM-DD)","date",true)+field("description","What is documented?","textarea",true)+field("source_id","Supporting document","select",false,options);
+  groupModal("Add documented timeline event",fields,async d=>{
+   const row={group_slug:slug,title:d.title.trim(),event_date:d.event_date,description:d.description.trim(),event_kind:"documented_event"};
+   if(d.source_id)row.source_id=Number(d.source_id);
+   const {error}=await client.from("investigation_group_events").insert(row);
+   if(error)throw error;await finalize();
+  });
+ }
+ document.addEventListener("click",async e=>{
+  const btn=e.target.closest("[data-action^='group-']");if(!btn)return;
+  const slug=btn.dataset.group;if(!currentGroup(slug))return;
+  switch(btn.dataset.action){
+   case "group-add-topic":addTopic(slug);break;
+   case "group-add-source":addSource(slug);break;
+   case "group-add-event":addEvent(slug);break;
+   case "group-toggle-reviewed":{
+    if(!guardWrite())return;
+    const src=rows("investigation_group_sources").find(x=>x.group_slug===slug&&String(x.source_id)===String(btn.dataset.id));
+    if(!src)return;
+    const {error}=await client.from("investigation_group_sources").update({reviewed:!src.reviewed}).eq("group_slug",slug).eq("source_id",src.source_id).select("source_id").single();
+    if(error){toast("Review status not saved: "+error.message);return;}
+    await loadData();break;
+   }
+  }
+ });
+})();
 </script>
 </body>
 </html>
