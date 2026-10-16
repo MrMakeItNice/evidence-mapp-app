@@ -42,7 +42,7 @@ const OWNER_USER_ID = 'cdfff424-d750-4f82-baa3-d17a6113af53';
 const client = window.supabase?.createClient?.(PROJECT_URL, PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 }) || null;
-const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox'];
+const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox','master_source_register','case_source_references'];
 const emptyData = () => Object.fromEntries(TABLES.map(t => [t, []]));
 const state = { screen:'dashboard', dataset:emptyData(), demo:false, ready:false, busy:false, caseId:null, search:'', filter:'all', errors:[], owner:null };
 const NAV=[['dashboard','▦','Overview'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['watch','◉','Research Watch'],['settings','⚙','Workspace']];
@@ -390,6 +390,66 @@ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=
   }
  });
  document.addEventListener("change",async e=>{const a=e.target.closest("[data-watch-assessment]");if(!a)return;const id=Number(a.dataset.watchAssessment);await updateWatch("research_inbox",id,{assessment:a.value,updated_at:new Date().toISOString()});});
+})();
+</script>
+
+<!-- MASTER-INDEX-CASE-UI-V1 -->
+<script>
+(function masterIndexCaseUI(){
+ "use strict";
+ let caseFilter="";
+ const get=(n)=>document.getElementById(n);
+ function drawCaseEnhancements(){
+  const screen=get("screen");if(!screen||typeof state==="undefined")return;
+  if(state.screen==="cases"){
+   const list=screen.querySelector(".case-list"),summary=screen.querySelector(".case-summary");
+   if(!list||!summary)return;
+   list.style.maxHeight="72vh";list.style.overflowY="auto";list.style.paddingRight="6px";
+   if(!list.querySelector("#caseCatalogFilter")){
+    list.insertAdjacentHTML("afterbegin",`<div style="position:sticky;top:0;z-index:2;background:#f4f6fa;padding-bottom:8px"><input id="caseCatalogFilter" class="search" type="search" style="width:100%;min-width:0" aria-label="Find cases by number or title" placeholder="Find by case # or title..." value="${esc(caseFilter)}"/><div class="mini-desc" id="caseCatalogResults" style="margin:6px 0 1px"></div></div>`);
+    const el=get("caseCatalogFilter");
+    el.addEventListener("input",e=>{caseFilter=e.target.value;applyCaseFilter();});
+   }
+   applyCaseFilter();
+   if(!summary.querySelector("#masterIndexReferences")){
+    const selected=one("cases",state.caseId);
+    const mapped=rows("case_source_references").filter(x=>String(x.case_id)===String(selected?.id));
+    const refs=mapped.map(link=>{
+      const reg=rows("master_source_register").find(x=>String(x.id)===String(link.register_id));
+      const src=rows("sources").find(x=>String(x.id)===String(reg?.source_id));
+      return {reg,src};
+    }).filter(x=>x.reg).sort((a,b)=>Number(a.reg.reference_code.replace(/\D/g,""))-Number(b.reg.reference_code.replace(/\D/g,"")));
+    const display=refs.length?refs.map(({reg,src})=>
+       `<div class="nested-row"><b>${esc(reg.reference_code)} · ${esc(src?.title||"Source entry not loaded")}</b>
+       <p>${src?.url?sourceAnchor(src,"Open cited document ↗"):"Citation URL unavailable"}</p>
+       <div class="mini-meta">Master index bibliography · PDF page ${esc(reg.original_pdf_page)} · ${esc(reg.register_name.replaceAll("_","–"))}</div></div>`
+    ).join(""):`<p class="mini-desc">No master-index citations are linked to this case yet.</p>`;
+    summary.insertAdjacentHTML("beforeend",`<section class="panel" id="masterIndexReferences"><div class="panel-head"><h2>Master index source references</h2><span>${refs.length} citation${refs.length===1?"":"s"}</span></div><div class="panel-body"><div class="notice" style="margin-bottom:14px">These documents are cited by the uploaded working index. A citation does not independently prove every claim, and external URLs have not all been rechecked.</div>${display}</div></section>`);
+    if(selected&&selected.published===false){
+      const detail=summary.querySelector(".case-detail");
+      detail?.insertAdjacentHTML("afterbegin",`<div class="mini-meta" style="margin-bottom:12px"><span class="badge orange">PRIVATE DRAFT — REVIEW REQUIRED</span><span>Original index case #${esc(selected.case_number||selected.id)}</span></div>`);
+    }
+   }
+  }
+  if(state.screen==="dashboard"&&!screen.querySelector("#masterIndexImportNotice")&&rows("cases").length>20){
+   const drafts=rows("cases").filter(c=>c.published===false).length,refs=rows("case_source_references").length;
+   screen.insertAdjacentHTML("beforeend",`<div id="masterIndexImportNotice" class="network-note"><strong>Master index imported:</strong> ${rows("cases").length} numbered case files, ${refs} citation links, and ${drafts} private drafts pending review. Grades and citation links reflect the uploaded October 2026 working index; they are not blanket verification of allegations or cause-of-death theories.</div>`);
+  }
+ }
+ function applyCaseFilter(){
+  const list=get("screen")?.querySelector(".case-list");if(!list)return;
+  const query=caseFilter.trim().toLowerCase();
+  let shown=0;
+  for(const btn of list.querySelectorAll(".case-option")){
+   const txt=btn.textContent.toLowerCase();
+   const c=rows("cases").find(x=>String(x.id)===String(btn.dataset.id));
+   const matched=!query||txt.includes(query)||(c&&String(c.case_number)===query)||(c&&String(c.case_number).includes(query));
+   btn.hidden=!matched;if(matched)shown++;
+  }
+  const counter=get("caseCatalogResults");if(counter)counter.textContent=`Showing ${shown} of ${list.querySelectorAll(".case-option").length} cases`;
+ }
+ const screen=get("screen");
+ if(screen){const obs=new MutationObserver(()=>drawCaseEnhancements());obs.observe(screen,{childList:true,subtree:false});drawCaseEnhancements();}
 })();
 </script>
 </body>
