@@ -4,6 +4,8 @@ A source-grounded research workspace for case files, claims, source references, 
 
 ## Live app (Supabase Edge Functions)
 
+**Current release:** v1.2.0 (research watch dashboard, source verification queue, private review state).
+
 **Open Evidence Atlas:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas
 
 Supabase reports deployment `evidence-atlas` active. The site is publicly reachable as an application shell; existing research remains accessible only after owner sign-in. For an anonymous visitor, **Explore a sample workspace** opens only fictitious demonstration records.
@@ -40,6 +42,7 @@ This repository is **public**. Never add passwords, private research exports, se
 - Draft solution proposals and modeled possible outcomes
 - Owner-protected record creation, editing, and JSON export
 - Owner-only CSV case catalog import with a preview, duplicate-title skipping, and private draft status
+- **Research Watch** dashboard: active topics, private source queue, credibility/assessment choices, review/dismiss/reopen decisions, and deliberately manual promotion to source library
 
 ## Current limitations
 
@@ -56,3 +59,23 @@ Maintained as a private-data application served from a public-code repository.
 In **Workspace → Import a case catalog**, choose a UTF-8 CSV with a `title` header. Supported optional headers: `summary`, `description`, `category`, `country`, `start_date`, `end_date`, `official_finding`, and `disputed_questions`. Dates must use `YYYY-MM-DD`. Review the preview and confirm before writing. Imports will assign new case numbers, skip duplicate titles, and mark every imported case as a private draft pending review. Never import records that have not been fact-checked as verified claims.
 
 The complete 120–140+ historical case corpus is not stored in this repo or Supabase yet; obtain the original master research material before importing, rather than generating purported findings from memory.
+
+## Daily discovery schedule
+
+A ChatGPT scheduled task named **Evidence Atlas Daily Research** is enabled, configured for daily morning runs in America/Los_Angeles. It searches active research topics, attempts to deduplicate source URLs, and stages noteworthy results in `research_inbox` under `review_status='pending'`. It may run only while the connected tools remain authorized and the scheduled task is active. It does not automatically create verified claims or publish findings. If a run cannot access Supabase, it should report the blocker instead of claiming records were saved.
+
+**Review new items:** Sign in → **Research Watch** → open sources, update assessment, mark reviewed, and optionally add them to Source Library as private drafts. A reviewed source is not necessarily corroborated; connect it to a claim only after evaluating the source and its limitations.
+
+Two October 2026 reporting articles were seeded into the review inbox as **pending / unassessed** starter research, without linking either to a case. Their inclusion does not establish the assertions in the articles.
+
+## Case corpus limitation
+
+The original 120–140-case master research file could not be recovered from the accessible GitHub repository or existing file library. This is still the one major content blocker. Do not fabricate or mark the missing cases as imported. Export/upload the original PDF, CSV, or other master file and transform its source-backed entries to the import format. A [CSV template](examples/case-import-template.csv) is included in this repository.
+
+## Verification
+
+- Supabase function deployment version 3 is reported ACTIVE.
+- App inline scripts passed JavaScript syntax validation.
+- Supabase owner-role SELECT and INSERT checks succeeded in a rolled-back transaction; a simulated unrelated authenticated user could see zero review records.
+- An independent real-browser end-to-end sign-in/write test has **not** been completed and remains part of release acceptance.
+- The security advisor currently reports a warning about leaked-password protection (availability depends on Supabase plan).
