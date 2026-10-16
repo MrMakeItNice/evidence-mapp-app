@@ -4,7 +4,7 @@ A source-grounded research workspace for case files, claims, source references, 
 
 ## Live app (Supabase Edge Functions)
 
-**Current release:** v1.3.0 (140 indexed cases, imported bibliographies, clickable case citations, 3-topic Research Watch).
+**Current release:** v1.4.0 (140 indexed cases, imported bibliographies, searchable case files, case-focused network map, 8 active research topics).
 
 **Open Evidence Atlas:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas
 
@@ -38,7 +38,7 @@ This repository is **public**. Never add passwords, private research exports, se
 - Searchable 140-case master index, owner-only working drafts, people, organization and source library
 - 147 bibliography register entries and 219 case-to-source references with original PDF source-page provenance
 - Source-linked claims and evidence status filters
-- Schematic relationship map (links ≠ causation)
+- Case-focused relationship map and source-overlap comparisons (shared citations ≠ causation)
 - Date-based timeline
 - Draft solution proposals and modeled possible outcomes
 - Owner-protected record creation, editing, and JSON export
@@ -65,11 +65,11 @@ For future collections, the CSV import workflow still works:
 
 In **Workspace → Import a case catalog**, choose a UTF-8 CSV with a `title` header. Supported optional headers: `summary`, `description`, `category`, `country`, `start_date`, `end_date`, `official_finding`, and `disputed_questions`. Dates must use `YYYY-MM-DD`. Review the preview and confirm before writing. Imports will assign new case numbers, skip duplicate titles, and mark every imported case as a private draft pending review. Never import records that have not been fact-checked as verified claims.
 
-The original master PDF is preserved in the user’s uploaded conversation; its contents have been imported into Supabase, not published into this public GitHub repository. The existing case UI allows title/number search and shows source register citations under each case.
+The original master PDF is preserved in the user’s uploaded conversation; its contents have been imported into Supabase, not published into this public GitHub repository. Case Files supports case number/title search and shows its exact master-index source citations. Connections Map supports case selection and compares shared source references, without implying collaboration or wrongdoing.
 
 ## Daily discovery schedule
 
-A ChatGPT scheduled task named **Evidence Atlas Daily Research** is enabled, configured for daily morning runs in America/Los_Angeles. It searches active research topics, attempts to deduplicate source URLs, and stages noteworthy results in `research_inbox` under `review_status='pending'`. It may run only while the connected tools remain authorized and the scheduled task is active. It does not automatically create verified claims or publish findings. If a run cannot access Supabase, it should report the blocker instead of claiming records were saved.
+A ChatGPT scheduled task named **Evidence Atlas Daily Research** is enabled, configured for daily morning runs in America/Los_Angeles. Eight active watch topics currently cover the master index's principal research areas. It searches active research topics, attempts to deduplicate source URLs, and stages noteworthy results in `research_inbox` under `review_status='pending'`. It may run only while the connected tools remain authorized and the scheduled task is active. It does not automatically create verified claims or publish findings. If a run cannot access Supabase, it should report the blocker instead of claiming records were saved.
 
 **Review new items:** Sign in → **Research Watch** → open sources, update assessment, mark reviewed, and optionally add them to Source Library as private drafts. A reviewed source is not necessarily corroborated; connect it to a claim only after evaluating the source and its limitations.
 
