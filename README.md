@@ -34,7 +34,7 @@ This repository is **public**. Never add passwords, private research exports, se
 
 ## Current limitations
 
-- No editing/deletion of existing records from the UI yet.
+- Owner-only editing is available for cases, claims, sources, people, organizations, solution proposals, and outcomes. Deletion remains intentionally disabled to preserve research history.
 - A linked citation is not itself verification of a claim.
 - Relationship map reflects only explicitly recorded links, not automatically inferred ties.
 - Live login and writes must be tested in the browser after Pages is enabled.
