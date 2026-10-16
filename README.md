@@ -4,7 +4,7 @@ A source-grounded research workspace for case files, claims, source references, 
 
 ## Live app (Supabase Edge Functions)
 
-**Current release:** v1.4.0 (140 indexed cases, imported bibliographies, searchable case files, case-focused network map, 8 active research topics).
+**Current release:** v1.6.0 (140 original cases preserved; separate Epstein Files, COVID-19 and Palestine/Gaza workspaces, source and timeline tools, and group-tagged daily monitoring).
 
 **Open Evidence Atlas:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas
 
@@ -43,7 +43,8 @@ This repository is **public**. Never add passwords, private research exports, se
 - Draft solution proposals and modeled possible outcomes
 - Owner-protected record creation, editing, and JSON export
 - Owner-only CSV case catalog import with a preview, duplicate-title skipping, and private draft status
-- **Research Watch** dashboard: active topics, private source queue, credibility/assessment choices, review/dismiss/reopen decisions, and deliberately manual promotion to source library
+- **Research Watch** dashboard: active topics, private source queue, credibility/assessment choices, review/dismiss/reopen decisions, group attribution and deliberately manual promotion to source library
+- **Three independent investigation groups**: Epstein Files; COVID-19; and Palestine / Gaza — International Law & Accountability. Each has its own research sections, primary source links, timeline and owner-only add/review actions.
 
 ## Current limitations
 
@@ -69,20 +70,26 @@ The original master PDF is preserved in the user’s uploaded conversation; its 
 
 ## Daily discovery schedule
 
-A ChatGPT scheduled task named **Evidence Atlas Daily Research** is enabled, configured for daily morning runs in America/Los_Angeles. Eight active watch topics currently cover the master index's principal research areas. It searches active research topics, attempts to deduplicate source URLs, and stages noteworthy results in `research_inbox` under `review_status='pending'`. It may run only while the connected tools remain authorized and the scheduled task is active. It does not automatically create verified claims or publish findings. If a run cannot access Supabase, it should report the blocker instead of claiming records were saved.
+A ChatGPT scheduled task named **Evidence Atlas Daily Research** is enabled and configured for daily morning runs in America/Los_Angeles. The 11 active watch topics cover the original historical cases and the three independent investigations; new findings are staged as pending and tagged by group when applicable. It searches active research topics, attempts to deduplicate source URLs, and stages noteworthy results in `research_inbox` under `review_status='pending'`. It may run only while the connected tools remain authorized and the scheduled task is active. It does not automatically create verified claims or publish findings. If a run cannot access Supabase, it should report the blocker instead of claiming records were saved.
 
 **Review new items:** Sign in → **Research Watch** → open sources, update assessment, mark reviewed, and optionally add them to Source Library as private drafts. A reviewed source is not necessarily corroborated; connect it to a claim only after evaluating the source and its limitations.
 
 Two October 2026 reporting articles were seeded into the review inbox as **pending / unassessed** starter research, without linking either to a case. Their inclusion does not establish the assertions in the articles.
 
-## Case corpus limitation
+## Independent investigation groups (added October 2026)
 
-The original 120–140-case master research file could not be recovered from the accessible GitHub repository or existing file library. This is still the one major content blocker. Do not fabricate or mark the missing cases as imported. Export/upload the original PDF, CSV, or other master file and transform its source-backed entries to the import format. A [CSV template](examples/case-import-template.csv) is included in this repository.
+Evidence Atlas now stores three private investigation workspaces **separately** from the original case number series, without modifying case #1–140 or their bibliography.
+
+1. **Epstein Files**: 5 research sections, official DOJ releases, Inspector General custody report, timeline, and links to the four relevant pre-existing index cases. Use survivor-centered safeguards. Being named in a record is not proof of involvement in crime.
+2. **COVID-19**: 5 research sections and WHO sources on origins, epidemiology, mortality, vaccination research, public policies and communications. The WHO SAGO June 2025 assessment says the available evidence favors zoonotic spillover but substantial origin questions remain unresolved. No hypothesis is deemed established solely by inclusion.
+3. **Palestine / Gaza**: 7 research sections, UN fact-finding reports, ICJ and ICC dockets, the official Rome Statute, genocide-law definitions, and event chronology. The UN Commission of Inquiry's September 2025 genocide conclusion must be attributed as its investigative finding; Israel disputes it. ICC arrest warrants alleging war crimes and crimes against humanity are not criminal convictions. ICJ provisional measures under the Genocide Convention are not a final merits judgment. The Rome Statute treats crimes against humanity (Article 7), war crimes (Article 8) and genocide (Article 6) as distinct legal categories, with different elements. A conflict itself should not be categorized as a criminal act without examining specific underlying conduct and legal context.
+
+New group records are owner-only by row-level security. The source links and timelines are curated *references* and should not be mistaken for exhaustive or independent verification of every claim. New research enters the private Research Watch queue before owner review. No automatic publication or guilt attribution is performed.
 
 ## Verification
 
-- Supabase function deployment version 3 is reported ACTIVE.
+- Supabase Edge Function deployment version 8 is reported ACTIVE.
 - App inline scripts passed JavaScript syntax validation.
-- Supabase owner-role SELECT and INSERT checks succeeded in a rolled-back transaction; a simulated unrelated authenticated user could see zero review records.
+- Supabase owner-role SELECT checks returned the new investigation groups and linked records; simulated non-owner requests saw zero rows in the new group tables. Original 140-case corpus remains intact.
 - An independent real-browser end-to-end sign-in/write test has **not** been completed and remains part of release acceptance.
 - The security advisor currently reports a warning about leaked-password protection (availability depends on Supabase plan).
