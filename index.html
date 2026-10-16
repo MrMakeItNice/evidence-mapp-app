@@ -160,5 +160,153 @@ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=
 (async()=>{setAuthed(false);if(new URLSearchParams(window.location.search).has('preview')){await enterDemo();return;}if(!client){$('authFeedback').textContent='The Supabase library needs an internet connection. Sample preview is still available.';return;}try{const {data,error}=await client.auth.getSession();if(error)throw error;if(data.session){const {data:userData,error:userError}=await client.auth.getUser();if(userError)throw userError;if(userData.user?.id===OWNER_USER_ID){state.owner=userData.user.id;await enterLive();}else{await client.auth.signOut();$('authFeedback').textContent='The signed-in account does not match the existing workspace owner.';}}}catch(err){$('authFeedback').textContent='Could not restore your session: '+err.message;}})();
 
 </script>
+<!-- Evidence Atlas enhancement tools -->
+<script>
+(function evidenceAtlasEnhancements() {
+  "use strict";
+  const editable = {
+    cases: [
+      ["title","Case title","text",true],["summary","Summary","textarea"],["description","Detailed research notes","textarea"],["category","Category","text"],["country","Location / country","text"],["start_date","Start date","date"],["end_date","End date","date"],["official_finding","Official finding","textarea"],["disputed_questions","Questions under review","textarea"],["evidence_level","Evidence level","text"]
+    ],
+    claims: [
+      ["claim_text","Claim / research question","textarea",true],["evidence_status","Evidence status","text"],["confidence","Confidence assessment","text"],["official_position","Official position","textarea"],["analysis","Analysis / limitations","textarea"]
+    ],
+    sources: [
+      ["title","Source title","text",true],["publisher","Publisher","text"],["author","Author","text"],["publication_date","Publication date","date"],["source_type","Source type","text"],["url","Source URL","url"],["archive_url","Archive URL","url"],["public_notes","Citation and context notes","textarea"]
+    ],
+    people: [
+      ["full_name","Name","text",true],["occupation","Occupation / role","text"],["biography","Context / biography","textarea"],["whistleblower_status","Whistleblower status (if documented)","text"]
+    ],
+    organizations: [
+      ["name","Organization name","text",true],["organization_type","Organization type","text"],["country","Country","text"],["description","Description","textarea"]
+    ]
+  };
+  const sets = [
+    ["cases","Case files","title"],["claims","Claims","claim_text"],["sources","Source references","title"],
+    ["people","People","full_name"],["organizations","Organizations","name"]
+  ];
+  function managePanel() {
+    return `<section class="panel" id="managePanel" style="margin-top:24px">
+      <div class="panel-head"><h2>Edit existing records</h2><span>Changes save to Supabase</span></div>
+      <div class="panel-body">
+      <p class="mini-desc">Find a record below, then choose Edit. Existing IDs and source links are preserved. Demo records cannot be changed.</p>
+      <input class="search" id="manageSearch" placeholder="Search across cases, claims, people, sources..." aria-label="Search editable records" style="width:100%;margin:10px 0 16px" />
+      ${sets.map(([table,title,key])=>`<details style="border-top:1px solid #e4eaf0;padding:14px 0"><summary style="cursor:pointer;font-weight:700;color:#31465a">${esc(title)} (${rows(table).length})</summary>
+        <div class="stack" style="margin-top:10px">${rows(table).map(rec=>`<div class="nested-row" data-manage-entry data-search="${esc((rec[key]||'').toLowerCase())}" style="display:flex;align-items:center;gap:10px;justify-content:space-between"><span style="font-size:12px;overflow-wrap:anywhere">${esc(cut(rec[key]||'Untitled',130))}</span><button class="secondary" type="button" data-action="edit-record" data-table="${table}" data-id="${esc(rec.id)}" style="flex-shrink:0">Edit</button></div>`).join('')||'<p class="mini-desc">No records yet.</p>'}</div></details>`).join('')}
+      </div></section>
+      <section class="panel" style="margin-top:24px" id="importPanel">
+      <div class="panel-head"><h2>Import a case catalog</h2><span>CSV · owner access</span></div>
+      <div class="panel-body"><p class="mini-desc">Upload a CSV with a <strong>title</strong> column. Optional columns: summary, description, category, country, start_date, end_date, official_finding, disputed_questions. Review the preview before importing. Existing titles are skipped and current records are never overwritten. Imported cases are private drafts for further verification.</p>
+      <input id="caseImportFile" type="file" accept=".csv,text/csv" class="field" aria-label="Select case catalog CSV" style="width:100%"/>
+      <p class="mini-desc" id="importPreview" role="status">Select a file to preview how many cases can be imported.</p>
+      <button class="primary" id="importCasesBtn" data-action="import-cases" type="button" disabled>Import new cases</button>
+      </div></section>`;
+  }
+  let staged = [];
+  let skipped = 0;
+  function normalize(v) {return String(v??"").trim().toLocaleLowerCase("en-US").replace(/\s+/g," ");}
+  function parseCsv(text) {
+    const all=[], row=[]; let cell="", quoted=false;
+    const input=text.replace(/^\uFEFF/,"");
+    for(let i=0;i<input.length;i++) {
+      const c=input[i];
+      if(c==='"') { if(quoted&&input[i+1]==='"'){cell+='"';i++;}else quoted=!quoted; }
+      else if(c===","&&!quoted){row.push(cell);cell="";}
+      else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&input[i+1]==="\n")i++;row.push(cell);if(row.some(v=>v.trim()))all.push([...row]);row.length=0;cell="";}
+      else cell+=c;
+    }
+    if(quoted)throw new Error("Unclosed quoted field in the CSV.");
+    row.push(cell);if(row.some(v=>v.trim()))all.push(row);
+    return all;
+  }
+  async function previewImport(file) {
+    staged=[];skipped=0;
+    $("importCasesBtn").disabled=true;
+    if(!file){$("importPreview").textContent="Select a CSV file to preview.";return;}
+    if(state.demo||!client){$("importPreview").textContent="Sign in as the workspace owner before importing.";return;}
+    if(file.size>5*1024*1024){$("importPreview").textContent="File is over 5 MB. Split large catalogs into smaller files.";return;}
+    try {
+      const data=parseCsv(await file.text());
+      if(data.length<2)throw new Error("The CSV needs a header and at least one case row.");
+      const headers=data.shift().map(x=>normalize(x).replaceAll(" ","_"));
+      if(!headers.includes("title"))throw new Error("Missing required 'title' column.");
+      const allowed=["title","summary","description","category","country","start_date","end_date","official_finding","disputed_questions"];
+      const seen=new Set(rows("cases").map(r=>normalize(r.title)));
+      const knownNumbers=new Set(rows("cases").map(r=>Number(r.case_number)));
+      let n=Math.max(0,...knownNumbers);
+      for(const values of data) {
+        const record={};
+        for(const f of allowed){const p=headers.indexOf(f);if(p>=0&&values[p]!=null&&values[p].trim())record[f]=values[p].trim();}
+        const name=normalize(record.title);
+        if(!name||seen.has(name)){skipped++;continue;}
+        for(const f of ["start_date","end_date"]) {
+          if(record[f]&&!/^\d{4}-\d{2}-\d{2}$/.test(record[f]))throw new Error(`Date for "${record.title}" must use YYYY-MM-DD in ${f}.`);
+        }
+        while(knownNumbers.has(++n)){}
+        knownNumbers.add(n);record.case_number=n;record.published=false;
+        record.evidence_level="Pending review";
+        seen.add(name);staged.push(record);
+      }
+      $("importPreview").textContent=`Ready to import ${staged.length} private case draft(s). Skipped ${skipped} blank or duplicate title(s). No existing case will be overwritten.`;
+      $("importCasesBtn").disabled=!staged.length;
+    } catch(error) {$("importPreview").textContent=`Import error: ${error.message}`;}
+  }
+  async function importCases() {
+    if(!staged.length||!guardWrite())return;
+    if(!confirm(`Import ${staged.length} new case drafts into the live database? Existing records will not be overwritten.`))return;
+    const btn=$("importCasesBtn"),view=$("importPreview");btn.disabled=true;
+    let completed=0;
+    for(let k=0;k<staged.length;k+=25) {
+      const batch=staged.slice(k,k+25);
+      const {error}=await client.from("cases").insert(batch);
+      if(error) {
+        view.textContent=`Imported ${completed} cases before an error: ${error.message}. Refresh and preview again before retrying.`;
+        staged=[];await loadData();return;
+      }
+      completed+=batch.length;view.textContent=`Imported ${completed} of ${staged.length} private drafts...`;
+    }
+    staged=[];view.textContent=`Imported ${completed} case drafts. Review each case and attach evidence before marking it published.`;
+    $("caseImportFile").value="";
+    await loadData();toast(`${completed} cases imported without overwriting existing records.`);
+  }
+  function editRecord(table,id) {
+    if(!guardWrite()||!editable[table])return;
+    const original=rows(table).find(x=>String(x.id)===String(id));
+    if(!original){toast("Record not found. Refresh data.");return;}
+    const fields=editable[table].map(([name,label,kind,required])=>field(name,label,kind,!!required,"",original[name]??"")).join("");
+    $("modalRoot").innerHTML=`<div class="modal-backdrop" id="modalBackdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-header"><h2 id="modalTitle">Edit ${esc(table.slice(0,-1))}</h2><button class="modal-close" data-action="close-modal" aria-label="Close">×</button></div><form id="editExistingForm">${fields}<p class="form-note">This updates the selected record only. Its ID, citations, and other links remain intact.</p><div id="modalError" role="alert"></div><div class="modal-actions"><button type="button" class="secondary" data-action="close-modal">Cancel</button><button class="primary" id="saveEditedBtn" type="submit">Save changes</button></div></form></section></div>`;
+    $("editExistingForm").addEventListener("submit",async e=>{
+      e.preventDefault();if(!guardWrite())return;
+      const update={};const values=new FormData(e.currentTarget);
+      for(const [name] of editable[table]){update[name]=String(values.get(name)??"").trim()||null;}
+      const button=$("saveEditedBtn");button.disabled=true;button.textContent="Saving...";
+      const {error}=await client.from(table).update(update).eq("id",original.id).select("*").single();
+      if(error){$("modalError").textContent=`Could not save: ${error.message}`;button.disabled=false;button.textContent="Save changes";return;}
+      closeModal();toast("Changes saved in Supabase.");await loadData();
+    });
+    $("editExistingForm").querySelector(".field")?.focus();
+  }
+  const screen=$("screen");
+  const observer=new MutationObserver(()=>{
+    if(state.screen==="settings"&&!$("managePanel"))screen.insertAdjacentHTML("beforeend",managePanel());
+  });
+  observer.observe(screen,{childList:true});
+  if(state.screen==="settings"&&!$("managePanel"))screen.insertAdjacentHTML("beforeend",managePanel());
+  document.addEventListener("click",e=>{
+    const b=e.target.closest('[data-action="edit-record"],[data-action="import-cases"]');
+    if(!b)return;
+    if(b.dataset.action==="edit-record")editRecord(b.dataset.table,b.dataset.id);
+    else if(b.dataset.action==="import-cases")void importCases();
+  });
+  document.addEventListener("input",e=>{
+    if(e.target.id!=="manageSearch")return;
+    const q=normalize(e.target.value);
+    document.querySelectorAll("[data-manage-entry]").forEach(item=>item.hidden=!normalize(item.dataset.search).includes(q));
+  });
+  document.addEventListener("change",e=>{
+    if(e.target.id==="caseImportFile")void previewImport(e.target.files?.[0]);
+  });
+})();
+</script>
 </body>
 </html>
