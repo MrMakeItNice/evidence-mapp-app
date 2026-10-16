@@ -117,6 +117,7 @@ function watchScreen() {
   ${x.evidence_notes?`<p><strong>Evidence notes:</strong> ${esc(x.evidence_notes)}</p>`:''}
   ${x.competing_explanations?`<p><strong>Alternative explanations:</strong> ${esc(x.competing_explanations)}</p>`:''}
   <div class="actions" style="margin-top:15px;gap:9px;align-items:center">
+   <button class="secondary" data-action="watch-edit" data-id="${esc(x.id)}">Edit notes</button>
    ${sourceAnchor({url:x.source_url,title:'Open source'},'Open original ↗')}
    <label class="mini-desc" style="margin:0">Assessment: <select class="filter-select" style="min-width:130px;padding:8px" data-watch-assessment="${esc(x.id)}">
      ${[['unassessed','Not assessed'],['corroborated','Corroborated'],['disputed','Disputed'],['misleading','Misleading'],['insufficient_evidence','Insufficient evidence']].map(([v,n])=>`<option value="${v}" ${x.assessment===v?'selected':''}>${n}</option>`).join('')}
@@ -129,7 +130,7 @@ function watchScreen() {
   `<div class="stat-grid">${counts.map(([n,l,i,t])=>`<div class="stat-card"><div class="stat-ic">${i}</div><div class="stat-label">${l}</div><div class="stat-number">${n}</div><div class="stat-note">${t}</div></div>`).join('')}</div>
   <div class="network-note" style="margin-bottom:23px"><strong>Evidence standards:</strong> An article, allegation, similarity or timeline overlap does not establish causation, collusion, or propaganda. Prefer primary records; compare independent coverage, note publication dates, and preserve uncertainties. Nothing in this queue is automatically published or labeled proven.</div>
   <div class="two-up" style="margin-bottom:24px">
-   ${panel('Watch topics',`<div class="panel-body">${topics.map(t=>`<div class="mini-card"><div class="record-head"><div class="mini-title">${esc(t.name)}</div>${label(t.active?'Active':'Paused',t.active?'teal':'orange')}</div><p class="mini-desc">${esc(t.search_query)}</p><div class="mini-meta"><span>Last checked: ${esc(t.last_checked_at?t.last_checked_at.slice(0,16).replace('T',' '):'No recorded run')}</span><button class="text-btn" data-action="watch-toggle-topic" data-id="${esc(t.id)}">${t.active?'Pause':'Activate'}</button></div></div>`).join('')||'<p class="mini-desc">No watch topics yet.</p>'}</div>`) }
+   ${panel('Watch topics',`<div class="panel-body">${topics.map(t=>`<div class="mini-card"><div class="record-head"><div class="mini-title">${esc(t.name)}</div>${label(t.active?'Active':'Paused',t.active?'teal':'orange')}</div><p class="mini-desc">${esc(t.search_query)}</p><div class="mini-meta"><span>Last checked: ${esc(t.last_checked_at?t.last_checked_at.slice(0,16).replace('T',' '):'No recorded run')}</span><button class="text-btn" data-action="watch-edit-topic" data-id="${esc(t.id)}">Edit</button><button class="text-btn" data-action="watch-toggle-topic" data-id="${esc(t.id)}">${t.active?'Pause':'Activate'}</button></div></div>`).join('')||'<p class="mini-desc">No watch topics yet.</p>'}</div>`) }
    ${panel('Workflow',`<div class="panel-body"><p class="mini-desc"><strong>1.</strong> The daily research agent searches for credible new sources.</p><p class="mini-desc"><strong>2.</strong> New material is staged here, with source URLs and documented uncertainty.</p><p class="mini-desc"><strong>3.</strong> Review and assess a source before adding it to your main library.</p><p class="mini-desc"><strong>4.</strong> Link evidence to claims or cases only where the actual record supports it.</p><p class="mini-desc">Only the authorized owner can change watch topics or approve records.</p></div>`)}
   </div>
   ${panel('Pending research',pending.length?`<div class="panel-body stack">${pending.map(card).join('')}</div>`:blank('Your review queue is clear','Newly discovered material appears here for your assessment.'))}
@@ -352,6 +353,21 @@ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=
    modal(fields,"Stage a research finding",async e=>{e.preventDefault();const form=Object.fromEntries(new FormData(e.currentTarget));let d={};for(let [k,v] of Object.entries(form)){v=String(v).trim();if(v)d[k]=v;}if(!d.related_case_id)delete d.related_case_id;if(!d.watch_topic_id)delete d.watch_topic_id;d.origin="manual";const b=$("watchSubmit");b.disabled=true;const {error}=await client.from("research_inbox").insert(d);b.disabled=false;if(error){$("watchFormError").textContent=`Save failed: ${error.code==='23505'?'This URL is already in the review queue.':error.message}`;return;}closeModal();await loadData();message("Finding added for review. No claim was marked verified.");});
  }
  function addTopic(){if(!guardWrite())return;modal(field("name","Watch topic name","text",true)+field("search_query","What should the agent search for?","textarea",true),"Create research watch",async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.currentTarget));const b=$("watchSubmit");b.disabled=true;const {error}=await client.from("research_watch_topics").insert({name:String(f.name).trim(),search_query:String(f.search_query).trim()});b.disabled=false;if(error){$("watchFormError").textContent=error.message;return;}closeModal();await loadData();message("New watch topic saved.");});}
+
+ function editItem(id){
+  if(!guardWrite())return;
+  const current=watchById(id);
+  if(!current)return;
+  const caseOptionsHtml='<option value="">— Unassigned —</option>'+rows("cases").map(c=>`<option value="${c.id}" ${String(c.id)===String(current.related_case_id)?"selected":""}>${esc(c.title)}</option>`).join("");
+  const coverageTypes=[["unclassified","Unclassified"],["primary_document","Primary document"],["reporting","News reporting"],["opinion","Opinion"],["fact_check","Fact check"]].map(([v,n])=>`<option value="${v}" ${current.coverage_type===v?"selected":""}>${n}</option>`).join("");
+  const fields=field("title","Title","text",true,"",current.title)+field("source_url","Source URL","url",true,"",current.source_url)+field("publisher","Publisher","text",false,"",current.publisher)+field("published_at","Published (date)","date",false,"",current.published_at?.slice(0,10))+field("related_case_id","Related case","select",false,caseOptionsHtml)+field("coverage_type","Source type","select",false,coverageTypes)+field("relevance_notes","Relevance and reason for review","textarea",false,"",current.relevance_notes)+field("evidence_notes","What the source actually demonstrates","textarea",false,"",current.evidence_notes)+field("competing_explanations","Counter-evidence, alternative explanations, caveats","textarea",false,"",current.competing_explanations);
+  modal(fields,"Edit research assessment",async e=>{e.preventDefault();const values=Object.fromEntries(new FormData(e.currentTarget));const body={};for(const [key,val] of Object.entries(values))body[key]=String(val).trim()||null;body.updated_at=new Date().toISOString();const b=$("watchSubmit");b.disabled=true;const result=await updateWatch("research_inbox",id,body);b.disabled=false;if(result){closeModal();message("Research notes updated. Review status unchanged.");}else{$("watchFormError").textContent="Update could not be saved.";}});
+ }
+ function editTopic(id){
+  if(!guardWrite())return;
+  const current=rows("research_watch_topics").find(x=>x.id===id);if(!current)return;
+  modal(field("name","Watch name","text",true,"",current.name)+field("search_query","What to look for","textarea",true,"",current.search_query),"Edit research watch",async e=>{e.preventDefault();const values=Object.fromEntries(new FormData(e.currentTarget));const result=await updateWatch("research_watch_topics",id,{name:String(values.name).trim(),search_query:String(values.search_query).trim()});if(result){closeModal();message("Watch topic updated.");}else{$("watchFormError").textContent="Update failed. Check the topic name is unique."; }});
+ }
  async function promote(id){if(!guardWrite())return;const x=watchById(id);if(!x||x.review_status!=="reviewed"){message("Review the material before saving it as a source.");return;}
   if(!confirm("Add this source to the library? This does not confirm its claims, link it to any case, or publish the evidence."))return;
   const {data:found,error:findError}=await client.from("sources").select("id").eq("url",x.source_url).limit(1);
@@ -363,6 +379,8 @@ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=
   const b=e.target.closest("[data-action^='watch-']");if(!b)return;let id=Number(b.dataset.id);
   switch(b.dataset.action){
    case "watch-add-item":addItem();break;
+   case "watch-edit":editItem(id);break;
+   case "watch-edit-topic":editTopic(id);break;
    case "watch-add-topic":addTopic();break;
    case "watch-review":await updateWatch("research_inbox",id,{review_status:"reviewed",updated_at:new Date().toISOString()});break;
    case "watch-dismiss":await updateWatch("research_inbox",id,{review_status:"dismissed",updated_at:new Date().toISOString()});break;
