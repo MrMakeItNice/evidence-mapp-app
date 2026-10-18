@@ -4,7 +4,7 @@ A source-grounded research workspace for case files, claims, source references, 
 
 ## Live app (Supabase Edge Functions)
 
-**Current release:** v1.6.0 (140 original cases preserved; separate Epstein Files, COVID-19 and Palestine/Gaza workspaces, source and timeline tools, and group-tagged daily monitoring).
+**Current release:** v1.7.0 (News & Information added: nine news sections, 34 user-editable topics, source-review queue, investigation filters, and handoff to Research Watch).
 
 **Open Evidence Atlas:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas
 
@@ -43,8 +43,20 @@ This repository is **public**. Never add passwords, private research exports, se
 - Draft solution proposals and modeled possible outcomes
 - Owner-protected record creation, editing, and JSON export
 - Owner-only CSV case catalog import with a preview, duplicate-title skipping, and private draft status
+- **News & Information**: Nine topic-based sections, 34 starter topics, five explicitly dated/undated official background references, owner-only adding of sections/topics/stories, topic/investigation/type/status filters, article editing, source-linked review, and optional promotion of reviewed items to Research Watch
 - **Research Watch** dashboard: active topics, private source queue, credibility/assessment choices, review/dismiss/reopen decisions, group attribution and deliberately manual promotion to source library
 - **Three independent investigation groups**: Epstein Files; COVID-19; and Palestine / Gaza — International Law & Accountability. Each has its own research sections, primary source links, timeline and owner-only add/review actions.
+
+
+## News & Information workflow
+
+Open **News & Information** from the left navigation. Browse sections (Latest News; Government & Transparency; World Affairs & Conflict; Justice, Rights & Accountability; Health, Science & Medicine; Media, Narratives & Fact-Checking; Economy, Technology & Society; Investigation Updates; Information & Explainers). Each contains topics that can be extended by the owner. Filters find saved items by topic, investigation group, content kind and review status.
+
+**New source entries are private and pending review.** The five starter entries are archival/index references to official materials and should **not** be read as today's breaking news. Editing or marking an item reviewed does not verify its claims. Select **Send to Research Watch** from a reviewed item to open a deeper evidence-analysis queue; case records and evidence grades are not changed automatically. Duplicate URLs in the news desk are blocked.
+
+The Supabase project also contains a distinct **raw news collection** schema (`news_articles`, `news_article_topics`, `news_watch_topics` and related analysis tables), used by separate news-service deployments. The newly added `news_sections`, `news_topics`, and `news_items` represent the **curated owner-only News & Information desk**, rather than silently merging or deleting the raw collection. As of initial setup, the raw article collection had zero items; do not claim that raw and curated feeds are synchronized unless a verified pipeline is built.
+
+The existing daily scheduled research task was updated to review new items across active news topics and stage meaningful, properly sourced URLs in `news_items` as pending. Scheduled workflows depend on authorization and runtime availability; they are not evidence of a successful future ingestion until records appear in the database. Notifications depend on the user's task notification preferences.
 
 ## Current limitations
 
