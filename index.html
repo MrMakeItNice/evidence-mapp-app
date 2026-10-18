@@ -64,10 +64,10 @@ const OWNER_USER_ID = 'cdfff424-d750-4f82-baa3-d17a6113af53';
 const client = window.supabase?.createClient?.(PROJECT_URL, PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 }) || null;
-const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox','master_source_register','case_source_references','investigation_groups','investigation_group_topics','investigation_group_sources','investigation_group_cases','investigation_group_events'];
+const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox','master_source_register','case_source_references','investigation_groups','investigation_group_topics','investigation_group_sources','investigation_group_cases','investigation_group_events','news_sections','news_topics','news_items'];
 const emptyData = () => Object.fromEntries(TABLES.map(t => [t, []]));
 const state = { screen:'dashboard', dataset:emptyData(), demo:false, ready:false, busy:false, caseId:null, search:'', filter:'all', errors:[], owner:null };
-const NAV=[['guide','?','Start Here'],['dashboard','▦','Overview'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['epstein-files','♧','Epstein Files'],['covid-19','✳','COVID-19'],['palestine-gaza','⚖','Palestine / Gaza'],['watch','◉','Research Watch'],['settings','⚙','Workspace']];
+const NAV=[['guide','?','Start Here'],['dashboard','▦','Overview'],['news','◍','News & Information'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['epstein-files','♧','Epstein Files'],['covid-19','✳','COVID-19'],['palestine-gaza','⚖','Palestine / Gaza'],['watch','◉','Research Watch'],['settings','⚙','Workspace']];
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date = s => s ? new Date(`${s}T12:00:00Z`).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : 'Not dated';
@@ -209,8 +209,78 @@ function groupScreen(slug){
  </div>
  <div class="network-note">Independent workspace: these sections, sources and events are private drafts. They do not alter the evidence grades in the original 140-case index. The connection of a person or institution to an event does not, by itself, prove guilt or causation.</div>`;
 }
-function render(){initNav();const counts={cases:rows('cases').length,claims:rows('claims').length,sources:rows('sources').length,people:rows('people').length,solutions:rows('solution_candidates').length,watch:rows('research_inbox').filter(x=>x.review_status==='pending').length};document.querySelectorAll('[data-navcount]').forEach(el=>{const v=counts[el.dataset.navcount];el.textContent=v||'';el.hidden=!v});$('breadcrumbName').textContent=(NAV.find(x=>x[0]===state.screen)||NAV[0])[2];let body='';if(state.errors.length)body+=`<div class="error-box"><strong>Some data could not be loaded.</strong> ${esc(state.errors.slice(0,3).join(' • '))}. Check this account's table permissions in Supabase, then retry.</div>`;
-const builders={guide:guideScreen,dashboard:dashboardScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,'epstein-files':()=>groupScreen('epstein-files'),'covid-19':()=>groupScreen('covid-19'),'palestine-gaza':()=>groupScreen('palestine-gaza'),watch:watchScreen,settings:settingsScreen};$('screen').innerHTML=body+(state.screen==='dashboard'?welcomePanel():'')+builders[state.screen]();}
+const newsView={section:"all",topic:"all",group:"all",kind:"all",review:"all",search:""};
+function newsScreen(){
+  const sections=rows("news_sections").slice().sort((a,b)=>a.display_order-b.display_order);
+  const topics=rows("news_topics").filter(t=>t.active!==false);
+  const all=rows("news_items").slice().sort((a,b)=>String(b.published_at||b.discovered_at||"").localeCompare(String(a.published_at||a.discovered_at||"")));
+  if(state.demo&&!sections.length)return intro("NEWS AND INFORMATION","News & Information","Separate from your case files: collect reports and review the original sources.")+panel("Sample preview",'<div class="panel-body"><p class="mini-desc">Sign in to browse your nine live news sections and 34 topics. Sample mode does not load private news records.</p></div>');
+  const section=sections.find(s=>String(s.id)===String(newsView.section));
+  const scopedTopics=section?topics.filter(t=>t.section_id===section.id):topics;
+  const chosenTopic=topics.find(t=>String(t.id)===String(newsView.topic));
+  const groupName=slug=>rows("investigation_groups").find(g=>g.slug===slug)?.title||slug||"General reporting";
+  const numIn=s=>all.filter(x=>topics.some(t=>t.id===x.topic_id&&t.section_id===s.id)).length;
+  const selected=all.filter(x=>{
+    const t=topics.find(t=>t.id===x.topic_id);if(!t)return false;
+    return (!section||t.section_id===section.id) &&
+      (newsView.topic==="all"||String(x.topic_id)===String(newsView.topic)) &&
+      (newsView.group==="all"||x.group_slug===newsView.group) &&
+      (newsView.kind==="all"||x.content_kind===newsView.kind) &&
+      (newsView.review==="all"||x.review_status===newsView.review) &&
+      [x.headline,x.publisher,x.summary,x.evidence_notes,x.alternative_views,t.title].join(" ").toLowerCase().includes(newsView.search.toLowerCase().trim());
+  });
+  const countPending=all.filter(x=>x.review_status==="pending").length;
+  const topicCard=t=>`<button class="news-topic-card" type="button" data-news-topic="${t.id}" style="text-align:left;display:block;width:100%;border:1px solid #d9e3e9;border-radius:12px;background:${String(newsView.topic)===String(t.id)?"#eef8f5":"#fff"};padding:14px;cursor:pointer"><div class="mini-title">${esc(t.title)} ${t.group_slug?"· "+esc(groupName(t.group_slug)):""}</div><p class="mini-desc">${esc(t.description)}</p><span class="mini-meta">${all.filter(x=>x.topic_id===t.id).length} saved items</span></button>`;
+  const itemCard=x=>{
+    const t=topics.find(y=>y.id===x.topic_id);
+    const sec=sections.find(y=>y.id===t?.section_id);
+    const status=x.review_status==="reviewed"?"Reviewed by owner":x.review_status==="dismissed"?"Dismissed":"Pending review";
+    const kind={news_report:"News report",primary_document:"Original document",research_paper:"Scientific research",fact_check:"Fact-check",background_explainer:"Background / explainer",legal_record:"Legal record",opinion:"Opinion"}[x.content_kind]||"Source";
+    return `<article class="record-card" data-news-record="${x.id}">
+      <div class="record-head"><div class="eyebrow">${esc(sec?.title||"News")} / ${esc(t?.title||"Uncategorized")}</div>${label(status,x.review_status==="reviewed"?"teal":x.review_status==="dismissed"?"red":"orange")}</div>
+      <h3>${esc(x.headline)}</h3>
+      <div class="mini-meta"><span>${esc(x.publisher||"Publisher not recorded")}</span><span>${esc(kind)}</span><span>${x.published_at?"Published "+esc(x.published_at.slice(0,10)):"Publication date not recorded"}</span>${x.group_slug?`<span>${esc(groupName(x.group_slug))}</span>`:""}</div>
+      ${x.summary?`<p>${esc(x.summary)}</p>`:""}
+      ${x.evidence_notes?`<p class="mini-desc"><strong>Evidence / caveats:</strong> ${esc(x.evidence_notes)}</p>`:""}
+      ${x.alternative_views?`<p class="mini-desc"><strong>Competing interpretations:</strong> ${esc(x.alternative_views)}</p>`:""}
+      <div class="mini-meta">Assessment: ${esc((x.assessment||"unassessed").replaceAll("_"," "))} · Entered as a source, not a proven claim</div>
+      <div class="actions" style="margin-top:12px;gap:8px;align-items:center;flex-wrap:wrap">
+        ${sourceAnchor({url:x.source_url,title:x.headline},"Read original ↗")}
+        ${!state.demo?`<button class="secondary" type="button" data-action="news-edit" data-id="${x.id}">Edit notes</button>`:""}
+        ${!state.demo && x.review_status==="pending"?`<button class="secondary" type="button" data-action="news-review" data-id="${x.id}">Mark reviewed</button><button class="secondary" type="button" data-action="news-dismiss" data-id="${x.id}">Dismiss</button>`:""}
+        ${!state.demo && x.review_status!=="pending"?`<button class="secondary" type="button" data-action="news-reopen" data-id="${x.id}">Reopen</button>`:""}
+        ${!state.demo && x.review_status==="reviewed"?`<button class="secondary" type="button" data-action="news-send-inbox" data-id="${x.id}">Send to Research Watch</button>`:""}
+      </div>
+    </article>`;
+  };
+  const sectionButtons=`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px"><button class="secondary" type="button" data-news-section="all" aria-pressed="${!section}">All sections</button>${sections.map(s=>`<button class="secondary" type="button" data-news-section="${s.id}" aria-pressed="${section?.id===s.id}">${esc(s.title)}</button>`).join("")}</div>`;
+  const sectionCards=!section?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px">${sections.map(s=>`<button type="button" data-news-section="${s.id}" style="border:1px solid #dae5ea;border-radius:12px;background:#fff;text-align:left;padding:16px;cursor:pointer"><strong>${esc(s.title)}</strong><p class="mini-desc">${esc(s.description)}</p><div class="mini-meta">${topics.filter(t=>t.section_id===s.id).length} topics · ${numIn(s)} items</div></button>`).join("")}</div>`:"";
+  const topicCards=section?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px">${scopedTopics.map(topicCard).join("")}</div>`:"<p class=\"mini-desc\">Choose a section above to browse its topics, or use the filters below to search everything.</p>";
+  const topicSelect=`<option value="all">All topics</option>${scopedTopics.map(t=>`<option value="${t.id}" ${String(newsView.topic)===String(t.id)?"selected":""}>${esc(t.title)}</option>`).join("")}`;
+  const groupSelect=`<option value="all">All investigations</option>${rows("investigation_groups").map(g=>`<option value="${esc(g.slug)}" ${newsView.group===g.slug?"selected":""}>${esc(g.title)}</option>`).join("")}`;
+  const kinds=[["all","All types"],["news_report","News reporting"],["primary_document","Primary documents"],["legal_record","Legal records"],["research_paper","Scientific research"],["fact_check","Fact-checks"],["background_explainer","Explainers"],["opinion","Opinion"]];
+  const selection=(value,choices)=>choices.map(([v,n])=>`<option value="${esc(v)}" ${v===value?"selected":""}>${esc(n)}</option>`).join("");
+  return intro("INDEPENDENT NEWS DESK","News & Information","Browse reporting, primary documents, research, corrections and explanatory material. Nothing here becomes a verified claim without review.",
+    state.demo?"":action("news-add-item","＋ Add information")+action("news-add-topic","＋ New topic","secondary")+action("news-add-section","＋ New section","secondary"))+
+    `<div class="stat-grid">${[[sections.length,"News sections","▤"],[topics.length,"Topics","⌕"],[all.length,"Items","⌁"],[countPending,"Waiting for review","◉"]].map(([v,name,ic])=>`<div class="stat-card"><div class="stat-ic">${ic}</div><div class="stat-label">${name}</div><div class="stat-number">${v}</div></div>`).join("")}</div>
+    <div class="network-note" style="margin-bottom:18px"><strong>Editorial policy:</strong> News reports, allegations and analysis are distinct from primary documents and legal findings. Keep original publication dates, seek independent confirmation, and record corrections. These items are private to your account.</div>
+    ${sectionButtons}${sectionCards}
+    ${panel(section?`Topics: ${esc(section.title)}`:"Browse by topic",`<div class="panel-body">${topicCards}</div>`)}
+    <div style="height:20px"></div>
+    ${panel("News desk & saved references",
+    `<div class="panel-body"><div class="filterbar" style="display:flex;flex-wrap:wrap;gap:9px">
+      <input id="newsFilterSearch" class="search" placeholder="Search headlines, sources or notes…" value="${esc(newsView.search)}" aria-label="Search news" style="min-width:200px;flex:1"/>
+      <select id="newsFilterTopic" class="filter-select" aria-label="Topic">${topicSelect}</select>
+      <select id="newsFilterGroup" class="filter-select" aria-label="Investigation">${groupSelect}</select>
+      <select id="newsFilterKind" class="filter-select" aria-label="Information type">${selection(newsView.kind,kinds)}</select>
+      <select id="newsFilterStatus" class="filter-select" aria-label="Review status">${selection(newsView.review,[["all","All review stages"],["pending","Pending"],["reviewed","Reviewed"],["dismissed","Dismissed"]])}</select>
+    </div><div class="mini-meta" id="newsShownCount" style="margin:10px 0 15px">Showing ${selected.length} of ${all.length} saved entries</div>
+    ${selected.length?`<div class="stack" id="newsRecords">${selected.map(itemCard).join("")}</div>`:blank("No matching news items","Change a filter, or add a source to this news topic. The starter references are background material, not live-breaking reports.")}
+    </div>`)}
+    <div class="network-note" style="margin-top:14px">To investigate a news item more deeply, mark it reviewed, then send it to Research Watch. This does not automatically add it to a case, confirm a claim, or publish it.</div>`;
+}
+function render(){initNav();const counts={cases:rows('cases').length,claims:rows('claims').length,sources:rows('sources').length,people:rows('people').length,solutions:rows('solution_candidates').length,watch:rows('research_inbox').filter(x=>x.review_status==='pending').length,news:rows('news_items').filter(x=>x.review_status==='pending').length};document.querySelectorAll('[data-navcount]').forEach(el=>{const v=counts[el.dataset.navcount];el.textContent=v||'';el.hidden=!v});$('breadcrumbName').textContent=(NAV.find(x=>x[0]===state.screen)||NAV[0])[2];let body='';if(state.errors.length)body+=`<div class="error-box"><strong>Some data could not be loaded.</strong> ${esc(state.errors.slice(0,3).join(' • '))}. Check this account's table permissions in Supabase, then retry.</div>`;
+const builders={guide:guideScreen,dashboard:dashboardScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,'epstein-files':()=>groupScreen('epstein-files'),'covid-19':()=>groupScreen('covid-19'),'palestine-gaza':()=>groupScreen('palestine-gaza'),watch:watchScreen,news:newsScreen,settings:settingsScreen};$('screen').innerHTML=body+(state.screen==='dashboard'?welcomePanel():'')+builders[state.screen]();}
 
 function welcomePanel(){return `<section class="welcome-panel" aria-labelledby="welcomeTitle"><div class="eyebrow">OUR MISSION / MAKE IT NICE</div><h2 id="welcomeTitle">Understand the world. Help make it nicer.</h2><p>Evidence Atlas brings cases, claims, sources, and context together so you can examine what is documented, what is disputed, and what remains unknown. Follow the evidence, keep uncertainty visible, then explore practical ways to improve things.</p><figure class="madison-quote"><blockquote>“The accumulation of all powers, legislative, executive, and judiciary, in the same hands … may justly be pronounced the very definition of tyranny.”</blockquote><figcaption>James Madison · <a href="https://avalon.law.yale.edu/18th_century/fed47.asp" target="_blank" rel="noopener noreferrer">The Federalist No. 47 (1788) ↗</a> · Abridged excerpt</figcaption></figure><div class="actions">${action('nav','How to use Evidence Atlas','primary','data-page="guide"')}${action('nav','Explore case files','secondary','data-page="cases"')}</div><p class="mini-desc">A claim appearing here means it is being examined. Inclusion or a connection alone does not establish guilt or prove a claim.</p></section>`;}
 function guideScreen(){
