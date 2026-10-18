@@ -2,9 +2,17 @@
 
 A source-grounded research workspace for case files, claims, source references, people, organizations, connection maps, timelines, and modeled outcomes. This repo hosts the static browser frontend; the existing Supabase project stores the research records.
 
-## Live app (Supabase Edge Functions)
+## Live web app
 
-**Current release:** v1.8.0 (About / README for the public reader and the owner workspace, including mission, walkthrough, editorial evidence standards, privacy/security overview, contact route and release history).
+**Primary browser address:** https://mrmakeitnice.github.io/evidence-mapp-app/
+
+**Owner workspace:** https://mrmakeitnice.github.io/evidence-mapp-app/index.html?workspace=1
+
+GitHub Pages is the browser-facing host. Supabase Edge Functions serve JSON APIs and retain a synchronized HTML copy; Supabase gateway headers can prevent rendering HTML directly, so use the primary browser address.
+
+## Supabase service routes
+
+**Current release:** v1.9.0 (About / README for the public reader and the owner workspace, including mission, walkthrough, editorial evidence standards, privacy/security overview, contact route and release history).
 
 **Open public reader:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas
 
@@ -85,7 +93,7 @@ Maintained as a private-data application served from a public-code repository.
 
 ## Imported master index and future CSV imports
 
-**Import completed 16 October 2026:** The uploaded *Documented Government Operations Master Index 1-140* was parsed and imported directly into the connected Supabase project. All case numbers 1–140 are accounted for: existing case #1 was kept without rewriting; 139 additional cases are private drafts. The 147 bibliography register entries from three separate source-register namespaces have been inserted and mapped to the 140 cases via 219 documented citations. Source listings and the original 40-page PDF are not independent verification of their contents or link availability.
+**Import completed 16 October 2026:** The uploaded *Documented Government Operations Master Index 1-140* was parsed and imported directly into the connected Supabase project. All case numbers 1–140 are accounted for: existing case #1 was kept without rewriting; 139 additional cases were initially private drafts. As verified on 18 October 2026, all 140 case records are marked published. This publication status is not verification of every assertion; future case imports and new cases remain private drafts. The 147 bibliography register entries from three separate source-register namespaces have been inserted and mapped to the 140 cases via 219 documented citations. Source listings and the original 40-page PDF are not independent verification of their contents or link availability.
 
 **Important:** The original working index deliberately retains repeated/cross-referenced case titles and distinguishes documented events, disputed attribution, and unsupported murder/suppression theories. Do not interpret the network map or a case/source link as proof of culpability or causation.
 
@@ -115,7 +123,8 @@ New group records are owner-only by row-level security. The source links and tim
 
 ## Verification
 
-- Supabase Edge Function deployment version 8 is reported ACTIVE.
+- The deployed case API returns JSON with all 140 published cases; keyword research returns 140 cases, 123 published sources and 18 public problem areas.
+- The public-read RLS rule now allows published rows while retaining separate restrictive owner-only INSERT, UPDATE and DELETE rules.
 - App inline scripts passed JavaScript syntax validation.
 - Supabase owner-role SELECT checks returned the new investigation groups and linked records; simulated non-owner requests saw zero rows in the new group tables. Original 140-case corpus remains intact.
 - An independent real-browser end-to-end sign-in/write test has **not** been completed and remains part of release acceptance.
@@ -128,4 +137,36 @@ The investigation workspace is English-first. Go to **Workspace → Language set
 
 For **Workspace → Import a case catalog**, the **Language of this CSV case text** dropdown defaults to the workspace preference and can be changed for that specific import. New case drafts store this label in `cases.content_language`. New source references, News & Information items and Research Watch findings also carry a content-language code. The database defaults to `en` for these new records. Existing data and original evidence files are not translated or rewritten.
 
-**Important:** These are content language preferences and metadata, not machine translation. Non-English CSV text or source documents must be accurately translated and verified separately before English summaries can be treated as such. The user interface itself currently remains in English. Automatic translation of uploaded non-English files requires a separate trusted translation pipeline with source preservation and review.
+**Important:** Language preferences label content; they do not translate CSV imports. Use Translation Desk for a separate reading copy. The UI stays in English and originals are never rewritten by translation.
+
+
+## Web release 1.9 — 18 October 2026
+
+### Repaired and delivered
+
+- `/functions/v1/evidence-atlas/api/cases` now returns JSON, rather than a page of HTML, and exposes only an explicit public field list with `published=true`.
+- Published-case/source/problem-area SELECT policies no longer conflict with the restrictive owner guard. Anonymous readers see only published rows; a different signed-in account sees no private owner workspace records. Existing write protection remains enforced.
+- Public news has a bounded GDELT request and a BBC RSS fallback. The UI names the provider and limited scope; it does not label a single-publisher fallback as a comprehensive cross-outlet comparison. Article dates are retained. A timed-out request now reaches an actionable error state.
+- New cases and source entries explicitly start unpublished. The SDK is pinned to 2.95.3. Password inputs clear after successful sign-in and on sign-out.
+- CSV preview now validates actual calendar dates and start/end ordering before saving.
+- Backend function source and a reproducible page generator are included in the repository.
+
+### Translation Desk
+
+- A separate owner-only `document_translations` table retains original text, SHA-256 fingerprint, source filename, target-language reading copy, engine, and human-review status.
+- Paste text or open UTF-8 `.txt`, `.md`, `.csv`, or `.json` excerpts, up to 20,000 characters. This is text preservation, not original PDF/image/Word binary archival. PDF/image/Word text extraction and OCR are not implemented.
+- Supported desktop browsers may use their on-device `Translator` API without sending text to this application's server. Availability depends on browser, device and language pair.
+- Cross-browser server translation is implemented through DeepL and requires a `DEEPL_API_KEY` Edge Function secret. The key was **not configured** at release verification. The UI reports the missing configuration and disables server translation until configured. No provider key is stored in frontend code.
+- DeepL use requires an explicit in-app consent checkbox. English is the default target unless the owner has chosen another language. Translations remain pending human review and cannot automatically become verified claims or published evidence.
+- Manual reading copies can be reviewed and saved without a translation provider. Imported CSVs are still language-labeled, not automatically translated. Bulk automatic translation of every uploaded file is not complete.
+
+### Reproduce checks and deployments
+
+```sh
+node tests/web-checks.mjs
+node scripts/build-edge.mjs
+```
+
+Deploy `supabase/functions/evidence-atlas/index.ts` together with its generated `pages.ts`; deploy the other functions from their matching directories. `pages.ts` is build output, generated from `index.html`, `discover.html` and `privacy.html`. The SQL repair files record the remote database changes and are reference history, not blindly repeatable setup scripts.
+
+The downloadable iPhone app and App Store submission are outside this web release.

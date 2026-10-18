@@ -223,7 +223,7 @@ function openCase(id){
  pane.scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("caseGrid").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(b)openCase(b.dataset.id)});
-$("featuredCase").addEventListener("click",()=>{let c=cases.find(c=>Number(c.case_number)===13);if(c)openCase(c.id);else document.getElementById("history").scrollIntoView()});
+$("featuredCase").addEventListener("click",()=>{let c=cases.find(c=>/cointelpro/i.test(c.title));if(c)openCase(c.id);else document.getElementById("history").scrollIntoView()});
 $("moreCases").addEventListener("click",()=>{shown+=9;renderCases()});
 $("searchForm").addEventListener("submit",e=>{e.preventDefault();search=$("searchInput").value.trim();shown=9;renderCases()});
 document.querySelectorAll("[data-search]").forEach(b=>b.addEventListener("click",()=>{search=b.dataset.search;$("searchInput").value=search;shown=9;renderCases();document.getElementById("history").scrollIntoView()}));
@@ -231,7 +231,7 @@ async function getCases(){
  try{const c=new AbortController(),timer=setTimeout(()=>c.abort(),17000);let r;try{r=await fetch(API+"evidence-atlas/api/cases",{signal:c.signal})}finally{clearTimeout(timer)}
  if(!r.ok)throw Error("Historical cases unavailable");const data=await r.json();if(!Array.isArray(data))throw Error("Unexpected case response");
  cases=data.filter(x=>x?.id&&x.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));renderCases();
- }catch(e){$("caseGrid").innerHTML='<div class="message">Historical library is temporarily unavailable. Try again shortly.</div>';$("caseCount").textContent="Offline";$("moreCases").hidden=true;}
+ }catch(e){$("caseGrid").innerHTML='<div class="message">Historical library is temporarily unavailable. <button type="button" class="btn" id="retryCases">Try again</button></div>';$("caseCount").textContent="Offline";$("moreCases").hidden=true;$("retryCases")?.addEventListener("click",getCases);}
 }
 let newsController;
 async function getNews(topic){
@@ -239,7 +239,7 @@ async function getNews(topic){
  $("newsStatus").textContent="Checking recently published "+topic+" coverage…";$("newsGrid").innerHTML="";
  try{const timer=setTimeout(()=>controller.abort(),18000);let r;try{r=await fetch(API+"evidence-public-news?topic="+encodeURIComponent(topic),{signal:controller.signal})}finally{clearTimeout(timer)}
  if(!r.ok)throw Error("News provider temporarily unavailable");const d=await r.json(),items=Array.isArray(d.articles)?d.articles:[];
- $("newsStatus").textContent=items.length+" recent article references discovered. Headlines have not been independently verified.";
+ $("newsStatus").textContent=items.length+" article references · "+(d.provider||"News discovery")+" · "+(d.notice||"Headlines have not been independently verified.");
  $("newsGrid").innerHTML=items.length?items.map((a,i)=>{
  const u=urlOK(a.url),flag=a.sensitive===true;
  const source=esc(a.publisher||"Publisher not recorded")+(a.first_seen?" · "+esc(a.first_seen.slice(0,10)):"");
@@ -247,7 +247,7 @@ async function getNews(topic){
  (flag?'<button class="pill" type="button" data-reveal="'+i+'">Reveal headline</button><span hidden id="hidden'+i+'">'+esc(a.title)+'</span>':"")+
  (u?'<p><a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">Open original publisher ↗</a></p>':"")+'</article>';
  }).join(""):'<div class="message">No coverage returned for this category at this moment. Try another section.</div>';
- }catch(e){if(e.name!=="AbortError"){$("newsStatus").textContent="Live headlines unavailable right now.";$("newsGrid").innerHTML='<div class="message">The external discovery service may be rate-limited or temporarily offline. You can still explore historical cases above.</div>';}}
+ }catch(e){if(newsController===controller){$("newsStatus").textContent="Live headlines unavailable right now.";$("newsGrid").innerHTML='<div class="message">The external discovery service may be rate-limited or temporarily offline. You can still explore historical cases above.</div>';}}
 }
 $("topics").addEventListener("click",e=>{const b=e.target.closest("[data-topic]");if(!b)return;document.querySelectorAll("[data-topic]").forEach(x=>x.classList.toggle("active",x===b));getNews(b.dataset.topic)});
 $("newsGrid").addEventListener("click",e=>{const b=e.target.closest("[data-reveal]");if(!b)return;const i=b.dataset.reveal,slot=$("headline"+i),hidden=$("hidden"+i);if(slot&&hidden){slot.textContent=hidden.textContent;b.remove();}});
