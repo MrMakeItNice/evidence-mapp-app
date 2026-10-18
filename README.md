@@ -120,3 +120,12 @@ New group records are owner-only by row-level security. The source links and tim
 - Supabase owner-role SELECT checks returned the new investigation groups and linked records; simulated non-owner requests saw zero rows in the new group tables. Original 140-case corpus remains intact.
 - An independent real-browser end-to-end sign-in/write test has **not** been completed and remains part of release acceptance.
 - The security advisor currently reports a warning about leaked-password protection (availability depends on Supabase plan).
+
+
+## Language preferences (17 October 2026)
+
+The investigation workspace is English-first. Go to **Workspace → Language settings** to choose the default language used for **new** case and source research entries. The preference is stored in the owner's Supabase `workspace_preferences` row and follows the owner across signed-in devices. English (`en`) is the default until explicitly changed.
+
+For **Workspace → Import a case catalog**, the **Language of this CSV case text** dropdown defaults to the workspace preference and can be changed for that specific import. New case drafts store this label in `cases.content_language`. New source references, News & Information items and Research Watch findings also carry a content-language code. The database defaults to `en` for these new records. Existing data and original evidence files are not translated or rewritten.
+
+**Important:** These are content language preferences and metadata, not machine translation. Non-English CSV text or source documents must be accurately translated and verified separately before English summaries can be treated as such. The user interface itself currently remains in English. Automatic translation of uploaded non-English files requires a separate trusted translation pipeline with source preservation and review.
