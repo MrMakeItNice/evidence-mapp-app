@@ -26,6 +26,14 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #34b8
 .btn.primary{background:#42d1ae;border-color:#42d1ae;color:#0d2631}.btn.dark{background:transparent;color:#e2f6f7;border-color:#587582}.btn:hover{filter:brightness(.96)}
 .hero small{display:block;color:#93acba;margin-top:21px;font-size:11px}
 main{padding:30px 0 65px}
+.about-readme{padding-top:8px;scroll-margin-top:82px}
+.about-readme h3{font:700 17px/1.4 'Space Grotesk',sans-serif;margin:6px 0 10px}
+.about-readme ul{padding-left:20px;margin:10px 0;color:#536c7f;font-size:13px;line-height:1.9}
+.about-readme .readme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin:14px 0}
+.about-readme a{color:#168879}
+.about-readme .readme-pill{display:inline-block;font-size:11px;font-weight:700;color:#327465;background:#e4f5ee;border-radius:99px;padding:7px 11px;margin:3px}
+@media(max-width:760px){.about-readme .readme-grid{grid-template-columns:1fr}}
+
 .feature{display:grid;grid-template-columns:1.3fr .8fr;gap:17px;margin-bottom:35px}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 4px 20px #182f4409}
 .card.feature-main{background:#eaf7f2;border-color:#cce5dc}
@@ -71,11 +79,11 @@ footer{background:#111f33;color:#b6cfdb;padding:28px 0;font-size:11px;line-heigh
 </style>
 </head><body>
 <header class="top"><div class="wrap top-inner"><a class="logo" href="./discover.html">◈ EVIDENCE <b>ATLAS</b></a>
-<nav class="menu" aria-label="Main navigation"><a href="#history">Explore</a><a href="#news">News</a><a href="#how">Tutorial</a><a href="./index.html?workspace=1">Workspace ↗</a></nav></div></header>
+<nav class="menu" aria-label="Main navigation"><a href="#history">Explore</a><a href="#news">News</a><a href="#how">Tutorial</a><a href="#about">About / README</a><a href="./index.html?workspace=1">Workspace ↗</a></nav></div></header>
 <section class="hero"><div class="wrap"><div class="overline">Make It Nice · Explore with curiosity</div>
 <h1>Don’t just read the news.<br><em>Follow the evidence.</em></h1>
 <p>Explore documented history, investigate today's reporting, and discover which questions are settled, which remain disputed, and what the sources actually establish.</p>
-<div class="hero-actions"><a class="btn primary" href="#history">Explore history →</a><a class="btn dark" href="#news">Read the news</a><a class="btn dark" href="#how">Start here ?</a></div>
+<div class="hero-actions"><a class="btn primary" href="#history">Explore history →</a><a class="btn dark" href="#news">Read the news</a><a class="btn dark" href="#how">Start here ?</a><a class="btn dark" href="#about">About this project</a></div>
 <small>Open to curious minds · No account needed to read · Graphic content is not displayed</small>
 </div></section>
 <main class="wrap">
@@ -106,10 +114,70 @@ footer{background:#111f33;color:#b6cfdb;padding:28px 0;font-size:11px;line-heigh
 <section class="how" id="how"><div class="sectionhead"><div><div class="kicker">Start here · The field guide</div><h2>Become your own investigator</h2><p>Three steps to begin. The best investigator knows what they don't know.</p></div></div>
 <div class="steps"><div class="card"><div class="kicker">01 · Ask</div><h3>Begin with a question</h3><p>Find a historical event or current story. Write down what you think you know and what could change your mind.</p></div><div class="card"><div class="kicker">02 · Check</div><h3>Follow the documents</h3><p>Compare dates, reporting, official findings, and opposing evidence. An allegation is not a proven fact.</p></div><div class="card"><div class="kicker">03 · Connect</div><h3>See the bigger picture</h3><p>Examine historical parallels without assuming causation. Consider constructive, measurable solutions.</p></div></div>
 <div class="warning"><strong>For younger readers and families:</strong> This public reader contains educational summaries without graphic imagery or sign-in requirements. Some topics involve violence, exploitation, human experimentation, or war. Original links lead to external websites and may contain upsetting information. Use discretion.</div>
-</section></main>
+</section>
+<section class="about-readme" id="about" aria-labelledby="aboutTitle">
+  <div class="sectionhead"><div><div class="kicker">About the project · README</div><h2 id="aboutTitle">Understand the world. Help make it nicer.</h2><p>Evidence Atlas is an independent educational research project focused on asking better questions, following original records, and keeping uncertainty visible.</p></div></div>
+  <article class="card" style="border-top:3px solid #31be9e">
+    <div class="kicker">Our mission</div><h3>Connections aren't conclusions.</h3>
+    <p>Our historical case library, newsroom and investigation workspaces help readers explore source-grounded information about government operations, public health, accountability and human rights. Inclusion of a person, institution, accusation or timeline overlap does not imply guilt or proof of causation.</p>
+    <div style="margin-top:10px"><span class="readme-pill">Follow sources</span><span class="readme-pill">Separate facts from claims</span><span class="readme-pill">Record uncertainty</span><span class="readme-pill">Correct errors</span></div>
+  </article>
+  <div class="readme-grid">
+    <article class="card">
+      <div class="kicker">How to use Evidence Atlas</div><h3>Your reading guide</h3>
+      <ol style="padding-left:20px;color:#536c7f;font-size:13px;line-height:1.95;margin:0">
+        <li><a href="#history">Search historical cases</a> and read what the cited records say.</li>
+        <li><a href="#news">Explore reporting</a> by subject and open the original publisher.</li>
+        <li>Check dates, corrections, source independence and the original context.</li>
+        <li>Compare opposing evidence before drawing conclusions.</li>
+        <li>Use the <a href="./index.html?workspace=1">private researcher workspace</a> if you are the authorized owner.</li>
+      </ol>
+    </article>
+    <article class="card">
+      <div class="kicker">Research methodology</div><h3>What our evidence labels mean</h3>
+      <ul>
+        <li><strong>Documented:</strong> a specified fact is supported by an identifiable record or finding.</li>
+        <li><strong>Attributed finding:</strong> a named court, commission or institution reached a conclusion; note its date and legal status.</li>
+        <li><strong>Contested / alleged:</strong> evidence conflicts, or the proposition has not been established.</li>
+        <li><strong>Unassessed:</strong> not yet sufficiently reviewed, which is different from disproven.</li>
+      </ul>
+      <p>The original historical index also uses contextual A–D evidence grades. These are not probabilities or guarantees that every allegation in a case is proven.</p>
+    </article>
+    <article class="card">
+      <div class="kicker">Feature guide</div><h3>Explore our research areas</h3>
+      <p><strong>Historical case library:</strong> Documented and disputed operations, with original case notes.</p>
+      <p><strong>Newsroom:</strong> Current coverage by external publishers, not independently endorsed headlines.</p>
+      <p><strong>Independent investigations:</strong> The private workspace contains dedicated Epstein Files, COVID-19, and Palestine / Gaza groups, plus a research-review queue and timelines.</p>
+      <p><strong>Connections:</strong> Shared documents or timelines are research leads; additional evidence is required for causal conclusions.</p>
+    </article>
+    <article class="card">
+      <div class="kicker">Trust, privacy and safety</div><h3>What is public and what stays private?</h3>
+      <p>This public reader can display approved educational summaries without an account. The researcher workspace uses Supabase sign-in and owner-only database permissions for private drafts and records; public source code is not the private database.</p>
+      <p>External document links may lead to disturbing subject matter or third-party websites. Read our current <a href="https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas/privacy" target="_blank" rel="noopener noreferrer">privacy notice ↗</a> for additional details.</p>
+      <p>A privacy summary is not a guarantee of perfect security. Avoid sharing sensitive information about survivors or witnesses.</p>
+    </article>
+    <article class="card">
+      <div class="kicker">Contact and feedback</div><h3>Help strengthen the evidence</h3>
+      <p>Read the <a href="https://github.com/MrMakeItNice/evidence-mapp-app" target="_blank" rel="noopener noreferrer">project repository and technical README ↗</a> for documentation and project changes.</p>
+      <p>For corrections, identify the exact statement, source URL, date, and why it needs review. The project has not published a dedicated contact email.</p>
+      <p>Never disclose private survivor, witness or family details through public reports.</p>
+    </article>
+    <article class="card">
+      <div class="kicker">Update history</div><h3>Recent releases</h3>
+      <ul>
+        <li><strong>v1.8 · October 2026:</strong> About / README added to the app and public site.</li>
+        <li><strong>v1.7:</strong> News & Information categories and source-review tools.</li>
+        <li><strong>v1.5–1.6:</strong> Separate Epstein Files, COVID-19 and Palestine / Gaza research areas.</li>
+        <li><strong>v1.3–1.4:</strong> Original 140-case master index and linked citation library.</li>
+      </ul>
+    </article>
+  </div>
+  <div class="warning"><strong>Editorial independence and limitations:</strong> Evidence Atlas is an educational research tool, not a judicial finding, investigative authority, medical advisor or source of legal advice. Where courts, UN bodies or experts disagree, their conclusions and procedural status should be attributed accurately. We update assessments when better evidence is available.</div>
+</section>
+</main>
 <footer><div class="wrap"><strong>◈ Evidence Atlas · Understand the past. Question responsibly. Build a better future.</strong>
 <p>This is an educational research library. Inclusion of a person, organization, topic, or claim does not imply guilt, causation, or independent verification.</p>
-<a href="./index.html?workspace=1">Researcher workspace</a> · <a href="https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas/privacy">Privacy</a></div></footer>
+<a href="#about">About / README</a> · <a href="./index.html?workspace=1">Researcher workspace</a> · <a href="https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas/privacy">Privacy</a></div></footer>
 <script>
 "use strict";
 (function(){
