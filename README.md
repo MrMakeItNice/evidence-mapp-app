@@ -4,13 +4,28 @@ A source-grounded research workspace for case files, claims, source references, 
 
 ## Live app (Supabase Edge Functions)
 
-**Current release:** v1.7.0 (News & Information added: nine news sections, 34 user-editable topics, source-review queue, investigation filters, and handoff to Research Watch).
+**Current release:** v1.8.0 (About / README for the public reader and the owner workspace, including mission, walkthrough, editorial evidence standards, privacy/security overview, contact route and release history).
 
-**Open Evidence Atlas:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas
+**Open public reader:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas
 
-Supabase reports deployment `evidence-atlas` active. The site is publicly reachable as an application shell; existing research remains accessible only after owner sign-in. For an anonymous visitor, **Explore a sample workspace** opens only fictitious demonstration records.
+**Open owner workspace:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas?workspace=1
+
+**Read the new About / README:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas#about
+
+The public reader presents available published educational summaries without a login. The separate owner workspace requires an authorized Supabase Auth account; research drafts and private records remain protected by database row-level security (RLS). The public reader and owner workspace can be reached through one Edge Function using the links above. GitHub Pages also hosts the static reader and workspace files when its deployment is configured.
 
 The current release is also committed as `index.html` in this repository, so GitHub Pages can be enabled separately for a shorter address. To update the Edge Function, redeploy its HTML response with the latest committed `index.html`.
+
+## About / README — public reader and owner workspace
+
+The **About / README** area is available in two places:
+
+- Public reader: select **About / README** in the top navigation. Its `#about` section explains the project mission, why associations are not proof of culpability, how to read citations, types of evidence, key features, project update history, and appropriate correction practices.
+- Signed-in workspace: select **About / README** in the left sidebar. It also offers a detailed guide to features, evidence assessment categories, owner data review, and source traceability.
+- Contact and corrections: use the repository at https://github.com/MrMakeItNice/evidence-mapp-app as the project reference. A direct public contact email has **not** been supplied or published; do not invent one.
+- Privacy: the published privacy summary explains the current public-reader / private-workspace boundary and links to the existing `/privacy` notice. Do not mistake these explanatory notes for an attorney-reviewed contractual privacy policy.
+
+Editorial convention: distinguish verified individual facts, attributed legal or institutional findings, disputed factual assertions, allegations and unassessed leads. Letter grades from the original master index are contextual and do not authenticate every claim in a file. An arrest warrant is not a conviction; an ICJ provisional-measures order is not a final merits finding. Shared citations in the relationship view do not establish coordination.
 
 ## Optional: publish using GitHub Pages
 
