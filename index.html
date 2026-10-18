@@ -77,7 +77,7 @@ const client = window.supabase?.createClient?.(PROJECT_URL, PUBLISHABLE_KEY, {
 const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox','master_source_register','case_source_references','investigation_groups','investigation_group_topics','investigation_group_sources','investigation_group_cases','investigation_group_events','news_sections','news_topics','news_items'];
 const emptyData = () => Object.fromEntries(TABLES.map(t => [t, []]));
 const state = { screen:'dashboard', dataset:emptyData(), demo:false, ready:false, busy:false, caseId:null, search:'', filter:'all', errors:[], owner:null };
-const NAV=[['guide','?','Start Here'],['dashboard','▦','Overview'],['news','◍','News & Information'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['epstein-files','♧','Epstein Files'],['covid-19','✳','COVID-19'],['palestine-gaza','⚖','Palestine / Gaza'],['watch','◉','Research Watch'],['settings','⚙','Workspace']];
+const NAV=[['guide','?','Start Here'],['about','ⓘ','About / README'],['dashboard','▦','Overview'],['news','◍','News & Information'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['epstein-files','♧','Epstein Files'],['covid-19','✳','COVID-19'],['palestine-gaza','⚖','Palestine / Gaza'],['watch','◉','Research Watch'],['settings','⚙','Workspace']];
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date = s => s ? new Date(`${s}T12:00:00Z`).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : 'Not dated';
@@ -289,8 +289,73 @@ function newsScreen(){
     </div>`)}
     <div class="network-note" style="margin-top:14px">To investigate a news item more deeply, mark it reviewed, then send it to Research Watch. This does not automatically add it to a case, confirm a claim, or publish it.</div>`;
 }
+function aboutScreen(){
+ const url="https://github.com/MrMakeItNice/evidence-mapp-app";
+ const policy="https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas/privacy";
+ const anchor=(url,label)=>`<a class="source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>`;
+ const sections=[
+  ["Start Here","Read the guided walkthrough; learn how to assess a claim and locate original sources.","guide"],
+  ["Case Files","Browse the original 140 numbered case studies, preserving the document's caveats and original source register.","cases"],
+  ["Evidence Ledger & Source Library","Compare individual claims, cited documents, source context and competing evidence.","claims"],
+  ["Connections Map & Timeline","Explore explicitly recorded relationships and chronology; overlap does not prove wrongdoing.","network"],
+  ["News & Information","Browse nine news sections and their topics. Date sources, review articles and separate reporting from primary evidence.","news"],
+  ["Research Watch","Manage research topics and incoming leads. New material is staged for review; it is not automatically verified.","watch"],
+  ["Epstein Files","Separate investigation of official disclosures, legal proceedings and custody findings, with survivor privacy in mind.","epstein-files"],
+  ["COVID-19","Separate workspace for origins evidence, public-health data, pandemic policy and research uncertainty.","covid-19"],
+  ["Palestine / Gaza","International law and humanitarian evidence, including UN findings and ICC/ICJ proceedings with appropriate legal status.","palestine-gaza"],
+  ["Solutions Lab","Explore proposals and conditional scenarios; these are not forecasts or proven interventions.","solutions"],
+  ["Workspace","Owner-only editing, exports, case imports and account-level navigation.","settings"]
+ ];
+ const standards=[
+  ["Documented","An identified original record, court decision, official report or other traceable evidence establishes a specific fact. Record exactly what it does and does not establish."],
+  ["Attributed finding","A named institution, court, commission or expert body has reached a conclusion. Identify its date, mandate, procedural status and any relevant rebuttal."],
+  ["Allegation or hypothesis","An assertion or proposed explanation under investigation. Treat it as unproven until adequate corroboration exists."],
+  ["Contested","Credible sources disagree or important factual/legal elements remain unresolved. Preserve competing evidence and the nature of the dispute."],
+  ["Unassessed or unsupported","Unassessed means not yet reviewed; unsupported means a particular claim is not established by the reviewed material. These are not interchangeable."]
+ ];
+ const timeline=[
+  ["October 2026 · v1.8","About / README added to the researcher workspace and the public reader."],
+  ["October 2026 · v1.7","News & Information sections, topic filters and private review workflow."],
+  ["October 2026 · v1.5–v1.6","Separate Epstein, COVID-19 and Palestine / Gaza investigation workspaces."],
+  ["October 2026 · v1.3–v1.4","Original 140-case index imported with its case citations; searchable case views and case-focused network."],
+  ["Earlier releases","Owner-protected investigation workspace, source library, evidence ledger, timelines and Research Watch."]
+ ];
+ return intro("PROJECT DOCUMENTATION","About / README","What Evidence Atlas is, how to investigate responsibly, and how its research and privacy boundaries work.",
+  `${action("nav","Start the guided tour","primary",'data-page="guide"')}${action("nav","Browse news","secondary",'data-page="news"')}`)+
+  `<section class="panel" style="margin-bottom:18px;border-top:3px solid #30cba9"><div class="panel-body">
+   <div class="eyebrow">OUR MISSION · MAKE IT NICE</div>
+   <h2 style="font-size:23px;margin:9px 0">Understand the world. Help make it nicer.</h2>
+   <p class="mini-desc" style="line-height:1.9">Evidence Atlas is an evidence-first research and learning project. It collects case histories, source documents, current reporting and questions worth investigating. The goal is to make it easier to tell what is established, what is alleged, what is disputed, and what is still unknown—and to turn careful understanding into constructive ideas.</p>
+   <p class="mini-desc">A case or person appearing here does not imply guilt, causal involvement, an intelligence connection, or independent verification by the project.</p>
+   <div class="actions" style="margin-top:14px">${anchor(url,"Project source code and technical README")}</div>
+  </div></section>
+  <div class="two-up" style="margin-bottom:18px">
+   ${panel("How to use each feature",`<div class="panel-body">${sections.map(([heading,detail,view])=>`<div class="mini-card"><button class="muted-link" type="button" data-action="nav" data-page="${esc(view)}">${esc(heading)} →</button><p class="mini-desc">${esc(detail)}</p></div>`).join("")}</div>`)}
+   <div class="stack">
+    ${panel("Evidence and research standards",`<div class="panel-body">${standards.map(([heading,detail])=>`<div class="mini-card"><strong class="mini-title">${esc(heading)}</strong><p class="mini-desc">${esc(detail)}</p></div>`).join("")}
+    <p class="mini-desc"><strong>Historic case grades:</strong> The original master index uses context-specific A–D assessments. Preserve each original entry's full wording, death/whistleblower distinctions and linked sources. A grade for a documented program does not verify every claim associated with it.</p>
+    <p class="mini-desc"><strong>Legal proceedings:</strong> Charges, arrest warrants, investigative conclusions, provisional measures and final judgments are different. The app should name the source and precise status rather than infer guilt or a final legal ruling.</p></div>`)}
+    ${panel("Publishing and review",`<div class="panel-body"><p class="mini-desc">Research Watch and News & Information collect source leads. Read the original document, check publication dates and provenance, compare independent accounts and record corrections before marking an item reviewed. A reviewed article is not automatically a confirmed factual claim.</p>
+    <p class="mini-desc">A saved private draft is not the same as a publicly published summary. Cross-references and network edges describe recorded relationships; they do not establish causation.</p></div>`)}
+   </div>
+  </div>
+  <div class="two-up" style="margin-bottom:18px">
+   ${panel("Privacy and security",`<div class="panel-body">
+    <p class="mini-desc"><strong>Public reader:</strong> Visitors can read available public summaries without signing into the owner workspace. External publisher links open other websites, which have their own practices.</p>
+    <p class="mini-desc"><strong>Private workspace:</strong> The site uses Supabase authentication and database row-level security to restrict research records. The public GitHub repository includes frontend source code, not your private research database or passwords. Access restrictions are not a promise of absolute security.</p>
+    <p class="mini-desc"><strong>Transparency:</strong> Publication settings and storage arrangements may change. Review the project's current ${anchor(policy,"privacy notice")}. This page is a summary of the present app design, not a substitute for formal legal terms.</p>
+    </div>`)}
+   ${panel("Contact and feedback",`<div class="panel-body">
+    <p class="mini-desc">For technical details, project history and potential contribution routes, visit the ${anchor(url,"Evidence Atlas GitHub repository")}.</p>
+    <p class="mini-desc"><strong>Direct contact email:</strong> Not yet published. No personal contact details are displayed without the owner's approval.</p>
+    <p class="mini-desc">When submitting corrections, include the case or article, original source URL, relevant date and the precise statement that needs attention. Avoid sending private survivor or witness information.</p>
+    </div>`)}
+  </div>
+  ${panel("Project updates",`<div class="panel-body">${timeline.map(([when,detail])=>`<div class="nested-row"><strong>${esc(when)}</strong><p class="mini-desc">${esc(detail)}</p></div>`).join("")}</div>`)}
+  <div class="network-note" style="margin-top:18px">Evidence Atlas is an educational research workspace, not legal, medical or professional advice. Findings should be revisited when stronger or conflicting evidence becomes available.</div>`;
+}
 function render(){initNav();const counts={cases:rows('cases').length,claims:rows('claims').length,sources:rows('sources').length,people:rows('people').length,solutions:rows('solution_candidates').length,watch:rows('research_inbox').filter(x=>x.review_status==='pending').length,news:rows('news_items').filter(x=>x.review_status==='pending').length};document.querySelectorAll('[data-navcount]').forEach(el=>{const v=counts[el.dataset.navcount];el.textContent=v||'';el.hidden=!v});$('breadcrumbName').textContent=(NAV.find(x=>x[0]===state.screen)||NAV[0])[2];let body='';if(state.errors.length)body+=`<div class="error-box"><strong>Some data could not be loaded.</strong> ${esc(state.errors.slice(0,3).join(' • '))}. Check this account's table permissions in Supabase, then retry.</div>`;
-const builders={guide:guideScreen,dashboard:dashboardScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,'epstein-files':()=>groupScreen('epstein-files'),'covid-19':()=>groupScreen('covid-19'),'palestine-gaza':()=>groupScreen('palestine-gaza'),watch:watchScreen,news:newsScreen,settings:settingsScreen};$('screen').innerHTML=body+(state.screen==='dashboard'?welcomePanel():'')+builders[state.screen]();}
+const builders={guide:guideScreen,about:aboutScreen,dashboard:dashboardScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,'epstein-files':()=>groupScreen('epstein-files'),'covid-19':()=>groupScreen('covid-19'),'palestine-gaza':()=>groupScreen('palestine-gaza'),watch:watchScreen,news:newsScreen,settings:settingsScreen};$('screen').innerHTML=body+(state.screen==='dashboard'?welcomePanel():'')+builders[state.screen]();}
 
 function welcomePanel(){return `<section class="welcome-panel" aria-labelledby="welcomeTitle"><div class="eyebrow">OUR MISSION / MAKE IT NICE</div><h2 id="welcomeTitle">Understand the world. Help make it nicer.</h2><p>Evidence Atlas brings cases, claims, sources, and context together so you can examine what is documented, what is disputed, and what remains unknown. Follow the evidence, keep uncertainty visible, then explore practical ways to improve things.</p><figure class="madison-quote"><blockquote>“The accumulation of all powers, legislative, executive, and judiciary, in the same hands … may justly be pronounced the very definition of tyranny.”</blockquote><figcaption>James Madison · <a href="https://avalon.law.yale.edu/18th_century/fed47.asp" target="_blank" rel="noopener noreferrer">The Federalist No. 47 (1788) ↗</a> · Abridged excerpt</figcaption></figure><div class="actions">${action('nav','How to use Evidence Atlas','primary','data-page="guide"')}${action('nav','Explore case files','secondary','data-page="cases"')}</div><p class="mini-desc">A claim appearing here means it is being examined. Inclusion or a connection alone does not establish guilt or prove a claim.</p></section>`;}
 function guideScreen(){
