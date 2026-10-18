@@ -6,6 +6,16 @@
   <meta name="theme-color" content="#101c31" />
   <meta name="description" content="Evidence Atlas: private, source-grounded investigation workspace connected to Supabase." />
   <title>Evidence Atlas — Investigation Workspace</title>
+  <script data-public-landing-redirect>
+  // The public reader is the default website experience.
+  // ?workspace=1 preserves the authorized owner's existing research app.
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('workspace') !== '1' && !params.has('preview')) {
+      window.location.replace('./discover.html' + window.location.search + window.location.hash);
+    }
+  })();
+  </script>
   <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 :root{font-family:'DM Sans',Inter,system-ui,sans-serif;color:#172338;background:#f4f6fa;font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}a{color:inherit}svg{max-width:100%}[hidden]{display:none!important}
