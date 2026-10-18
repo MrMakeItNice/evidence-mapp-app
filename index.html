@@ -762,5 +762,113 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="networkCaseSe
  });
 })();
 </script>
+
+<!-- News & Information interaction controls -->
+<script>
+(function setupNewsInteraction(){
+ const byId=id=>rows("news_items").find(x=>String(x.id)===String(id));
+ const groupChoices=selected=>`<option value="">General (no linked investigation)</option>`+rows("investigation_groups").map(g=>`<option value="${esc(g.slug)}" ${selected===g.slug?"selected":""}>${esc(g.title)}</option>`).join("");
+ const sectionChoices=selected=>rows("news_sections").slice().sort((a,b)=>a.display_order-b.display_order).map(s=>`<option value="${s.id}" ${String(selected)===String(s.id)?"selected":""}>${esc(s.title)}</option>`).join("");
+ const topicChoices=selected=>rows("news_topics").filter(t=>t.active!==false).map(t=>`<option value="${t.id}" ${String(selected)===String(t.id)?"selected":""}>${esc(rows("news_sections").find(s=>s.id===t.section_id)?.title||"Other")} / ${esc(t.title)}</option>`).join("");
+ const kindChoices=selected=>[["news_report","News report"],["primary_document","Original document"],["legal_record","Legal record"],["research_paper","Scientific research"],["fact_check","Fact-check"],["background_explainer","Background explainer"],["opinion","Opinion"]].map(([k,v])=>`<option value="${k}" ${selected===k?"selected":""}>${v}</option>`).join("");
+ const assessmentChoices=selected=>[["unassessed","Not assessed"],["corroborated","Corroborated"],["contested","Contested"],["misleading","Misleading"],["insufficient_evidence","Insufficient evidence"]].map(([k,v])=>`<option value="${k}" ${selected===k?"selected":""}>${v}</option>`).join("");
+ const modal=(title,fields,handle)=>{
+  if(!guardWrite())return;
+  $("modalRoot").innerHTML=`<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="newsModalTitle"><div class="modal-header"><h2 id="newsModalTitle">${esc(title)}</h2><button type="button" class="modal-close" data-action="close-modal" aria-label="Close">×</button></div><form id="newsForm">${fields}<div id="newsFormError" role="alert" class="mini-desc"></div><div class="modal-actions"><button type="button" class="secondary" data-action="close-modal">Cancel</button><button type="submit" id="newsModalSave" class="primary">Save</button></div></form></section></div>`;
+  $("newsForm").addEventListener("submit",async e=>{
+   e.preventDefault();if(!guardWrite())return;
+   const button=$("newsModalSave");button.disabled=true;button.textContent="Saving…";
+   try{await handle(Object.fromEntries(new FormData(e.currentTarget)));closeModal();await loadData();toast("Saved to your private News & Information desk.");}
+   catch(err){$("newsFormError").textContent="Could not save: "+(err?.code==="23505"?"A section, topic, or source URL already exists.":err?.message||"Unknown error");}
+   finally{if(button.isConnected){button.disabled=false;button.textContent="Save";}}
+  });
+  $("newsForm").querySelector("input")?.focus();
+ };
+ const addSection=()=>{
+  modal("New news section",field("title","Section title","text",true)+field("description","What belongs in this section?","textarea",true),async x=>{
+   const title=String(x.title||"").trim();
+   let slug=title.normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,64);
+   if(slug.length<3)throw Error("Enter a descriptive section title.");
+   const existing=new Set(rows("news_sections").map(s=>s.slug));if(existing.has(slug))throw Error("A section with this name already exists.");
+   const {error}=await client.from("news_sections").insert({slug,title,description:String(x.description||"").trim(),display_order:rows("news_sections").length+1});
+   if(error)throw error;
+  });
+ };
+ const addTopic=()=>{
+  const selected=newsView.section==="all"?rows("news_sections")[0]?.id:newsView.section;
+  modal("New news topic",field("section_id","Section","select",true,sectionChoices(selected))+field("title","Topic title","text",true)+field("description","Topic description","textarea",true)+field("search_terms","Optional research/search keywords","textarea")+field("group_slug","Related investigation (optional)","select",false,groupChoices(newsView.group==="all"?"":newsView.group)),async x=>{
+   const {error}=await client.from("news_topics").insert({section_id:Number(x.section_id),title:String(x.title).trim(),description:String(x.description||"").trim(),search_terms:String(x.search_terms||"").trim(),group_slug:x.group_slug||null});
+   if(error)throw error;
+  });
+ };
+ const itemForm=(current=null)=>{
+  const t=newsView.topic==="all"?rows("news_topics").find(x=>x.active&&((newsView.section==="all")||String(x.section_id)===String(newsView.section)))?.id:newsView.topic;
+  const desiredTopic=current?.topic_id??t;
+  if(!desiredTopic){toast("Create a news topic first.");return;}
+  const sectionDefault=rows("news_topics").find(t=>String(t.id)===String(desiredTopic));
+  const desiredGroup=current?.group_slug||(newsView.group==="all"?sectionDefault?.group_slug:newsView.group)||"";
+  const fields=field("topic_id","News topic","select",true,topicChoices(desiredTopic))+
+    field("group_slug","Related investigation (optional)","select",false,groupChoices(desiredGroup))+
+    field("headline","Headline or original document title","text",true,"",current?.headline||"")+
+    field("source_url","Exact source URL","url",true,"",current?.source_url||"")+
+    field("publisher","Publisher, agency or original author","text",false,"",current?.publisher||"")+
+    field("published_at","Original publication date (optional)","date",false,"",current?.published_at?.slice(0,10)||"")+
+    field("content_kind","Content type","select",true,kindChoices(current?.content_kind||"news_report"))+
+    field("summary","Neutral summary","textarea",false,"",current?.summary||"")+
+    field("evidence_notes","Sources, limits and verification notes","textarea",false,"",current?.evidence_notes||"")+
+    field("alternative_views","Competing reports and interpretations","textarea",false,"",current?.alternative_views||"")+
+    field("assessment","Evidence assessment","select",true,assessmentChoices(current?.assessment||"unassessed"));
+  modal(current?"Edit news information":"Add a news or information source",fields,async x=>{
+   const url=String(x.source_url||"").trim();if(!targetUrl(url))throw Error("Enter a valid HTTP or HTTPS URL.");
+   const value={topic_id:Number(x.topic_id),group_slug:x.group_slug||null,headline:String(x.headline||"").trim(),source_url:url,publisher:String(x.publisher||"").trim(),published_at:x.published_at||null,content_kind:x.content_kind,summary:String(x.summary||"").trim(),evidence_notes:String(x.evidence_notes||"").trim(),alternative_views:String(x.alternative_views||"").trim(),assessment:x.assessment,updated_at:new Date().toISOString()};
+   if(current){const out=await client.from("news_items").update(value).eq("id",current.id).select("id").single();if(out.error)throw out.error;}
+   else{value.review_status="pending";value.origin="manual";const out=await client.from("news_items").insert(value);if(out.error)throw out.error;}
+  });
+ };
+ async function setStatus(id,status){if(!guardWrite())return;const {error}=await client.from("news_items").update({review_status:status,updated_at:new Date().toISOString()}).eq("id",id).select("id").single();if(error){toast("Could not update item: "+error.message);return;}await loadData();toast(status==="reviewed"?"Reviewed. This does not verify any underlying claims.":"Review status changed.");}
+ async function sendToResearchInbox(id){
+  if(!guardWrite())return;
+  const item=byId(id);
+  if(!item||item.review_status!=="reviewed"){toast("Review the information before sending it to investigations.");return;}
+  if(!confirm("Stage this source in Research Watch for deeper investigation? No claim will be verified or published."))return;
+  const prior=await client.from("research_inbox").select("id").eq("source_url",item.source_url).limit(1);
+  if(prior.error){toast(prior.error.message);return;}
+  if(prior.data?.length){toast("This source is already in the research queue.");nav("watch");return;}
+  const coverage=item.content_kind==="primary_document"||item.content_kind==="legal_record"?"primary_document":item.content_kind==="fact_check"?"fact_check":item.content_kind==="opinion"?"opinion":item.content_kind==="news_report"?"reporting":"unclassified";
+  const watch=rows("research_watch_topics").find(x=>x.group_slug===item.group_slug&&x.active);
+  const data={title:item.headline,source_url:item.source_url,publisher:item.publisher||null,published_at:item.published_at||null,relevance_notes:item.summary||null,evidence_notes:item.evidence_notes||null,competing_explanations:item.alternative_views||null,group_slug:item.group_slug||null,watch_topic_id:watch?.id||null,coverage_type:coverage,assessment:"unassessed",review_status:"pending",origin:"manual"};
+  const added=await client.from("research_inbox").insert(data);
+  if(added.error){toast("Could not stage source: "+added.error.message);return;}
+  await loadData();nav("watch");toast("Source staged for further research.");
+ }
+ document.addEventListener("click",e=>{
+  const section=e.target.closest("[data-news-section]");if(section){newsView.section=section.dataset.newsSection;newsView.topic="all";render();return;}
+  const topic=e.target.closest("[data-news-topic]");if(topic){const row=rows("news_topics").find(x=>String(x.id)===String(topic.dataset.newsTopic));if(row){newsView.section=String(row.section_id);newsView.topic=String(row.id);render();$("newsRecords")?.scrollIntoView({block:"start",behavior:"smooth"});}return;}
+  const button=e.target.closest("[data-action^='news-']");if(!button)return;const id=Number(button.dataset.id);
+  switch(button.dataset.action){
+   case "news-add-section":addSection();break;
+   case "news-add-topic":addTopic();break;
+   case "news-add-item":itemForm();break;
+   case "news-edit":itemForm(byId(id));break;
+   case "news-review":void setStatus(id,"reviewed");break;
+   case "news-dismiss":void setStatus(id,"dismissed");break;
+   case "news-reopen":void setStatus(id,"pending");break;
+   case "news-send-inbox":void sendToResearchInbox(id);break;
+  }
+ });
+ document.addEventListener("change",e=>{
+  const v=e.target.value;
+  if(e.target.id==="newsFilterTopic"){newsView.topic=v;render();}
+  if(e.target.id==="newsFilterGroup"){newsView.group=v;render();}
+  if(e.target.id==="newsFilterKind"){newsView.kind=v;render();}
+  if(e.target.id==="newsFilterStatus"){newsView.review=v;render();}
+ });
+ document.addEventListener("input",e=>{
+  if(e.target.id!=="newsFilterSearch")return;
+  const caret=e.target.selectionStart;newsView.search=e.target.value;render();
+  const field=$("newsFilterSearch");if(field){field.focus();field.setSelectionRange(caret,caret);}
+ });
+})();
+</script>
 </body>
 </html>
