@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101c31">
+<meta name="description" content="Evidence Atlas. Don't just read the news. Follow the evidence.">
+<title>Discover | Evidence Atlas</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+:root{--navy:#101c31;--teal:#30cba9;--ink:#1b3047;--sub:#617486;--line:#dde7ed;font-family:'DM Sans',system-ui,sans-serif;color:var(--ink);background:#f5f7fa}
+*{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}button,input{font:inherit}a{color:inherit}button{cursor:pointer}button:disabled{opacity:.6;cursor:wait}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #34b89c;outline-offset:3px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:10;border-bottom:1px solid #264258}
+.top-inner{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.logo{font:700 16px 'Space Grotesk',sans-serif;letter-spacing:2px;text-decoration:none;white-space:nowrap}.logo b{color:#51d9b7}
+.menu{display:flex;gap:3px;flex-wrap:wrap}.menu a{color:#c4dce4;text-decoration:none;padding:9px 10px;border-radius:7px;font-weight:700;font-size:12px}.menu a:hover{background:#2b3d53}
+.hero{background:radial-gradient(ellipse at 89% 15%,#1b6a71 0%,transparent 48%),linear-gradient(140deg,#101c31,#192d43);color:#fff;padding:65px 0 55px}
+.overline{color:#40d6ad;letter-spacing:2.1px;font-size:11px;font-weight:800;text-transform:uppercase}
+.hero h1{font:700 clamp(33px,6vw,65px)/1.07 'Space Grotesk',sans-serif;letter-spacing:-2px;max-width:850px;margin:17px 0 17px}
+.hero h1 em{color:#69e6bf;font-style:normal}
+.hero p{max-width:665px;color:#c3d8e3;line-height:1.75;font-size:15px}
+.hero-actions,.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hero-actions{margin-top:27px}.btn{background:#fff;border:1px solid #cdd9e1;padding:11px 16px;border-radius:9px;font-size:12px;font-weight:800;min-height:43px;text-decoration:none;color:#27465a;display:inline-flex;justify-content:center;align-items:center}
+.btn.primary{background:#42d1ae;border-color:#42d1ae;color:#0d2631}.btn.dark{background:transparent;color:#e2f6f7;border-color:#587582}.btn:hover{filter:brightness(.96)}
+.hero small{display:block;color:#93acba;margin-top:21px;font-size:11px}
+main{padding:30px 0 65px}
+.feature{display:grid;grid-template-columns:1.3fr .8fr;gap:17px;margin-bottom:35px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:0 4px 20px #182f4409}
+.card.feature-main{background:#eaf7f2;border-color:#cce5dc}
+.feature h2{font:700 24px/1.24 'Space Grotesk',sans-serif;margin:10px 0}
+.kicker{color:#148870;letter-spacing:1.5px;font-size:10px;text-transform:uppercase;font-weight:800}
+.card p,.description{color:#5d7585;font-size:13px;line-height:1.7}
+.quote{font:600 16px/1.6 'Space Grotesk',sans-serif;color:#263b52;margin:11px 0}
+.citation{font-size:11px;color:#71869a}.citation a{color:#168879}
+.sectionhead{display:flex;justify-content:space-between;gap:10px;align-items:end;margin:17px 0}
+.sectionhead h2{font:700 27px 'Space Grotesk',sans-serif;letter-spacing:-.6px;margin:6px 0}
+.sectionhead p{font-size:12px;color:#657b8c;line-height:1.6;margin:6px 0}
+.counter{font-size:11px;color:#65818d}
+.search-box{background:#fff;border-radius:13px;border:1px solid var(--line);padding:18px;margin-bottom:18px}
+.search-box label{font-size:12px;font-weight:800;display:block;margin:0 0 10px}
+.search-row{display:flex;gap:9px}.search-row input{border:1px solid #cedae3;border-radius:9px;padding:12px 13px;flex:1;min-width:0}
+.pills,.topics{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.pill{border:1px solid #dce7e9;border-radius:24px;background:#f2f8f7;color:#38766b;padding:8px 12px;font-size:11px;font-weight:700}
+.casegrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.case{padding:18px;border-radius:12px;background:#fff;border:1px solid var(--line);display:flex;flex-direction:column}
+.case h3{font:700 17px/1.4 'Space Grotesk';margin:10px 0 8px}
+.case p{font-size:12px;line-height:1.65;color:#60788b;flex:1}
+.eyebrow{font-size:10px;color:#168c72;letter-spacing:1px;text-transform:uppercase;font-weight:800}
+.case .btn{align-self:flex-start;min-height:36px;padding:7px 12px}
+.message{font-size:12px;color:#617f8e;line-height:1.6;padding:12px 0}
+.case-detail{background:white;border:1px solid #a7d9d2;border-radius:15px;padding:23px;margin:14px 0 20px;scroll-margin-top:80px}
+.case-detail h2{font:700 25px 'Space Grotesk';margin:9px 0}
+.case-detail h3{font-size:14px;margin:10px 0 3px}
+.case-detail p{color:#546e82;font-size:13px;line-height:1.75}
+.details-section{border-top:1px solid #e2e9ed;margin-top:15px;padding-top:11px}
+.warning{background:#fff7e9;border:1px solid #ecdfb8;border-radius:9px;padding:13px;color:#755e39;font-size:12px;line-height:1.6;margin:14px 0}
+.news{background:white;border:1px solid var(--line);border-radius:15px;padding:25px;margin:40px 0}
+.topics{margin:19px 0}.topics button{border:1px solid #d7e3e8;background:#f8fafb;border-radius:22px;padding:9px 13px;font-size:11px;color:#45617b;font-weight:800}
+.topics button.active{background:#173f39;border-color:#173f39;color:#f4fffb}
+.newsgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.newsitem{border:1px solid #e1e8eb;border-radius:11px;background:#f9fbfc;padding:17px}
+.newsitem h3{font:700 15px/1.45 'Space Grotesk';margin:9px 0}.newsitem p{font-size:11px;color:#6c8193}
+.newsitem a{color:#157b72;text-decoration:none;overflow-wrap:anywhere}.newsitem a:hover{text-decoration:underline}
+.how{margin:30px 0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.steps h3{font:700 17px 'Space Grotesk';margin:10px 0 5px}
+footer{background:#111f33;color:#b6cfdb;padding:28px 0;font-size:11px;line-height:1.9}footer a{color:#66dfb6}
+@media(max-width:760px){.feature,.casegrid,.newsgrid,.steps{grid-template-columns:1fr}.hero{padding:47px 0}.hero h1{letter-spacing:-1.4px}.wrap{padding:0 15px}.search-row{flex-direction:column}.menu a{font-size:10px;padding:7px 5px}.logo{font-size:12px;letter-spacing:1px}.top-inner{min-height:59px}.news{padding:17px}}
+@media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+</head><body>
+<header class="top"><div class="wrap top-inner"><a class="logo" href="./discover.html">◈ EVIDENCE <b>ATLAS</b></a>
+<nav class="menu" aria-label="Main navigation"><a href="#history">Explore</a><a href="#news">News</a><a href="#how">Tutorial</a><a href="./index.html?workspace=1">Workspace ↗</a></nav></div></header>
+<section class="hero"><div class="wrap"><div class="overline">Make It Nice · Explore with curiosity</div>
+<h1>Don’t just read the news.<br><em>Follow the evidence.</em></h1>
+<p>Explore documented history, investigate today's reporting, and discover which questions are settled, which remain disputed, and what the sources actually establish.</p>
+<div class="hero-actions"><a class="btn primary" href="#history">Explore history →</a><a class="btn dark" href="#news">Read the news</a><a class="btn dark" href="#how">Start here ?</a></div>
+<small>Open to curious minds · No account needed to read · Graphic content is not displayed</small>
+</div></section>
+<main class="wrap">
+<div class="feature">
+<article class="card feature-main"><div class="kicker">Your first investigation</div><h2>How can you tell the difference between documented history and speculation?</h2>
+<p>Start with one real case, read the official record, and explore what evidence can and cannot tell us. Learn to investigate before drawing conclusions.</p>
+<div class="actions"><button class="btn primary" type="button" id="featuredCase">Explore COINTELPRO →</button><span class="citation">A short, guided research journey</span></div></article>
+<article class="card"><div class="kicker">From the historical record</div>
+<blockquote class="quote">“The accumulation of all powers, legislative, executive, and judiciary, in the same hands … may justly be pronounced the very definition of tyranny.”</blockquote>
+<p class="citation">James Madison · <a href="https://avalon.law.yale.edu/18th_century/fed47.asp" target="_blank" rel="noopener noreferrer">The Federalist No. 47 (1788) ↗</a> · Abridged quotation</p>
+<p class="citation">Connections are not conclusions.</p></article>
+</div>
+<section id="history"><div class="sectionhead"><div><div class="kicker">Explore the past</div><h2>Historical case library</h2><p>Publicly available research summaries with clear notes on unanswered questions.</p></div><span class="counter" id="caseCount"></span></div>
+<form class="search-box" id="searchForm"><label for="searchInput">What would you like to investigate?</label>
+<div class="search-row"><input id="searchInput" type="search" placeholder="Search programs, events, names, or case numbers" maxlength="120" autocomplete="off"><button class="btn primary" type="submit">Find evidence →</button></div>
+<div class="pills"><button type="button" class="pill" data-search="MKULTRA">MKULTRA</button><button type="button" class="pill" data-search="COINTELPRO">COINTELPRO</button><button type="button" class="pill" data-search="surveillance">Surveillance</button><button type="button" class="pill" data-search="environment">Environment</button></div>
+</form>
+<section id="caseDetail" class="case-detail" tabindex="-1" hidden></section>
+<div id="caseGrid" class="casegrid"><div class="message">Loading published historical cases…</div></div>
+<div class="actions" style="margin-top:16px"><button type="button" id="moreCases" class="btn">Show more cases</button><span class="message" id="caseStatus" role="status"></span></div>
+</section>
+<section class="news" id="news"><div class="sectionhead"><div><div class="kicker">The newsroom</div><h2>What’s being reported?</h2><p>International news discovery. Read original publishers, compare claims, and stay curious.</p></div></div>
+<div class="topics" id="topics"><button type="button" class="active" data-topic="world">World</button><button type="button" data-topic="government">Government</button><button type="button" data-topic="environment">Environment</button><button type="button" data-topic="science">Science & Tech</button><button type="button" data-topic="health">Health</button><button type="button" data-topic="rights">Human rights</button></div>
+<p class="message" id="newsStatus" role="status" aria-live="polite">Checking recent coverage…</p>
+<div class="newsgrid" id="newsGrid"></div>
+<div class="warning">News titles are claims made by publishers, not independent findings by Evidence Atlas. This feed is not exhaustive. Shared headlines can result from wire services or common sources, not necessarily coordinated messaging. Potentially distressing titles are initially hidden.</div>
+</section>
+<section class="how" id="how"><div class="sectionhead"><div><div class="kicker">Start here · The field guide</div><h2>Become your own investigator</h2><p>Three steps to begin. The best investigator knows what they don't know.</p></div></div>
+<div class="steps"><div class="card"><div class="kicker">01 · Ask</div><h3>Begin with a question</h3><p>Find a historical event or current story. Write down what you think you know and what could change your mind.</p></div><div class="card"><div class="kicker">02 · Check</div><h3>Follow the documents</h3><p>Compare dates, reporting, official findings, and opposing evidence. An allegation is not a proven fact.</p></div><div class="card"><div class="kicker">03 · Connect</div><h3>See the bigger picture</h3><p>Examine historical parallels without assuming causation. Consider constructive, measurable solutions.</p></div></div>
+<div class="warning"><strong>For younger readers and families:</strong> This public reader contains educational summaries without graphic imagery or sign-in requirements. Some topics involve violence, exploitation, human experimentation, or war. Original links lead to external websites and may contain upsetting information. Use discretion.</div>
+</section></main>
+<footer><div class="wrap"><strong>◈ Evidence Atlas · Understand the past. Question responsibly. Build a better future.</strong>
+<p>This is an educational research library. Inclusion of a person, organization, topic, or claim does not imply guilt, causation, or independent verification.</p>
+<a href="./index.html?workspace=1">Researcher workspace</a> · <a href="https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas/privacy">Privacy</a></div></footer>
+<script>
+"use strict";
+(function(){
+const API="https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/";
+const $=id=>document.getElementById(id);
+const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const urlOK=x=>{try{const u=new URL(String(x));return ["https:","http:"].includes(u.protocol)?u.href:null}catch{return null}};
+const sensitive=/\b(kill|killed|murder|suicide|abuse|torture|rape|assault|shooting|trafficking|death|genocide|sexual|radiation|biological)\b/i;
+const snippet=(s,n=170)=>{s=String(s||"");return s.length>n?s.slice(0,n-1).trim()+"…":s};
+let cases=[],search="",shown=9;
+function filtered(){const q=search.toLowerCase();return cases.filter(c=>!q||String(c.case_number)===q||[c.title,c.summary,c.category,c.description].some(v=>String(v||"").toLowerCase().includes(q)))}
+function renderCases(){
+ const matches=filtered(),visible=matches.slice(0,shown);
+ $("caseCount").textContent=cases.length?cases.length+" published cases":"";
+ $("caseGrid").innerHTML=visible.length?visible.map(c=>{
+ const flagged=sensitive.test(String(c.title)+" "+String(c.summary));
+ return '<article class="case"><div class="eyebrow">CASE #'+esc(c.case_number)+' · '+esc(c.category||"Historical record")+'</div><h3>'+esc(c.title)+'</h3><p>'+(flagged?"Sensitive subject. Tap to view the research summary.":esc(snippet(c.summary||"Research notes available.")))+'</p><button type="button" class="btn" data-id="'+esc(c.id)+'">Explore case →</button></article>';
+ }).join(""):'<div class="message">No matching cases. Try shorter search terms.</div>';
+ $("caseStatus").textContent="Showing "+visible.length+" of "+matches.length;
+ $("moreCases").hidden=visible.length>=matches.length;
+}
+function openCase(id){
+ const c=cases.find(c=>String(c.id)===String(id));if(!c)return;
+ const pane=$("caseDetail"),flagged=sensitive.test(String(c.title)+" "+String(c.summary));
+ const body='<p>'+esc(c.summary||"No summary listed.")+'</p>'+
+ (c.official_finding?'<div class="details-section"><h3>Recorded official finding</h3><p>'+esc(c.official_finding)+'</p></div>':"")+
+ (c.disputed_questions?'<div class="details-section"><h3>Disputed or unanswered questions</h3><p>'+esc(c.disputed_questions)+'</p></div>':"")+
+ '<div class="details-section"><h3>Source check</h3><p>Look for original documents and independent corroboration before deciding what is established. Documents returned by a topic search are not necessarily verified citations for this particular case.</p><button type="button" class="btn" id="checkSources">Find published source records →</button><div id="related"></div></div>';
+ const showBody=()=>{pane.innerHTML='<div class="eyebrow">PUBLIC CASE #'+esc(c.case_number)+'</div><h2>'+esc(c.title)+'</h2>'+body+'<div class="actions"><button type="button" class="btn" id="closeCase">Close</button></div>';
+  $("closeCase").addEventListener("click",()=>pane.hidden=true);
+  $("checkSources").addEventListener("click",async()=>{const t=$("related");t.textContent="Searching topic-matched source records…";try{
+   const controller=new AbortController(),time=setTimeout(()=>controller.abort(),14000);
+   let r;try{r=await fetch(API+"evidence-research?q="+encodeURIComponent(c.title.slice(0,140)),{signal:controller.signal})}finally{clearTimeout(time)}
+   if(!r.ok)throw Error("Document search unavailable");const d=await r.json(),docs=d.matches?.documents||[];
+   t.innerHTML=docs.length?'<p class="citation">These are topic matches, NOT automatically case-specific evidence.</p>'+docs.map(x=>{const u=urlOK(x.url)||urlOK(x.archive_url);return '<p>'+esc(x.title)+(u?' · <a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">Original document ↗</a>':'')+'</p>'}).join(""):'<p>No separately published source matches found.</p>';
+  }catch{t.textContent="Document search is temporarily unavailable."}});
+ };
+ pane.hidden=false;
+ if(flagged){pane.innerHTML='<div class="eyebrow">SENSITIVE HISTORICAL SUBJECT</div><h2>'+esc(c.title)+'</h2><p>This case discusses potentially disturbing historical material. The public view is text-only. Would you like to read the summary?</p><div class="actions"><button type="button" class="btn primary" id="confirmCase">Read summary</button><button type="button" class="btn" id="cancelCase">Not now</button></div>';
+  $("confirmCase").addEventListener("click",showBody);
+  $("cancelCase").addEventListener("click",()=>pane.hidden=true);
+ }else showBody();
+ pane.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("caseGrid").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(b)openCase(b.dataset.id)});
+$("featuredCase").addEventListener("click",()=>{let c=cases.find(c=>Number(c.case_number)===13);if(c)openCase(c.id);else document.getElementById("history").scrollIntoView()});
+$("moreCases").addEventListener("click",()=>{shown+=9;renderCases()});
+$("searchForm").addEventListener("submit",e=>{e.preventDefault();search=$("searchInput").value.trim();shown=9;renderCases()});
+document.querySelectorAll("[data-search]").forEach(b=>b.addEventListener("click",()=>{search=b.dataset.search;$("searchInput").value=search;shown=9;renderCases();document.getElementById("history").scrollIntoView()}));
+async function getCases(){
+ try{const c=new AbortController(),timer=setTimeout(()=>c.abort(),17000);let r;try{r=await fetch(API+"evidence-atlas/api/cases",{signal:c.signal})}finally{clearTimeout(timer)}
+ if(!r.ok)throw Error("Historical cases unavailable");const data=await r.json();if(!Array.isArray(data))throw Error("Unexpected case response");
+ cases=data.filter(x=>x?.id&&x.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));renderCases();
+ }catch(e){$("caseGrid").innerHTML='<div class="message">Historical library is temporarily unavailable. Try again shortly.</div>';$("caseCount").textContent="Offline";$("moreCases").hidden=true;}
+}
+let newsController;
+async function getNews(topic){
+ newsController?.abort();const controller=new AbortController();newsController=controller;
+ $("newsStatus").textContent="Checking recently published "+topic+" coverage…";$("newsGrid").innerHTML="";
+ try{const timer=setTimeout(()=>controller.abort(),18000);let r;try{r=await fetch(API+"evidence-public-news?topic="+encodeURIComponent(topic),{signal:controller.signal})}finally{clearTimeout(timer)}
+ if(!r.ok)throw Error("News provider temporarily unavailable");const d=await r.json(),items=Array.isArray(d.articles)?d.articles:[];
+ $("newsStatus").textContent=items.length+" recent article references discovered. Headlines have not been independently verified.";
+ $("newsGrid").innerHTML=items.length?items.map((a,i)=>{
+ const u=urlOK(a.url),flag=a.sensitive===true;
+ const source=esc(a.publisher||"Publisher not recorded")+(a.first_seen?" · "+esc(a.first_seen.slice(0,10)):"");
+ return '<article class="newsitem"><div class="eyebrow">'+source+'</div><h3 id="headline'+i+'">'+(flag?"Sensitive headline hidden":esc(a.title))+'</h3>'+
+ (flag?'<button class="pill" type="button" data-reveal="'+i+'">Reveal headline</button><span hidden id="hidden'+i+'">'+esc(a.title)+'</span>':"")+
+ (u?'<p><a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">Open original publisher ↗</a></p>':"")+'</article>';
+ }).join(""):'<div class="message">No coverage returned for this category at this moment. Try another section.</div>';
+ }catch(e){if(e.name!=="AbortError"){$("newsStatus").textContent="Live headlines unavailable right now.";$("newsGrid").innerHTML='<div class="message">The external discovery service may be rate-limited or temporarily offline. You can still explore historical cases above.</div>';}}
+}
+$("topics").addEventListener("click",e=>{const b=e.target.closest("[data-topic]");if(!b)return;document.querySelectorAll("[data-topic]").forEach(x=>x.classList.toggle("active",x===b));getNews(b.dataset.topic)});
+$("newsGrid").addEventListener("click",e=>{const b=e.target.closest("[data-reveal]");if(!b)return;const i=b.dataset.reveal,slot=$("headline"+i),hidden=$("hidden"+i);if(slot&&hidden){slot.textContent=hidden.textContent;b.remove();}});
+getCases();getNews("world");
+})();
+</script>
+</body></html>
