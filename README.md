@@ -202,3 +202,14 @@ Deploy `evidence-chat` and apply `supabase/assistant-budget.sql`. Source-finder 
 AI calls require explicit visitor opt-in, retrieve only public excerpts, use strict structured output with validated source IDs, request `store:false`, and fall back to keyword results on provider or budget failure. These safeguards do not establish factual accuracy; original records still require review. No generation has been verified against a real paid provider until a key is configured. Tests mock the provider and cover consent, budget, no-key mode, validation and failure fallback.
 
 Official API references: https://developers.openai.com/api/docs/guides/migrate-to-responses and https://developers.openai.com/api/docs/models/gpt-4.1-mini
+
+
+## Positive-progress hub and source transparency (1.13)
+
+The homepage leads with a six-item constructive-reporting feed from Positive News and Reasons to be Cheerful, with publisher, available byline and publication date. The API supports `evidence-public-news?topic=positive`, records source availability, tolerates one failed feed, and never replaces a failed constructive feed with general headlines. These publisher-selected items are not all independently reviewed and may include opinion or proposals. A feed appearance is not proof of medical efficacy or another claim. The browser refreshes when opened and every ten minutes while visible; this is not a continuous server-side collector. Broader GDELT/BBC discovery is opt-in by topic below.
+
+The current pillars are Self-Care & Inner Peace, Positive Progress, Government Accountability, and Media & Narrative Watch. The public archive remains the existing published index, not an exhaustive catalog of all deception or a verdict on every case. A source-policy section prioritizes identifiable original reporting, methods, documents, conflicts disclosure, corrections and uncertainty. Newsroom policy links are inspectable references, not accuracy guarantees or claims that every automatically discovered item meets the standard.
+
+The manual two-report comparison keeps notes in page memory, escapes input, allows only http(s) links, and gives reading prompts. It does not fetch article bodies, verify claims, or detect propaganda automatically. The Gates farmland starting note links dated personal statements and an independent ownership profile, separates acreage categories and personal investments from foundation activity, and makes no allegation of wrongdoing. No complete ownership audit has been performed.
+
+Community posting, public Q&A, movement organising, automated source-quality review, and automatically publishing monitored findings are not implemented. A separately configured ChatGPT hourly public-source watch reports only substantive new findings to the user; it does not modify this website.
