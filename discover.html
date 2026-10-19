@@ -231,6 +231,7 @@ async function getCases(){
  try{const c=new AbortController(),timer=setTimeout(()=>c.abort(),17000);let r;try{r=await fetch(API+"evidence-atlas/api/cases",{signal:c.signal})}finally{clearTimeout(timer)}
  if(!r.ok)throw Error("Historical cases unavailable");const data=await r.json();if(!Array.isArray(data))throw Error("Unexpected case response");
  cases=data.filter(x=>x?.id&&x.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));renderCases();
+ const linkedCase=cases.find(c=>String(c.id)===new URLSearchParams(location.search).get("case"));if(linkedCase)openCase(linkedCase.id);
  }catch(e){$("caseGrid").innerHTML='<div class="message">Historical library is temporarily unavailable. <button type="button" class="btn" id="retryCases">Try again</button></div>';$("caseCount").textContent="Offline";$("moreCases").hidden=true;$("retryCases")?.addEventListener("click",getCases);}
 }
 let newsController;
@@ -254,4 +255,5 @@ $("newsGrid").addEventListener("click",e=>{const b=e.target.closest("[data-revea
 getCases();getNews("world");
 })();
 </script>
+<script src="./assistant.js" defer></script>
 </body></html>

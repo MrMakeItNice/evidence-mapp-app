@@ -25,4 +25,5 @@ function tick(){remaining=Math.max(0,Math.ceil((endAt-Date.now())/1000));if(!rem
 $('quietToggle').onclick=()=>{if(running){tick();running=false;clearInterval(interval);}else{if(!remaining)remaining=60;endAt=Date.now()+remaining*1000;running=true;interval=setInterval(tick,250);$('quietStatus').textContent='Nothing to achieve. Breathe naturally or notice the room.';}paintTime();};
 $('quietReset').onclick=()=>{running=false;clearInterval(interval);remaining=60;paintTime();$('quietStatus').textContent='Stop or skip whenever you want.';};document.addEventListener('visibilitychange',()=>{if(running)tick();});
 $('clearReflection').onclick=()=>{$('reflectionText').value='';$('reflectionStatus').textContent='Note cleared.';};
-</script></body></html>
+</script><script src="./assistant.js" defer></script>
+</body></html>

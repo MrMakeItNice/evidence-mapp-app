@@ -191,3 +191,14 @@ The downloadable iPhone app and App Store submission are outside this web releas
 Human Design links identify Jovian Archive and myBodyGraph as spiritual reflection resources, separate from clinical mental-health information. No personal chart URL was available; these are labeled provider websites rather than a fabricated personal chart. The owner can supply the exact shareable URL for a subsequent link update.
 
 Mental-health source pages: NIMH Caring for Your Mental Health; NHS breathing exercises for stress; NHS inform grounding exercises. U.S. 988 contact routes were verified through the helpline tool before inclusion. No personal mental-health history is included in the public page.
+
+
+## Ask Evidence Atlas (1.10)
+
+The floating assistant is available on the public reader, workspace and Healing page. It searches published records only, provides source links and site guidance, and clearly labels keyword retrieval versus AI summaries. Case links open the selected case; sensitive case disclosure still applies. No chat, mood selection, reflection or private workspace record is included in saved chat data. There is no chat-history database.
+
+Deploy `evidence-chat` and apply `supabase/assistant-budget.sql`. Source-finder mode works without a paid AI provider. To enable optional AI summaries, add `OPENAI_API_KEY` and `EVIDENCE_AI_PUBLIC_ENABLED=true` in Supabase Edge Function secrets, then redeploy `evidence-chat`. Never put provider keys in the frontend or repository. `EVIDENCE_AI_MODEL` defaults to `gpt-4.1-mini`; `EVIDENCE_AI_DAILY_LIMIT` defaults to 30 requests per UTC day, clamped to 1–100. Use provider account spend controls too. The aggregate counter is atomic, service-role only, with RLS and no user/chat identifiers. Requests failing after reserving a slot still count.
+
+AI calls require explicit visitor opt-in, retrieve only public excerpts, use strict structured output with validated source IDs, request `store:false`, and fall back to keyword results on provider or budget failure. These safeguards do not establish factual accuracy; original records still require review. No generation has been verified against a real paid provider until a key is configured. Tests mock the provider and cover consent, budget, no-key mode, validation and failure fallback.
+
+Official API references: https://developers.openai.com/api/docs/guides/migrate-to-responses and https://developers.openai.com/api/docs/models/gpt-4.1-mini
