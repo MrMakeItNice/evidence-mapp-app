@@ -2,3 +2,4 @@ node_modules/
 supabase/functions/evidence-atlas/pages.ts
 .env
 .env.*
+supabase/functions/evidence-atlas/healing.ts

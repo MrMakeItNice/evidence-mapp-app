@@ -86,7 +86,7 @@ The existing daily scheduled research task was updated to review new items acros
 - Existing cases, claims, sources, people and organizations are editable from **Workspace → Edit existing records**. The app intentionally has no automatic deletion feature.
 - A linked citation is not itself verification of a claim.
 - Relationship map reflects only explicitly recorded links, not automatically inferred ties.
-- Live login, editing and CSV import should be verified manually in a signed-in browser session. Supabase reports the Edge Function deployment active, but a browser end-to-end test is still needed.
+- An existing owner session restored successfully in the real browser. CSV upload, preview, private import, record editing and translation-copy saving passed browser acceptance checks on 18 October 2026. Fresh password sign-in was not exercised; no credentials were collected.
 - Internet connection required for the Supabase client and backend.
 
 Maintained as a private-data application served from a public-code repository.
@@ -127,7 +127,7 @@ New group records are owner-only by row-level security. The source links and tim
 - The public-read RLS rule now allows published rows while retaining separate restrictive owner-only INSERT, UPDATE and DELETE rules.
 - App inline scripts passed JavaScript syntax validation.
 - Supabase owner-role SELECT checks returned the new investigation groups and linked records; simulated non-owner requests saw zero rows in the new group tables. Original 140-case corpus remains intact.
-- An independent real-browser end-to-end sign-in/write test has **not** been completed and remains part of release acceptance.
+- Browser acceptance tested restored owner access, a real CSV import, editing and separate original/translation storage. New password entry and physical iPhone testing were not performed.
 - The security advisor currently reports a warning about leaked-password protection (availability depends on Supabase plan).
 
 
@@ -170,3 +170,24 @@ node scripts/build-edge.mjs
 Deploy `supabase/functions/evidence-atlas/index.ts` together with its generated `pages.ts`; deploy the other functions from their matching directories. `pages.ts` is build output, generated from `index.html`, `discover.html` and `privacy.html`. The SQL repair files record the remote database changes and are reference history, not blindly repeatable setup scripts.
 
 The downloadable iPhone app and App Store submission are outside this web release.
+
+
+### Browser acceptance results
+
+- Public history search, case details and topic-matched document lookup worked against the deployed APIs.
+- The existing owner session restored in Chrome. A QA CSV file uploaded and previewed one private case; import saved it as unpublished with English language metadata. Editing its summary saved successfully.
+- A separate QA reading copy saved the original Spanish text and English copy with a SHA-256 fingerprint and pending review status. The original stayed unchanged.
+- The browser exposed the Translator API but could not create the requested Spanish/English translator; this environment could not download/use the language model. That failure is displayed explicitly. DeepL is not configured, so cross-browser automatic translation remains blocked on its provider key.
+- All six public news categories returned article references via the named BBC fallback during live endpoint checks.
+- Anonymous requests could not read the QA private case; another signed-in identity could read zero private translations or research inbox records. Owner writes for case/source/proposal/outcome records passed rollback-only database tests.
+- The original 140-case corpus remains intact. One unpublished QA case (#141, ID 143) and one private translation test record remain after cleanup requests failed at the connector transport layer; they are not public findings.
+- The sidebar now scrolls within the viewport; editor form fields have associated labels. Physical iPhone visual testing and automatic PDF/image/Word translation are not claimed complete.
+
+
+## Healing & Support and Human Design
+
+`healing.html` is linked from the public reader and researcher navigation. It offers an unsaved mood check-in, step-by-step sensory grounding, a quiet-minute timer, reflection text that is never submitted or stored, NHS/NIMH educational links, and clearly U.S.-labeled crisis support. It is a general well-being resource, not diagnosis or treatment.
+
+Human Design links identify Jovian Archive and myBodyGraph as spiritual reflection resources, separate from clinical mental-health information. No personal chart URL was available; these are labeled provider websites rather than a fabricated personal chart. The owner can supply the exact shareable URL for a subsequent link update.
+
+Mental-health source pages: NIMH Caring for Your Mental Health; NHS breathing exercises for stress; NHS inform grounding exercises. U.S. 988 contact routes were verified through the helpline tool before inclusion. No personal mental-health history is included in the public page.

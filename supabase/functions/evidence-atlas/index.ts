@@ -1,4 +1,5 @@
 import { OWNER_HTML, PUBLIC_HTML, PRIVACY_HTML } from './pages.ts';
+import { HEALING_HTML } from './healing.ts';
 const BASE=Deno.env.get('SUPABASE_URL')||'';
 const KEY=Deno.env.get('SUPABASE_ANON_KEY')||'';
 const cors={'access-control-allow-origin':'*','access-control-allow-methods':'GET,HEAD,OPTIONS','access-control-allow-headers':'authorization,apikey,content-type,x-client-info','cache-control':'no-store','x-content-type-options':'nosniff'};
@@ -17,6 +18,6 @@ Deno.serve(async(request:Request)=>{
      return new Response(request.method==='HEAD'?null:JSON.stringify(cases),{headers:{...cors,'content-type':'application/json; charset=utf-8'}});
    }catch(error){console.error('Public cases unavailable',error);return Response.json({error:'Published case library is temporarily unavailable.'},{status:503,headers:cors});}
  }
- const mode=path.endsWith('/privacy')?'privacy':(url.searchParams.get('workspace')==='1'||url.searchParams.has('preview')||path.endsWith('/index.html'))?'owner':'public';
- return new Response(request.method==='HEAD'?null:mode==='privacy'?PRIVACY_HTML:mode==='owner'?OWNER_HTML:PUBLIC_HTML,{headers:{...cors,'content-type':'text/html; charset=utf-8','x-frame-options':'DENY','referrer-policy':'strict-origin-when-cross-origin','permissions-policy':'camera=(), microphone=(), geolocation=()'}});
+ const mode=(path.endsWith('/healing')||path.endsWith('/healing.html'))?'healing':path.endsWith('/privacy')?'privacy':(url.searchParams.get('workspace')==='1'||url.searchParams.has('preview')||path.endsWith('/index.html'))?'owner':'public';
+ return new Response(request.method==='HEAD'?null:mode==='healing'?HEALING_HTML:mode==='privacy'?PRIVACY_HTML:mode==='owner'?OWNER_HTML:PUBLIC_HTML,{headers:{...cors,'content-type':'text/html; charset=utf-8','x-frame-options':'DENY','referrer-policy':'strict-origin-when-cross-origin','permissions-policy':'camera=(), microphone=(), geolocation=()'}});
 });
