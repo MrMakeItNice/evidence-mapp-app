@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="A transparent metadata completeness review of the published Evidence Atlas case index."><meta name="referrer" content="strict-origin-when-cross-origin"><title>Research Quality | Evidence Atlas</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#e9f2f7;background:#0c192a}*{box-sizing:border-box}body{margin:0}a{color:#73e4ca}header{border-bottom:1px solid #294159;background:#12243a;padding:16px max(20px,calc((100vw - 1180px)/2));display:flex;align-items:center;gap:18px;flex-wrap:wrap}header strong{letter-spacing:2px}header nav{display:flex;gap:16px;flex-wrap:wrap;font-size:13px}main{max-width:1180px;margin:auto;padding:46px 20px 90px}.eyebrow{color:#68d9ba;letter-spacing:2px;text-transform:uppercase;font-size:12px;font-weight:800}h1{font-size:clamp(34px,5vw,58px);line-height:1.1;margin:14px 0 16px;letter-spacing:-1.5px}h2{font-size:20px;margin:0 0 10px}.lead{max-width:850px;color:#b9ccda;line-height:1.75}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:31px 0}.stat,.panel{background:#152b42;border:1px solid #2a445b;border-radius:14px;padding:22px}.stat b{font-size:33px;display:block;margin-bottom:6px;font-variant-numeric:tabular-nums}.stat span{color:#abc3d5;font-size:13px}.panel{margin:20px 0}.panel p,.note{color:#afc5d4;line-height:1.7;font-size:14px}.bar{height:12px;border-radius:9px;background:#294259;overflow:hidden;margin:10px 0 17px}.bar i{display:block;height:100%;background:#51d0b0;width:0;transition:width .4s}.bars{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px}.bar-label{display:flex;justify-content:space-between;font-size:13px;gap:10px}.filters{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.filters input,.filters select{background:#112339;border:1px solid #36536c;border-radius:8px;color:white;padding:12px 13px;min-height:45px}.filters input{flex:1;min-width:200px}.filters select{min-width:210px}input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #62ddc0;outline-offset:3px}.case-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.case{background:#142a40;border:1px solid #2c445d;border-radius:12px;padding:20px}.case h3{font-size:17px;margin:0 0 10px}.case p{font-size:13px;color:#b9cddd;line-height:1.6;min-height:55px}.meta{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.tag{padding:5px 9px;background:#233d52;border:1px solid #35566b;border-radius:6px;font-size:11px;color:#c8dbe6}.tag.ok{background:#173e36;color:#a0edd4}.tag.missing{background:#493c28;color:#f3d49a}.case a{display:inline-block;margin-top:8px;font-weight:700;font-size:13px}.warning{background:#343022;border:1px solid #63512d;padding:17px 19px;border-radius:10px;color:#f8dfaa;font-size:13px;line-height:1.7}#status{min-height:25px;color:#a9c8d5}button{border:1px solid #537782;border-radius:9px;background:#1c4850;color:#fff;padding:12px 16px;cursor:pointer}button:disabled{opacity:.5}footer{font-size:12px;color:#8faabd;margin-top:36px}@media(max-width:720px){.summary{grid-template-columns:repeat(2,1fr)}.bars,.case-list{grid-template-columns:1fr}main{padding-top:28px}}@media(max-width:400px){.summary{grid-template-columns:1fr 1fr}.stat{padding:16px}.stat b{font-size:26px}}
+</style></head><body>
+<header><strong>✳ EVIDENCE ATLAS</strong><nav aria-label="Site navigation"><a href="./discover.html">Discover</a><a href="./discover.html#history">Case library</a><a href="./discover.html#updates">News updates</a><a href="./index.html?workspace=1">Owner workspace</a></nav></header>
+<main><div class="eyebrow">Evidence Atlas · Research accountability</div><h1>Research quality<br>and open questions</h1><p class="lead">A transparent look at which published case files include specific research-context fields. Missing fields are a prompt to investigate, not proof that an event is false, unverified, or unsupported. A filled field is not independent fact-checking.</p>
+<div class="warning"><strong>What this measures:</strong> metadata completeness in the public case index, not the number of verified claims or sources. The full research database has separate source registers, claims, and relationship records that are not assessed here. An evidence-level label is not a substitute for examining primary records.</div>
+<div class="summary" aria-label="Published case metrics"><div class="stat"><b id="casesN">—</b><span>Published case files</span></div><div class="stat"><b id="officialN">—</b><span>With recorded official findings</span></div><div class="stat"><b id="questionsN">—</b><span>With disputed questions</span></div><div class="stat"><b id="datesN">—</b><span>With a start date</span></div></div>
+<section class="panel"><h2>Fields populated across the published index</h2><p>Coverage updates automatically as published cases are added or edited. It does not indicate the quality, relevance, or independence of underlying sources.</p><div id="bars" class="bars" aria-live="polite"></div></section>
+<section class="panel"><h2>Browse research gaps</h2><p>Filter by missing context or search case titles. Open any case for its published description and currently available supporting context.</p><div class="filters"><input id="q" type="search" placeholder="Search cases…" aria-label="Search cases"><select id="filter" aria-label="Research field filter"><option value="all">All published cases</option><option value="official_missing">Official finding not recorded</option><option value="questions_missing">Disputed questions not recorded</option><option value="dates_missing">Start date not recorded</option><option value="official_present">Official finding recorded</option><option value="questions_present">Disputed questions recorded</option></select></div><p id="status" role="status">Loading published case index…</p><div id="caseList" class="case-list"></div><p style="margin-top:18px"><button id="more" type="button" hidden>Show more</button></p></section>
+<footer>Evidence Atlas · Public research transparency · Case labels and conclusions require source-by-source review. Connections are not evidence of causation.</footer></main>
+<script>
+(() => {
+  'use strict';
+  const endpoint='https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas/api/cases';
+  const el=id=>document.getElementById(id);
+  const nonempty=v=>typeof v==='string'&&v.trim().length>0;
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let cases=[],count=18;
+  function tag(text,ok){return '<span class="tag '+(ok?'ok':'missing')+'">'+esc(text)+'</span>'}
+  function chart(){
+    const n=cases.length||1;
+    const fields=[['Summary','summary'],['Evidence classification','evidence_level'],['Official finding','official_finding'],['Disputed questions','disputed_questions'],['Start date','start_date']];
+    el('bars').innerHTML=fields.map(([name,key])=>{const present=cases.filter(c=>nonempty(c[key])).length,pct=Math.round(present/n*100);return '<div><div class="bar-label"><span>'+esc(name)+'</span><strong>'+present+' / '+cases.length+' ('+pct+'%)</strong></div><div class="bar"><i style="width:'+pct+'%"></i></div></div>'}).join('');
+    el('casesN').textContent=cases.length;
+    el('officialN').textContent=cases.filter(c=>nonempty(c.official_finding)).length;
+    el('questionsN').textContent=cases.filter(c=>nonempty(c.disputed_questions)).length;
+    el('datesN').textContent=cases.filter(c=>nonempty(c.start_date)).length;
+  }
+  function render(){
+    const q=el('q').value.trim().toLowerCase(),filter=el('filter').value;
+    const filtered=cases.filter(c=>{
+      if(q&&!String(c.case_number+' '+c.title+' '+(c.summary||'')).toLowerCase().includes(q))return false;
+      if(filter==='official_missing')return !nonempty(c.official_finding);
+      if(filter==='questions_missing')return !nonempty(c.disputed_questions);
+      if(filter==='dates_missing')return !nonempty(c.start_date);
+      if(filter==='official_present')return nonempty(c.official_finding);
+      if(filter==='questions_present')return nonempty(c.disputed_questions);
+      return true;
+    });
+    el('status').textContent='Showing '+Math.min(filtered.length,count)+' of '+filtered.length+' matching published cases';
+    el('caseList').innerHTML=filtered.slice(0,count).map(c=>'<article class="case"><h3>Case #'+esc(c.case_number)+' · '+esc(c.title)+'</h3><p>'+esc(c.summary||'No summary recorded.')+'</p><div class="meta">'+tag('Official finding '+(nonempty(c.official_finding)?'recorded':'not recorded'),nonempty(c.official_finding))+tag('Disputed questions '+(nonempty(c.disputed_questions)?'recorded':'not recorded'),nonempty(c.disputed_questions))+tag('Start date '+(nonempty(c.start_date)?'recorded':'not recorded'),nonempty(c.start_date))+'</div><a href="./discover.html?case='+encodeURIComponent(c.id)+'#history">Read published case →</a></article>').join('')||'<p class="note">No cases match these filters.</p>';
+    el('more').hidden=count>=filtered.length;
+  }
+  el('q').addEventListener('input',()=>{count=18;render()});
+  el('filter').addEventListener('change',()=>{count=18;render()});
+  el('more').addEventListener('click',()=>{count+=18;render()});
+  (async()=>{try{const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),12000);let response;try{response=await fetch(endpoint,{signal:ctl.signal,cache:'no-store'})}finally{clearTimeout(timeout)}if(!response.ok)throw Error('Status '+response.status);const data=await response.json();if(!Array.isArray(data))throw Error('Unexpected response');cases=data.filter(c=>c&&c.id&&c.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));chart();render();}catch(e){el('status').textContent='Published cases cannot be loaded right now. Try again later. ('+String(e.message||'network error')+')';}})();
+})();
+</script></body></html>
