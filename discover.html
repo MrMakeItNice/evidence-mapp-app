@@ -108,7 +108,7 @@ main{padding-top:0}.entry-paths{padding:39px 0 41px;border-bottom:1px solid #d9e
 
 /* Public-reader clarity and accessibility refresh */
 html{scroll-behavior:smooth;scroll-padding-top:86px}body{line-height:1.55}.wrap{max-width:1120px}.top-inner{align-items:center}.menu{align-items:center;gap:5px}.menu>a{font-size:13px;padding:10px 12px;white-space:nowrap}.menu>a:hover,.menu>a:focus-visible{background:#27455a;color:#fff}.more-nav{position:relative}.more-nav summary{list-style:none;cursor:pointer;color:#c4dce4;padding:10px 12px;font-size:13px;font-weight:700;border-radius:8px}.more-nav summary::-webkit-details-marker{display:none}.more-nav[open] summary,.more-nav summary:hover{background:#27455a;color:#fff}.more-nav-panel{position:absolute;right:0;top:calc(100% + 10px);width:min(290px,90vw);background:#fff;color:#1b3047;border:1px solid #dce8eb;border-radius:13px;padding:9px;box-shadow:0 18px 45px #0b24373d;display:grid;gap:2px;z-index:30}.more-nav-panel a{color:#29475c;font-size:13px;text-decoration:none;padding:11px 12px;border-radius:8px}.more-nav-panel a:hover,.more-nav-panel a:focus-visible{background:#eaf7f3;color:#075b4c}.hero h1{max-width:750px;line-height:1.12}.hero p{font-size:16px;max-width:640px}.btn{font-size:13px;transition:transform .15s ease,box-shadow .15s ease}.btn:hover{transform:translateY(-1px);box-shadow:0 5px 16px #0e26321c}main p{line-height:1.75}section[id]{scroll-margin-top:88px}@media(max-width:900px){.top{position:relative}.top-inner{align-items:flex-start;flex-direction:column;padding-top:14px;padding-bottom:12px}.menu{width:100%;overflow:visible;gap:3px}.menu>a{font-size:12px;padding:8px}.more-nav-panel{right:auto;left:0}.hero{padding:48px 0 42px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
-</style>
+.case-tools{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:18px 0 8px}.case-tools label{display:grid;gap:5px;color:#365368;font-size:12px;font-weight:750}.case-tools select{min-width:165px;max-width:100%;background:#fff;border:1px solid #cbdde3;border-radius:9px;padding:10px;color:#1b3047}.case-help{font-size:13px;color:#587081;line-height:1.7;margin:6px 0 18px}.case-detail{scroll-margin-top:20px}@media(max-width:600px){.case-tools label{flex:1;min-width:135px}.case-tools select{width:100%;min-width:0}}</style>
 </head><body>
 <header class="top"><div class="wrap top-inner"><a class="logo" href="./discover.html">✳ MAKE IT <b>NICE</b></a>
 <nav class="menu" aria-label="Main navigation">
@@ -183,6 +183,7 @@ html{scroll-behavior:smooth;scroll-padding-top:86px}body{line-height:1.55}.wrap{
 <div class="search-row"><input id="searchInput" type="search" placeholder="Search programs, events, names, or case numbers" maxlength="120" autocomplete="off"><button class="btn primary" type="submit">Find evidence →</button></div>
 <div class="pills"><button type="button" class="pill" data-search="MKULTRA">MKULTRA</button><button type="button" class="pill" data-search="COINTELPRO">COINTELPRO</button><button type="button" class="pill" data-search="surveillance">Surveillance</button><button type="button" class="pill" data-search="environment">Environment</button></div>
 </form>
+<div class="case-tools" aria-label="Case library controls"><label for="caseCategory">Topic <select id="caseCategory"><option value="">All topics</option></select></label><label for="caseSort">Sort <select id="caseSort"><option value="number">Case number</option><option value="title">Title A–Z</option><option value="category">Topic A–Z</option></select></label><button type="button" class="btn" id="resetCases">Clear filters</button></div><p class="case-help">Browse documented cases and open a record to examine findings, disputed questions, and source-search links. A topic match is not proof of a relationship.</p>
 <section id="caseDetail" class="case-detail" tabindex="-1" hidden></section>
 <div id="caseGrid" class="casegrid"><div class="message">Loading published historical cases…</div></div>
 <div class="actions" style="margin-top:16px"><button type="button" id="moreCases" class="btn">Show more cases</button><span class="message" id="caseStatus" role="status"></span></div>
@@ -286,8 +287,9 @@ const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const urlOK=x=>{try{const u=new URL(String(x));return ["https:","http:"].includes(u.protocol)?u.href:null}catch{return null}};
 const sensitive=/\b(kill|killed|murder|suicide|abuse|torture|rape|assault|shooting|trafficking|death|genocide|sexual|radiation|biological)\b/i;
 const snippet=(s,n=170)=>{s=String(s||"");return s.length>n?s.slice(0,n-1).trim()+"…":s};
-let cases=[],search="",shown=9;
-function filtered(){const q=search.toLowerCase();return cases.filter(c=>!q||String(c.case_number)===q||[c.title,c.summary,c.category,c.description].some(v=>String(v||"").toLowerCase().includes(q)))}
+let cases=[],search="",shown=9,category="",sortBy="number";
+function filtered(){const q=search.toLowerCase();return cases.filter(c=>(!category||String(c.category||"Historical record")===category)&&(!q||String(c.case_number)===q||[c.title,c.summary,c.category,c.description].some(v=>String(v||"").toLowerCase().includes(q)))).sort((a,b)=>sortBy==="title"?String(a.title).localeCompare(String(b.title)):sortBy==="category"?String(a.category||"").localeCompare(String(b.category||""))||Number(a.case_number)-Number(b.case_number):Number(a.case_number)-Number(b.case_number)}
+function populateCaseTopics(){const options=[...new Set(cases.map(c=>String(c.category||"Historical record")))].sort((a,b)=>a.localeCompare(b));$("caseCategory").innerHTML='<option value="">All topics</option>'+options.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join("");$("caseCategory").value=category;}
 function renderCases(){
  const matches=filtered(),visible=matches.slice(0,shown);
  $("caseCount").textContent=cases.length?cases.length+" published cases":"";
@@ -325,11 +327,14 @@ $("caseGrid").addEventListener("click",e=>{const b=e.target.closest("[data-id]")
 $("featuredCase").addEventListener("click",()=>{let c=cases.find(c=>/cointelpro/i.test(c.title));if(c)openCase(c.id);else document.getElementById("history").scrollIntoView()});
 $("moreCases").addEventListener("click",()=>{shown+=9;renderCases()});
 $("searchForm").addEventListener("submit",e=>{e.preventDefault();search=$("searchInput").value.trim();shown=9;renderCases()});
+$("caseCategory").addEventListener("change",e=>{category=e.target.value;shown=9;renderCases()});
+$("caseSort").addEventListener("change",e=>{sortBy=e.target.value;shown=9;renderCases()});
+$("resetCases").addEventListener("click",()=>{search="";category="";sortBy="number";shown=9;$("searchInput").value="";$("caseCategory").value="";$("caseSort").value="number";renderCases()});
 document.querySelectorAll("[data-search]").forEach(b=>b.addEventListener("click",()=>{search=b.dataset.search;$("searchInput").value=search;shown=9;renderCases();document.getElementById("history").scrollIntoView()}));
 async function getCases(){
  try{const c=new AbortController(),timer=setTimeout(()=>c.abort(),17000);let r;try{r=await fetch(API+"evidence-atlas/api/cases",{signal:c.signal})}finally{clearTimeout(timer)}
  if(!r.ok)throw Error("Historical cases unavailable");const data=await r.json();if(!Array.isArray(data))throw Error("Unexpected case response");
- cases=data.filter(x=>x?.id&&x.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));renderCases();$("heroCaseCount").textContent=cases.length+" case files";
+ cases=data.filter(x=>x?.id&&x.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));populateCaseTopics();renderCases();$("heroCaseCount").textContent=cases.length+" case files";
  const linkedCase=cases.find(c=>String(c.id)===new URLSearchParams(location.search).get("case"));if(linkedCase)openCase(linkedCase.id);
  }catch(e){$("caseGrid").innerHTML='<div class="message">Historical library is temporarily unavailable. <button type="button" class="btn" id="retryCases">Try again</button></div>';$("caseCount").textContent="Offline";$("moreCases").hidden=true;$("retryCases")?.addEventListener("click",getCases);}
 }
