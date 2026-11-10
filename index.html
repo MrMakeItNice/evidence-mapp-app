@@ -74,14 +74,14 @@ const OWNER_USER_ID = 'cdfff424-d750-4f82-baa3-d17a6113af53';
 const client = window.supabase?.createClient?.(PROJECT_URL, PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 }) || null;
-const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox','master_source_register','case_source_references','investigation_groups','investigation_group_topics','investigation_group_sources','investigation_group_cases','investigation_group_events','news_sections','news_topics','news_items','workspace_preferences','document_translations'];
+const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox','master_source_register','case_source_references','investigation_groups','investigation_group_topics','investigation_group_sources','investigation_group_cases','investigation_group_events','news_sections','news_topics','news_items','workspace_preferences','document_translations','agent_control_state','agent_control_feeds','agent_control_activity'];
 const emptyData = () => Object.fromEntries(TABLES.map(t => [t, []]));
 const LANGUAGE_CHOICES=[['en','English'],['es','Español (Spanish)'],['fr','Français (French)'],['pt','Português (Portuguese)'],['de','Deutsch (German)'],['ar','العربية (Arabic)'],['zh','中文 (Chinese)'],['hi','हिन्दी (Hindi)'],['it','Italiano (Italian)'],['ja','日本語 (Japanese)'],['other','Other / specified language']];
 function contentLanguage(){const value=rows('workspace_preferences')[0]?.default_content_language||'en';return LANGUAGE_CHOICES.some(([code])=>code===value)?value:'en';}
 function languageOptions(selected){return LANGUAGE_CHOICES.map(([code,label])=>'<option value="'+esc(code)+'"'+(code===selected?' selected':'')+'>'+esc(label)+'</option>').join('');}
 function languageSettingsPanel(){const lang=contentLanguage();const body='<div class="panel-body"><label for="defaultContentLanguage" style="display:block;font-size:13px;font-weight:700;margin-bottom:9px">Default language for new research entries</label><select class="field" id="defaultContentLanguage" aria-label="Default content language" style="width:100%;max-width:370px" '+(state.demo?'disabled':'')+'>'+languageOptions(lang)+'</select><p class="mini-desc" style="margin-top:12px">English is the default. New case and source entries use this language setting unless you choose another. The CSV importer also lets you override the language for an individual upload.</p><div class="notice">The interface is in English. This setting labels new text; use Translation Desk to create a separate English copy of non-English text. Originals stay intact. Machine translations require review.</div></div>';return panel('Language settings',body);}
 const state = { screen:'dashboard', dataset:emptyData(), demo:false, ready:false, busy:false, caseId:null, search:'', filter:'all', errors:[], owner:null };
-const NAV=[['guide','?','Start Here'],['about','ⓘ','About / README'],['dashboard','▦','Overview'],['news','◍','News & Information'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['epstein-files','♧','Epstein Files'],['covid-19','✳','COVID-19'],['palestine-gaza','⚖','Palestine / Gaza'],['watch','◉','Research Watch'],['healing','♡','Healing & Support'],['human-design','✳','Human Design'],['translations','文','Translation Desk'],['settings','⚙','Workspace']];
+const NAV=[['guide','?','Start Here'],['about','ⓘ','About / README'],['dashboard','▦','Overview'],['agents','◈','Agent Control Center'],['news','◍','News & Information'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['epstein-files','♧','Epstein Files'],['covid-19','✳','COVID-19'],['palestine-gaza','⚖','Palestine / Gaza'],['watch','◉','Research Watch'],['healing','♡','Healing & Support'],['human-design','✳','Human Design'],['translations','文','Translation Desk'],['settings','⚙','Workspace']];
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date = s => s ? new Date(`${s}T12:00:00Z`).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : 'Not dated';
@@ -418,8 +418,68 @@ document.addEventListener('click',async e=>{
 document.addEventListener('change',async e=>{if(e.target.id!=='translationFile')return;const f=e.target.files?.[0];if(!f)return;try{if(f.size>100000)throw Error('Choose a text excerpt under 100 KB.');if(!/\.(txt|md|csv|json)$/i.test(f.name))throw Error('Choose a UTF-8 text file.');const text=await f.text();if(text.length>20000)throw Error('Split the document into excerpts of 20,000 characters or fewer.');$('translationOriginal').value=text;$('translationOutput').value='';$('translationTitle').value=f.name;translationFilename=f.name;translationEngine='manual';$('translationReviewed').checked=false;$('translationStatus').textContent='Original loaded locally. Choose a language and translation method.';}catch(error){$('translationStatus').textContent=error.message;}});
 document.addEventListener('input',e=>{if(['translationOriginal','translationSource','translationTarget'].includes(e.target.id)){$('translationOutput').value='';$('translationReviewed').checked=false;translationEngine='manual';translationFilename=null;}if(e.target.id==='translationOutput'){$('translationReviewed').checked=false;translationEngine='manual';}});
 
+function agentControlScreen(){
+  const summary=rows('agent_control_state')[0]||null;
+  const feeds=rows('agent_control_feeds').slice().sort((a,b)=>a.feed_id-b.feed_id);
+  const runs=rows('agent_control_activity').slice().sort((a,b)=>String(b.requested_at||'').localeCompare(String(a.requested_at||''))).slice(0,14);
+  const news=rows('news_items').filter(x=>x.review_status==='pending').slice().sort((a,b)=>String(b.discovered_at||'').localeCompare(String(a.discovered_at||''))).slice(0,6);
+  const stamp=value=>{
+    if(!value)return 'Not yet recorded';
+    const parsed=Date.parse(String(value).replace(' ','T').replace(/\+00$/, 'Z'));
+    return Number.isFinite(parsed)?new Date(parsed).toLocaleString():String(value).slice(0,16).replace('T',' ');
+  };
+  if(state.demo)return intro('OWNER CONTROL CENTER','Agent Control Center','Private operational dashboard for automatic collectors and research review queues.')+
+    panel('Sign in to see real monitoring status','<div class="panel-body"><p class="mini-desc">Sample mode is intentionally not connected to real feed activity, research agents, or private news records. Sign in to the owner workspace for actual data.</p></div>');
+  const options=action('refresh','↻ Refresh status','secondary')+action('nav','Review news leads','primary','data-page="news"')+action('nav','Research Watch','secondary','data-page="watch"');
+  if(!summary)return intro('OWNER CONTROL CENTER','Agent Control Center','Collector telemetry is not available yet.',options)+blank('Monitoring snapshot unavailable','Confirm the database refresh job and agent_control_* table access in Supabase, then refresh. Missing telemetry is not evidence that the collector is operating.');
+  const refreshed=Date.parse(String(summary.generated_at).replace(' ','T').replace(/\+00$/, 'Z'));
+  const stale=!(Number.isFinite(refreshed))||(Date.now()-refreshed)>20*60*1000;
+  const active=(summary.active_feeds||0)>0;
+  const counts=[
+    [summary.active_feeds||0,'Active RSS feeds','⌁','Rotated across five-minute dispatches'],
+    [summary.collected_leads||0,'Collected RSS leads','◉','Unassessed feed headlines'],
+    [summary.news_pending||0,'Pending news reviews','▤','Private News & Information queue'],
+    [summary.inbox_pending||0,'Research Watch queue','◎','Private leads to investigate']
+  ];
+  const agentNames=[
+    ['Evidence Atlas 24/7 Research','Hourly research automation','ChatGPT research task; its individual runs are not reported by this database monitor'],
+    ['Evidence Atlas Daily Watch','Daily case analysis','Independent ChatGPT scheduled task; check ChatGPT tasks for run history'],
+    ['Evidence Atlas Influence Watch','Daily influence accountability','Independent ChatGPT scheduled task; not a Supabase RSS feed'],
+    ['Public Accountability Voices','Daily public-source research','Independent ChatGPT scheduled task; not monitored by this collector']
+  ];
+  const groups=rows('investigation_groups');
+  const groupName=slug=>groups.find(g=>g.slug===slug)?.title||'General reporting';
+  const statusPill=s=>s==='ok'?label('Completed','teal'):s==='error'?label('Error','red'):label('Waiting','orange');
+  const headline=x=>`<div class="mini-card"><div class="mini-meta">${esc(x.publisher||'Publisher unknown')} · ${esc(groupName(x.group_slug))} · ${esc(stamp(x.discovered_at))}</div><div class="mini-title" style="margin:7px 0">${esc(x.headline)}</div><p class="mini-desc">Pending editorial review. A headline in the database is not independent verification.</p>${sourceAnchor({url:x.source_url,title:x.headline},'Read original source')}</div>`;
+  const feedCard=x=>{
+    const time=x.last_success_at?Date.now()-Date.parse(String(x.last_success_at).replace(' ','T').replace(/\+00$/, 'Z')):Infinity;
+    const staleFeed=!Number.isFinite(time)||time>90*60*1000;
+    const tag=x.last_run_status==='error'?label('Error','red'):!x.active?label('Paused','orange'):staleFeed?label('Check delayed','orange'):label('Reporting','teal');
+    return `<div class="mini-card"><div class="record-head"><strong class="mini-title">${esc(x.name)}</strong>${tag}</div><div class="mini-meta">Last check: ${esc(stamp(x.last_run_at))} · Last success: ${esc(stamp(x.last_success_at))} · ${Number(x.last_run_saved_count)||0} saved in last run</div>${x.last_error?`<p class="mini-desc" style="color:#b5515f">Last issue: ${esc(x.last_error)}</p>`:''}</div>`;
+  };
+  const runCard=x=>`<div class="mini-card"><div class="record-head"><div class="mini-title">${esc(x.feed_name)}</div>${statusPill(x.status)}</div><div class="mini-meta">Requested ${esc(stamp(x.requested_at))} · ${Number(x.saved_count)||0} leads saved${x.http_status?' · HTTP '+esc(x.http_status):''}</div>${x.error?`<p class="mini-desc" style="color:#b5515f">${esc(x.error)}</p>`:''}</div>`;
+  return intro('OWNER CONTROL CENTER','Agent Control Center','Track the live collector, private research queues, source intake and scheduled research—without confusing activity with verified findings.',options)+
+    `<div class="notice" style="margin-bottom:19px"><strong>Latest database snapshot:</strong> ${esc(stamp(summary.generated_at))}. ${stale?'Snapshot older than 20 minutes; check the scheduled database refresh.':'The feed monitor and dashboard operate independently of your browser.'} This page refreshes automatically while you are viewing it.</div>
+    <div class="stat-grid">${counts.map(([value,name,icon,note])=>`<div class="stat-card"><div class="stat-ic">${icon}</div><div class="stat-label">${esc(name)}</div><div class="stat-number">${Number(value)||0}</div><div class="stat-note">${esc(note)}</div></div>`).join('')}</div>
+    <div class="two-up" style="margin-bottom:22px">
+      ${panel('RSS collector health',`<div class="panel-body"><div class="record-head" style="align-items:center"><strong>${active?'Monitor configured':'No active feeds'}</strong>${stale?label('Snapshot overdue','orange'):label('Snapshot current','teal')}</div>
+        <div class="mini-meta" style="margin-top:12px">${label((summary.successful_feed_runs||0)+' completed','teal')}${label((summary.failed_feed_runs||0)+' failed',(summary.failed_feed_runs||0)?'red':'blue')}${label((summary.pending_feed_runs||0)+' pending','orange')}</div>
+        <p class="mini-desc" style="margin-top:12px">Feed dispatches rotate every five minutes; response processing runs every minute. Individual feeds are checked less frequently. A completed fetch does not mean a story is true.</p><div class="divider"></div>
+        ${feeds.length?feeds.map(feedCard).join(''):blank('No feed statuses','Confirm the telemetry job is populating your private tables.')}</div>`)}
+      <div class="stack">
+        ${panel('ChatGPT research agents',`<div class="panel-body"><p class="mini-desc">These are separate scheduled ChatGPT tasks, not RSS collection jobs. Their execution status is not connected to this dashboard; this list is a reference, not live telemetry.</p>
+          ${agentNames.map(([name,schedule,desc])=>`<div class="mini-card"><strong class="mini-title">${esc(name)}</strong><div class="mini-meta">${label(schedule,'blue')}</div><p class="mini-desc">${esc(desc)}</p></div>`).join('')}</div>`)}
+        ${panel('Editorial safeguards',`<div class="panel-body"><p class="mini-desc"><strong>Collected:</strong> A source headline and link have been recorded.</p><p class="mini-desc"><strong>Reviewed:</strong> A human has assessed content and context; this alone does not prove claims.</p><p class="mini-desc"><strong>Published:</strong> Requires a separate public workflow. This dashboard does not auto-publish, label claims proven, or rewrite case grades.</p><div class="actions" style="margin-top:16px">${action('nav','Open review queue','secondary','data-page="news"')}</div></div>`)}
+      </div>
+    </div>
+    <div class="two-up">
+      ${panel('Recent collection activity',runs.length?`<div class="panel-body">${runs.map(runCard).join('')}</div>`:blank('No collector history available','Activity appears after feed collection jobs complete.'))}
+      ${panel('Newest news leads awaiting review',news.length?`<div class="panel-body">${news.map(headline).join('')}<div class="actions" style="margin-top:18px">${action('nav','Review all news','primary','data-page="news"')}</div></div>`:blank('No pending news items','Newly collected news will enter the private review queue.'))}
+    </div>
+    <div class="network-note">Telemetry shown here is a five-minute snapshot of private database activity, not a live record of ChatGPT task executions or a public publishing system. Source verification and editorial decisions remain separate.</div>`;
+}
 function render(){if(state.screen==='translations'){initNav();$('breadcrumbName').textContent='Translation Desk';$('screen').innerHTML=translationScreen();void translationAvailability();return;}initNav();const counts={cases:rows('cases').length,claims:rows('claims').length,sources:rows('sources').length,people:rows('people').length,solutions:rows('solution_candidates').length,watch:rows('research_inbox').filter(x=>x.review_status==='pending').length,news:rows('news_items').filter(x=>x.review_status==='pending').length};document.querySelectorAll('[data-navcount]').forEach(el=>{const v=counts[el.dataset.navcount];el.textContent=v||'';el.hidden=!v});$('breadcrumbName').textContent=(NAV.find(x=>x[0]===state.screen)||NAV[0])[2];let body='';if(state.errors.length)body+=`<div class="error-box"><strong>Some data could not be loaded.</strong> ${esc(state.errors.slice(0,3).join(' • '))}. Check this account's table permissions in Supabase, then retry.</div>`;
-const builders={guide:guideScreen,about:aboutScreen,dashboard:dashboardScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,'epstein-files':()=>groupScreen('epstein-files'),'covid-19':()=>groupScreen('covid-19'),'palestine-gaza':()=>groupScreen('palestine-gaza'),watch:watchScreen,news:newsScreen,settings:settingsScreen};$('screen').innerHTML=body+(state.screen==='dashboard'?welcomePanel():'')+builders[state.screen]();}
+const builders={guide:guideScreen,about:aboutScreen,dashboard:dashboardScreen,agents:agentControlScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,'epstein-files':()=>groupScreen('epstein-files'),'covid-19':()=>groupScreen('covid-19'),'palestine-gaza':()=>groupScreen('palestine-gaza'),watch:watchScreen,news:newsScreen,settings:settingsScreen};$('screen').innerHTML=body+(state.screen==='dashboard'?welcomePanel():'')+builders[state.screen]();}
 
 function welcomePanel(){return `<section class="welcome-panel" aria-labelledby="welcomeTitle"><div class="eyebrow">OUR MISSION / MAKE IT NICE</div><h2 id="welcomeTitle">Understand the world. Help make it nicer.</h2><p>Evidence Atlas brings cases, claims, sources, and context together so you can examine what is documented, what is disputed, and what remains unknown. Follow the evidence, keep uncertainty visible, then explore practical ways to improve things.</p><figure class="madison-quote"><blockquote>“The accumulation of all powers, legislative, executive, and judiciary, in the same hands … may justly be pronounced the very definition of tyranny.”</blockquote><figcaption>James Madison · <a href="https://avalon.law.yale.edu/18th_century/fed47.asp" target="_blank" rel="noopener noreferrer">The Federalist No. 47 (1788) ↗</a> · Abridged excerpt</figcaption></figure><div class="actions">${action('nav','How to use Evidence Atlas','primary','data-page="guide"')}${action('nav','Explore case files','secondary','data-page="cases"')}</div><p class="mini-desc">A claim appearing here means it is being examined. Inclusion or a connection alone does not establish guilt or prove a claim.</p></section>`;}
 function guideScreen(){
@@ -1014,5 +1074,12 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="networkCaseSe
 })();
 </script>
 <script src="./assistant.js" defer></script>
+<script>
+(function agentControlAutoRefresh(){
+  setInterval(()=>{
+    if(state.screen==='agents'&&!state.demo&&!state.busy&&document.visibilityState==='visible')void loadData();
+  },60000);
+})();
+</script>
 </body>
 </html>
