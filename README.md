@@ -21,9 +21,9 @@ GitHub Pages is the browser-facing host. Supabase Edge Functions serve JSON APIs
 
 **Do not use** `https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas` as the browser website. Supabase's Edge Function gateway can present an HTML response as `text/plain`, causing visitors to see HTML/code instead of the rendered application. The Edge Functions should be used for back-end API endpoints; GitHub Pages is the intended static web host. This does not affect the database or scheduled research tasks.
 
-The public reader presents available published educational summaries without a login. The separate owner workspace requires an authorized Supabase Auth account; research drafts and private records remain protected by database row-level security (RLS). The public reader and owner workspace can be reached through one Edge Function using the links above. GitHub Pages also hosts the static reader and workspace files when its deployment is configured.
+The public reader presents available published educational summaries without a login. The separate owner workspace requires an authorized Supabase Auth account; research drafts and private records remain protected by database row-level security (RLS). The public reader and owner workspace should be opened through GitHub Pages once Pages deployment is enabled; Supabase Edge Functions remain available for backend APIs.
 
-The current release is also committed as `index.html` in this repository, so GitHub Pages can be enabled separately for a shorter address. To update the Edge Function, redeploy its HTML response with the latest committed `index.html`.
+The current release is committed as `index.html` and `discover.html` in this repository. Publish those files from the repository root with GitHub Pages rather than serving their HTML through an Edge Function.
 
 ## About / README — public reader and owner workspace
 
