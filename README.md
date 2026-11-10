@@ -10,6 +10,14 @@ A source-grounded research workspace for case files, claims, source references, 
 
 GitHub Pages is the browser-facing host. Supabase Edge Functions serve JSON APIs and retain a synchronized HTML copy; Supabase gateway headers can prevent rendering HTML directly, so use the primary browser address.
 
+## Private Agent Control Center (November 10, 2026)
+
+The signed-in owner workspace now has an **Agent Control Center** navigation item (in `index.html?workspace=1`). It is a read-only operational console, not automatic public publishing. It shows real snapshot counts for active RSS feeds, collected feed leads, pending private news items, and the Research Watch inbox, plus a recent-run log, seven per-feed last-check/error records, and the latest pending headlines with source links. It provides quick links to existing **News & Information** and **Research Watch** review actions.
+
+A private scheduled database job `evidence-atlas-control-center-sync` refreshes these owner-readable views every five minutes, independently of the user's browser. The source of truth remains the separate `atlas_monitor.feeds` and `atlas_monitor.runs` private tables and the existing review tables. Public mirrors are `public.agent_control_state` (one snapshot), `public.agent_control_feeds`, and `public.agent_control_activity`. All three have row-level security restricting reads to the existing owner UID; anonymous and other authenticated users cannot view these records. No anonymous-accessible monitoring function is added.
+
+The dashboard explicitly labels the four scheduled ChatGPT research agents as **separate tasks whose runtime statuses are not yet connected to this telemetry**. The page must not claim that agents are online or completed merely because the RSS collector succeeded. The Control Center frontend refreshes once a minute while open; statistics are only as recent as the last five-minute database snapshot. Actual page rendering on a physical device and the site's GitHub Pages availability still need verification. Research verification, public publication, and ChatGPT task history integrations are future work.
+
 ## Automated research feed monitor (November 10, 2026)
 
 Evidence Atlas has an unattended, database-scheduled **RSS lead collector**. Supabase `pg_cron` runs `atlas_monitor.dispatch_next()` every five minutes, rotating between seven configured feeds; `atlas_monitor.process_responses()` checks completed requests each minute. The private `atlas_monitor.feeds` and `atlas_monitor.runs` tables track requests and results. The first live RSS ingestion test saved three pending records.
