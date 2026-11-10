@@ -1,1 +1,1646 @@
-{"generated_on":"2026-11-10","note":"Initial published case-linked source snapshot, not exhaustive. Linkage does not prove a claim.","references":[{"case_id":1,"source_role":"cited_by_master_index","title":"Project MKULTRA, the CIA's Program of Research in Behavioral Modification","publisher":"U.S. Senate Select Committee on Intelligence","publication_date":"1977-08-03","url":"https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project","reference_code":"S1"},{"case_id":3,"source_role":"cited_by_master_index","title":"Project MKULTRA, the CIA's Program of Research in Behavioral Modification","publisher":"U.S. Senate Select Committee on Intelligence","publication_date":"1977-08-03","url":"https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project","reference_code":"S1"},{"case_id":5,"source_role":"cited_by_master_index","title":"Project MKULTRA, the CIA's Program of Research in Behavioral Modification","publisher":"U.S. Senate Select Committee on Intelligence","publication_date":"1977-08-03","url":"https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project","reference_code":"S1"},{"case_id":32,"source_role":"cited_by_master_index","title":"Project MKULTRA, the CIA's Program of Research in Behavioral Modification","publisher":"U.S. Senate Select Committee on Intelligence","publication_date":"1977-08-03","url":"https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project","reference_code":"S1"},{"case_id":35,"source_role":"cited_by_master_index","title":"Project MKULTRA, the CIA's Program of Research in Behavioral Modification","publisher":"U.S. Senate Select Committee on Intelligence","publication_date":"1977-08-03","url":"https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project","reference_code":"S1"}]}
+{
+  "generated_on": "2026-11-10",
+  "note": "Deduplicated case-to-source links from published cases and published sources.",
+  "references": [
+    {
+      "url": "https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project",
+      "title": "Project MKULTRA, the CIA's Program of Research in Behavioral Modification",
+      "case_id": 1,
+      "publisher": "U.S. Senate Select Committee on Intelligence",
+      "source_id": 1,
+      "source_role": "cited_by_master_index",
+      "reference_code": "S1",
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://nsarchive.gwu.edu/briefing-book/dnsa-intelligence/2024-12-23/cia-behavior-control-experiments-focus-new-scholarly",
+      "title": "CIA Behavior Control Experiments Focus of New Scholarly Collection",
+      "case_id": 1,
+      "publisher": "National Security Archive",
+      "source_id": 204,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2024-12-23"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 1,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project",
+      "title": "Project MKULTRA, the CIA's Program of Research in Behavioral Modification",
+      "case_id": 3,
+      "publisher": "U.S. Senate Select Committee on Intelligence",
+      "source_id": 1,
+      "source_role": "cited_by_master_index",
+      "reference_code": "S1",
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://nsarchive2.gwu.edu/NSAEBB/NSAEBB438/st02.pdf",
+      "title": "CIA memorandum for the record: Project ARTICHOKE",
+      "case_id": 3,
+      "publisher": "Central Intelligence Agency; National Security Archive mirror",
+      "source_id": 212,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1975-01-31"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 3,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://nsarchive2.gwu.edu/NSAEBB/NSAEBB438/st02.pdf",
+      "title": "CIA memorandum for the record: Project ARTICHOKE",
+      "case_id": 4,
+      "publisher": "Central Intelligence Agency; National Security Archive mirror",
+      "source_id": 212,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1975-01-31"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 4,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project",
+      "title": "Project MKULTRA, the CIA's Program of Research in Behavioral Modification",
+      "case_id": 5,
+      "publisher": "U.S. Senate Select Committee on Intelligence",
+      "source_id": 1,
+      "source_role": "cited_by_master_index",
+      "reference_code": "S1",
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 5,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 6,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/12",
+      "title": "Historical Background of the U.S. Biological Warfare Program",
+      "case_id": 9,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 269,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/2",
+      "title": "Toxicologic Assessment of Army Zinc Cadmium Sulfide Dispersion Tests: Summary",
+      "case_id": 9,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 270,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://openjurist.org/696/f2d/1229",
+      "title": "Nevin v. United States, 696 F.2d 1229",
+      "case_id": 10,
+      "publisher": "U.S. Court of Appeals for the Ninth Circuit; OpenJurist mirror",
+      "source_id": 215,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1983-01-17"
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/12",
+      "title": "Historical Background of the U.S. Biological Warfare Program",
+      "case_id": 10,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 269,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.govinfo.gov/content/pkg/GOVPUB-PR-PURL-gpo15717/pdf/GOVPUB-PR-PURL-gpo15717.pdf",
+      "title": "Ethically Impossible: STD Research in Guatemala from 1946 to 1948",
+      "case_id": 12,
+      "publisher": "Presidential Commission for the Study of Bioethical Issues",
+      "source_id": 252,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/summary.html",
+      "title": "ACHRE Final Report: Executive Summary",
+      "case_id": 13,
+      "publisher": "Advisory Committee on Human Radiation Experiments / DOE archive",
+      "source_id": 183,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://vault.fbi.gov/cointel-pro",
+      "title": "COINTELPRO records collection",
+      "case_id": 14,
+      "publisher": "FBI Vault",
+      "source_id": 225,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.archives.gov/research/african-americans/individuals/martin-luther-king",
+      "title": "Martin Luther King Jr. archival guide",
+      "case_id": 15,
+      "publisher": "National Archives and Records Administration",
+      "source_id": 231,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2020-10-05"
+    },
+    {
+      "url": "https://www.archives.gov/research/jfk/select-committee-report/part-2e.html",
+      "title": "Findings on MLK Assassination: performance of the FBI",
+      "case_id": 15,
+      "publisher": "House Select Committee on Assassinations / National Archives",
+      "source_id": 233,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://nsarchive2.gwu.edu/NSAEBB/NSAEBB222/top05.pdf",
+      "title": "CIA Family Jewels: special-program review",
+      "case_id": 16,
+      "publisher": "Central Intelligence Agency; National Security Archive mirror",
+      "source_id": 210,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1973-05-08"
+    },
+    {
+      "url": "https://nsarchive2.gwu.edu/NSAEBB/NSAEBB222/top09.pdf",
+      "title": "CIA Family Jewels: MHCHAOS reports",
+      "case_id": 16,
+      "publisher": "Central Intelligence Agency; National Security Archive mirror",
+      "source_id": 211,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://nsarchive2.gwu.edu/NSAEBB/NSAEBB441/",
+      "title": "Disreputable if Not Outright Illegal: NSA versus prominent Americans",
+      "case_id": 17,
+      "publisher": "National Security Archive",
+      "source_id": 213,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2013-09-25"
+    },
+    {
+      "url": "https://www.cia.gov/resources/csi/static/Recollections-Church-Committee-Investigation.pdf",
+      "title": "Unlucky SHAMROCK: Recollections from the Church Committee’s Investigation of NSA",
+      "case_id": 17,
+      "publisher": "L. Britt Snider / CIA Center for the Study of Intelligence",
+      "source_id": 241,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://nsarchive2.gwu.edu/NSAEBB/NSAEBB441/",
+      "title": "Disreputable if Not Outright Illegal: NSA versus prominent Americans",
+      "case_id": 18,
+      "publisher": "National Security Archive",
+      "source_id": 213,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2013-09-25"
+    },
+    {
+      "url": "https://www.cia.gov/resources/csi/static/Recollections-Church-Committee-Investigation.pdf",
+      "title": "Unlucky SHAMROCK: Recollections from the Church Committee’s Investigation of NSA",
+      "case_id": 18,
+      "publisher": "L. Britt Snider / CIA Center for the Study of Intelligence",
+      "source_id": 241,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://nsarchive2.gwu.edu/NSAEBB/NSAEBB222/family_jewels_pt1_ocr.pdf",
+      "title": "CIA Family Jewels: Project MOCKINGBIRD",
+      "case_id": 19,
+      "publisher": "Central Intelligence Agency; National Security Archive mirror",
+      "source_id": 209,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.cia.gov/resources/csi/static/studies-Unclass-Extracts-51-3-Sep-2007.pdf",
+      "title": "DCIs Colby and Helms Reflect on CIA’s Time of Troubles",
+      "case_id": 19,
+      "publisher": "CIA Center for the Study of Intelligence",
+      "source_id": 243,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://nsarchive2.gwu.edu/NSAEBB/NSAEBB222/family_jewels_pt1_ocr.pdf",
+      "title": "CIA Family Jewels: Project MOCKINGBIRD",
+      "case_id": 20,
+      "publisher": "Central Intelligence Agency; National Security Archive mirror",
+      "source_id": 209,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.cia.gov/resources/csi/static/studies-Unclass-Extracts-51-3-Sep-2007.pdf",
+      "title": "DCIs Colby and Helms Reflect on CIA’s Time of Troubles",
+      "case_id": 20,
+      "publisher": "CIA Center for the Study of Intelligence",
+      "source_id": 243,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://history.state.gov/historicaldocuments/frus1961-63v10/d314",
+      "title": "Guidelines for Operation Mongoose",
+      "case_id": 21,
+      "publisher": "U.S. Department of State, Office of the Historian",
+      "source_id": 191,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1962-03-14"
+    },
+    {
+      "url": "https://history.state.gov/historicaldocuments/frus1961-63v10/d314",
+      "title": "Guidelines for Operation Mongoose",
+      "case_id": 22,
+      "publisher": "U.S. Department of State, Office of the Historian",
+      "source_id": 191,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1962-03-14"
+    },
+    {
+      "url": "https://history.state.gov/historicaldocuments/frus1969-76v38p2/d52",
+      "title": "FRUS editorial note on the Church Committee assassination report",
+      "case_id": 23,
+      "publisher": "U.S. Department of State, Office of the Historian",
+      "source_id": 192,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-94chile.pdf",
+      "title": "Covert Action in Chile, 1963–1973",
+      "case_id": 23,
+      "publisher": "U.S. Senate Church Committee",
+      "source_id": 257,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1975-12-18"
+    },
+    {
+      "url": "https://history.state.gov//historicaldocuments/frus1951-54IranEd2/sources",
+      "title": "Sources for FRUS: Iran 1951–1954",
+      "case_id": 24,
+      "publisher": "U.S. Department of State, Office of the Historian",
+      "source_id": 189,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://history.state.gov/historicaldocuments/frus1952-54Guat/d65",
+      "title": "Program for PBSUCCESS: draft memorandum for the record",
+      "case_id": 25,
+      "publisher": "Central Intelligence Agency / U.S. Department of State, Office of the Historian",
+      "source_id": 190,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1953-11-12"
+    },
+    {
+      "url": "https://history.state.gov/historicaldocuments/frus1969-76v38p2/d52",
+      "title": "FRUS editorial note on the Church Committee assassination report",
+      "case_id": 26,
+      "publisher": "U.S. Department of State, Office of the Historian",
+      "source_id": 192,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-94chile.pdf",
+      "title": "Covert Action in Chile, 1963–1973",
+      "case_id": 26,
+      "publisher": "U.S. Senate Church Committee",
+      "source_id": 257,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1975-12-18"
+    },
+    {
+      "url": "https://www.archives.gov/iwg/declassified-records/rg-330-defense-secretary",
+      "title": "Records of the Secretary of Defense, RG 330",
+      "case_id": 27,
+      "publisher": "National Archives",
+      "source_id": 229,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2016-10-11"
+    },
+    {
+      "url": "https://www.archives.gov/iwg/reports/nazi-war-crimes-interim-report-october-1999",
+      "title": "Implementation of the Nazi War Crimes Disclosure Act: Interim Report",
+      "case_id": 27,
+      "publisher": "Nazi War Criminal Records Interagency Working Group / NARA",
+      "source_id": 230,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://irp.fas.org/offdocs/walsh/execsum.htm",
+      "title": "Final Report: Executive Summary",
+      "case_id": 28,
+      "publisher": "Independent Counsel Lawrence Walsh; FAS reproduction",
+      "source_id": 197,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1993-08-04"
+    },
+    {
+      "url": "https://www.archives.gov/research/investigations/walsh.html",
+      "title": "Records of Lawrence Walsh relating to Iran/Contra",
+      "case_id": 28,
+      "publisher": "National Archives",
+      "source_id": 232,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.reaganlibrary.gov/archives/speech/address-nation-iran-arms-and-contra-aid-controversy-and-administration-goals",
+      "title": "Address on Iran Arms, Contra Aid and Administration Goals",
+      "case_id": 28,
+      "publisher": "Ronald Reagan Presidential Library",
+      "source_id": 280,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1987-08-12"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/2014/12/09/press-committee-releases-study-cias-detention-and-interrogation-program/",
+      "title": "Committee Releases Study of CIA Detention and Interrogation Program",
+      "case_id": 30,
+      "publisher": "Senate Select Committee on Intelligence",
+      "source_id": 256,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2014-12-09"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-press-findings-and-conclusions.pdf",
+      "title": "Committee Study: Findings and Conclusions",
+      "case_id": 30,
+      "publisher": "Senate Select Committee on Intelligence",
+      "source_id": 259,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2014-12-09"
+    },
+    {
+      "url": "https://www.cia.gov/resources/csi/static/reflections-times-of-trouble.pdf",
+      "title": "Reflections of DCI Colby and Helms on the CIA’s Time of Troubles",
+      "case_id": 31,
+      "publisher": "CIA Center for the Study of Intelligence",
+      "source_id": 242,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project",
+      "title": "Project MKULTRA, the CIA's Program of Research in Behavioral Modification",
+      "case_id": 32,
+      "publisher": "U.S. Senate Select Committee on Intelligence",
+      "source_id": 1,
+      "source_role": "cited_by_master_index",
+      "reference_code": "S1",
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 32,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 33,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 34,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.prisonlegalnews.org/news/publications/human-drug-testing-by-the-cia-1977-hearings-before-us-senate/",
+      "title": "Human Drug Testing by the CIA: 1977 Senate hearings",
+      "case_id": 34,
+      "publisher": "U.S. Senate; hosted by Prison Legal News",
+      "source_id": 279,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project",
+      "title": "Project MKULTRA, the CIA's Program of Research in Behavioral Modification",
+      "case_id": 35,
+      "publisher": "U.S. Senate Select Committee on Intelligence",
+      "source_id": 1,
+      "source_role": "cited_by_master_index",
+      "reference_code": "S1",
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://nsarchive.gwu.edu/briefing-book/dnsa-intelligence/2025-10-30/top-secret-testimony-cias-mkultra-chief-50-years-later",
+      "title": "The Top Secret Testimony of CIA’s MKULTRA Chief, 50 Years Later",
+      "case_id": 35,
+      "publisher": "National Security Archive",
+      "source_id": 205,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2025-10-30"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 35,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 36,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.prisonlegalnews.org/news/publications/human-drug-testing-by-the-cia-1977-hearings-before-us-senate/",
+      "title": "Human Drug Testing by the CIA: 1977 Senate hearings",
+      "case_id": 36,
+      "publisher": "U.S. Senate; hosted by Prison Legal News",
+      "source_id": 279,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf",
+      "title": "Project MKULTRA: joint Senate hearing, 3 August 1977",
+      "case_id": 37,
+      "publisher": "U.S. Senate",
+      "source_id": 258,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1977-08-03"
+    },
+    {
+      "url": "https://www.prisonlegalnews.org/news/publications/human-drug-testing-by-the-cia-1977-hearings-before-us-senate/",
+      "title": "Human Drug Testing by the CIA: 1977 Senate hearings",
+      "case_id": 37,
+      "publisher": "U.S. Senate; hosted by Prison Legal News",
+      "source_id": 279,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/25065/chapter/2",
+      "title": "Review of Report and Approach to Evaluating Long-Term Health Effects in Army Test Subjects",
+      "case_id": 38,
+      "publisher": "National Academies",
+      "source_id": 268,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/2058/chapter/2",
+      "title": "Veterans at Risk: Executive Summary",
+      "case_id": 39,
+      "publisher": "Institute of Medicine",
+      "source_id": 267,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.health.mil/Military-Health-Topics/Environmental-Exposures-Hub/Environmental-Exposures-Topics/Project-112-SHAD/Fact-Sheets",
+      "title": "Project 112/SHAD Fact Sheets",
+      "case_id": 40,
+      "publisher": "Defense Health Agency",
+      "source_id": 253,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.health.mil/Military-Health-Topics/Environmental-Exposures-Hub/Environmental-Exposures-Topics/Project-112-SHAD/Fact-Sheets",
+      "title": "Project 112/SHAD Fact Sheets",
+      "case_id": 41,
+      "publisher": "Defense Health Agency",
+      "source_id": 253,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/2",
+      "title": "Toxicologic Assessment of Army Zinc Cadmium Sulfide Dispersion Tests: Summary",
+      "case_id": 42,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 270,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/3",
+      "title": "Toxicologic Assessment: Introduction",
+      "case_id": 42,
+      "publisher": "National Research Council",
+      "source_id": 271,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap5_5.html",
+      "title": "ACHRE Chapter 5: Conclusion",
+      "case_id": 43,
+      "publisher": "ACHRE / DOE archive",
+      "source_id": 177,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/summary.html",
+      "title": "ACHRE Final Report: Executive Summary",
+      "case_id": 43,
+      "publisher": "Advisory Committee on Human Radiation Experiments / DOE archive",
+      "source_id": 183,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap5_2.html",
+      "title": "ACHRE Chapter 5: The Manhattan District Experiments",
+      "case_id": 44,
+      "publisher": "ACHRE / DOE archive",
+      "source_id": 176,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap5_5.html",
+      "title": "ACHRE Chapter 5: Conclusion",
+      "case_id": 44,
+      "publisher": "ACHRE / DOE archive",
+      "source_id": 177,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap12_3.html",
+      "title": "ACHRE Chapter 12: The Marshallese",
+      "case_id": 45,
+      "publisher": "ACHRE / DOE archive",
+      "source_id": 173,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap12_5.html",
+      "title": "ACHRE Chapter 12: Conclusion",
+      "case_id": 45,
+      "publisher": "ACHRE / DOE archive",
+      "source_id": 174,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.govinfo.gov/content/pkg/GOVPUB-PR-PURL-gpo15717/pdf/GOVPUB-PR-PURL-gpo15717.pdf",
+      "title": "Ethically Impossible: STD Research in Guatemala from 1946 to 1948",
+      "case_id": 46,
+      "publisher": "Presidential Commission for the Study of Bioethical Issues",
+      "source_id": 252,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/19720327/",
+      "title": "The prisoner as model organism: malaria research at Stateville Penitentiary",
+      "case_id": 48,
+      "publisher": "Nathaniel Comfort; Studies in History and Philosophy of Biological and Biomedical Sciences / PubMed",
+      "source_id": 221,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://vault.fbi.gov/cointel-pro",
+      "title": "COINTELPRO records collection",
+      "case_id": 49,
+      "publisher": "FBI Vault",
+      "source_id": 225,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://vault.fbi.gov/cointel-pro/new-left",
+      "title": "COINTELPRO: New Left files",
+      "case_id": 49,
+      "publisher": "FBI Vault",
+      "source_id": 226,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.cia.gov/resources/csi/static/reflections-times-of-trouble.pdf",
+      "title": "Reflections of DCI Colby and Helms on the CIA’s Time of Troubles",
+      "case_id": 50,
+      "publisher": "CIA Center for the Study of Intelligence",
+      "source_id": 242,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.cia.gov/resources/csi/static/reflections-times-of-trouble.pdf",
+      "title": "Reflections of DCI Colby and Helms on the CIA’s Time of Troubles",
+      "case_id": 51,
+      "publisher": "CIA Center for the Study of Intelligence",
+      "source_id": 242,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://nsarchive.gwu.edu/briefing-book/cybervault-intelligence-nuclear-vault/2017-09-25/national-security-agency-tracking-us",
+      "title": "National Security Agency Tracking of U.S. Citizens – Questionable Practices from 1960s & 1970s",
+      "case_id": 52,
+      "publisher": "National Security Archive",
+      "source_id": 203,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2017-09-25"
+    },
+    {
+      "url": "https://nsarchive.gwu.edu/document/15655-document-08-u-s-senate-select-committee-study",
+      "title": "NSA Monitoring Issues Outline, 10 September 1975",
+      "case_id": 53,
+      "publisher": "U.S. Senate, hosted by National Security Archive",
+      "source_id": 207,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://nsarchive.gwu.edu/briefing-book/intelligence/2020-06-25/spying-americans-new-release-infamous-huston-plan",
+      "title": "Spying on Americans: Infamous 1970s White House Plan for Protest Surveillance Released",
+      "case_id": 54,
+      "publisher": "National Security Archive",
+      "source_id": 206,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2020-06-25"
+    },
+    {
+      "url": "https://nsarchive.gwu.edu/document/20430-national-security-archive-doc-08-white-house",
+      "title": "White House memorandum: Huston to Helms, Domestic Intelligence",
+      "case_id": 54,
+      "publisher": "White House, hosted by National Security Archive",
+      "source_id": 208,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1970-07-23"
+    },
+    {
+      "url": "https://www.fordlibrarymuseum.gov/sites/default/files/pdf_documents/library/document/0180/75573204.pdf",
+      "title": "Project MOCKINGBIRD: Telephone Tap of Newspaper Columnists",
+      "case_id": 55,
+      "publisher": "Gerald R. Ford Presidential Library / Rockefeller Commission files",
+      "source_id": 246,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://history.state.gov/historicaldocuments/frus1969-76v38p2/d52",
+      "title": "FRUS editorial note on the Church Committee assassination report",
+      "case_id": 57,
+      "publisher": "U.S. Department of State, Office of the Historian",
+      "source_id": 192,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.fordlibrarymuseum.gov/sites/default/files/pdf_documents/library/document/0180/75573204.pdf",
+      "title": "Project MOCKINGBIRD: Telephone Tap of Newspaper Columnists",
+      "case_id": 60,
+      "publisher": "Gerald R. Ford Presidential Library / Rockefeller Commission files",
+      "source_id": 246,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://documents.theblackvault.com/documents/biological/bigitch.pdf",
+      "title": "BW-I-55: Operation Big Itch",
+      "case_id": 62,
+      "publisher": "U.S. Army Dugway Proving Ground, hosted by The Black Vault",
+      "source_id": 170,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1954-11-17"
+    },
+    {
+      "url": "https://fowlchicago.wordpress.com/wp-content/uploads/2020/06/an-evaluation-of-entomological-warfare-as-a-potential-danger-to-the-united-states-and-european-nato-nations-by-william-h-rose.pdf",
+      "title": "An Evaluation of Entomological Warfare as a Potential Danger to the United States and European NATO Nations",
+      "case_id": 62,
+      "publisher": "U.S. Army Dugway Proving Ground; hosted copy",
+      "source_id": 188,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://fowlchicago.wordpress.com/wp-content/uploads/2020/06/an-evaluation-of-entomological-warfare-as-a-potential-danger-to-the-united-states-and-european-nato-nations-by-william-h-rose.pdf",
+      "title": "An Evaluation of Entomological Warfare as a Potential Danger to the United States and European NATO Nations",
+      "case_id": 63,
+      "publisher": "U.S. Army Dugway Proving Ground; hosted copy",
+      "source_id": 188,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://fowlchicago.wordpress.com/wp-content/uploads/2020/06/an-evaluation-of-entomological-warfare-as-a-potential-danger-to-the-united-states-and-european-nato-nations-by-william-h-rose.pdf",
+      "title": "An Evaluation of Entomological Warfare as a Potential Danger to the United States and European NATO Nations",
+      "case_id": 64,
+      "publisher": "U.S. Army Dugway Proving Ground; hosted copy",
+      "source_id": 188,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/7",
+      "title": "Toxicologic Assessment of the Army’s Zinc Cadmium Sulfide Dispersion Tests: Exposure Assessment",
+      "case_id": 65,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 273,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/12",
+      "title": "Historical Background of the U.S. Biological Warfare Program",
+      "case_id": 67,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 269,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/3",
+      "title": "Toxicologic Assessment: Introduction",
+      "case_id": 68,
+      "publisher": "National Research Council",
+      "source_id": 271,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/4",
+      "title": "Toxicologic Assessment of the Army’s Zinc Cadmium Sulfide Dispersion Tests: Input From the Public",
+      "case_id": 69,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 272,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/2",
+      "title": "Toxicologic Assessment of Army Zinc Cadmium Sulfide Dispersion Tests: Summary",
+      "case_id": 70,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 270,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/7",
+      "title": "Toxicologic Assessment of the Army’s Zinc Cadmium Sulfide Dispersion Tests: Exposure Assessment",
+      "case_id": 71,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 273,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.nationalacademies.org/read/5739/chapter/8",
+      "title": "Toxicologic Assessment of the Army’s Zinc Cadmium Sulfide Dispersion Tests: Risk Characterization",
+      "case_id": 71,
+      "publisher": "National Research Council / National Academies Press",
+      "source_id": 274,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap11_2.html",
+      "title": "ACHRE Final Report: Intentional Releases: What We Now Know",
+      "case_id": 72,
+      "publisher": "Advisory Committee on Human Radiation Experiments / U.S. Department of Energy",
+      "source_id": 172,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap13_3.html",
+      "title": "ACHRE Final Report: The Practice of Secrecy: Project Sunshine",
+      "case_id": 73,
+      "publisher": "Advisory Committee on Human Radiation Experiments / U.S. Department of Energy",
+      "source_id": 175,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap7_5.html",
+      "title": "ACHRE Final Report: The Studies at the Fernald School",
+      "case_id": 74,
+      "publisher": "Advisory Committee on Human Radiation Experiments / U.S. Department of Energy",
+      "source_id": 178,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap7_6.html",
+      "title": "ACHRE Final Report: Conclusion: Pregnancy Studies and Vanderbilt",
+      "case_id": 75,
+      "publisher": "Advisory Committee on Human Radiation Experiments / U.S. Department of Energy",
+      "source_id": 179,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/roadmap/part3.html",
+      "title": "DOE Roadmap: Iron Metabolism in Human Pregnancy as Studied With Radioactive Isotope Iron-59",
+      "case_id": 75,
+      "publisher": "U.S. Department of Energy",
+      "source_id": 184,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap8_5.html",
+      "title": "ACHRE Final Report: Postwar TBI-Effects Experimentation: University of Cincinnati",
+      "case_id": 76,
+      "publisher": "Advisory Committee on Human Radiation Experiments / U.S. Department of Energy",
+      "source_id": 180,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap9_2.html",
+      "title": "ACHRE Chapter 9: Oregon and Washington Experiments",
+      "case_id": 77,
+      "publisher": "Advisory Committee on Human Radiation Experiments / DOE",
+      "source_id": 181,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://ehss.energy.gov/ohre/roadmap/achre/chap9_5.html",
+      "title": "ACHRE Chapter 9: Ethical Considerations",
+      "case_id": 77,
+      "publisher": "ACHRE / DOE",
+      "source_id": 182,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.cceb.upenn.edu/evpdeancommunications/2021-08-20-283.html",
+      "title": "Statement on Penn Medicine’s Recognition of the Legacy of Albert Kligman",
+      "case_id": 78,
+      "publisher": "University of Pennsylvania / Penn Medicine",
+      "source_id": 239,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2021-08-20"
+    },
+    {
+      "url": "https://www.phila.gov/2022-10-06-city-issues-formal-apology-for-experiments-conducted-at-holmesburg-prison-decades-ago/",
+      "title": "City Issues Formal Apology for Experiments Conducted at Holmesburg Prison Decades Ago",
+      "case_id": 78,
+      "publisher": "City of Philadelphia",
+      "source_id": 277,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2022-10-06"
+    },
+    {
+      "url": "https://ori.hhs.gov/education/products/columbia_wbt/rcr_conflicts/foundation/sideBar_willowbrook.html",
+      "title": "Willowbrook Hepatitis Study",
+      "case_id": 79,
+      "publisher": "HHS Office of Research Integrity, Columbia teaching resource",
+      "source_id": 216,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://law.justia.com/cases/federal/district-courts/district-of-columbia/dcdce/1:2023cv02516/259165/37/",
+      "title": "Eban v. U.S. Department of Defense, Document 37",
+      "case_id": 80,
+      "publisher": "U.S. District Court for D.C. / Justia",
+      "source_id": 199,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2025-09-29"
+    },
+    {
+      "url": "https://historytogo.utah.gov/post/chemical-weapons-testing/",
+      "title": "Chemical Weapons Testing Created Controversy at Dugway",
+      "case_id": 81,
+      "publisher": "Utah History to Go",
+      "source_id": 193,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://mwi.westpoint.edu/killed-dugway-sheep-matters-fifty-years-later/",
+      "title": "Who Killed the Dugway Sheep? Why It Matters Fifty Years Later",
+      "case_id": 81,
+      "publisher": "Modern War Institute, West Point",
+      "source_id": 201,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://legal.un.org/unjuridicalyearbook/pdfs/english/by_chapter/chpIII/1986/chpIII.pdf",
+      "title": "United Nations Juridical Yearbook 1986, Chapter III",
+      "case_id": 89,
+      "publisher": "United Nations",
+      "source_id": 200,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://oig.justice.gov/sites/default/files/archive/special/9712/ch01p1.htm",
+      "title": "CIA-Contra-Crack Cocaine Controversy: Chapter I",
+      "case_id": 90,
+      "publisher": "DOJ Office of the Inspector General",
+      "source_id": 214,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://oig.justice.gov/sites/default/files/archive/special/9712/ch01p1.htm",
+      "title": "CIA-Contra-Crack Cocaine Controversy: Chapter I",
+      "case_id": 97,
+      "publisher": "DOJ Office of the Inspector General",
+      "source_id": 214,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://archive.org/stream/InslawAffairInvestigativeReport/TheInslawAffair_djvu.txt",
+      "title": "The INSLAW Affair, House Report 102-857",
+      "case_id": 98,
+      "publisher": "U.S. House Judiciary Committee / Internet Archive",
+      "source_id": 166,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://archive.org/stream/InslawAffairInvestigativeReport/TheInslawAffair_djvu.txt",
+      "title": "The INSLAW Affair, House Report 102-857",
+      "case_id": 99,
+      "publisher": "U.S. House Judiciary Committee / Internet Archive",
+      "source_id": 166,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://archive.org/stream/OctoberSurpriseArchive/Joint%20Report%20of%20the%20October%20Surprise%20Task%20Force_djvu.txt",
+      "title": "Joint Report of the October Surprise Task Force",
+      "case_id": 101,
+      "publisher": "U.S. House of Representatives / Internet Archive",
+      "source_id": 167,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1993-01-03"
+    },
+    {
+      "url": "https://assets.publishing.service.gov.uk/media/5a8055c340f0b62302692e48/The-Litvinenko-Inquiry-H-C-695-web.pdf",
+      "title": "The Litvinenko Inquiry",
+      "case_id": 102,
+      "publisher": "UK Home Office / Sir Robert Owen",
+      "source_id": 168,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2016-01-21"
+    },
+    {
+      "url": "https://hudoc.echr.coe.int/app/conversion/pdf/?filename=Judgment+Carter+v.+Russia+-+Russia+was+responsible+for+assassination+of+Aleksandr+Litvinenko+in+the+UK.pdf&id=003-7125276-9653243&library=ECHR",
+      "title": "Carter v. Russia: Registry summary",
+      "case_id": 102,
+      "publisher": "European Court of Human Rights",
+      "source_id": 194,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2021-09-21"
+    },
+    {
+      "url": "https://ehrac.org.uk/en_gb/key-ehrac-cases/magnitsky-others-v-russia/",
+      "title": "Magnitsky & others v Russia",
+      "case_id": 103,
+      "publisher": "European Human Rights Advocacy Centre",
+      "source_id": 171,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://news.sky.com/story/gareth-williams-review-into-death-of-mi6-worker-found-in-bag-reveals-no-new-evidence-13064660",
+      "title": "Review into death of MI6 worker found in bag reveals no new evidence",
+      "case_id": 105,
+      "publisher": "Sky News",
+      "source_id": 202,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2024-02-05"
+    },
+    {
+      "url": "https://www.law.berkeley.edu/experiential/clinics/human-rights-clinic/projects-and-cases/featured-reports-and-projects/the-giei-honduras-report-on-the-murder-of-berta-caceres/",
+      "title": "The GIEI Honduras Report on the Murder of Berta Cáceres",
+      "case_id": 107,
+      "publisher": "UC Berkeley Law",
+      "source_id": 266,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.oas.org/en/iachr/jsForm/?File=/en/iachr/media_center/preleases/2026/006.asp",
+      "title": "GIEI Honduras issues final report on the murder of Berta Cáceres",
+      "case_id": 107,
+      "publisher": "Inter-American Commission on Human Rights",
+      "source_id": 275,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2026-01-12"
+    },
+    {
+      "url": "https://www.thenationalnews.com/world/the-americas/shell-settles-lawsuit-over-executions-1.489291",
+      "title": "Shell settles lawsuit over executions",
+      "case_id": 108,
+      "publisher": "The National",
+      "source_id": 283,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2009-06-10"
+    },
+    {
+      "url": "https://www.charlestoncounty.gov/news/2024/4852-charleston-county-coroner-concludes-investigation-releases-report-on-death-of-john-barnett.pdf?v=695",
+      "title": "Coroner Concludes Investigation, Releases Report on Death of John Barnett",
+      "case_id": 109,
+      "publisher": "Charleston County Coroner",
+      "source_id": 240,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2024-05-17"
+    },
+    {
+      "url": "https://www.kiro7.com/news/local/family-boeing-whistleblower-settles-lawsuit-with-aircraft-maker-over-his-death/UUZIBCBOU5E3LEHDZCDL33HSQU/?outputType=amp",
+      "title": "Family of Boeing whistleblower settles lawsuit with aircraft maker over his death",
+      "case_id": 109,
+      "publisher": "Associated Press via KIRO 7",
+      "source_id": 265,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2025-05-13"
+    },
+    {
+      "url": "https://www.wmbfnews.com/2024/05/17/charleston-police-release-investigation-report-boeing-whistleblower-death/",
+      "title": "Attorneys release statement on investigation report in Boeing whistleblower’s death",
+      "case_id": 109,
+      "publisher": "WCSC via WMBF News",
+      "source_id": 284,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2024-05-17"
+    },
+    {
+      "url": "https://www.autopsyfiles.org/reports/Other/hastings,%20michael_report.pdf",
+      "title": "Michael Hastings autopsy report, case 2013-04353",
+      "case_id": 111,
+      "publisher": "Los Angeles County Department of Coroner; copy hosted by Autopsyfiles.org",
+      "source_id": 235,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2013-08-16"
+    },
+    {
+      "url": "https://en.wikisource.org/wiki/Page:Report_On_The_Investigation_Into_Russian_Interference_In_The_2016_Presidential_Election.pdf/54",
+      "title": "Mueller report: reproduced page 54",
+      "case_id": 112,
+      "publisher": "US Department of Justice; scan reproduced by Wikisource",
+      "source_id": 186,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2019-04-18"
+    },
+    {
+      "url": "https://www.investing.com/news/world-news/french-modelling-agent-who-founded-agency-with-epstein-dies-in-custody-2767773",
+      "title": "French modelling agent who founded agency with Epstein dies in custody",
+      "case_id": 114,
+      "publisher": "Reuters via Investing.com",
+      "source_id": 260,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2022-02-19"
+    },
+    {
+      "url": "https://www.investing.com/news/world-news/jeffrey-epstein-accuser-virginia-giuffre-dies-by-suicide-her-family-says-4005565",
+      "title": "Jeffrey Epstein accuser Virginia Giuffre dies by suicide, her family says",
+      "case_id": 115,
+      "publisher": "Reuters via Investing.com",
+      "source_id": 262,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2025-04-26"
+    },
+    {
+      "url": "https://www.investing.com/news/world-news/french-modelling-scout-linked-to-epstein-found-dead-4806065",
+      "title": "French modelling scout linked to Epstein found dead",
+      "case_id": 116,
+      "publisher": "Reuters via Investing.com",
+      "source_id": 261,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2026-07-22"
+    },
+    {
+      "url": "https://www.investing.com/news/world-news/no-sign-of-violence-in-death-of-epsteinlinked-french-modelling-scout-prosecutors-day-4812038",
+      "title": "No sign of violence in death of Epstein-linked French modelling scout, prosecutors say",
+      "case_id": 116,
+      "publisher": "Reuters via Investing.com",
+      "source_id": 263,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2026-07-24"
+    },
+    {
+      "url": "https://patents.google.com/patent/US4936961A/en",
+      "title": "US4936961A: Method for the production of a fuel gas",
+      "case_id": 117,
+      "publisher": "US patent record via Google Patents",
+      "source_id": 218,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1990-06-26"
+    },
+    {
+      "url": "https://politifact.com/factchecks/2021/jun/03/facebook-posts/no-stanley-meyer-was-not-assassinated-pentagon/",
+      "title": "No, Stanley Meyer was not assassinated by the Pentagon",
+      "case_id": 117,
+      "publisher": "PolitiFact",
+      "source_id": 220,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2021-06-03"
+    },
+    {
+      "url": "https://jud.ct.gov/external/supapp/Cases/AROap/AP230/AP230.93.pdf",
+      "title": "Brown v. Commissioner of Correction, AC 46658",
+      "case_id": 118,
+      "publisher": "Connecticut Appellate Court",
+      "source_id": 198,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2025-01-28"
+    },
+    {
+      "url": "https://www.pressherald.com/2015/01/07/man-convicted-of-killing-physicist-gets-58-years-in-prison/",
+      "title": "Man convicted of killing physicist gets 58 years in prison",
+      "case_id": 118,
+      "publisher": "Associated Press via Portland Press Herald",
+      "source_id": 278,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2015-01-07"
+    },
+    {
+      "url": "https://patents.google.com/patent/US4177779A/en",
+      "title": "US4177779A: Fuel economy system for an internal combustion engine",
+      "case_id": 120,
+      "publisher": "US patent record via Google Patents",
+      "source_id": 217,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1979-12-11"
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4624276/",
+      "title": "Radiofrequency Heating Pathways for Gold Nanoparticles",
+      "case_id": 121,
+      "publisher": "Nanoscale / Royal Society of Chemistry",
+      "source_id": 219,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2014-08-07"
+    },
+    {
+      "url": "https://www.arrl.org/news/john-kanzius-k3tup-sk",
+      "title": "John Kanzius, K3TUP (SK)",
+      "case_id": 121,
+      "publisher": "American Radio Relay League",
+      "source_id": 234,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2009-02-23"
+    },
+    {
+      "url": "https://www.capecoralbreeze.com/news/local-news/2009/02/21/cancer-treatment-innovator-dies/",
+      "title": "Cancer treatment innovator dies",
+      "case_id": 121,
+      "publisher": "Cape Coral Breeze",
+      "source_id": 238,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2009-02-21"
+    },
+    {
+      "url": "https://pubmed.ncbi.nlm.nih.gov/19907043/",
+      "title": "Outcome reporting in industry-sponsored trials of gabapentin for off-label use",
+      "case_id": 124,
+      "publisher": "Vedula et al., New England Journal of Medicine",
+      "source_id": 222,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2009-11-12"
+    },
+    {
+      "url": "https://www.pfizer.com/news/press-release/press-release-detail/pharmacia_subsidiaries_reach_34_7_million_settlement_with_doj_resolve_allegations_of_improper_activities_prior_to_acquisition_by_pfizer",
+      "title": "Pharmacia subsidiaries reach $34.7 million settlement with DOJ",
+      "case_id": 125,
+      "publisher": "Pfizer",
+      "source_id": 276,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2007-04-02"
+    },
+    {
+      "url": "https://www.amnesty.org/en/wp-content/uploads/2024/04/AMR190361990ENGLISH.pdf",
+      "title": "Chico Mendes: Two Years After",
+      "case_id": 127,
+      "publisher": "Amnesty International",
+      "source_id": 227,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "1990-12-21"
+    },
+    {
+      "url": "https://www.gov.br/icmbio/pt-br/acesso-a-informacao/institucional/quem-foi-chico-mendes",
+      "title": "Quem foi Chico Mendes?",
+      "case_id": 127,
+      "publisher": "ICMBio, Government of Brazil",
+      "source_id": 248,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.stj.jus.br/sites/portalp/Paginas/Comunicacao/Noticias-antigas/2017/2017-05-26_21-31_Ministro-mantem-juri-e-aplica-jurisprudencia-para-recalcular-pena-no-caso-Dorothy-Stang.aspx",
+      "title": "Ministro mantém júri e aplica jurisprudência para recalcular pena no caso Dorothy Stang",
+      "case_id": 128,
+      "publisher": "Superior Tribunal de Justiça",
+      "source_id": 282,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2017-05-26"
+    },
+    {
+      "url": "https://elperuano.pe/noticia/277586-caso-saweto-ratifican-condena-de-28-anos-para-madereros-que-asesinaron-a-lideres-indigenas",
+      "title": "Caso Saweto: ratifican condena de 28 años para madereros que asesinaron a líderes indígenas",
+      "case_id": 129,
+      "publisher": "Diario Oficial El Peruano",
+      "source_id": 185,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2025-08-26"
+    },
+    {
+      "url": "https://www.idl.org.pe/caso-saweto-confirman-sentencia-de-28-anos-y-3-meses-de-carcel-contra-asesinos-de-los-lideres-indigenas/",
+      "title": "Caso Saweto: confirman sentencia contra asesinos de líderes indígenas",
+      "case_id": 129,
+      "publisher": "Instituto de Defensa Legal",
+      "source_id": 255,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2025-08-26"
+    },
+    {
+      "url": "https://cptnacional.org.br/2016/12/12/ze-claudio-e-maria-justica-historica/",
+      "title": "Zé Claudio e Maria: justiça histórica",
+      "case_id": 130,
+      "publisher": "Comissão Pastoral da Terra / Felipe Milanez",
+      "source_id": 169,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2016-12-12"
+    },
+    {
+      "url": "https://www.goldmanprize.org/recipient/isidro-baldenegro/",
+      "title": "Isidro Baldenegro",
+      "case_id": 131,
+      "publisher": "Goldman Environmental Prize",
+      "source_id": 247,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.amnestyusa.org/victories/urgent-action-victory-killing-of-samir-flores-under-investigation-mexico-ua-24-19/",
+      "title": "Killing of Samir Flores under investigation",
+      "case_id": 132,
+      "publisher": "Amnesty International USA",
+      "source_id": 228,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": null
+    },
+    {
+      "url": "https://www.jornada.com.mx/2026/03/15/estados/020n1est",
+      "title": "Absuelve juez a único detenido por el crimen del activista Samir Flores",
+      "case_id": 132,
+      "publisher": "La Jornada",
+      "source_id": 264,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2026-03-15"
+    },
+    {
+      "url": "https://apnews.com/article/64c5e0e4481825191f2266aa0e46935c",
+      "title": "Honduras arrests powerful ex-mayor accused of masterminding killing of environmental defender",
+      "case_id": 134,
+      "publisher": "Associated Press",
+      "source_id": 165,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2026-05-12"
+    },
+    {
+      "url": "https://hudoc.echr.coe.int/app/conversion/pdf/?filename=Judgment+Mazepa+and+Others+v.+Russia+-+investigation+into+the+murder+of+Anna+Politkovskaya.pdf&id=003-6147957-7951870&library=ECHR",
+      "title": "Investigation of journalist Anna Politkovskaya’s murder failed to look properly into who commissioned the crime",
+      "case_id": 135,
+      "publisher": "European Court of Human Rights",
+      "source_id": 195,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2018-07-17"
+    },
+    {
+      "url": "https://hudoc.echr.coe.int/app/conversion/pdf/?filename=Judgment+Nemtsova+v.+Russia+-+Investigation+into+Nemtsov+assassination+inadequate.pdf&id=003-7701602-10631160&library=ECHR",
+      "title": "Investigation into Nemtsov assassination inadequate",
+      "case_id": 136,
+      "publisher": "European Court of Human Rights",
+      "source_id": 196,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2023-07-11"
+    },
+    {
+      "url": "https://www.berlin.de/gerichte/presse/pressemitteilungen-der-ordentlichen-gerichtsbarkeit/2021/pressemitteilung.1157896.php",
+      "title": "Kammergericht verurteilt russischen Staatsbürger wegen politisch motivierten Mordes",
+      "case_id": 137,
+      "publisher": "Berlin judiciary",
+      "source_id": 236,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2021-12-15"
+    },
+    {
+      "url": "https://www.berlin.de/gerichte/presse/pressemitteilungen-der-ordentlichen-gerichtsbarkeit/2021/pressemitteilung.1161570.php",
+      "title": "Urteil zum Tiergartenmord rechtskräftig",
+      "case_id": 137,
+      "publisher": "Berlin judiciary",
+      "source_id": 237,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2021-12-27"
+    },
+    {
+      "url": "https://www.doughtystreet.co.uk/news/inquest-alexander-perepilichnyys-death-concludes",
+      "title": "Inquest into Alexander Perepilichnyy’s death concludes",
+      "case_id": 138,
+      "publisher": "Doughty Street Chambers",
+      "source_id": 244,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2018-12-20"
+    },
+    {
+      "url": "https://www.rferl.org/amp/russian-businessman-perepilichny-likely-died-of-natural-causes-u-k-inquest-finds/29665636.html",
+      "title": "Russian businessman Perepilichny likely died of natural causes",
+      "case_id": 138,
+      "publisher": "RFE/RL",
+      "source_id": 281,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2018-12-20"
+    },
+    {
+      "url": "https://theshiftnews.com/2026/09/22/prosecution-formally-asks-for-yorgen-fenechs-retrial/",
+      "title": "Prosecution formally asks for Yorgen Fenech’s retrial",
+      "case_id": 139,
+      "publisher": "The Shift News",
+      "source_id": 224,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2026-09-22"
+    },
+    {
+      "url": "https://www.gov.mt/en/Government/DOI/Press%20Releases/Documents/pr211432a.pdf",
+      "title": "Rapport tal-Inkjesta Pubblika: Daphne Caruana Galizia",
+      "case_id": 139,
+      "publisher": "Malta public inquiry",
+      "source_id": 249,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2021-07-29"
+    },
+    {
+      "url": "https://www.icij.org/news/2026/09/jury-acquits-maltese-business-tycoon-in-the-murder-of-daphne-caruana-galizia/",
+      "title": "Jury acquits Maltese business tycoon in the murder of Daphne Caruana Galizia",
+      "case_id": 139,
+      "publisher": "International Consortium of Investigative Journalists",
+      "source_id": 254,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2026-09-02"
+    },
+    {
+      "url": "https://www.gov.uk/government/news/joint-statement-by-the-uk-sweden-france-germany-and-the-netherlands-on-alexei-navalnys-death",
+      "title": "Joint statement on Alexei Navalny’s death",
+      "case_id": 140,
+      "publisher": "UK, Sweden, France, Germany and Netherlands foreign ministries",
+      "source_id": 250,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2026-02-14"
+    },
+    {
+      "url": "https://www.gov.uk/government/news/uk-confirmsrussia-poisoned-navalny-in-prison-with-rare-toxin",
+      "title": "UK confirms Russia poisoned Navalny in prison with rare toxin",
+      "case_id": 140,
+      "publisher": "UK Foreign, Commonwealth & Development Office",
+      "source_id": 251,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2026-02-14"
+    },
+    {
+      "url": "https://en.wikisource.org/wiki/Report_of_the_Review_of_Low_Energy_Nuclear_Reactions",
+      "title": "Report of the Review of Low Energy Nuclear Reactions",
+      "case_id": 141,
+      "publisher": "U.S. Department of Energy, Office of Science; validated Wikisource transcription",
+      "source_id": 187,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2004-12-01"
+    },
+    {
+      "url": "https://science.osti.gov/-/media/fes/fesac/pdf/2004/Fesac_davies_july_2004.pdf",
+      "title": "Fusion Energy Sciences Program Update",
+      "case_id": 141,
+      "publisher": "U.S. Department of Energy, N. Anne Davies",
+      "source_id": 223,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2004-07-26"
+    },
+    {
+      "url": "https://www.energy.gov/nepa/articles/cx-027838-exploratory-topics-low-energy-nuclear-reactions-lenr-program-foa-no-de-foa",
+      "title": "CX-027838: Exploratory Topics: Low-Energy Nuclear Reactions Program",
+      "case_id": 141,
+      "publisher": "U.S. Department of Energy",
+      "source_id": 245,
+      "source_role": "Annotated research reference",
+      "reference_code": null,
+      "publication_date": "2023-04-21"
+    }
+  ]
+}
