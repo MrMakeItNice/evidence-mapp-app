@@ -10,6 +10,16 @@ A source-grounded research workspace for case files, claims, source references, 
 
 GitHub Pages is the browser-facing host. Supabase Edge Functions serve JSON APIs and retain a synchronized HTML copy; Supabase gateway headers can prevent rendering HTML directly, so use the primary browser address.
 
+## Automated research feed monitor (November 10, 2026)
+
+Evidence Atlas has an unattended, database-scheduled **RSS lead collector**. Supabase `pg_cron` runs `atlas_monitor.dispatch_next()` every five minutes, rotating between seven configured feeds; `atlas_monitor.process_responses()` checks completed requests each minute. The private `atlas_monitor.feeds` and `atlas_monitor.runs` tables track requests and results. The first live RSS ingestion test saved three pending records.
+
+Current feeds: Epstein Files (Google News search), COVID-19 research (Google News search), Palestine/Gaza humanitarian reporting (Google News search), BBC World, BBC government/politics, BBC health, and Positive News. Rotation means any individual feed is checked roughly every 35 minutes under normal conditions, not continuously. Provider outages, access restrictions, and rate limits may delay updates.
+
+**What this collector actually does:** Fetches publicly available RSS headlines, source links and feed attribution; deduplicates source URLs; limits new entries per feed; and saves them as private `public.news_items` records with `review_status=pending`, `assessment=unassessed`, and `origin=daily_monitor`. It does **not** scrape full articles, independently verify reported claims, automatically publish to the public website, alter evidence ratings, or assert connections between cases. Google News links may redirect; feed timestamps are not necessarily the original story publication time.
+
+The separate hourly **Evidence Atlas 24/7 Research** ChatGPT automation can perform deeper source analysis, but is not the same as this five-minute RSS collector. The three other existing research automations retain their prior schedules. To inspect operation, query `cron.job`, `cron.job_run_details`, and `atlas_monitor.runs` in the owner-only database. Existing Research Watch and News & Information screens remain the editorial review path. Service costs and provider quotas should be monitored before increasing frequency or feed count.
+
 ## Website addresses and Edge Function limitation
 
 **Current release:** v1.9.0 (About / README for the public reader and owner workspace, including mission, walkthrough, editorial evidence standards, privacy/security overview, contact route and release history).
