@@ -10,15 +10,16 @@ A source-grounded research workspace for case files, claims, source references, 
 
 GitHub Pages is the browser-facing host. Supabase Edge Functions serve JSON APIs and retain a synchronized HTML copy; Supabase gateway headers can prevent rendering HTML directly, so use the primary browser address.
 
-## Supabase service routes
+## Website addresses and Edge Function limitation
 
-**Current release:** v1.9.0 (About / README for the public reader and the owner workspace, including mission, walkthrough, editorial evidence standards, privacy/security overview, contact route and release history).
+**Current release:** v1.9.0 (About / README for the public reader and owner workspace, including mission, walkthrough, editorial evidence standards, privacy/security overview, contact route and release history).
 
-**Open public reader:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas
+- **Public website:** https://mrmakeitnice.github.io/evidence-mapp-app/
+- **About / README:** https://mrmakeitnice.github.io/evidence-mapp-app/discover.html#about
+- **Private researcher workspace:** https://mrmakeitnice.github.io/evidence-mapp-app/index.html?workspace=1
+- **GitHub Pages setup (if the links return 404):** https://github.com/MrMakeItNice/evidence-mapp-app/settings/pages — select **Deploy from a branch**, **main**, **/(root)**, then Save.
 
-**Open owner workspace:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas?workspace=1
-
-**Read the new About / README:** https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas#about
+**Do not use** `https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas` as the browser website. Supabase's Edge Function gateway can present an HTML response as `text/plain`, causing visitors to see HTML/code instead of the rendered application. The Edge Functions should be used for back-end API endpoints; GitHub Pages is the intended static web host. This does not affect the database or scheduled research tasks.
 
 The public reader presents available published educational summaries without a login. The separate owner workspace requires an authorized Supabase Auth account; research drafts and private records remain protected by database row-level security (RLS). The public reader and owner workspace can be reached through one Edge Function using the links above. GitHub Pages also hosts the static reader and workspace files when its deployment is configured.
 
