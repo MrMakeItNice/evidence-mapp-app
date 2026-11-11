@@ -1,6 +1,6 @@
 {
   "generated_on": "2026-11-10",
-  "note": "Deduplicated case-to-source links from published cases and published sources.",
+  "note": "Case-to-source links from the published register and public citations checked for Paper Trails.",
   "references": [
     {
       "url": "https://www.intelligence.senate.gov/hearings/joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project",
@@ -113,6 +113,26 @@
       "publication_date": "1977-08-03"
     },
     {
+      "case_id": 7,
+      "source_id": 18,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. Department of Veterans Affairs, Edgewood/Aberdeen chemical-agent exposure studies",
+      "publisher": "U.S. Department of Veterans Affairs",
+      "publication_date": null,
+      "url": "https://www.publichealth.va.gov/exposures/edgewood-aberdeen/index.asp",
+      "reference_code": "S5"
+    },
+    {
+      "case_id": 8,
+      "source_id": 20,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. Department of Veterans Affairs, Project 112 / SHAD",
+      "publisher": "U.S. Department of Veterans Affairs",
+      "publication_date": null,
+      "url": "https://www.publichealth.va.gov/exposures/shad/basics.asp",
+      "reference_code": "S7"
+    },
+    {
       "url": "https://www.nationalacademies.org/read/5739/chapter/12",
       "title": "Historical Background of the U.S. Biological Warfare Program",
       "case_id": 9,
@@ -151,6 +171,26 @@
       "source_role": "Annotated research reference",
       "reference_code": null,
       "publication_date": null
+    },
+    {
+      "case_id": 11,
+      "source_id": 8,
+      "source_role": "reviewed_public_citation",
+      "title": "CDC, U.S. Public Health Service Untreated Syphilis Study at Tuskegee timeline",
+      "publisher": "CDC",
+      "publication_date": null,
+      "url": "https://www.cdc.gov/tuskegee/about/timeline.html",
+      "reference_code": "S9"
+    },
+    {
+      "case_id": 11,
+      "source_id": 60,
+      "source_role": "reviewed_public_citation",
+      "title": "Washington Post, Peter Buxtun obituary, July 16, 2024",
+      "publisher": "The Washington Post",
+      "publication_date": "2024-07-16",
+      "url": "https://www.washingtonpost.com/obituaries/2024/07/16/peter-buxtun-dead-tuskegee-syphilis/",
+      "reference_code": "S43"
     },
     {
       "url": "https://www.govinfo.gov/content/pkg/GOVPUB-PR-PURL-gpo15717/pdf/GOVPUB-PR-PURL-gpo15717.pdf",
@@ -433,6 +473,26 @@
       "publication_date": "1987-08-12"
     },
     {
+      "case_id": 29,
+      "source_id": 34,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. National Archives, Pentagon Papers resources",
+      "publisher": "U.S. National Archives",
+      "publication_date": null,
+      "url": "https://www.archives.gov/research/pentagon-papers",
+      "reference_code": "S28"
+    },
+    {
+      "case_id": 29,
+      "source_id": 59,
+      "source_role": "reviewed_public_citation",
+      "title": "Washington Post, Daniel Ellsberg obituary, June 16, 2023",
+      "publisher": "The Washington Post",
+      "publication_date": "2023-06-16",
+      "url": "https://www.washingtonpost.com/obituaries/2023/06/16/daniel-ellsberg-pentagon-papers-dead/",
+      "reference_code": "S44"
+    },
+    {
       "url": "https://www.intelligence.senate.gov/2014/12/09/press-committee-releases-study-cias-detention-and-interrogation-program/",
       "title": "Committee Releases Study of CIA Detention and Interrogation Program",
       "case_id": 30,
@@ -713,6 +773,26 @@
       "publication_date": null
     },
     {
+      "case_id": 47,
+      "source_id": 8,
+      "source_role": "reviewed_public_citation",
+      "title": "CDC, U.S. Public Health Service Untreated Syphilis Study at Tuskegee timeline",
+      "publisher": "CDC",
+      "publication_date": null,
+      "url": "https://www.cdc.gov/tuskegee/about/timeline.html",
+      "reference_code": "S9"
+    },
+    {
+      "case_id": 47,
+      "source_id": 60,
+      "source_role": "reviewed_public_citation",
+      "title": "Washington Post, Peter Buxtun obituary, July 16, 2024",
+      "publisher": "The Washington Post",
+      "publication_date": "2024-07-16",
+      "url": "https://www.washingtonpost.com/obituaries/2024/07/16/peter-buxtun-dead-tuskegee-syphilis/",
+      "reference_code": "S43"
+    },
+    {
       "url": "https://pubmed.ncbi.nlm.nih.gov/19720327/",
       "title": "The prisoner as model organism: malaria research at Stateville Penitentiary",
       "case_id": 48,
@@ -813,6 +893,16 @@
       "publication_date": null
     },
     {
+      "case_id": 56,
+      "source_id": 14,
+      "source_role": "reviewed_public_citation",
+      "title": "CIA, Family Jewels historical discussion",
+      "publisher": "CIA Center for the Study of Intelligence",
+      "publication_date": null,
+      "url": "https://www.cia.gov/resources/csi/studies-in-intelligence/volume-51-no-3/dcis-colby-and-helms-reflections-on-the-cias-time-of-troubles/",
+      "reference_code": "S18"
+    },
+    {
       "url": "https://history.state.gov/historicaldocuments/frus1969-76v38p2/d52",
       "title": "FRUS editorial note on the Church Committee assassination report",
       "case_id": 57,
@@ -823,6 +913,36 @@
       "publication_date": null
     },
     {
+      "case_id": 58,
+      "source_id": 5,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - Phoenix Program",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1964-68v07/d256",
+      "reference_code": "S19"
+    },
+    {
+      "case_id": 58,
+      "source_id": 6,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - Provincial Reconnaissance Units",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1969-76v06/d157",
+      "reference_code": "S20"
+    },
+    {
+      "case_id": 59,
+      "source_id": 6,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - Provincial Reconnaissance Units",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1969-76v06/d157",
+      "reference_code": "S20"
+    },
+    {
       "url": "https://www.fordlibrarymuseum.gov/sites/default/files/pdf_documents/library/document/0180/75573204.pdf",
       "title": "Project MOCKINGBIRD: Telephone Tap of Newspaper Columnists",
       "case_id": 60,
@@ -831,6 +951,16 @@
       "source_role": "Annotated research reference",
       "reference_code": null,
       "publication_date": null
+    },
+    {
+      "case_id": 61,
+      "source_id": 13,
+      "source_role": "reviewed_public_citation",
+      "title": "CIA Center for the Study of Intelligence, historical review of MHCHAOS and domestic activities",
+      "publisher": "CIA Center for the Study of Intelligence",
+      "publication_date": null,
+      "url": "https://www.cia.gov/resources/csi/static/UNCLASSIFIED-Studies-68-2-June-2024-2.pdf",
+      "reference_code": "S14"
     },
     {
       "url": "https://documents.theblackvault.com/documents/biological/bigitch.pdf",
@@ -881,6 +1011,26 @@
       "source_role": "Annotated research reference",
       "reference_code": null,
       "publication_date": null
+    },
+    {
+      "case_id": 66,
+      "source_id": 29,
+      "source_role": "reviewed_public_citation",
+      "title": "National Security Archive, official U.S. Army history of U.S. biological-warfare programs",
+      "publisher": "National Security Archive",
+      "publication_date": null,
+      "url": "https://nsarchive2.gwu.edu/NSAEBB/NSAEBB58/index2.html",
+      "reference_code": "S21"
+    },
+    {
+      "case_id": 66,
+      "source_id": 40,
+      "source_role": "reviewed_public_citation",
+      "title": "PBS American Experience, Secret Testing in the United States (Sea-Spray, airports, subways)",
+      "publisher": "PBS American Experience",
+      "publication_date": null,
+      "url": "https://www.pbs.org/wgbh/americanexperience/features/weapon-secret-testing/",
+      "reference_code": "S22"
     },
     {
       "url": "https://www.nationalacademies.org/read/5739/chapter/12",
@@ -1083,6 +1233,106 @@
       "publication_date": null
     },
     {
+      "case_id": 82,
+      "source_id": 49,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, Office of the Historian - Bay of Pigs milestone",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/milestones/1961-1968/bay-of-pigs",
+      "reference_code": "S48"
+    },
+    {
+      "case_id": 83,
+      "source_id": 43,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - Lumumba death / Church Committee conclusions",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1961-63v20/d6",
+      "reference_code": "S50"
+    },
+    {
+      "case_id": 83,
+      "source_id": 44,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - CIA Lumumba assassination planning",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1964-68v23/d30",
+      "reference_code": "S49"
+    },
+    {
+      "case_id": 84,
+      "source_id": 50,
+      "source_role": "reviewed_public_citation",
+      "title": "National Security Archive - U.S. Embassy records on Indonesia 1965 mass killings",
+      "publisher": "National Security Archive",
+      "publication_date": "2017-10-17",
+      "url": "https://nsarchive.gwu.edu/briefing-book/indonesia/2017-10-17/indonesia-mass-murder-1965-us-embassy-files",
+      "reference_code": "S51"
+    },
+    {
+      "case_id": 85,
+      "source_id": 46,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - warning concerning Condor assassinations",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1969-76ve11p2/d241",
+      "reference_code": "S53"
+    },
+    {
+      "case_id": 85,
+      "source_id": 48,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - Operation Condor summary",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1977-80v24/d6",
+      "reference_code": "S52"
+    },
+    {
+      "case_id": 86,
+      "source_id": 46,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - warning concerning Condor assassinations",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1969-76ve11p2/d241",
+      "reference_code": "S53"
+    },
+    {
+      "case_id": 86,
+      "source_id": 47,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - Letelier/Moffitt case",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1977-80v24/d235",
+      "reference_code": "S54"
+    },
+    {
+      "case_id": 87,
+      "source_id": 55,
+      "source_role": "reviewed_public_citation",
+      "title": "CIA Studies in Intelligence - CIA Air Operations in Laos, 1955-1974",
+      "publisher": "CIA Center for the Study of Intelligence",
+      "publication_date": null,
+      "url": "https://www.cia.gov/resources/csi/studies-in-intelligence/studies-in-intelligence-winter-1999-2000/cia-air-operations-in-laos-1955-1974/",
+      "reference_code": "S55"
+    },
+    {
+      "case_id": 88,
+      "source_id": 45,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. State Department, FRUS - “Breakfast Plan” / Cambodia bombing",
+      "publisher": "U.S. Department of State",
+      "publication_date": null,
+      "url": "https://history.state.gov/historicaldocuments/frus1969-76v06/d40",
+      "reference_code": "S56"
+    },
+    {
       "url": "https://legal.un.org/unjuridicalyearbook/pdfs/english/by_chapter/chpIII/1986/chpIII.pdf",
       "title": "United Nations Juridical Yearbook 1986, Chapter III",
       "case_id": 89,
@@ -1101,6 +1351,116 @@
       "source_role": "Annotated research reference",
       "reference_code": null,
       "publication_date": null
+    },
+    {
+      "case_id": 91,
+      "source_id": 51,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. DOJ OIG - 1982 CIA-DOJ crimes-reporting memorandum discussion",
+      "publisher": "U.S. Department of Justice, Office of the Inspector General",
+      "publication_date": null,
+      "url": "https://oig.justice.gov/sites/default/files/archive/special/9712/ch11p1.htm",
+      "reference_code": "S60"
+    },
+    {
+      "case_id": 92,
+      "source_id": 65,
+      "source_role": "reviewed_public_citation",
+      "title": "National Research Council - Report of the Committee on Ballistic Acoustics (1982)",
+      "publisher": "National Research Council",
+      "publication_date": null,
+      "url": "https://www.nationalacademies.org/publications/10264",
+      "reference_code": "S62"
+    },
+    {
+      "case_id": 92,
+      "source_id": 67,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. National Archives - JFK Assassination Records, 2025/2026 releases",
+      "publisher": "U.S. National Archives",
+      "publication_date": null,
+      "url": "https://www.archives.gov/research/jfk/release-2025",
+      "reference_code": "S63"
+    },
+    {
+      "case_id": 92,
+      "source_id": 68,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. National Archives - House Select Committee on Assassinations summary of findings",
+      "publisher": "U.S. National Archives",
+      "publication_date": null,
+      "url": "https://www.archives.gov/research/jfk/select-committee-report/summary.html",
+      "reference_code": "S61"
+    },
+    {
+      "case_id": 93,
+      "source_id": 70,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. National Archives - Robert F. Kennedy assassination records releases",
+      "publisher": "U.S. National Archives",
+      "publication_date": null,
+      "url": "https://www.archives.gov/research/rfk",
+      "reference_code": "S64"
+    },
+    {
+      "case_id": 93,
+      "source_id": 72,
+      "source_role": "reviewed_public_citation",
+      "title": "Governor of California - Executive Report on Parole, Sirhan Sirhan facts/conviction",
+      "publisher": "Office of the Governor of California",
+      "publication_date": null,
+      "url": "https://www.gov.ca.gov/wp-content/uploads/2023/01/Executive-Report-on-Parole-2022.pdf",
+      "reference_code": "S65"
+    },
+    {
+      "case_id": 94,
+      "source_id": 68,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. National Archives - House Select Committee on Assassinations summary of findings",
+      "publisher": "U.S. National Archives",
+      "publication_date": null,
+      "url": "https://www.archives.gov/research/jfk/select-committee-report/summary.html",
+      "reference_code": "S61"
+    },
+    {
+      "case_id": 94,
+      "source_id": 69,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. National Archives - Martin Luther King Jr. assassination records, 2025 release",
+      "publisher": "U.S. National Archives",
+      "publication_date": null,
+      "url": "https://www.archives.gov/research/mlk",
+      "reference_code": "S66"
+    },
+    {
+      "case_id": 95,
+      "source_id": 77,
+      "source_role": "reviewed_public_citation",
+      "title": "Manhattan District Attorney - 2021 joint motion to vacate Malcolm X convictions",
+      "publisher": "Manhattan District Attorney’s Office",
+      "publication_date": null,
+      "url": "https://www.manhattanda.org/wp-content/uploads/2021/11/FINAL-Motion-to-Vacate-Convictions-11.16.2021.pdf",
+      "reference_code": "S67"
+    },
+    {
+      "case_id": 96,
+      "source_id": 64,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. Court of Appeals, 10th Cir. - Silkwood v. Kerr-McGee, 667 F.2d 908",
+      "publisher": "U.S. Court of Appeals for the Tenth Circuit",
+      "publication_date": null,
+      "url": "https://law.justia.com/cases/federal/appellate-courts/F2/667/908/76859/",
+      "reference_code": "S68"
+    },
+    {
+      "case_id": 96,
+      "source_id": 71,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. GAO - Federal investigations concerning Kerr-McGee / Karen Silkwood",
+      "publisher": "U.S. Government Accountability Office",
+      "publication_date": null,
+      "url": "https://www.gao.gov/assets/red-75-374.pdf",
+      "reference_code": "S69"
     },
     {
       "url": "https://oig.justice.gov/sites/default/files/archive/special/9712/ch01p1.htm",
@@ -1131,6 +1491,36 @@
       "source_role": "Annotated research reference",
       "reference_code": null,
       "publication_date": null
+    },
+    {
+      "case_id": 100,
+      "source_id": 66,
+      "source_role": "reviewed_public_citation",
+      "title": "DOJ OIG announcement of Epstein custody investigation (27 June 2023)",
+      "publisher": "U.S. Department of Justice, Office of the Inspector General",
+      "publication_date": "2023-06-27",
+      "url": "https://oig.justice.gov/sites/default/files/2023-06/6-27-2023_0.pdf",
+      "reference_code": "S73"
+    },
+    {
+      "case_id": 100,
+      "source_id": 74,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. DOJ/FBI memorandum concerning Epstein death, July 2025",
+      "publisher": "U.S. Department of Justice and FBI",
+      "publication_date": null,
+      "url": "https://www.justice.gov/opa/media/1407001/dl",
+      "reference_code": "S74"
+    },
+    {
+      "case_id": 100,
+      "source_id": 75,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. DOJ - January 30, 2026 Epstein-files production announcement",
+      "publisher": "U.S. Department of Justice",
+      "publication_date": "2026-01-30",
+      "url": "https://www.justice.gov/opa/pr/department-justice-publishes-35-million-responsive-pages-compliance-epstein-files",
+      "reference_code": "S75"
     },
     {
       "url": "https://archive.org/stream/OctoberSurpriseArchive/Joint%20Report%20of%20the%20October%20Surprise%20Task%20Force_djvu.txt",
@@ -1173,6 +1563,16 @@
       "publication_date": null
     },
     {
+      "case_id": 104,
+      "source_id": 86,
+      "source_role": "reviewed_public_citation",
+      "title": "UK Attorney General, No fresh inquest into death of Dr David Kelly (2011)",
+      "publisher": "UK Attorney General’s Office",
+      "publication_date": null,
+      "url": "https://www.gov.uk/government/news/no-fresh-inquest-into-death-of-dr-david-kelly",
+      "reference_code": "4"
+    },
+    {
       "url": "https://news.sky.com/story/gareth-williams-review-into-death-of-mi6-worker-found-in-bag-reveals-no-new-evidence-13064660",
       "title": "Review into death of MI6 worker found in bag reveals no new evidence",
       "case_id": 105,
@@ -1181,6 +1581,16 @@
       "source_role": "Annotated research reference",
       "reference_code": null,
       "publication_date": "2024-02-05"
+    },
+    {
+      "case_id": 106,
+      "source_id": 85,
+      "source_role": "reviewed_public_citation",
+      "title": "Office of the Director of National Intelligence, Assessment of Saudi Government Role in Khashoggi Death (2021)",
+      "publisher": "Office of the Director of National Intelligence",
+      "publication_date": null,
+      "url": "https://www.dni.gov/files/ODNI/documents/assessments/Assessment-Saudi-Gov-Role-in-JK-Death-20210226v2.pdf",
+      "reference_code": "7"
     },
     {
       "url": "https://www.law.berkeley.edu/experiential/clinics/human-rights-clinic/projects-and-cases/featured-reports-and-projects/the-giei-honduras-report-on-the-murder-of-berta-caceres/",
@@ -1243,6 +1653,26 @@
       "publication_date": "2024-05-17"
     },
     {
+      "case_id": 110,
+      "source_id": 79,
+      "source_role": "reviewed_public_citation",
+      "title": "ABC7, Joshua Dean death after pneumonia/MRSA (2024)",
+      "publisher": "ABC7 Los Angeles",
+      "publication_date": "2024-05-02",
+      "url": "https://abc7.com/post/2nd-boeing-whistleblower-joshua-dean-dies-after-short-illness/14762938/",
+      "reference_code": "15"
+    },
+    {
+      "case_id": 110,
+      "source_id": 95,
+      "source_role": "reviewed_public_citation",
+      "title": "The Guardian, second Boeing-linked whistleblower Joshua Dean dies after short illness (2024)",
+      "publisher": "The Guardian",
+      "publication_date": "2024-05-02",
+      "url": "https://www.theguardian.com/business/article/2024/may/02/second-boeing-whistleblower-dies",
+      "reference_code": "14"
+    },
+    {
       "url": "https://www.autopsyfiles.org/reports/Other/hastings,%20michael_report.pdf",
       "title": "Michael Hastings autopsy report, case 2013-04353",
       "case_id": 111,
@@ -1261,6 +1691,36 @@
       "source_role": "Annotated research reference",
       "reference_code": null,
       "publication_date": "2019-04-18"
+    },
+    {
+      "case_id": 113,
+      "source_id": 102,
+      "source_role": "reviewed_public_citation",
+      "title": "Whitney Museum, Mark Lombardi artist record and FBI interest in BCCI drawing",
+      "publisher": "Whitney Museum of American Art",
+      "publication_date": null,
+      "url": "https://whitney.org/artists/7340",
+      "reference_code": "22"
+    },
+    {
+      "case_id": 113,
+      "source_id": 103,
+      "source_role": "reviewed_public_citation",
+      "title": "British Journal of Psychiatry, Mark Lombardi - fallen stars (medical examiner suicide finding)",
+      "publisher": "The British Journal of Psychiatry",
+      "publication_date": null,
+      "url": "https://www.cambridge.org/core/journals/the-british-journal-of-psychiatry/article/mark-lombardi-fallen-stars/F27FA8A5A82A71AA1C1008B43D1168E7",
+      "reference_code": "24"
+    },
+    {
+      "case_id": 113,
+      "source_id": 108,
+      "source_role": "reviewed_public_citation",
+      "title": "NPR, The Conspiracy Art of Mark Lombardi (2003)",
+      "publisher": "NPR Illinois",
+      "publication_date": null,
+      "url": "https://www.nprillinois.org/2003-10-31/the-conspiracy-art-of-mark-lombardi",
+      "reference_code": "23"
     },
     {
       "url": "https://www.investing.com/news/world-news/french-modelling-agent-who-founded-agency-with-epstein-dies-in-custody-2767773",
@@ -1343,6 +1803,26 @@
       "publication_date": "2015-01-07"
     },
     {
+      "case_id": 119,
+      "source_id": 101,
+      "source_role": "reviewed_public_citation",
+      "title": "FBI Vault, Nikola Tesla files",
+      "publisher": "FBI Vault",
+      "publication_date": null,
+      "url": "https://vault.fbi.gov/nikola-tesla",
+      "reference_code": "34"
+    },
+    {
+      "case_id": 119,
+      "source_id": 109,
+      "source_role": "reviewed_public_citation",
+      "title": "PBS Tesla biography, government review and John G. Trump assessment of papers",
+      "publisher": "PBS",
+      "publication_date": null,
+      "url": "https://www.pbs.org/tesla/ll/ll_mispapers.html",
+      "reference_code": "36"
+    },
+    {
       "url": "https://patents.google.com/patent/US4177779A/en",
       "title": "US4177779A: Fuel economy system for an internal combustion engine",
       "case_id": 120,
@@ -1383,6 +1863,36 @@
       "publication_date": "2009-02-21"
     },
     {
+      "case_id": 122,
+      "source_id": 105,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. Senate Finance Committee, David Graham testimony on Vioxx (18 Nov 2004)",
+      "publisher": "U.S. Senate Committee on Finance",
+      "publication_date": null,
+      "url": "https://www.finance.senate.gov/imo/media/doc/111804dgtest.pdf",
+      "reference_code": "S1"
+    },
+    {
+      "case_id": 122,
+      "source_id": 127,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. Senate Finance Committee, allegations of effort to discredit Graham (24 Nov 2004)",
+      "publisher": "U.S. Senate Committee on Finance",
+      "publication_date": "2004-11-24",
+      "url": "https://www.finance.senate.gov/chairmans-news/chairman-asks-for-inspector-general-review-of-allegations-of-fda-effort-to-discredit-hearing-witness",
+      "reference_code": "S2"
+    },
+    {
+      "case_id": 123,
+      "source_id": 135,
+      "source_role": "reviewed_public_citation",
+      "title": "U.S. DOJ, GSK $750 million manufacturing-deficiency resolution / Cheryl Eckard",
+      "publisher": "U.S. Department of Justice",
+      "publication_date": null,
+      "url": "https://www.justice.gov/archives/opa/pr/glaxosmithkline-plead-guilty-pay-750-million-resolve-criminal-and-civil-liability-regarding",
+      "reference_code": "S3"
+    },
+    {
       "url": "https://pubmed.ncbi.nlm.nih.gov/19907043/",
       "title": "Outcome reporting in industry-sponsored trials of gabapentin for off-label use",
       "case_id": 124,
@@ -1401,6 +1911,16 @@
       "source_role": "Annotated research reference",
       "reference_code": null,
       "publication_date": "2007-04-02"
+    },
+    {
+      "case_id": 126,
+      "source_id": 133,
+      "source_role": "reviewed_public_citation",
+      "title": "Santa Barbara Independent, coroner report on Brandy Vaughan (18 Feb 2021)",
+      "publisher": "Santa Barbara Independent",
+      "publication_date": "2021-02-18",
+      "url": "https://www.independent.com/2021/02/18/santa-barbara-coroner-concludes-anti-vaxxer-brandy-vaughan-died-of-natural-causes/",
+      "reference_code": "S6"
     },
     {
       "url": "https://www.amnesty.org/en/wp-content/uploads/2024/04/AMR190361990ENGLISH.pdf",
@@ -1491,6 +2011,26 @@
       "source_role": "Annotated research reference",
       "reference_code": null,
       "publication_date": "2026-03-15"
+    },
+    {
+      "case_id": 133,
+      "source_id": 136,
+      "source_role": "reviewed_public_citation",
+      "title": "La Nacion (Costa Rica), evidence and convictions in Jairo Mora case",
+      "publisher": "La Nación",
+      "publication_date": null,
+      "url": "https://www.nacion.com/sucesos/judiciales/celulares-delatan-a-asesinos-de-ambientalista-jairo-mora/2M4OEKLAIVADLADFD7ZMHZCDQQ/story/",
+      "reference_code": "S16"
+    },
+    {
+      "case_id": 133,
+      "source_id": 137,
+      "source_role": "reviewed_public_citation",
+      "title": "Washington Post, convictions and motive in Jairo Mora murder",
+      "publisher": "The Washington Post",
+      "publication_date": "2016-04-05",
+      "url": "https://www.washingtonpost.com/news/energy-environment/wp/2016/04/05/a-rare-conviction-for-the-slaying-of-a-latin-american-environmentalist/",
+      "reference_code": "S17"
     },
     {
       "url": "https://apnews.com/article/64c5e0e4481825191f2266aa0e46935c",
