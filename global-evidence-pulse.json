@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "updated_at": null,
+  "methodology": "Counts represent distinct source-reviewed events in this curated dataset, not all worldwide activity. No articles or cases are counted as events without event-level review.",
+  "events": []
+}
