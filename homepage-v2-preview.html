@@ -21,9 +21,9 @@ const status=document.getElementById('globe-status'),fallback=document.getElemen
 try{
  const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js');
  const canvas=document.getElementById('earth'),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(37,1,.1,100);
- camera.position.z=6.8;
+ camera.position.z=8.5;
  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;
- const globe=new THREE.Group();scene.add(globe);
+ const globe=new THREE.Group();globe.scale.setScalar(.72);scene.add(globe);
  const texture=new THREE.TextureLoader().load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',()=>{status.textContent='Interactive Earth ready';fallback.style.display='none'},undefined,()=>{status.textContent='Earth texture unavailable — globe controls still work'});
  texture.colorSpace=THREE.SRGBColorSpace;
  const earth=new THREE.Mesh(new THREE.SphereGeometry(1.53,96,64),new THREE.MeshPhongMaterial({map:texture,shininess:5,specular:0x163b4a}));globe.add(earth);
@@ -34,14 +34,14 @@ try{
 
  const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2(),geoPanel=document.getElementById('geo-panel');
  globe.rotation.y=.35;globe.rotation.x=.13;
- let dragging=false,moved=false,lastX=0,lastY=0,zoom=6.8,targetX=.13,targetY=.35,pinchDistance=0;
+ let dragging=false,moved=false,lastX=0,lastY=0,zoom=8.5,targetX=.13,targetY=.35,pinchDistance=0;
  canvas.addEventListener('pointerdown',e=>{dragging=true;moved=false;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId)});
  canvas.addEventListener('pointermove',e=>{if(!dragging)return;if(Math.abs(e.clientX-lastX)+Math.abs(e.clientY-lastY)>2)moved=true;targetY+=(e.clientX-lastX)*.003;targetX=Math.max(-1.1,Math.min(1.1,targetX+(e.clientY-lastY)*.0025));lastX=e.clientX;lastY=e.clientY});
  canvas.addEventListener('pointerup',e=>{dragging=false;if(moved)return;const rect=canvas.getBoundingClientRect();mouse.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(mouse,camera);const markerHits=raycaster.intersectObjects(markerMeshes);const hit=raycaster.intersectObject(earth)[0];const markerHit=markerHits.find(h=>!hit||h.distance<=hit.distance+.015);if(markerHit){const event=markerHit.object.userData.event;geoPanel.replaceChildren();const heading=document.createElement("strong");heading.textContent=event.title;const info=document.createElement("p");info.textContent=event.category+" · "+(event.event_date||"Date unspecified")+" · Source reviewed";const link=document.createElement("a");link.href=event.source_url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Read original source ↗";geoPanel.append(heading,info,link);return;}if(!hit)return;const point=globe.worldToLocal(hit.point.clone()).normalize();const lat=Math.asin(Math.max(-1,Math.min(1,point.y)))*180/Math.PI;const rawLon=Math.atan2(point.z,-point.x)*180/Math.PI-180;const lon=((rawLon+180)%360+360)%360-180;geoPanel.textContent='Selected location: '+lat.toFixed(1)+'° latitude, '+lon.toFixed(1)+'° longitude. Verified local news events are not yet connected; no claims are assigned to this point.'});canvas.addEventListener('pointercancel',()=>dragging=false);
- document.getElementById('globe-out').addEventListener('click',()=>{canvas.dataset.userZoom='1';zoom=Math.min(10,zoom+.65)});document.getElementById('globe-in').addEventListener('click',()=>{canvas.dataset.userZoom='1';zoom=Math.max(4.8,zoom-.65)});document.getElementById('globe-reset').addEventListener('click',()=>{delete canvas.dataset.userZoom;targetX=.13;targetY=.35;zoom=Math.max(6.8,4.5/Math.max(.5,camera.aspect))});
- canvas.addEventListener('wheel',e=>{e.preventDefault();canvas.dataset.userZoom='1';zoom=Math.max(4.8,Math.min(10,zoom+Math.sign(e.deltaY)*.32))},{passive:false});
+ document.getElementById('globe-out').addEventListener('click',()=>{canvas.dataset.userZoom='1';zoom=Math.min(14,zoom+.65)});document.getElementById('globe-in').addEventListener('click',()=>{canvas.dataset.userZoom='1';zoom=Math.max(5.5,zoom-.65)});document.getElementById('globe-reset').addEventListener('click',()=>{delete canvas.dataset.userZoom;targetX=.13;targetY=.35;zoom=Math.max(8.5,5.8/Math.max(.45,camera.aspect))});
+ canvas.addEventListener('wheel',e=>{e.preventDefault();canvas.dataset.userZoom='1';zoom=Math.max(5.5,Math.min(14,zoom+Math.sign(e.deltaY)*.32))},{passive:false});
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- function resize(){const rect=canvas.getBoundingClientRect();renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();if(!canvas.dataset.userZoom){zoom=Math.max(6.8,4.5/Math.max(.5,camera.aspect));}}
+ function resize(){const rect=canvas.getBoundingClientRect();renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();if(!canvas.dataset.userZoom){zoom=Math.max(8.5,5.8/Math.max(.45,camera.aspect));}}
  new ResizeObserver(resize).observe(canvas);resize();
  function animate(){requestAnimationFrame(animate);if(!dragging&&!reduced)targetY+=.0003;globe.rotation.x+=(targetX-globe.rotation.x)*.13;globe.rotation.y+=(targetY-globe.rotation.y)*.13;camera.position.z+=(zoom-camera.position.z)*.12;renderer.render(scene,camera)}animate();
 }catch(e){status.textContent='3D globe unavailable on this connection. Investigation links remain accessible.';fallback.style.display='block'}
