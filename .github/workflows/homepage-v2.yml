@@ -1,0 +1,22 @@
+name: Homepage V2 checks
+on:
+  pull_request:
+    paths:
+      - 'homepage-v2-preview.html'
+      - 'tests/homepage-v2.test.mjs'
+      - '.github/workflows/homepage-v2.yml'
+  push:
+    branches:
+      - 'feature/evidence-atlas-v2-homepage'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run homepage smoke tests
+        run: node --test tests/homepage-v2.test.mjs
