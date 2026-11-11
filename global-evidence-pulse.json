@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "updated_at": null,
+  "methodology": "Counts are distinct, source-reviewed events in this curated dataset, not a census of all global activity. Coverage and editorial selection bias must be disclosed. Empty feeds are shown as unavailable, not zero.",
+  "events": [],
+  "event_contract": {
+    "id": "Stable unique event ID; repeated articles about one occurrence share one ID",
+    "title": "Specific verifiable description of what happened",
+    "category": "positive | negative | neutral; label is a provisional editorial assessment",
+    "event_date": "YYYY-MM-DD date of occurrence, not publication date",
+    "lat": "Verified event latitude, -90 to 90",
+    "lon": "Verified event longitude, -180 to 180",
+    "source_url": "Original independently inspectable https source",
+    "review_status": "verified only after editorial review",
+    "optional_fields": [
+      "additional_source_urls",
+      "country",
+      "reviewer",
+      "reviewed_at",
+      "classification_rationale",
+      "counterevidence_urls",
+      "confidence",
+      "correction_note"
+    ]
+  },
+  "review_policy": [
+    "Do not equate article sentiment with event impact.",
+    "Count distinct events, not articles or media mentions.",
+    "Require a specific occurrence, place, date, and source.",
+    "Review contradictory evidence and mixed outcomes before classification.",
+    "Disclose geographic, language, source-selection, and reporting-period limitations.",
+    "Do not present these counts as proof that the world is objectively improving or worsening."
+  ]
+}
