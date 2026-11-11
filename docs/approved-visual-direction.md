@@ -22,3 +22,6 @@ Preserve the existing working pages and Supabase-backed foundations. First estab
 Cinematic dark navy, deep teal, luminous mint and amber accents for futuristic views; warm sepia, off-white, charcoal ink, paper textures, serif editorial typography for the magazine. Rich but readable; responsive; accessible motion controls.
 
 This is a design specification, not a claim that all three experiences are already fully implemented.
+
+## Owner refinement — 2026-11-11
+The preferred Evidence Web is a **clean, sprawling investigative mind map with real photographs and document previews embedded inside nodes**, not a floating-photo constellation or a stylized detective corkboard. Keep a spacious, restrained dark canvas, organic graph layout, fine unobtrusive links, excellent legibility, and smooth zoom/pan. Click a photo or document to inspect its original source, date, evidence status, and competing interpretations. Prior image concepts were rejected as generic, overdecorated and excessively neon/sepia. Avoid decorative strings, fake news clippings, faux technical overlays, clutter, excessive glow and invented metrics. Keep the vintage/rustic look mainly in the separate magazine experience. Preserve the 3D globe as a separate discovery mode. Do not present concept imagery or unverified relations as actual sourced records.
