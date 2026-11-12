@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "collection": "California Indigenous Heritage — Research Candidates",
+  "status": "editorial_review_required",
+  "note": "These are heritage site profiles, not dated news events. Do not add them to global-evidence-pulse.json or count as positive news. Do not publish precise coordinates for sensitive archaeological locations. Seek tribal perspectives and respect access restrictions.",
+  "sites": [
+    {
+      "name": "Chumash Painted Cave",
+      "region": "Santa Barbara County",
+      "cultural_context": "Chumash",
+      "significance": "Protected rock paintings; tribal cultural significance",
+      "source_url": "https://www.parks.ca.gov/?page_id=602",
+      "review_status": "pending_editorial_review",
+      "public_pin_policy": "regional only; no sensitive site coordinates"
+    },
+    {
+      "name": "Coso Rock Art District",
+      "region": "Inyo County",
+      "cultural_context": "Indigenous peoples of the Coso region",
+      "significance": "More than 20,000 recorded petroglyphs; access restricted",
+      "source_url": "https://home.nps.gov/articles/visit-indigenous-landscapes.htm",
+      "review_status": "pending_editorial_review",
+      "public_pin_policy": "regional only; no sensitive site coordinates"
+    },
+    {
+      "name": "Anderson Marsh",
+      "region": "Lake County",
+      "cultural_context": "Pomo",
+      "significance": "Over 50 recorded Indigenous archaeological sites; some more than 6,000 years old",
+      "source_url": "https://parks.ca.gov/?page_id=24096",
+      "review_status": "pending_editorial_review",
+      "public_pin_policy": "regional only; no sensitive site coordinates"
+    },
+    {
+      "name": "Ahjumawi Lava Springs",
+      "region": "Shasta County",
+      "cultural_context": "Ajumawi / Pit River peoples",
+      "significance": "Stone fish traps, village sites and bedrock mortars",
+      "source_url": "https://parks.ca.gov/?page_id=24096",
+      "review_status": "pending_editorial_review",
+      "public_pin_policy": "regional only; no sensitive site coordinates"
+    },
+    {
+      "name": "Annadel obsidian quarry",
+      "region": "Sonoma County",
+      "cultural_context": "Indigenous peoples of the Santa Rosa region",
+      "significance": "Obsidian quarry and stone-tool production history",
+      "source_url": "https://parks.ca.gov/?page_id=24096",
+      "review_status": "pending_editorial_review",
+      "public_pin_policy": "regional only; no sensitive site coordinates"
+    },
+    {
+      "name": "Piedras Grandes Cultural Preserve",
+      "region": "San Diego County",
+      "cultural_context": "Kumeyaay",
+      "significance": "Rock shelters and pictographs; preservation concerns",
+      "source_url": "https://www.parks.ca.gov/pages/21299/files/anza-borrego_cps_piedras_grandes.pdf",
+      "review_status": "pending_editorial_review",
+      "public_pin_policy": "regional only; no sensitive site coordinates"
+    },
+    {
+      "name": "Carrizo Plain Painted Rock",
+      "region": "San Luis Obispo County",
+      "cultural_context": "Chumash and other Indigenous nations with ties to the area",
+      "significance": "Sacred rock art and extensive heritage landscape",
+      "source_url": "https://northernchumash.org/sites/",
+      "review_status": "pending_editorial_review",
+      "public_pin_policy": "regional only; no sensitive site coordinates"
+    },
+    {
+      "name": "Blythe Intaglios",
+      "region": "Riverside County",
+      "cultural_context": "Indigenous Colorado River communities",
+      "significance": "Large desert geoglyphs; interpretation and stewardship require tribal perspectives",
+      "source_url": "https://www.visitcalifornia.com/experience/native-american-rock-art-sites-california/",
+      "review_status": "pending_editorial_review",
+      "public_pin_policy": "regional only; no sensitive site coordinates"
+    }
+  ]
+}
