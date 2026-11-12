@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-11-11",
+  "status": "editorial_candidates_not_live",
+  "notice": "Research leads, not reviewed live globe events. No counts or pins until editorial approval. Coordinates are approximate site or administrative locations, not precise occurrence coordinates.",
+  "events": [
+    {
+      "id": "pompeii-unesco-discoveries-2025",
+      "title": "UNESCO reports newly uncovered Roman villa and bath complex at Pompeii",
+      "topic": "ancient-civilizations",
+      "category": "positive",
+      "event_date": "2025-02-04",
+      "date_basis": "UNESCO publication date; excavations occurred earlier",
+      "lat": 40.75,
+      "lon": 14.486,
+      "location_basis": "Approximate Pompeii archaeological site, not excavation coordinates",
+      "source_url": "https://whc.unesco.org/en/news/2741",
+      "review_status": "pending_editorial_review",
+      "classification_rationale": "Archaeological research expands public understanding of Roman society."
+    },
+    {
+      "id": "koh-ker-conservation-assistance-2026",
+      "title": "UNESCO approves $85,000 in conservation-capacity assistance for Koh Ker",
+      "topic": "ancient-civilizations",
+      "category": "positive",
+      "event_date": "2026-07-28",
+      "date_basis": "UNESCO assistance approval date",
+      "lat": 13.78,
+      "lon": 104.54,
+      "location_basis": "Approximate Koh Ker archaeological site",
+      "source_url": "https://whc.unesco.org/en/statesparties/kh/assistance/",
+      "review_status": "pending_editorial_review",
+      "classification_rationale": "Documented support for preserving ancient Khmer heritage; implementation is not yet established."
+    },
+    {
+      "id": "who-covid-pheic-ended-2023",
+      "title": "WHO ends COVID-19 international public-health emergency designation",
+      "topic": "covid-19",
+      "category": "neutral",
+      "event_date": "2023-05-05",
+      "date_basis": "WHO announcement date",
+      "lat": 46.2276,
+      "lon": 6.1406,
+      "location_basis": "WHO headquarters in Geneva; administrative decision, not disease epicenter",
+      "source_url": "https://www.who.int/news-room/speeches/item/who-director-general-s-opening-remarks-at-the-media-briefing---5-may-2023",
+      "review_status": "pending_editorial_review",
+      "classification_rationale": "Policy milestone with mixed implications; WHO emphasized COVID-19 remained a health threat."
+    },
+    {
+      "id": "epstein-files-doj-release-2026",
+      "title": "DOJ announces additional Epstein Files Transparency Act records release",
+      "topic": "epstein-files",
+      "category": "neutral",
+      "event_date": "2026-01-30",
+      "date_basis": "DOJ publication date",
+      "lat": 38.8951,
+      "lon": -77.025,
+      "location_basis": "DOJ Washington DC administrative location; not location of alleged crimes",
+      "source_url": "https://www.justice.gov/opa/pr/department-justice-publishes-35-million-responsive-pages-compliance-epstein-files",
+      "review_status": "pending_editorial_review",
+      "classification_rationale": "Document disclosure supports public scrutiny, but records can include unverified submissions and sensitive victim information."
+    },
+    {
+      "id": "us-covid-phe-ended-2023",
+      "title": "U.S. federal COVID-19 public-health emergency declaration ends",
+      "topic": "covid-19",
+      "category": "neutral",
+      "event_date": "2023-05-11",
+      "date_basis": "Federal public-health emergency end date",
+      "lat": 38.8951,
+      "lon": -77.0364,
+      "location_basis": "Washington DC federal policy location",
+      "source_url": "https://archive.cdc.gov/www_cdc_gov/coronavirus/2019-ncov/your-health/end-of-phe.html",
+      "review_status": "pending_editorial_review",
+      "classification_rationale": "Administrative transition, with both benefits and changes to data reporting."
+    }
+  ]
+}
