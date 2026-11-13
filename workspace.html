@@ -1,0 +1,1075 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#101c31" />
+  <meta name="description" content="Evidence Atlas: private, source-grounded investigation workspace connected to Supabase." />
+  <title>Evidence Atlas — Investigation Workspace</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+:root{font-family:'DM Sans',Inter,system-ui,sans-serif;color:#172338;background:#f4f6fa;font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}a{color:inherit}svg{max-width:100%}[hidden]{display:none!important}
+.app-shell{min-height:100vh;display:flex}.sidebar{width:247px;background:#101c31;color:#cad6e8;flex-shrink:0;position:fixed;top:0;bottom:0;left:0;z-index:30;display:flex;flex-direction:column;border-right:1px solid #26364e}.brand{height:94px;display:flex;align-items:center;gap:11px;padding:25px 24px}.brand-mark{width:38px;height:38px;background:linear-gradient(140deg,#42d9be,#3496cb);border-radius:12px;display:grid;place-items:center;color:#092037;font-size:29px;font-weight:700}.brand strong{font-family:'Space Grotesk',sans-serif;color:#fff;font-size:16px;letter-spacing:2.5px;line-height:17px;display:block}.brand small{color:#42cba9;font-size:10px;letter-spacing:3.25px;font-weight:700}.brand small i{color:#7e91a9;font-size:9px;font-style:normal;letter-spacing:.8px}.workspace-label{font-size:10px;letter-spacing:2px;font-weight:700;color:#647994;margin:30px 27px 12px}.nav{padding:0 12px;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}.brand,.workspace-label,.sidebar-bottom{flex-shrink:0}.nav-item{display:flex;gap:13px;width:100%;align-items:center;color:#a8bad1;border:0;background:none;text-align:left;padding:12px 15px;margin:3px 0;border-radius:9px;font-size:13.5px;font-weight:600;transition:.15s}.nav-item .ni{font-size:19px;font-weight:400;width:21px;text-align:center;opacity:.8}.nav-item:hover{background:#1b2b44;color:#f5fcff}.nav-item.active{background:#193b4a;color:#61e5c3;box-shadow:inset 3px 0 #44daba}.nav-item .count{margin-left:auto;background:#2b4055;color:#a9bcd0;font-size:10px;padding:2px 7px;border-radius:15px}.sidebar-bottom{margin-top:auto;padding:20px 17px 23px}.security-note{border:1px solid #2a4056;background:#15253c;border-radius:10px;padding:14px;color:#d0deec;font-size:12px;font-weight:600;line-height:21px}.security-note small{font-size:10px;font-weight:400;color:#91a5bb;margin-left:15px}.green-dot{width:7px;height:7px;border-radius:50%;display:inline-block;background:#54dcb7;margin-right:6px;box-shadow:0 0 0 3px #54dcb722}.sidebar-signout{border:0;background:transparent;color:#aebfce;padding:16px 13px 2px;font-size:12px}.sidebar-signout:hover{color:#fff}.main-shell{margin-left:247px;min-width:0;width:calc(100% - 247px)}.topbar{height:67px;background:#fff;border-bottom:1px solid #e5eaf1;display:flex;align-items:center;justify-content:space-between;padding:0 43px;position:sticky;top:0;z-index:20}.breadcrumb{font-size:11px;letter-spacing:1.55px;font-weight:700;color:#96a2b3}.breadcrumb span{color:#c4cdd7;padding:0 8px}.breadcrumb b{color:#57667a}.topbar-right{display:flex;align-items:center;gap:19px}.status-chip{display:inline-flex;align-items:center;gap:8px;background:#eefaf5;border:1px solid #d4eee3;color:#268865;border-radius:30px;padding:8px 12px;font-size:11px;font-weight:700}.status-dot{width:7px;height:7px;border-radius:50%;background:#32bf8f}.user-bubble{width:31px;height:31px;border-radius:50%;display:grid;place-items:center;color:#254a55;background:#d0f2e9;font-family:'Space Grotesk';font-size:11px;font-weight:700}.mobile-menu{display:none}.screen{padding:43px 45px 70px;max-width:1640px;margin:0 auto}.screen-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;margin-bottom:30px}.eyebrow{font-size:10px;font-weight:800;letter-spacing:2.15px;color:#16977c;text-transform:uppercase}.screen-intro h1{font-family:'Space Grotesk',sans-serif;font-size:32px;line-height:1.13;letter-spacing:-1.1px;margin:11px 0 8px;font-weight:700;color:#18283d}.screen-intro p{color:#7c889b;font-size:13.5px;line-height:1.6;margin:0;max-width:650px}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.primary{background:#16a889;border:1px solid #16a889;color:white;border-radius:9px;padding:11px 16px;font-size:12px;font-weight:800;letter-spacing:.1px;box-shadow:0 6px 16px #17a88925;display:inline-flex;gap:12px;align-items:center;justify-content:center}.primary:hover{background:#0c9276}.secondary{background:#fff;border:1px solid #dce3ec;color:#4b5e75;border-radius:9px;padding:10px 15px;font-size:12px;font-weight:700;display:inline-flex;gap:8px;align-items:center}.secondary:hover{border-color:#9bb3ca;background:#fafcfe}.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px;margin-bottom:24px}.stat-card{background:#fff;border:1px solid #e5eaf0;border-radius:13px;padding:21px 22px 20px;box-shadow:0 3px 15px #0c244206;position:relative;overflow:hidden}.stat-card .stat-ic{width:37px;height:37px;background:#eef9f6;border-radius:10px;display:grid;place-items:center;color:#0fa788;font-size:22px;margin-bottom:19px}.stat-card:nth-child(2) .stat-ic{background:#ecf1ff;color:#537fe0}.stat-card:nth-child(3) .stat-ic{background:#fff5e8;color:#d19436}.stat-card:nth-child(4) .stat-ic{background:#f4efff;color:#9b73da}.stat-label{font-size:11px;color:#8390a2;font-weight:700;letter-spacing:.5px}.stat-number{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:700;letter-spacing:-1px;margin:5px 0 2px;color:#142239}.stat-note{color:#9aa7b6;font-size:11px}.columns{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(270px,1fr);gap:22px}.panel{background:#fff;border:1px solid #e3e9f0;border-radius:13px;overflow:hidden;box-shadow:0 2px 13px #0a2a4805}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:20px 23px;border-bottom:1px solid #edf0f5}.panel-head h2{font-family:'Space Grotesk',sans-serif;font-size:15px;margin:0;font-weight:700;color:#24334a}.panel-head span{font-size:11px;color:#92a0b1}.panel-body{padding:19px 23px}.text-btn{border:0;background:none;color:#119778;font-size:11px;font-weight:800;padding:5px}.mini-card{padding:18px 0;border-bottom:1px solid #eef1f5}.mini-card:first-child{padding-top:0}.mini-card:last-child{border-bottom:0;padding-bottom:0}.mini-title{display:block;font-weight:700;color:#26354b;font-size:13px;line-height:1.5}.mini-desc{font-size:11.5px;color:#8290a2;margin:6px 0 11px;line-height:1.6}.mini-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;color:#8494a4}.badge{display:inline-block;border-radius:6px;background:#eff3f7;color:#68788e;padding:5px 8px;font-size:10px;font-weight:800;white-space:nowrap}.badge.teal{background:#e6f8f1;color:#158567}.badge.orange{background:#fff2dc;color:#a5792d}.badge.blue{background:#ebf1ff;color:#5776bf}.badge.purple{background:#f4ecff;color:#8060ad}.badge.red{background:#ffedef;color:#b5515f}.section-label{font-size:11px;font-weight:800;letter-spacing:1.5px;color:#6e7f94;margin:0 0 15px}.subdued{color:#8b99aa}.empty{padding:45px 25px;text-align:center;color:#8493a5}.empty .empty-ic{font-size:34px;color:#b7c8d5;margin-bottom:13px}.empty h3{color:#43536a;font-family:'Space Grotesk';margin:0 0 8px;font-size:17px}.empty p{font-size:12px;line-height:1.7;max-width:380px;margin:0 auto 16px}.empty.compact{padding:30px 20px}.data-table{border-collapse:collapse;width:100%;font-size:12px}.data-table th{text-align:left;background:#f8fafc;color:#8794a7;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:14px 16px;font-weight:800}.data-table td{padding:15px 16px;border-top:1px solid #edf0f4;color:#506178;vertical-align:top}.data-table td:first-child{color:#273c52;font-weight:700}.data-table tr:hover td{background:#fafcfe}.table-scroll{overflow-x:auto}.row-click{cursor:pointer}.filterbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}.search{border:1px solid #dce5ee;background:white;border-radius:10px;min-width:240px;flex:1;padding:11px 14px;font-size:12px;outline:none;color:#24364e}.search:focus,.field:focus{border-color:#3cbda5;box-shadow:0 0 0 3px #1fa98a18}.filter-select{border:1px solid #dce5ee;background:white;border-radius:10px;color:#52637a;padding:11px 14px;font-size:12px;min-width:160px}.stack{display:grid;gap:13px}.record-card{padding:20px 23px;background:#fff;border:1px solid #e3e9f0;border-radius:12px;transition:border-color .2s;box-shadow:0 2px 8px #0a2a4805}.record-card:hover{border-color:#bdccdb}.record-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.record-card h3{font-family:'Space Grotesk';font-size:15px;color:#24364a;margin:9px 0 7px;font-weight:700}.record-card p{font-size:12px;color:#7d8ba0;line-height:1.65;margin:7px 0 10px}.record-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:10px;font-size:10px;color:#91a0af}.tag{padding:5px 8px;border-radius:6px;background:#f0f4f8;color:#718198;font-size:10px}.split-pane{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px}.case-list{display:grid;gap:10px;align-content:start}.case-option{width:100%;border:1px solid #e3eaf0;background:white;text-align:left;padding:17px;border-radius:11px}.case-option.active{border-color:#3dc7aa;background:#f2fcf8;box-shadow:inset 3px 0 #23b590}.case-option b{display:block;font-size:12px;line-height:1.4;color:#30445b}.case-option small{display:block;margin-top:6px;font-size:11px;color:#8494a5}.case-summary{display:grid;gap:18px}.case-detail{padding:26px}.case-detail h2{font-family:'Space Grotesk';font-size:23px;margin:10px 0;color:#1e2d44}.case-detail p{font-size:13px;color:#6d7e93;line-height:1.75}.meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}.meta-cell{border:1px solid #edf0f4;padding:13px;border-radius:8px}.meta-cell small{font-size:10px;color:#9ca8b7;display:block;margin-bottom:6px}.meta-cell strong{font-size:13px;color:#375064}.nested-row{padding:14px 0;border-top:1px solid #edf0f4}.nested-row b{display:block;font-size:12px;color:#35495f;line-height:1.6}.nested-row p{font-size:11px;margin:5px 0;line-height:1.6}.nested-row a{font-size:11px;color:#158b79;text-decoration:none;word-break:break-word}.source-link{color:#11987b;font-size:11px;text-decoration:none;overflow-wrap:anywhere}.source-link:hover{text-decoration:underline}.divider{height:1px;background:#edf1f5;margin:19px 0}.network-wrap{background:#fff;border:1px solid #e5eaf0;border-radius:12px;padding:12px;overflow:auto}.network-svg{display:block;width:100%;min-height:420px}.network-note{background:#fff8eb;border:1px solid #f5e4b8;border-radius:10px;padding:14px 17px;color:#8b6c31;font-size:12px;line-height:1.6;margin-top:14px}.legend{display:flex;gap:18px;flex-wrap:wrap;color:#697b90;font-size:11px}.legend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}.timeline{position:relative;margin-left:22px;border-left:2px solid #d7e6e8}.timeline-item{padding:0 0 26px 28px;position:relative}.timeline-item::before{content:'';position:absolute;width:11px;height:11px;border-radius:50%;background:#35b89b;left:-7px;top:5px;box-shadow:0 0 0 4px #e4f7ef}.timeline-date{font-size:10px;color:#249779;font-weight:800;letter-spacing:.8px}.timeline-item h3{font-size:13px;font-weight:700;margin:7px 0;color:#304157}.timeline-item p{color:#8794a3;font-size:12px;line-height:1.6;margin:0}.muted-link{border:0;background:none;padding:0;color:#13967a;text-align:left;text-decoration:none;font-size:11px;font-weight:800}.muted-link:hover{text-decoration:underline}.key-figure{display:flex;align-items:flex-start;gap:12px;padding:16px 0;border-top:1px solid #eef1f5}.avatar{height:38px;width:38px;border-radius:10px;background:#eaf4ff;color:#547fb2;display:grid;place-items:center;font-size:12px;font-weight:800;flex-shrink:0}.key-figure h3{font-size:12.5px;margin:2px 0 5px}.key-figure p{font-size:11px;color:#8898a7;margin:0;line-height:1.5}.two-up{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.progress{height:7px;border-radius:20px;background:#ebf0f5;overflow:hidden;margin-top:12px}.progress>div{height:100%;background:linear-gradient(90deg,#1c9d81,#61d5bd);border-radius:20px}.notice{background:#edf8fa;border:1px solid #d3eaf0;color:#517689;border-radius:9px;font-size:11px;line-height:1.7;padding:13px 15px;margin:15px 0}.value{font-family:'Space Grotesk';font-size:22px;font-weight:700;color:#253750}.auth-screen{min-height:100vh;background:#fbfcfe;display:grid;grid-template-columns:1fr 1fr}.auth-decoration{background:#101e33;color:#fff;padding:10vh 9vw;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center}.auth-decoration:before{content:'';position:absolute;width:520px;height:520px;border:1px solid #40c6b630;border-radius:50%;right:-240px;top:-100px;box-shadow:0 0 0 70px #1f7e7021,0 0 0 155px #18745f15}.auth-mark{font-size:75px;color:#44d7b5}.auth-decoration h1{font-family:'Space Grotesk';font-size:clamp(34px,4vw,60px);letter-spacing:-2px;line-height:1.12;margin:16px 0 20px;position:relative}.auth-decoration p{max-width:420px;color:#9cb4ca;line-height:1.7;font-size:14px;position:relative}.auth-foot{font-size:10px;font-weight:700;letter-spacing:2px;color:#55817e;position:absolute;bottom:35px}.auth-panel{display:flex;align-items:center;justify-content:center;padding:40px}.auth-card{width:min(420px,100%)}.auth-card h2{font-family:'Space Grotesk';font-size:35px;letter-spacing:-1.2px;margin:12px 0}.auth-card>p{font-size:13px;line-height:1.7;color:#8594a8;margin:0 0 28px}.auth-card form{display:grid;gap:10px}.auth-card label{font-size:11px;color:#4f6178;font-weight:800}.auth-card input{border:1px solid #d8e2ec;padding:14px;border-radius:9px;margin-bottom:10px;outline:none;font-size:13px}.auth-card .wide{width:100%;justify-content:space-between;font-size:13px;padding:14px 16px}.auth-alt{text-align:center;margin-top:24px;color:#93a0b0;font-size:12px}.link-btn{color:#119b80;font-weight:800;background:transparent;border:0;padding:0}.auth-card .auth-help{margin-top:30px;font-size:11px;color:#a3afbc}.auth-feedback{min-height:22px;color:#b94f58;font-size:12px;margin-top:12px;line-height:1.5}.modal-backdrop{position:fixed;inset:0;background:#0b172b9d;z-index:90;display:grid;place-items:center;padding:18px;overflow:auto}.modal{background:white;max-width:550px;width:100%;max-height:92vh;overflow:auto;border-radius:15px;box-shadow:0 30px 90px #05132755}.modal-header{padding:23px 25px;border-bottom:1px solid #edf0f4;display:flex;justify-content:space-between;align-items:center}.modal-header h2{font-family:'Space Grotesk';font-size:20px;margin:0}.modal-close{border:0;background:#eef3f8;border-radius:7px;padding:5px 11px;color:#65778c;font-size:19px}.modal form{padding:23px 25px;display:grid;gap:14px}.form-row{display:grid;gap:7px}.form-row label{font-size:11px;font-weight:800;color:#607087}.field{width:100%;background:white;border:1px solid #dce4ec;border-radius:8px;outline:0;padding:11px 13px;font-size:12px;color:#263e56}.form-note{color:#8796a5;font-size:11px;line-height:1.6}.modal-actions{border-top:1px solid #edf1f5;padding-top:18px;display:flex;justify-content:flex-end;gap:10px}#toast{position:fixed;right:25px;bottom:25px;z-index:130;background:#142b3d;color:white;padding:13px 19px;border-radius:9px;font-size:12px;box-shadow:0 8px 28px #061c382f;opacity:0;transform:translateY(12px);transition:.2s;pointer-events:none}#toast.show{opacity:1;transform:translateY(0)}.error-box{color:#ad3a49;background:#fff1f2;border:1px solid #f6cbd3;padding:12px 15px;border-radius:8px;font-size:12px;line-height:1.6;margin-bottom:18px}
+@media (max-width:1100px){.stat-grid{grid-template-columns:repeat(2,1fr)}.screen{padding:30px 25px 50px}.topbar{padding:0 25px}.columns{grid-template-columns:1fr}.split-pane{grid-template-columns:240px 1fr}}@media(max-width:720px){.sidebar{transform:translateX(-100%);transition:transform .2s}.sidebar.visible{transform:translateX(0)}.main-shell{margin-left:0;width:100%}.mobile-menu{display:block}.topbar{height:62px;padding:0 17px}.topbar-left{display:flex;gap:11px;align-items:center}.iconbutton{border:0;background:none;font-size:18px;color:#54677b}.screen{padding:25px 15px 40px}.screen-intro{flex-direction:column;margin-bottom:22px}.screen-intro h1{font-size:28px}.stat-grid{gap:10px}.stat-card{padding:15px}.stat-number{font-size:28px}.split-pane{grid-template-columns:1fr}.case-list{display:flex;overflow:auto}.case-option{min-width:195px}.two-up{grid-template-columns:1fr}.meta-grid{grid-template-columns:1fr 1fr}.auth-screen{grid-template-columns:1fr}.auth-decoration{min-height:185px;padding:30px}.auth-decoration h1{font-size:30px}.auth-decoration p,.auth-foot{display:none}.auth-mark{font-size:35px}.auth-panel{padding:32px 23px}.status-chip{font-size:0;padding:9px}.status-dot{margin:0}}
+
+
+/* Responsive sizing: allow grid and flex children to shrink within the viewport. */
+.app-shell{width:100%;min-width:0}.main-shell{flex:1;max-width:100%}
+.screen,.topbar,.topbar-left,.screen-intro>div,.panel,.panel-body,.record-head>div,.meta-cell{min-width:0}
+.screen{width:100%;overflow-wrap:anywhere}.stat-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.topbar-left{display:flex;align-items:center;gap:11px}.topbar-right{flex-shrink:0}.breadcrumb{overflow-wrap:anywhere}
+.welcome-panel{background:linear-gradient(130deg,#e9faf4,#edf5fc);border:1px solid #cce9df;border-radius:13px;padding:24px;margin-bottom:24px}
+.welcome-panel h2{font-family:'Space Grotesk',sans-serif;font-size:24px;line-height:1.25;margin:10px 0;color:#18283d}
+.welcome-panel p,.guide-step p{font-size:14px;line-height:1.7;color:#52677c;max-width:760px}
+.guide-step{border-bottom:1px solid #e5eaf0;padding:20px 0}.guide-step:first-child{padding-top:0}.guide-step:last-child{border:0}
+.guide-step h3{margin:0;font-size:17px;line-height:1.4}.guide-step p{margin:10px 0}.guide-step .secondary{min-height:44px}
+@media(max-width:1100px){.stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){
+ .main-shell{width:100%;margin-left:0}.topbar{gap:10px}.topbar-left{flex:1}.breadcrumb{font-size:10px;letter-spacing:.7px}.breadcrumb span{padding:0 3px}.topbar-right{gap:8px}.user-bubble{display:none}.mobile-menu{flex-shrink:0;min-width:32px;min-height:44px}
+ .screen-intro>div{width:100%}.screen-intro p{max-width:100%}.stat-card{min-width:0;padding:14px 12px}.stat-note{line-height:1.5}.stat-label{letter-spacing:0}.stat-number{font-size:28px}
+ .columns,.split-pane,.two-up{grid-template-columns:minmax(0,1fr)}.meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .filterbar>*{min-width:0;max-width:100%}.filterbar .search{flex-basis:100%}.filter-select{max-width:100%}.case-option{flex-shrink:0}.case-list{max-width:100%}
+ .record-head,.panel-head{flex-wrap:wrap}.panel-head,.panel-body,.case-detail,.record-card{padding:18px}.actions{max-width:100%}.primary,.secondary{min-height:44px;white-space:normal}
+ .badge{max-width:100%;white-space:normal;overflow-wrap:anywhere}.network-wrap,.table-scroll{max-width:100%}.welcome-panel{padding:20px}.welcome-panel h2{font-size:23px}
+}
+
+.madison-quote{margin:20px 0 21px;padding:20px 22px;border-left:4px solid #17aa8c;background:linear-gradient(110deg,#f7fbfa,#f3f7fb);border-radius:0 12px 12px 0;color:#223c4b}.madison-quote blockquote{margin:0;font:600 clamp(15px,1.7vw,20px)/1.55 'Space Grotesk',sans-serif;letter-spacing:-.2px}.madison-quote figcaption{margin-top:11px;font-size:11px;line-height:1.5;color:#5f7184}.madison-quote a{color:#137d71;text-decoration:underline;text-underline-offset:2px}.auth-decoration .madison-quote{background:#ffffff13;border-left-color:#54dcb7;color:#f1fafb;max-width:550px;padding:15px 18px;margin:22px 0}.auth-decoration .madison-quote blockquote{font-size:clamp(13px,1.3vw,17px)}.auth-decoration .madison-quote figcaption,.auth-decoration .madison-quote a{color:#c7eee9}@media(max-width:720px){.madison-quote{padding:16px 17px;margin:16px 0}.auth-decoration .madison-quote{margin:12px 0 0}.auth-decoration .madison-quote blockquote{font-size:13px;line-height:1.4}}
+</style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.3"></script>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><div class="brand-mark"><span>◈</span></div><div><strong>EVIDENCE</strong><small>ATLAS <i> / RESEARCH OS</i></small></div></div>
+      <div class="workspace-label">WORKSPACE</div>
+      <nav id="nav" class="nav" aria-label="Main navigation"></nav>
+      <div class="sidebar-bottom"><div class="security-note"><span class="green-dot"></span> Private workspace<br/><small>Owner-protected by Supabase RLS</small></div><button class="sidebar-signout" id="signOutBtn">⇥ &nbsp; Sign out</button></div>
+    </aside>
+    <div class="main-shell">
+      <header class="topbar"><div class="topbar-left"><button id="mobileMenu" class="iconbutton mobile-menu" aria-label="Toggle navigation">☰</button><span class="breadcrumb">WORKSPACE <span> / </span> <b id="breadcrumbName">Overview</b></span></div><div class="topbar-right"><span class="status-chip" id="connectionStatus"><span class="status-dot"></span> Connecting</span><span class="user-bubble" title="Signed-in account">EA</span></div></header>
+      <main id="screen" class="screen" tabindex="-1"></main>
+    </div>
+  </div>
+  <div class="auth-screen" id="authScreen" hidden>
+    <div class="auth-decoration"><span class="auth-mark">◈</span><div class="auth-pixels"></div><h1>Turn research<br/>into clarity.</h1><p>A private workspace for cases, evidence, source trails and careful analysis. Connections are not conclusions.</p><figure class="madison-quote"><blockquote>“The accumulation of all powers, legislative, executive, and judiciary, in the same hands … may justly be pronounced the very definition of tyranny.”</blockquote><figcaption>James Madison · <a href="https://avalon.law.yale.edu/18th_century/fed47.asp" target="_blank" rel="noopener noreferrer">The Federalist No. 47 (1788) ↗</a> · Abridged excerpt</figcaption></figure><div class="auth-foot">EVIDENCE ATLAS &nbsp; / &nbsp; RESEARCH OPERATING SYSTEM</div></div>
+    <div class="auth-panel"><div class="auth-card"><div class="eyebrow">SECURE WORKSPACE</div><h2>Welcome back.</h2><p>Sign in with the account already authorized in your Supabase project.</p><form id="loginForm"><label for="loginEmail">Email address</label><input type="email" id="loginEmail" placeholder="you@example.com" required autocomplete="username"/><label for="loginPassword">Password</label><input type="password" id="loginPassword" placeholder="Your Supabase password" required autocomplete="current-password"/><button type="submit" id="loginBtn" class="primary wide">Sign in <span>→</span></button></form><div class="auth-feedback" id="authFeedback" role="alert"></div><div class="auth-alt">Or <button id="demoBtn" class="link-btn">explore a sample workspace</button></div><p class="auth-help">No new account is created. Your existing Supabase access rules remain in place.</p></div></div>
+  </div>
+  <div id="modalRoot"></div><div id="toast" role="status" aria-live="polite"></div>
+<script>
+/* Evidence Atlas v1 — one-owner Supabase investigation workspace. */
+'use strict';
+const PROJECT_URL = 'https://nxlffnplqdobfqxogmxo.supabase.co';
+const PUBLISHABLE_KEY = 'sb_publishable_cZZLI1DFQBybPEvr8zA0_Q_jz8afL0i';
+const OWNER_USER_ID = 'cdfff424-d750-4f82-baa3-d17a6113af53';
+const client = window.supabase?.createClient?.(PROJECT_URL, PUBLISHABLE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+}) || null;
+const TABLES = ['cases','claims','sources','claim_sources','people','organizations','case_people','case_organizations','relationships','solution_candidates','possible_outcomes','outcome_scenarios','problem_areas','research_watch_topics','research_inbox','master_source_register','case_source_references','investigation_groups','investigation_group_topics','investigation_group_sources','investigation_group_cases','investigation_group_events','news_sections','news_topics','news_items','workspace_preferences','document_translations','agent_control_state','agent_control_feeds','agent_control_activity'];
+const emptyData = () => Object.fromEntries(TABLES.map(t => [t, []]));
+const LANGUAGE_CHOICES=[['en','English'],['es','Español (Spanish)'],['fr','Français (French)'],['pt','Português (Portuguese)'],['de','Deutsch (German)'],['ar','العربية (Arabic)'],['zh','中文 (Chinese)'],['hi','हिन्दी (Hindi)'],['it','Italiano (Italian)'],['ja','日本語 (Japanese)'],['other','Other / specified language']];
+function contentLanguage(){const value=rows('workspace_preferences')[0]?.default_content_language||'en';return LANGUAGE_CHOICES.some(([code])=>code===value)?value:'en';}
+function languageOptions(selected){return LANGUAGE_CHOICES.map(([code,label])=>'<option value="'+esc(code)+'"'+(code===selected?' selected':'')+'>'+esc(label)+'</option>').join('');}
+function languageSettingsPanel(){const lang=contentLanguage();const body='<div class="panel-body"><label for="defaultContentLanguage" style="display:block;font-size:13px;font-weight:700;margin-bottom:9px">Default language for new research entries</label><select class="field" id="defaultContentLanguage" aria-label="Default content language" style="width:100%;max-width:370px" '+(state.demo?'disabled':'')+'>'+languageOptions(lang)+'</select><p class="mini-desc" style="margin-top:12px">English is the default. New case and source entries use this language setting unless you choose another. The CSV importer also lets you override the language for an individual upload.</p><div class="notice">The interface is in English. This setting labels new text; use Translation Desk to create a separate English copy of non-English text. Originals stay intact. Machine translations require review.</div></div>';return panel('Language settings',body);}
+const state = { screen:'dashboard', dataset:emptyData(), demo:false, ready:false, busy:false, caseId:null, search:'', filter:'all', errors:[], owner:null };
+const NAV=[['guide','?','Start Here'],['about','ⓘ','About / README'],['dashboard','▦','Overview'],['agents','◈','Agent Control Center'],['news','◍','News & Information'],['cases','▤','Case Files'],['claims','≡','Evidence Ledger'],['sources','⌁','Source Library'],['people','♙','People & Orgs'],['network','⬡','Connections Map'],['timeline','◷','Timeline'],['solutions','✧','Solutions Lab'],['epstein-files','♧','Epstein Files'],['covid-19','✳','COVID-19'],['palestine-gaza','⚖','Palestine / Gaza'],['watch','◉','Research Watch'],['healing','♡','Healing & Support'],['human-design','✳','Human Design'],['translations','文','Translation Desk'],['settings','⚙','Workspace']];
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const date = s => s ? new Date(`${s}T12:00:00Z`).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : 'Not dated';
+const cut = (s,n=110)=>{const t=String(s||'');return t.length>n?t.slice(0,n-1)+'…':t};
+const rows = t => state.dataset[t] || [];
+const one = (t,id)=>rows(t).find(r=>String(r.id)===String(id));
+const nameOfCase = id => one('cases',id)?.title||'Unassigned';
+const sourceFor = id => one('sources',id);
+const matches = (...s)=>`${s.join(' ')}`.toLowerCase().includes(state.search.toLowerCase().trim());
+const targetUrl = u=>{try{const parsed=new URL(u);return ['https:','http:'].includes(parsed.protocol)?parsed.href:null}catch{return null}};
+const sourceAnchor = (s,text)=>s?.url&&targetUrl(s.url)?`<a class="source-link" href="${esc(targetUrl(s.url))}" target="_blank" rel="noopener noreferrer">${esc(text||s.title)} ↗</a>`:esc(text||s?.title||'Unknown source');
+const label = (s,kind='')=>`<span class="badge ${kind}">${esc(s||'Not assessed')}</span>`;
+const action = (name,caption,variant='primary',attrs='')=>`<button class="${variant}" data-action="${name}" ${attrs}>${caption}</button>`;
+const blank = (title,desc,btn='')=>`<div class="empty"><div class="empty-ic">◇</div><h3>${esc(title)}</h3><p>${esc(desc)}</p>${btn}</div>`;
+const intro=(eyebrow,title,desc,buttons='')=>`<div class="screen-intro"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${desc}</p></div><div class="actions">${buttons}</div></div>`;
+const panel=(title,body,right='')=>`<section class="panel"><div class="panel-head"><h2>${title}</h2>${right}</div>${body}</section>`;
+const statusClass=s=>/verified|documented|supported|confirmed/i.test(String(s))?'teal':/disput|refut|false/i.test(String(s))?'red':/unreview|unknown|not assessed/i.test(String(s))?'orange':'blue';
+const linkedSources=id=>rows('claim_sources').filter(l=>String(l.claim_id)===String(id)).map(l=>({link:l, source:sourceFor(l.source_id)}));
+const countLinked=id=>linkedSources(id).length;
+const show = id=>$(id).hidden=false; const hide = id=>$(id).hidden=true;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._toast);window._toast=setTimeout(()=>t.classList.remove('show'),3500)}
+function status(text,mode='online'){const el=$('connectionStatus');el.innerHTML=`<span class="status-dot" style="background:${mode==='error'?'#dc6573':mode==='demo'?'#d3a249':'#32bf8f'}"></span> ${esc(text)}`;}
+function initNav(){ $('nav').innerHTML=NAV.map(([k,i,n])=>`<button class="nav-item ${k===state.screen?'active':''}" data-action="nav" data-page="${k}"><span class="ni">${i}</span>${n}<span class="count" data-navcount="${k}"></span></button>`).join(''); }
+function nav(k){if(k==='healing'||k==='human-design'){window.location.assign('./healing.html'+(k==='human-design'?'#human-design':''));return;}state.screen=k;state.search='';state.filter='all';$('sidebar').classList.remove('visible');render();window.scrollTo({top:0,behavior:'instant'});}
+function setAuthed(yes){$('authScreen').hidden=yes;$('appShell').hidden=!yes;}
+async function fetchAll(t){let result=[];for(let offset=0;offset<5000;offset+=1000){const {data,error}=await client.from(t).select('*').range(offset,offset+999);if(error)throw new Error(`${t}: ${error.message}`);result.push(...(data||[]));if(!data||data.length<1000)break;}return result;}
+async function loadData(){if(!client||state.demo)return;state.busy=true;status('Syncing');const results=await Promise.allSettled(TABLES.map(t=>fetchAll(t)));state.errors=[];results.forEach((r,i)=>{if(r.status==='fulfilled'){state.dataset[TABLES[i]]=r.value}else{state.errors.push(r.reason.message)}});state.busy=false;state.ready=true;status(state.errors.length?'Sync issues':'Live database',state.errors.length?'error':'online');render();}
+function demoData(){const d=emptyData();d.cases=[{id:1,case_number:1,title:'Sample investigation',summary:'This example record demonstrates the research workspace. Nothing here is saved to your database.',category:'Preview',start_date:null}];d.people=[{id:1,full_name:'Example researcher',occupation:'Sample record'}];d.sources=[{id:1,title:'Example source document',publisher:'Demo content',url:''}];d.claims=[{id:1,case_id:1,claim_text:'Example research question: what evidence would establish this claim?',evidence_status:'Not assessed',analysis:'Illustrative placeholder, not a real-world allegation.'}];d.claim_sources=[{claim_id:1,source_id:1,supports_or_refutes:'Context',strength:'Not reviewed'}];d.case_people=[{case_id:1,person_id:1,role:'Researcher'}];return d;}
+async function enterDemo(){state.demo=true;state.dataset=demoData();state.ready=true;state.caseId=1;state.errors=[];setAuthed(true);status('Sample preview','demo');render();}
+async function enterLive(){state.demo=false;setAuthed(true);await loadData();}
+function signedInLabel(){return state.demo?'SAMPLE DATA — NOT SAVED':'LIVE DATABASE / OWNER ACCESS';}
+function guardWrite(){if(state.demo){toast('Sample preview is read-only. Sign in to add records.');return false}if(!client){toast('The connection library is unavailable. Connect to the internet and reopen the app.');return false}if(state.owner!==OWNER_USER_ID){toast('Sign in as the authorized owner before changing records.');return false}return true}
+function networkScreenV2(){
+  const all=rows("cases");
+  const chosen=all.find(c=>String(c.id)===String(state.caseId))||all[0];
+  if(!chosen)return intro("RELATIONSHIP ANALYSIS","Connections Map","No case records yet.")+blank("No case files","Create your first case.");
+  state.caseId=chosen.id;
+  const originals=state.dataset;
+  const caseid=String(chosen.id);
+  const matched=(x)=>String(x.case_id)===caseid;
+  const links=rows("case_source_references").filter(matched);
+  const refs=rows("master_source_register");
+  const refIds=new Set(links.map(l=>String(l.register_id)));
+  const reg=refs.filter(x=>refIds.has(String(x.id)));
+  const sourceIds=new Set(reg.map(x=>String(x.source_id)));
+  const claims=rows("claims").filter(matched);
+  const claimIds=new Set(claims.map(x=>String(x.id)));
+  const claimSource=rows("claim_sources").filter(x=>claimIds.has(String(x.claim_id)));
+  claimSource.forEach(x=>sourceIds.add(String(x.source_id)));
+  const casePeople=rows("case_people").filter(matched),caseOrgs=rows("case_organizations").filter(matched);
+  const personIds=new Set(casePeople.map(x=>String(x.person_id))),orgIds=new Set(caseOrgs.map(x=>String(x.organization_id)));
+  const citations=reg.map(x=>({source_type:"case",source_id:chosen.id,target_type:"source",target_id:x.source_id,relationship_type:"Cited in master index"}));
+  const direct=rows("relationships").filter(x=>(x.source_type==="case"&&String(x.source_id)===caseid)||(x.target_type==="case"&&String(x.target_id)===caseid));
+  const subset={...originals,cases:[chosen],claims,claim_sources:claimSource,sources:rows("sources").filter(x=>sourceIds.has(String(x.id))),case_people:casePeople,case_organizations:caseOrgs,people:rows("people").filter(x=>personIds.has(String(x.id))),organizations:rows("organizations").filter(x=>orgIds.has(String(x.id))),relationships:[...direct,...citations]};
+  let graph;
+  try{state.dataset=subset;graph=networkScreen();}
+  finally{state.dataset=originals;}
+  const select=`<select id="networkCaseSelect" class="filter-select" aria-label="Select a case to map" style="max-width:480px">${all.map(x=>`<option value="${x.id}" ${String(x.id)===caseid?"selected":""}>#${esc(x.case_number||x.id)} · ${esc(cut(x.title,70))}</option>`).join("")}</select>`;
+  const shared=new Map();
+  for(const link of rows("case_source_references")){
+    const rf=refs.find(x=>String(x.id)===String(link.register_id));if(!rf)continue;
+    const sid=String(rf.source_id);if(!shared.has(sid))shared.set(sid,new Set());
+    shared.get(sid).add(String(link.case_id));
+  }
+  const overlap=[...shared.entries()].filter(x=>x[1].size>1).sort((a,b)=>b[1].size-a[1].size).slice(0,8);
+  const overlapHtml=overlap.map(([sid,ids])=>{
+    const s=rows("sources").find(x=>String(x.id)===sid);
+    const cases=all.filter(c=>ids.has(String(c.id)));
+    return `<div class="mini-card"><strong class="mini-title">${esc(s?.title||"Shared citation")}</strong><div class="mini-meta">${cases.length} cases citing the same document</div><p class="mini-desc">${cases.map(c=>`<button class="muted-link" data-action="open-case" data-id="${c.id}">#${esc(c.case_number)} ${esc(cut(c.title,33))}</button>`).join(" · ")}</p></div>`;
+  }).join("");
+  const cited=reg.map(r=>{
+    const s=rows("sources").find(x=>String(x.id)===String(r.source_id));
+    return `<div class="mini-card"><strong class="mini-title">${esc(r.reference_code)} — ${esc(s?.title||"Source reference")}</strong><div class="mini-desc">${s?.url?sourceAnchor(s,"Open original reference ↗"):"URL unavailable"} · PDF page ${r.original_pdf_page}</div></div>`;
+  }).join("");
+  return `<div class="filterbar"><label class="mini-desc" for="networkCaseSelect">Focus the map on a case</label>${select}</div>`
+    +graph
+    +`<div class="network-note">This map is limited to one case for readability. Its source edges mean “cited in the uploaded index”—not causation, coordination, culpability, or independently verified facts.</div>`
+    +`<div class="two-up" style="margin-top:21px">`
+    +panel("Case bibliography",cited?`<div class="panel-body">${cited}</div>`:blank("No citations","Add a source reference for this case."))
+    +panel("Sources shared between cases",overlapHtml?`<div class="panel-body">${overlapHtml}</div>`:blank("No shared source entries","A shared reference alone does not prove a deeper connection."))
+    +`</div>`;
+}
+function groupScreen(slug){
+ const group=rows("investigation_groups").find(g=>g.slug===slug);
+ if(!group)return intro("INDEPENDENT INVESTIGATIONS","Research group unavailable","The group is unavailable in sample mode or has not yet synchronized.")+blank("No group data","Sign in as the owner and refresh your data.");
+ const topics=rows("investigation_group_topics").filter(x=>x.group_slug===slug).sort((a,b)=>a.display_order-b.display_order);
+ const linked=rows("investigation_group_sources").filter(x=>x.group_slug===slug);
+ const events=rows("investigation_group_events").filter(x=>x.group_slug===slug).slice().sort((a,b)=>a.event_date.localeCompare(b.event_date));
+ const prior=rows("investigation_group_cases").filter(x=>x.group_slug===slug);
+ const sourceMap=new Map(rows("sources").map(x=>[String(x.id),x]));
+ const sourceList=linked.map(link=>({...link,source:sourceMap.get(String(link.source_id))})).filter(x=>x.source);
+ const groupAccent={"epstein-files":"#5174a4","covid-19":"#188f79","palestine-gaza":"#937347"}[slug]||"#168a88";
+ const tag=slug==="epstein-files"?"Court records & official disclosures":slug==="covid-19"?"Scientific research & policy oversight":"International humanitarian law & accountability";
+ const title=slug==="palestine-gaza"?"Palestine / Gaza":group.title;
+ const topicStatuses={unassessed:"Not yet assessed",documented:"Documented core",attributed_finding:"Attributed finding",allegation:"Allegation",contested:"Contested",resolved:"Resolved"};
+ const topicItem=t=>{
+  const f=sourceList.filter(x=>String(x.topic_id)===String(t.id));
+  return `<article class="record-card"><div class="record-head"><div class="eyebrow">RESEARCH SECTION · ${esc(String(t.display_order||"").padStart(2,"0"))}</div>${label(topicStatuses[t.finding_status]||"Unassessed",t.finding_status==="contested"?"orange":t.finding_status==="documented"?"teal":"blue")}</div>
+  <h3>${esc(t.title)}</h3><p>${esc(t.summary)}</p><div class="mini-desc"><strong>Research question:</strong> ${esc(t.research_question)}</div>
+  <div class="record-foot"><span>${f.length} linked source${f.length===1?"":"s"}</span><span>Review: ${esc(t.review_state)}</span></div>
+  ${f.length?`<div class="divider"></div><div class="mini-meta">${f.slice(0,4).map(z=>`<span>${sourceAnchor(z.source,cut(z.source.title,45))}</span>`).join(" · ")}</div>`:""}
+  </article>`;
+ };
+ const sourceItem=(x)=>{
+  const t=topics.find(t=>String(t.id)===String(x.topic_id));
+  return `<div class="mini-card"><div class="record-head"><strong class="mini-title">${esc(x.source.title)}</strong>${label(x.reviewed?"Reviewed":"Source to review",x.reviewed?"teal":"orange")}</div>
+    <div class="mini-meta">${esc(x.source.publisher||"Publisher unrecorded")} · ${esc(x.evidence_role.replaceAll("_"," "))}${t?` · ${esc(t.title)}`:""}</div>
+    <p class="mini-desc">${esc(x.relevance_notes||"Source supplied for consideration, not independently verified.")}</p>
+    <div class="actions" style="margin-top:8px">
+      ${sourceAnchor(x.source,"Open original source ↗")}
+      ${state.demo?"":`<button type="button" class="text-btn" data-action="group-toggle-reviewed" data-group="${esc(slug)}" data-id="${esc(x.source_id)}">${x.reviewed?"Return to review":"Mark source reviewed"}</button>`}
+    </div>
+  </div>`;
+ };
+ const eventItem=(e)=>{
+  const s=e.source_id?sourceMap.get(String(e.source_id)):null;
+  return `<div class="timeline-item"><div class="timeline-date">${esc(e.event_date)} · ${esc(e.event_kind.replaceAll("_"," "))}</div><h3>${esc(e.title)}</h3><p>${esc(e.description)}</p>${s?`<p>${sourceAnchor(s,"Event documentation ↗")}</p>`:""}</div>`;
+ };
+ const linkedCases=prior.map(c=>{
+  const x=one("cases",c.case_id);return x?`<div class="mini-card"><button class="muted-link" data-action="open-case" data-id="${x.id}">#${esc(x.case_number)} · ${esc(x.title)} ↗</button><p class="mini-desc">${esc(c.notes||"Existing master index record cross-reference.")}</p></div>`:"";
+ }).join("");
+ const controls=state.demo?"":
+ `<button type="button" class="primary" data-action="group-add-source" data-group="${esc(slug)}">＋ Add document</button>
+  <button type="button" class="secondary" data-action="group-add-topic" data-group="${esc(slug)}">＋ Research section</button>
+  <button type="button" class="secondary" data-action="group-add-event" data-group="${esc(slug)}">＋ Timeline event</button>`;
+ return `<div class="screen-intro"><div><div class="eyebrow">${esc(tag)}</div><h1>${esc(title)}</h1><p>${esc(group.subtitle)}</p></div></div>
+ <section class="panel" style="margin-bottom:20px;border-top:3px solid ${groupAccent}"><div class="panel-body">
+ <div class="eyebrow">GROUP MISSION</div><p style="line-height:1.75;color:#465970;font-size:13px">${esc(group.scope_notes)}</p>
+ <p class="mini-desc"><strong>Evidence standards:</strong> ${esc(group.research_policy)}</p>
+ <div class="actions" style="margin-top:16px">${controls}<button class="secondary" type="button" data-action="nav" data-page="watch">◉ Research Watch</button></div>
+ </div></section>
+ <div class="stat-grid">${[[topics.length,"Research sections","▤"],[sourceList.length,"Source references","⌁"],[events.length,"Dated events","◷"],[prior.length,"Linked master cases","⬡"]].map(([v,k,icon])=>`<div class="stat-card"><div class="stat-ic">${icon}</div><div class="stat-label">${k}</div><div class="stat-number">${v}</div></div>`).join("")}</div>
+ ${panel("Research sections",topics.length?`<div class="panel-body"><div class="two-up">${topics.map(topicItem).join("")}</div></div>`:blank("No sections","Create your first research section."))}
+ <div class="two-up" style="margin-top:20px">
+  ${panel("Document & evidence library",sourceList.length?`<div class="panel-body">${sourceList.map(sourceItem).join("")}</div>`:blank("No documents yet","Add primary records or independently sourced reports."))}
+  <div class="stack">${panel("Event & legal timeline",events.length?`<div class="panel-body"><div class="timeline">${events.map(eventItem).join("")}</div></div>`:blank("No timeline events","Add dated events with original documentation."))}
+  ${panel("Links to original 140-case index",linkedCases?`<div class="panel-body">${linkedCases}</div>`:`<div class="panel-body"><p class="mini-desc">This is a new, separate investigation. No previous master-index cases are linked.</p></div>`)}
+  </div>
+ </div>
+ <div class="network-note">Independent workspace: these sections, sources and events are private drafts. They do not alter the evidence grades in the original 140-case index. The connection of a person or institution to an event does not, by itself, prove guilt or causation.</div>`;
+}
+const newsView={section:"all",topic:"all",group:"all",kind:"all",review:"all",search:""};
+function newsScreen(){
+  const sections=rows("news_sections").slice().sort((a,b)=>a.display_order-b.display_order);
+  const topics=rows("news_topics").filter(t=>t.active!==false);
+  const all=rows("news_items").slice().sort((a,b)=>String(b.published_at||b.discovered_at||"").localeCompare(String(a.published_at||a.discovered_at||"")));
+  if(state.demo&&!sections.length)return intro("NEWS AND INFORMATION","News & Information","Separate from your case files: collect reports and review the original sources.")+panel("Sample preview",'<div class="panel-body"><p class="mini-desc">Sign in to browse your nine live news sections and 34 topics. Sample mode does not load private news records.</p></div>');
+  const section=sections.find(s=>String(s.id)===String(newsView.section));
+  const scopedTopics=section?topics.filter(t=>t.section_id===section.id):topics;
+  const chosenTopic=topics.find(t=>String(t.id)===String(newsView.topic));
+  const groupName=slug=>rows("investigation_groups").find(g=>g.slug===slug)?.title||slug||"General reporting";
+  const numIn=s=>all.filter(x=>topics.some(t=>t.id===x.topic_id&&t.section_id===s.id)).length;
+  const selected=all.filter(x=>{
+    const t=topics.find(t=>t.id===x.topic_id);if(!t)return false;
+    return (!section||t.section_id===section.id) &&
+      (newsView.topic==="all"||String(x.topic_id)===String(newsView.topic)) &&
+      (newsView.group==="all"||x.group_slug===newsView.group) &&
+      (newsView.kind==="all"||x.content_kind===newsView.kind) &&
+      (newsView.review==="all"||x.review_status===newsView.review) &&
+      [x.headline,x.publisher,x.summary,x.evidence_notes,x.alternative_views,t.title].join(" ").toLowerCase().includes(newsView.search.toLowerCase().trim());
+  });
+  const countPending=all.filter(x=>x.review_status==="pending").length;
+  const topicCard=t=>`<button class="news-topic-card" type="button" data-news-topic="${t.id}" style="text-align:left;display:block;width:100%;border:1px solid #d9e3e9;border-radius:12px;background:${String(newsView.topic)===String(t.id)?"#eef8f5":"#fff"};padding:14px;cursor:pointer"><div class="mini-title">${esc(t.title)} ${t.group_slug?"· "+esc(groupName(t.group_slug)):""}</div><p class="mini-desc">${esc(t.description)}</p><span class="mini-meta">${all.filter(x=>x.topic_id===t.id).length} saved items</span></button>`;
+  const itemCard=x=>{
+    const t=topics.find(y=>y.id===x.topic_id);
+    const sec=sections.find(y=>y.id===t?.section_id);
+    const status=x.review_status==="reviewed"?"Reviewed by owner":x.review_status==="dismissed"?"Dismissed":"Pending review";
+    const kind={news_report:"News report",primary_document:"Original document",research_paper:"Scientific research",fact_check:"Fact-check",background_explainer:"Background / explainer",legal_record:"Legal record",opinion:"Opinion"}[x.content_kind]||"Source";
+    return `<article class="record-card" data-news-record="${x.id}">
+      <div class="record-head"><div class="eyebrow">${esc(sec?.title||"News")} / ${esc(t?.title||"Uncategorized")}</div>${label(status,x.review_status==="reviewed"?"teal":x.review_status==="dismissed"?"red":"orange")}</div>
+      <h3>${esc(x.headline)}</h3>
+      <div class="mini-meta"><span>${esc(x.publisher||"Publisher not recorded")}</span><span>${esc(kind)}</span><span>${x.published_at?"Published "+esc(x.published_at.slice(0,10)):"Publication date not recorded"}</span>${x.group_slug?`<span>${esc(groupName(x.group_slug))}</span>`:""}</div>
+      ${x.summary?`<p>${esc(x.summary)}</p>`:""}
+      ${x.evidence_notes?`<p class="mini-desc"><strong>Evidence / caveats:</strong> ${esc(x.evidence_notes)}</p>`:""}
+      ${x.alternative_views?`<p class="mini-desc"><strong>Competing interpretations:</strong> ${esc(x.alternative_views)}</p>`:""}
+      <div class="mini-meta">Assessment: ${esc((x.assessment||"unassessed").replaceAll("_"," "))} · Entered as a source, not a proven claim</div>
+      <div class="actions" style="margin-top:12px;gap:8px;align-items:center;flex-wrap:wrap">
+        ${sourceAnchor({url:x.source_url,title:x.headline},"Read original ↗")}
+        ${!state.demo?`<button class="secondary" type="button" data-action="news-edit" data-id="${x.id}">Edit notes</button>`:""}
+        ${!state.demo && x.review_status==="pending"?`<button class="secondary" type="button" data-action="news-review" data-id="${x.id}">Mark reviewed</button><button class="secondary" type="button" data-action="news-dismiss" data-id="${x.id}">Dismiss</button>`:""}
+        ${!state.demo && x.review_status!=="pending"?`<button class="secondary" type="button" data-action="news-reopen" data-id="${x.id}">Reopen</button>`:""}
+        ${!state.demo && x.review_status==="reviewed"?`<button class="secondary" type="button" data-action="news-send-inbox" data-id="${x.id}">Send to Research Watch</button>`:""}
+      </div>
+    </article>`;
+  };
+  const sectionButtons=`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px"><button class="secondary" type="button" data-news-section="all" aria-pressed="${!section}">All sections</button>${sections.map(s=>`<button class="secondary" type="button" data-news-section="${s.id}" aria-pressed="${section?.id===s.id}">${esc(s.title)}</button>`).join("")}</div>`;
+  const sectionCards=!section?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px">${sections.map(s=>`<button type="button" data-news-section="${s.id}" style="border:1px solid #dae5ea;border-radius:12px;background:#fff;text-align:left;padding:16px;cursor:pointer"><strong>${esc(s.title)}</strong><p class="mini-desc">${esc(s.description)}</p><div class="mini-meta">${topics.filter(t=>t.section_id===s.id).length} topics · ${numIn(s)} items</div></button>`).join("")}</div>`:"";
+  const topicCards=section?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px">${scopedTopics.map(topicCard).join("")}</div>`:"<p class=\"mini-desc\">Choose a section above to browse its topics, or use the filters below to search everything.</p>";
+  const topicSelect=`<option value="all">All topics</option>${scopedTopics.map(t=>`<option value="${t.id}" ${String(newsView.topic)===String(t.id)?"selected":""}>${esc(t.title)}</option>`).join("")}`;
+  const groupSelect=`<option value="all">All investigations</option>${rows("investigation_groups").map(g=>`<option value="${esc(g.slug)}" ${newsView.group===g.slug?"selected":""}>${esc(g.title)}</option>`).join("")}`;
+  const kinds=[["all","All types"],["news_report","News reporting"],["primary_document","Primary documents"],["legal_record","Legal records"],["research_paper","Scientific research"],["fact_check","Fact-checks"],["background_explainer","Explainers"],["opinion","Opinion"]];
+  const selection=(value,choices)=>choices.map(([v,n])=>`<option value="${esc(v)}" ${v===value?"selected":""}>${esc(n)}</option>`).join("");
+  return intro("INDEPENDENT NEWS DESK","News & Information","Browse reporting, primary documents, research, corrections and explanatory material. Nothing here becomes a verified claim without review.",
+    state.demo?"":action("news-add-item","＋ Add information")+action("news-add-topic","＋ New topic","secondary")+action("news-add-section","＋ New section","secondary"))+
+    `<div class="stat-grid">${[[sections.length,"News sections","▤"],[topics.length,"Topics","⌕"],[all.length,"Items","⌁"],[countPending,"Waiting for review","◉"]].map(([v,name,ic])=>`<div class="stat-card"><div class="stat-ic">${ic}</div><div class="stat-label">${name}</div><div class="stat-number">${v}</div></div>`).join("")}</div>
+    <div class="network-note" style="margin-bottom:18px"><strong>Editorial policy:</strong> News reports, allegations and analysis are distinct from primary documents and legal findings. Keep original publication dates, seek independent confirmation, and record corrections. These items are private to your account.</div>
+    ${sectionButtons}${sectionCards}
+    ${panel(section?`Topics: ${esc(section.title)}`:"Browse by topic",`<div class="panel-body">${topicCards}</div>`)}
+    <div style="height:20px"></div>
+    ${panel("News desk & saved references",
+    `<div class="panel-body"><div class="filterbar" style="display:flex;flex-wrap:wrap;gap:9px">
+      <input id="newsFilterSearch" class="search" placeholder="Search headlines, sources or notes…" value="${esc(newsView.search)}" aria-label="Search news" style="min-width:200px;flex:1"/>
+      <select id="newsFilterTopic" class="filter-select" aria-label="Topic">${topicSelect}</select>
+      <select id="newsFilterGroup" class="filter-select" aria-label="Investigation">${groupSelect}</select>
+      <select id="newsFilterKind" class="filter-select" aria-label="Information type">${selection(newsView.kind,kinds)}</select>
+      <select id="newsFilterStatus" class="filter-select" aria-label="Review status">${selection(newsView.review,[["all","All review stages"],["pending","Pending"],["reviewed","Reviewed"],["dismissed","Dismissed"]])}</select>
+    </div><div class="mini-meta" id="newsShownCount" style="margin:10px 0 15px">Showing ${selected.length} of ${all.length} saved entries</div>
+    ${selected.length?`<div class="stack" id="newsRecords">${selected.map(itemCard).join("")}</div>`:blank("No matching news items","Change a filter, or add a source to this news topic. The starter references are background material, not live-breaking reports.")}
+    </div>`)}
+    <div class="network-note" style="margin-top:14px">To investigate a news item more deeply, mark it reviewed, then send it to Research Watch. This does not automatically add it to a case, confirm a claim, or publish it.</div>`;
+}
+function aboutScreen(){
+ const url="https://github.com/MrMakeItNice/evidence-mapp-app";
+ const policy="./privacy.html";
+ const anchor=(url,label)=>`<a class="source-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>`;
+ const sections=[
+  ["Start Here","Read the guided walkthrough; learn how to assess a claim and locate original sources.","guide"],
+  ["Case Files","Browse the original 140 numbered case studies, preserving the document's caveats and original source register.","cases"],
+  ["Evidence Ledger & Source Library","Compare individual claims, cited documents, source context and competing evidence.","claims"],
+  ["Connections Map & Timeline","Explore explicitly recorded relationships and chronology; overlap does not prove wrongdoing.","network"],
+  ["News & Information","Browse nine news sections and their topics. Date sources, review articles and separate reporting from primary evidence.","news"],
+  ["Research Watch","Manage research topics and incoming leads. New material is staged for review; it is not automatically verified.","watch"],
+  ["Epstein Files","Separate investigation of official disclosures, legal proceedings and custody findings, with survivor privacy in mind.","epstein-files"],
+  ["COVID-19","Separate workspace for origins evidence, public-health data, pandemic policy and research uncertainty.","covid-19"],
+  ["Palestine / Gaza","International law and humanitarian evidence, including UN findings and ICC/ICJ proceedings with appropriate legal status.","palestine-gaza"],
+  ["Solutions Lab","Explore proposals and conditional scenarios; these are not forecasts or proven interventions.","solutions"],
+  ["Workspace","Owner-only editing, exports, case imports and account-level navigation.","settings"]
+ ];
+ const standards=[
+  ["Documented","An identified original record, court decision, official report or other traceable evidence establishes a specific fact. Record exactly what it does and does not establish."],
+  ["Attributed finding","A named institution, court, commission or expert body has reached a conclusion. Identify its date, mandate, procedural status and any relevant rebuttal."],
+  ["Allegation or hypothesis","An assertion or proposed explanation under investigation. Treat it as unproven until adequate corroboration exists."],
+  ["Contested","Credible sources disagree or important factual/legal elements remain unresolved. Preserve competing evidence and the nature of the dispute."],
+  ["Unassessed or unsupported","Unassessed means not yet reviewed; unsupported means a particular claim is not established by the reviewed material. These are not interchangeable."]
+ ];
+ const timeline=[
+  ["October 2026 · v1.8","About / README added to the researcher workspace and the public reader."],
+  ["October 2026 · v1.7","News & Information sections, topic filters and private review workflow."],
+  ["October 2026 · v1.5–v1.6","Separate Epstein, COVID-19 and Palestine / Gaza investigation workspaces."],
+  ["October 2026 · v1.3–v1.4","Original 140-case index imported with its case citations; searchable case views and case-focused network."],
+  ["Earlier releases","Owner-protected investigation workspace, source library, evidence ledger, timelines and Research Watch."]
+ ];
+ return intro("PROJECT DOCUMENTATION","About / README","What Evidence Atlas is, how to investigate responsibly, and how its research and privacy boundaries work.",
+  `${action("nav","Start the guided tour","primary",'data-page="guide"')}${action("nav","Browse news","secondary",'data-page="news"')}`)+
+  `<section class="panel" style="margin-bottom:18px;border-top:3px solid #30cba9"><div class="panel-body">
+   <div class="eyebrow">OUR MISSION · MAKE IT NICE</div>
+   <h2 style="font-size:23px;margin:9px 0">Understand the world. Help make it nicer.</h2>
+   <p class="mini-desc" style="line-height:1.9">Evidence Atlas is an evidence-first research and learning project. It collects case histories, source documents, current reporting and questions worth investigating. The goal is to make it easier to tell what is established, what is alleged, what is disputed, and what is still unknown—and to turn careful understanding into constructive ideas.</p>
+   <p class="mini-desc">A case or person appearing here does not imply guilt, causal involvement, an intelligence connection, or independent verification by the project.</p>
+   <div class="actions" style="margin-top:14px">${anchor(url,"Project source code and technical README")}</div>
+  </div></section>
+  <div class="two-up" style="margin-bottom:18px">
+   ${panel("How to use each feature",`<div class="panel-body">${sections.map(([heading,detail,view])=>`<div class="mini-card"><button class="muted-link" type="button" data-action="nav" data-page="${esc(view)}">${esc(heading)} →</button><p class="mini-desc">${esc(detail)}</p></div>`).join("")}</div>`)}
+   <div class="stack">
+    ${panel("Evidence and research standards",`<div class="panel-body">${standards.map(([heading,detail])=>`<div class="mini-card"><strong class="mini-title">${esc(heading)}</strong><p class="mini-desc">${esc(detail)}</p></div>`).join("")}
+    <p class="mini-desc"><strong>Historic case grades:</strong> The original master index uses context-specific A–D assessments. Preserve each original entry's full wording, death/whistleblower distinctions and linked sources. A grade for a documented program does not verify every claim associated with it.</p>
+    <p class="mini-desc"><strong>Legal proceedings:</strong> Charges, arrest warrants, investigative conclusions, provisional measures and final judgments are different. The app should name the source and precise status rather than infer guilt or a final legal ruling.</p></div>`)}
+    ${panel("Publishing and review",`<div class="panel-body"><p class="mini-desc">Research Watch and News & Information collect source leads. Read the original document, check publication dates and provenance, compare independent accounts and record corrections before marking an item reviewed. A reviewed article is not automatically a confirmed factual claim.</p>
+    <p class="mini-desc">A saved private draft is not the same as a publicly published summary. Cross-references and network edges describe recorded relationships; they do not establish causation.</p></div>`)}
+   </div>
+  </div>
+  <div class="two-up" style="margin-bottom:18px">
+   ${panel("Privacy and security",`<div class="panel-body">
+    <p class="mini-desc"><strong>Public reader:</strong> Visitors can read available public summaries without signing into the owner workspace. External publisher links open other websites, which have their own practices.</p>
+    <p class="mini-desc"><strong>Private workspace:</strong> The site uses Supabase authentication and database row-level security to restrict research records. The public GitHub repository includes frontend source code, not your private research database or passwords. Access restrictions are not a promise of absolute security.</p>
+    <p class="mini-desc"><strong>Transparency:</strong> Publication settings and storage arrangements may change. Review the project's current ${anchor(policy,"privacy notice")}. This page is a summary of the present app design, not a substitute for formal legal terms.</p>
+    </div>`)}
+   ${panel("Contact and feedback",`<div class="panel-body">
+    <p class="mini-desc">For technical details, project history and potential contribution routes, visit the ${anchor(url,"Evidence Atlas GitHub repository")}.</p>
+    <p class="mini-desc"><strong>Direct contact email:</strong> Not yet published. No personal contact details are displayed without the owner's approval.</p>
+    <p class="mini-desc">When submitting corrections, include the case or article, original source URL, relevant date and the precise statement that needs attention. Avoid sending private survivor or witness information.</p>
+    </div>`)}
+  </div>
+  ${panel("Project updates",`<div class="panel-body">${timeline.map(([when,detail])=>`<div class="nested-row"><strong>${esc(when)}</strong><p class="mini-desc">${esc(detail)}</p></div>`).join("")}</div>`)}
+  <div class="network-note" style="margin-top:18px">Evidence Atlas is an educational research workspace, not legal, medical or professional advice. Findings should be revisited when stronger or conflicting evidence becomes available.</div>`;
+}
+
+function translationScreen(){
+ const history=rows('document_translations').slice().sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
+ return intro('KEEP THE ORIGINAL. REVIEW THE COPY.','Translation Desk','Create a separate English reading copy. A translation is not a verified source or a new finding.','')+
+ panel('Original and translated text',`<div class="panel-body"><p class="mini-desc">Paste an excerpt or load a UTF-8 text file (.txt, .md, .csv, .json). Text extraction from PDF, images and Word files is not included; paste extracted text. Uploads remain local until you save or explicitly send text for server translation.</p>
+ <label>Translation title<input class="field" id="translationTitle" maxlength="200" placeholder="Document or excerpt title" style="width:100%;margin:8px 0 15px"></label>
+ <label>Original text file<input class="field" type="file" id="translationFile" accept=".txt,.md,.csv,.json,text/plain,text/csv,application/json" style="width:100%;margin:8px 0 15px"></label>
+ <div class="two-up"><label>Original language<select class="field" id="translationSource" style="width:100%;margin:8px 0 15px">${languageOptions('es').replace(/<option value="other"[\s\S]*?<\/option>/,'')}</select></label><label>Translated language<select class="field" id="translationTarget" style="width:100%;margin:8px 0 15px">${languageOptions(contentLanguage()).replace(/<option value="other"[\s\S]*?<\/option>/,'')}</select></label></div>
+ <div class="two-up"><label>Original text · preserved<textarea class="field" id="translationOriginal" rows="12" maxlength="20000" style="width:100%;margin:8px 0 15px" placeholder="Paste original text"></textarea></label><label>Translated copy · editable for review<textarea class="field" id="translationOutput" rows="12" maxlength="100000" style="width:100%;margin:8px 0 15px" placeholder="Translate or paste an independently prepared translation"></textarea></label></div>
+ <div class="actions"><button class="primary" id="translateDevice" ${state.demo?'disabled':''}>Translate on this device</button><button class="secondary" id="translateServer" ${state.demo?'disabled':''}>Translate with DeepL</button></div>
+ <p class="mini-desc">On-device translation needs a browser with the Translator API and may download a language model. DeepL sends the original text to an external translation service and requires an owner-configured API key; it never replaces the original.</p>
+ <label style="display:block;margin:14px 0"><input type="checkbox" id="translationConsent"> I permit this text to be sent to DeepL when I choose its translation button.</label>
+ <label style="display:block;margin:14px 0"><input type="checkbox" id="translationReviewed"> I have compared the translated copy against the original and reviewed its accuracy.</label>
+ <p id="translationStatus" class="mini-desc" role="status" aria-live="polite">English is the default target. No translation has been generated.</p>
+ <button class="primary" id="saveTranslation" ${state.demo?'disabled':''}>Save original + translated copy</button></div>`)+
+ panel('Saved reading copies',history.length?`<div class="panel-body">${history.map(t=>`<div class="mini-card"><strong>${esc(t.title)}</strong><p class="mini-desc">${esc(t.source_language)} → ${esc(t.target_language)} · ${esc(t.engine)} · ${t.review_status==='reviewed'?'Human review recorded':'Pending human review'}</p><button class="secondary" data-translation-open="${esc(t.id)}">Open both versions</button></div>`).join('')}</div>`:blank('No saved translations','Your original text and translated copy will stay together in the private workspace.'));
+}
+async function translationAvailability(){
+ const onDevice='Translator' in window;
+ if($('translateDevice'))$('translateDevice').disabled=state.demo||!onDevice;
+ try{const r=await fetch(PROJECT_URL+'/functions/v1/evidence-translate',{signal:AbortSignal.timeout(8000)});const d=await r.json();if(state.screen!=='translations')return;$('translateServer').disabled=state.demo||!d.configured;$('translationStatus').textContent=(onDevice?'This browser offers the on-device translation API; individual language models may still be unavailable. ':'On-device translation is unavailable in this browser. ')+(d.configured?'DeepL server translation is configured.':'DeepL needs an API key in the project secrets. You can still paste, review, and save a translated copy.');}catch{if(state.screen==='translations')$('translationStatus').textContent='Could not check server translation. You can still paste and save a reviewed copy.';}
+}
+let translationEngine='manual',translationFilename=null;
+async function requestTranslation(engine){
+ if(!guardWrite())return;
+ const original=$('translationOriginal').value,source=$('translationSource').value,target=$('translationTarget').value;
+ if(!original.trim())throw Error('Add the original text first.');
+ if(original.length>20000)throw Error('Split this text into excerpts of 20,000 characters or fewer.');
+ if(source==='other'||target==='other')throw Error('Choose a supported language.');
+ if(source===target)return {text:original,engine:'manual'};
+ if(engine==='browser'){
+  if(!('Translator' in window))throw Error('This browser does not offer on-device translation. Use a supported desktop browser, configured DeepL, or paste a translation for review.');
+  const options={sourceLanguage:source,targetLanguage:target};
+  if(await window.Translator.availability(options)==='unavailable')throw Error('This language pair is unavailable on this device.');
+  const translator=await window.Translator.create(options);
+  try{return {text:await translator.translate(original),engine:'browser'};}finally{translator.destroy();}
+ }
+ if(!$('translationConsent').checked)throw Error('Confirm permission to send this text to DeepL first.');
+ const {data,error}=await client.auth.getSession();if(error||!data.session)throw Error('Sign in again before server translation.');
+ const r=await fetch(PROJECT_URL+'/functions/v1/evidence-translate',{method:'POST',headers:{authorization:'Bearer '+data.session.access_token,apikey:PUBLISHABLE_KEY,'content-type':'application/json'},body:JSON.stringify({text:original,source_language:source,target_language:target,consent:true}),signal:AbortSignal.timeout(35000)});
+ const d=await r.json();if(!r.ok)throw Error(d.error||'Translation unavailable.');return {text:d.translation,engine:d.engine};
+}
+document.addEventListener('click',async e=>{
+ const b=e.target.closest('#translateDevice,#translateServer,#saveTranslation,[data-translation-open]');if(!b)return;
+ if(b.dataset.translationOpen){const t=rows('document_translations').find(t=>t.id===b.dataset.translationOpen);if(!t)return;$('translationTitle').value=t.title;$('translationSource').value=t.source_language;$('translationTarget').value=t.target_language;$('translationOriginal').value=t.original_text;$('translationOutput').value=t.translated_text;$('translationReviewed').checked=t.review_status==='reviewed';translationEngine=t.engine;translationFilename=t.original_filename;$('translationStatus').textContent='Loaded saved versions. Saving creates a new review copy; this record is kept unchanged.';return;}
+ if(!guardWrite())return;const status=$('translationStatus');b.disabled=true;
+ try{
+ if(b.id==='saveTranslation'){
+  const original=$('translationOriginal').value,translated=$('translationOutput').value,title=$('translationTitle').value.trim();
+  if(!original.trim()||!translated.trim()||!title)throw Error('Add a title, original text, and translated copy before saving.');
+  const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(original)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+  const {error}=await client.from('document_translations').insert({owner_id:OWNER_USER_ID,title,original_filename:translationFilename,original_sha256:hash,source_language:$('translationSource').value,target_language:$('translationTarget').value,original_text:original,translated_text:translated,engine:translationEngine,review_status:$('translationReviewed').checked?'reviewed':'pending'});
+  if(error)throw error;await loadData();toast('Original and reading copy saved privately.');return;
+ }
+ const originalAtStart=$('translationOriginal').value,sourceAtStart=$('translationSource').value,targetAtStart=$('translationTarget').value;status.textContent='Translating… Original text stays unchanged.';const result=await requestTranslation(b.id==='translateDevice'?'browser':'deepl');if(originalAtStart!==$('translationOriginal').value||sourceAtStart!==$('translationSource').value||targetAtStart!==$('translationTarget').value)throw Error('Original text or language changed while translating. Translate again to match the current original.');$('translationOutput').value=result.text;translationEngine=result.engine;$('translationReviewed').checked=false;status.textContent='Reading copy generated. Compare it with the original before marking reviewed.';
+ }catch(error){status.textContent=error.message||'Operation failed. The original is unchanged.';}finally{b.disabled=false;}
+});
+document.addEventListener('change',async e=>{if(e.target.id!=='translationFile')return;const f=e.target.files?.[0];if(!f)return;try{if(f.size>100000)throw Error('Choose a text excerpt under 100 KB.');if(!/\.(txt|md|csv|json)$/i.test(f.name))throw Error('Choose a UTF-8 text file.');const text=await f.text();if(text.length>20000)throw Error('Split the document into excerpts of 20,000 characters or fewer.');$('translationOriginal').value=text;$('translationOutput').value='';$('translationTitle').value=f.name;translationFilename=f.name;translationEngine='manual';$('translationReviewed').checked=false;$('translationStatus').textContent='Original loaded locally. Choose a language and translation method.';}catch(error){$('translationStatus').textContent=error.message;}});
+document.addEventListener('input',e=>{if(['translationOriginal','translationSource','translationTarget'].includes(e.target.id)){$('translationOutput').value='';$('translationReviewed').checked=false;translationEngine='manual';translationFilename=null;}if(e.target.id==='translationOutput'){$('translationReviewed').checked=false;translationEngine='manual';}});
+
+function agentControlScreen(){
+  const summary=rows('agent_control_state')[0]||null;
+  const feeds=rows('agent_control_feeds').slice().sort((a,b)=>a.feed_id-b.feed_id);
+  const runs=rows('agent_control_activity').slice().sort((a,b)=>String(b.requested_at||'').localeCompare(String(a.requested_at||''))).slice(0,14);
+  const news=rows('news_items').filter(x=>x.review_status==='pending').slice().sort((a,b)=>String(b.discovered_at||'').localeCompare(String(a.discovered_at||''))).slice(0,6);
+  const stamp=value=>{
+    if(!value)return 'Not yet recorded';
+    const parsed=Date.parse(String(value).replace(' ','T').replace(/\+00$/, 'Z'));
+    return Number.isFinite(parsed)?new Date(parsed).toLocaleString():String(value).slice(0,16).replace('T',' ');
+  };
+  if(state.demo)return intro('OWNER CONTROL CENTER','Agent Control Center','Private operational dashboard for automatic collectors and research review queues.')+
+    panel('Sign in to see real monitoring status','<div class="panel-body"><p class="mini-desc">Sample mode is intentionally not connected to real feed activity, research agents, or private news records. Sign in to the owner workspace for actual data.</p></div>');
+  const options=action('refresh','↻ Refresh status','secondary')+action('nav','Review news leads','primary','data-page="news"')+action('nav','Research Watch','secondary','data-page="watch"');
+  if(!summary)return intro('OWNER CONTROL CENTER','Agent Control Center','Collector telemetry is not available yet.',options)+blank('Monitoring snapshot unavailable','Confirm the database refresh job and agent_control_* table access in Supabase, then refresh. Missing telemetry is not evidence that the collector is operating.');
+  const refreshed=Date.parse(String(summary.generated_at).replace(' ','T').replace(/\+00$/, 'Z'));
+  const stale=!(Number.isFinite(refreshed))||(Date.now()-refreshed)>20*60*1000;
+  const active=(summary.active_feeds||0)>0;
+  const counts=[
+    [summary.active_feeds||0,'Active RSS feeds','⌁','Rotated across five-minute dispatches'],
+    [summary.collected_leads||0,'Collected RSS leads','◉','Unassessed feed headlines'],
+    [summary.news_pending||0,'Pending news reviews','▤','Private News & Information queue'],
+    [summary.inbox_pending||0,'Research Watch queue','◎','Private leads to investigate']
+  ];
+  const agentNames=[
+    ['Evidence Atlas 24/7 Research','Hourly research automation','ChatGPT research task; its individual runs are not reported by this database monitor'],
+    ['Evidence Atlas Daily Watch','Daily case analysis','Independent ChatGPT scheduled task; check ChatGPT tasks for run history'],
+    ['Evidence Atlas Influence Watch','Daily influence accountability','Independent ChatGPT scheduled task; not a Supabase RSS feed'],
+    ['Public Accountability Voices','Daily public-source research','Independent ChatGPT scheduled task; not monitored by this collector']
+  ];
+  const groups=rows('investigation_groups');
+  const groupName=slug=>groups.find(g=>g.slug===slug)?.title||'General reporting';
+  const statusPill=s=>s==='ok'?label('Completed','teal'):s==='error'?label('Error','red'):label('Waiting','orange');
+  const headline=x=>`<div class="mini-card"><div class="mini-meta">${esc(x.publisher||'Publisher unknown')} · ${esc(groupName(x.group_slug))} · ${esc(stamp(x.discovered_at))}</div><div class="mini-title" style="margin:7px 0">${esc(x.headline)}</div><p class="mini-desc">Pending editorial review. A headline in the database is not independent verification.</p>${sourceAnchor({url:x.source_url,title:x.headline},'Read original source')}</div>`;
+  const feedCard=x=>{
+    const time=x.last_success_at?Date.now()-Date.parse(String(x.last_success_at).replace(' ','T').replace(/\+00$/, 'Z')):Infinity;
+    const staleFeed=!Number.isFinite(time)||time>90*60*1000;
+    const tag=x.last_run_status==='error'?label('Error','red'):!x.active?label('Paused','orange'):staleFeed?label('Check delayed','orange'):label('Reporting','teal');
+    return `<div class="mini-card"><div class="record-head"><strong class="mini-title">${esc(x.name)}</strong>${tag}</div><div class="mini-meta">Last check: ${esc(stamp(x.last_run_at))} · Last success: ${esc(stamp(x.last_success_at))} · ${Number(x.last_run_saved_count)||0} saved in last run</div>${x.last_error?`<p class="mini-desc" style="color:#b5515f">Last issue: ${esc(x.last_error)}</p>`:''}</div>`;
+  };
+  const runCard=x=>`<div class="mini-card"><div class="record-head"><div class="mini-title">${esc(x.feed_name)}</div>${statusPill(x.status)}</div><div class="mini-meta">Requested ${esc(stamp(x.requested_at))} · ${Number(x.saved_count)||0} leads saved${x.http_status?' · HTTP '+esc(x.http_status):''}</div>${x.error?`<p class="mini-desc" style="color:#b5515f">${esc(x.error)}</p>`:''}</div>`;
+  return intro('OWNER CONTROL CENTER','Agent Control Center','Track the live collector, private research queues, source intake and scheduled research—without confusing activity with verified findings.',options)+
+    `<div class="notice" style="margin-bottom:19px"><strong>Latest database snapshot:</strong> ${esc(stamp(summary.generated_at))}. ${stale?'Snapshot older than 20 minutes; check the scheduled database refresh.':'The feed monitor and dashboard operate independently of your browser.'} This page refreshes automatically while you are viewing it.</div>
+    <div class="stat-grid">${counts.map(([value,name,icon,note])=>`<div class="stat-card"><div class="stat-ic">${icon}</div><div class="stat-label">${esc(name)}</div><div class="stat-number">${Number(value)||0}</div><div class="stat-note">${esc(note)}</div></div>`).join('')}</div>
+    <div class="two-up" style="margin-bottom:22px">
+      ${panel('RSS collector health',`<div class="panel-body"><div class="record-head" style="align-items:center"><strong>${active?'Monitor configured':'No active feeds'}</strong>${stale?label('Snapshot overdue','orange'):label('Snapshot current','teal')}</div>
+        <div class="mini-meta" style="margin-top:12px">${label((summary.successful_feed_runs||0)+' completed','teal')}${label((summary.failed_feed_runs||0)+' failed',(summary.failed_feed_runs||0)?'red':'blue')}${label((summary.pending_feed_runs||0)+' pending','orange')}</div>
+        <p class="mini-desc" style="margin-top:12px">Feed dispatches rotate every five minutes; response processing runs every minute. Individual feeds are checked less frequently. A completed fetch does not mean a story is true.</p><div class="divider"></div>
+        ${feeds.length?feeds.map(feedCard).join(''):blank('No feed statuses','Confirm the telemetry job is populating your private tables.')}</div>`)}
+      <div class="stack">
+        ${panel('ChatGPT research agents',`<div class="panel-body"><p class="mini-desc">These are separate scheduled ChatGPT tasks, not RSS collection jobs. Their execution status is not connected to this dashboard; this list is a reference, not live telemetry.</p>
+          ${agentNames.map(([name,schedule,desc])=>`<div class="mini-card"><strong class="mini-title">${esc(name)}</strong><div class="mini-meta">${label(schedule,'blue')}</div><p class="mini-desc">${esc(desc)}</p></div>`).join('')}</div>`)}
+        ${panel('Editorial safeguards',`<div class="panel-body"><p class="mini-desc"><strong>Collected:</strong> A source headline and link have been recorded.</p><p class="mini-desc"><strong>Reviewed:</strong> A human has assessed content and context; this alone does not prove claims.</p><p class="mini-desc"><strong>Published:</strong> Requires a separate public workflow. This dashboard does not auto-publish, label claims proven, or rewrite case grades.</p><div class="actions" style="margin-top:16px">${action('nav','Open review queue','secondary','data-page="news"')}</div></div>`)}
+      </div>
+    </div>
+    <div class="two-up">
+      ${panel('Recent collection activity',runs.length?`<div class="panel-body">${runs.map(runCard).join('')}</div>`:blank('No collector history available','Activity appears after feed collection jobs complete.'))}
+      ${panel('Newest news leads awaiting review',news.length?`<div class="panel-body">${news.map(headline).join('')}<div class="actions" style="margin-top:18px">${action('nav','Review all news','primary','data-page="news"')}</div></div>`:blank('No pending news items','Newly collected news will enter the private review queue.'))}
+    </div>
+    <div class="network-note">Telemetry shown here is a five-minute snapshot of private database activity, not a live record of ChatGPT task executions or a public publishing system. Source verification and editorial decisions remain separate.</div>`;
+}
+function render(){if(state.screen==='translations'){initNav();$('breadcrumbName').textContent='Translation Desk';$('screen').innerHTML=translationScreen();void translationAvailability();return;}initNav();const counts={cases:rows('cases').length,claims:rows('claims').length,sources:rows('sources').length,people:rows('people').length,solutions:rows('solution_candidates').length,watch:rows('research_inbox').filter(x=>x.review_status==='pending').length,news:rows('news_items').filter(x=>x.review_status==='pending').length};document.querySelectorAll('[data-navcount]').forEach(el=>{const v=counts[el.dataset.navcount];el.textContent=v||'';el.hidden=!v});$('breadcrumbName').textContent=(NAV.find(x=>x[0]===state.screen)||NAV[0])[2];let body='';if(state.errors.length)body+=`<div class="error-box"><strong>Some data could not be loaded.</strong> ${esc(state.errors.slice(0,3).join(' • '))}. Check this account's table permissions in Supabase, then retry.</div>`;
+const builders={guide:guideScreen,about:aboutScreen,dashboard:dashboardScreen,agents:agentControlScreen,cases:casesScreen,claims:claimsScreen,sources:sourcesScreen,people:peopleScreen,network:networkScreenV2,timeline:timelineScreen,solutions:solutionsScreen,'epstein-files':()=>groupScreen('epstein-files'),'covid-19':()=>groupScreen('covid-19'),'palestine-gaza':()=>groupScreen('palestine-gaza'),watch:watchScreen,news:newsScreen,settings:settingsScreen};$('screen').innerHTML=body+(state.screen==='dashboard'?welcomePanel():'')+builders[state.screen]();}
+
+function welcomePanel(){return `<section class="welcome-panel" aria-labelledby="welcomeTitle"><div class="eyebrow">OUR MISSION / MAKE IT NICE</div><h2 id="welcomeTitle">Understand the world. Help make it nicer.</h2><p>Evidence Atlas brings cases, claims, sources, and context together so you can examine what is documented, what is disputed, and what remains unknown. Follow the evidence, keep uncertainty visible, then explore practical ways to improve things.</p><figure class="madison-quote"><blockquote>“The accumulation of all powers, legislative, executive, and judiciary, in the same hands … may justly be pronounced the very definition of tyranny.”</blockquote><figcaption>James Madison · <a href="https://avalon.law.yale.edu/18th_century/fed47.asp" target="_blank" rel="noopener noreferrer">The Federalist No. 47 (1788) ↗</a> · Abridged excerpt</figcaption></figure><div class="actions">${action('nav','How to use Evidence Atlas','primary','data-page="guide"')}${action('nav','Explore case files','secondary','data-page="cases"')}</div><p class="mini-desc">A claim appearing here means it is being examined. Inclusion or a connection alone does not establish guilt or prove a claim.</p></section>`;}
+function guideScreen(){
+ const steps=[
+ ['Start with a question','Choose an event, program, person, or topic you want to understand. Ask what evidence could change your mind. Open Case Files and use the case search to find a title or case number.','cases','Open Case Files'],
+ ['Read the case in context','Read the summary and research notes. Compare the official finding with the disputed questions. Where an assessment is missing, keep it open rather than guessing.','cases','Browse cases'],
+ ['Check individual claims','Use Evidence Ledger to inspect a claim and its evidence status. One case may contain claims with very different levels of support. A label is a research assessment, not a probability.','claims','Open Evidence Ledger'],
+ ['Trace the source trail','Open Source Library and follow citations to the underlying documents. Check authorship, date, exact wording, and context. Compare independent records and record whether a source supports, refutes, or only provides context for a claim.','sources','Open Source Library'],
+ ['Compare dates and connections','Use Timeline to inspect event order and Connections Map to explore recorded links. A relationship shows context; it does not by itself establish responsibility or wrongdoing.','timeline','Open Timeline'],
+ ['Keep a research queue','Research Watch holds topics and incoming material for review. Check the original source before treating an incoming item as established evidence. Use Workspace to export the records currently loaded in your browser.','watch','Open Research Watch'],
+ ['Develop practical solutions','In Solutions Lab, define a measurable goal, propose an intervention, and list assumptions, costs, risks, and tradeoffs. Possible outcomes are conditional scenarios that need evaluation.','solutions','Open Solutions Lab']
+ ];
+ return intro('START HERE','How to use Evidence Atlas','Move from a question to evidence, context, and useful next steps.')+welcomePanel()+panel('Your research workflow',`<div class="panel-body">${steps.map(([title,detail,page,caption],i)=>`<section class="guide-step"><h3>${i+1}. ${esc(title)}</h3><p>${esc(detail)}</p>${action('nav',esc(caption),'secondary',`data-page="${page}"`)}</section>`).join('')}</div>`)+panel('Using the workspace',`<div class="panel-body"><p class="mini-desc">On a phone, tap the menu at the top left to switch sections. Return to Start Here any time to replay this guide.</p><p class="mini-desc">Sample preview is read-only. Saving and editing records require the authorized owner account and the existing database permissions.</p><p class="mini-desc">Keep documented facts, allegations, disputed questions, and unknowns clearly distinguished. Revisit conclusions when stronger evidence becomes available.</p></div>`);
+}
+
+function dashboardScreen(){const c=rows('cases').length,cl=rows('claims').length,s=rows('sources').length,p=rows('people').length,linked=rows('claims').filter(x=>countLinked(x.id)>0).length,pct=cl?Math.round(linked/cl*100):0;
+return intro('RESEARCH INTELLIGENCE','Overview','A clear view of your investigations and the evidence behind them.',action('new-case','＋ New case'))+
+`<div class="stat-grid">${[[c,'Active case files','▤','Across the workspace'],[cl,'Recorded claims','≡','Assessments kept separate'],[s,'Source documents','⌁','References in your library'],[p,'People indexed','♙','Connected people']].map(([v,n,i,foot])=>`<div class="stat-card"><div class="stat-ic">${i}</div><div class="stat-label">${n}</div><div class="stat-number">${v}</div><div class="stat-note">${foot}</div></div>`).join('')}</div>
+<div class="columns">${panel('Investigation files',rows('cases').length?`<div class="panel-body">${rows('cases').slice(0,6).map(c=>`<div class="mini-card"><button class="muted-link" data-action="open-case" data-id="${c.id}">${esc(c.title)} &nbsp; ↗</button><div class="mini-desc">${esc(c.summary||c.description||'No case summary yet.')}</div><div class="mini-meta">${label('CASE '+(c.case_number||c.id),'blue')} <span>${rows('claims').filter(x=>x.case_id===c.id).length} claims</span> · <span>${rows('case_people').filter(x=>x.case_id===c.id).length} people</span></div></div>`).join('')}</div>`:blank('No case files yet','Add your first investigation to start organizing evidence.',action('new-case','Create a case')),
+`<button class="text-btn" data-action="nav" data-page="cases">View cases →</button>`)}
+<div class="stack">${panel('Evidence coverage',`<div class="panel-body"><div class="value">${pct}%</div><p class="mini-desc">${linked} of ${cl} claims have at least one source link. Linked does not mean verified.</p><div class="progress"><div style="width:${pct}%"></div></div><div class="divider"></div><div class="mini-meta">${label(rows('claim_sources').length+' citation links','teal')}<span>${cl-linked} without source links</span></div></div>`)}
+${panel('Research principle',`<div class="panel-body"><p class="mini-desc" style="margin:0">Facts, allegations, hypotheses, interpretations and proposed solutions must remain distinguishable. A connection on the map shows a stored link, not proof of causation or wrongdoing.</p></div>`)}
+${panel('Recent evidence',rows('claims').length?`<div class="panel-body">${rows('claims').slice(-3).reverse().map(c=>`<div class="mini-card"><div class="mini-title">${esc(cut(c.claim_text,105))}</div><div class="mini-meta">${label(c.evidence_status,statusClass(c.evidence_status))}<span>${countLinked(c.id)} linked sources</span></div></div>`).join('')}</div>`:blank('No claims yet','Create one in the Evidence Ledger.'))}</div></div>`;}
+function casesScreen(){const cases=rows('cases');if(!state.caseId||!one('cases',state.caseId))state.caseId=cases[0]?.id||null;const c=one('cases',state.caseId);const cs=rows('claims').filter(x=>x.case_id===c?.id);const people=rows('case_people').filter(x=>x.case_id===c?.id);const orgs=rows('case_organizations').filter(x=>x.case_id===c?.id);
+return intro('CASE MANAGEMENT','Case Files','Examine what is known, disputed and still unanswered.',action('new-case','＋ New case'))+(cases.length?`<div class="split-pane"><aside class="case-list">${cases.map(x=>`<button data-action="open-case" data-id="${x.id}" class="case-option ${String(x.id)===String(c?.id)?'active':''}"><b>${esc(x.title)}</b><small>#${esc(x.case_number||x.id)} · ${rows('claims').filter(y=>y.case_id===x.id).length} claims</small></button>`).join('')}</aside><div class="case-summary"><section class="panel case-detail"><div class="eyebrow">CASE FILE #${esc(c.case_number||c.id)}</div><h2>${esc(c.title)}</h2><p>${esc(c.summary||c.description||'No description has been entered.')}</p><div class="meta-grid"><div class="meta-cell"><small>CATEGORY</small><strong>${esc(c.category||'Unspecified')}</strong></div><div class="meta-cell"><small>START DATE</small><strong>${date(c.start_date)}</strong></div><div class="meta-cell"><small>LOCATION</small><strong>${esc(c.country||'Not specified')}</strong></div></div>${c.official_finding?`<div class="notice"><strong>Recorded official finding:</strong> ${esc(c.official_finding)}</div>`:''}${c.disputed_questions?`<div class="notice"><strong>Disputed questions:</strong> ${esc(c.disputed_questions)}</div>`:''}<div class="actions">${action('new-claim','＋ Add claim','secondary')}${action('link-person','＋ Link person','secondary')}${action('link-org','＋ Link org','secondary')}</div></section>
+${panel('Claims in this case',cs.length?`<div class="panel-body">${cs.map(x=>`<div class="nested-row"><b>${esc(x.claim_text)}</b><div class="mini-meta">${label(x.evidence_status,statusClass(x.evidence_status))}<span>${countLinked(x.id)} source links</span></div></div>`).join('')}</div>`:blank('No claims yet','Add the first claim and connect relevant sources.',action('new-claim','Add a claim')))}
+<div class="two-up">${panel('People',`<div class="panel-body">${people.length?people.map(x=>`<div class="mini-card"><span class="mini-title">${esc(one('people',x.person_id)?.full_name||'Unknown person')}</span><span class="mini-desc">${esc(x.role||'Linked to case')}</span></div>`).join(''):'<p class="mini-desc">No people linked yet.</p>'}</div>`)}${panel('Organizations',`<div class="panel-body">${orgs.length?orgs.map(x=>`<div class="mini-card"><span class="mini-title">${esc(one('organizations',x.organization_id)?.name||'Unknown organization')}</span><span class="mini-desc">${esc(x.relationship||'Linked to case')}</span></div>`).join(''):'<p class="mini-desc">No organizations linked yet.</p>'}</div>`)}</div></div></div>`:blank('No investigations yet','Create a case to begin your research.',action('new-case','Create first case')));}
+function claimsScreen(){const claims=rows('claims');const opts=[...new Set(claims.map(x=>x.evidence_status).filter(Boolean))];const selected=state.filter;const shown=claims.filter(x=>(selected==='all'||x.evidence_status===selected)&&matches(x.claim_text,x.analysis,nameOfCase(x.case_id)));
+return intro('EVIDENCE & CLAIMS','Evidence Ledger','Keep every claim traceable, contextualized and distinguishable from established findings.',action('new-claim','＋ New claim'))+
+`<div class="filterbar"><input id="filterSearch" class="search" placeholder="⌕  Search claims or cases..." value="${esc(state.search)}"/><select id="filterStatus" class="filter-select"><option value="all">All evidence statuses</option>${opts.map(o=>`<option ${o===selected?'selected':''} value="${esc(o)}">${esc(o)}</option>`).join('')}</select>${action('link-source','⌁ Link source','secondary')}</div>`+
+(shown.length?`<div class="stack">${shown.map(x=>`<article class="record-card"><div class="record-head"><div class="eyebrow">${esc(nameOfCase(x.case_id))} &nbsp; / &nbsp; CLAIM ${esc(x.id)}</div>${label(x.evidence_status,statusClass(x.evidence_status))}</div><h3>${esc(x.claim_text)}</h3>${x.analysis?`<p>${esc(cut(x.analysis,280))}</p>`:''}${x.official_position?`<p><strong>Recorded official position:</strong> ${esc(cut(x.official_position,230))}</p>`:''}<div class="record-foot"><span>${countLinked(x.id)} linked sources</span>${label('Confidence: '+(x.confidence||'Unrated'))}${linkedSources(x.id).slice(0,3).map(({link,source})=>`<span class="tag">${sourceAnchor(source,cut(source?.title||'Source',40))} · ${esc(link.supports_or_refutes||'Context')}</span>`).join('')}<button class="text-btn" data-action="link-source" data-claim="${x.id}">＋ Link evidence</button></div></article>`).join('')}</div>`:blank('No matching claims','Try another filter or record a new claim.',action('new-claim','Add claim')));}
+function sourcesScreen(){const sources=rows('sources').filter(s=>matches(s.title,s.publisher,s.author,s.public_notes));return intro('REFERENCE MATERIAL','Source Library','Original documents and external references used to evaluate claims.',action('new-source','＋ Add source'))+
+`<div class="filterbar"><input id="filterSearch" class="search" value="${esc(state.search)}" placeholder="⌕  Search titles, publishers, authors..."/></div>`+
+(sources.length?`<div class="panel table-scroll"><table class="data-table"><thead><tr><th>Source document</th><th>Publisher / author</th><th>Published</th><th>Linked claims</th><th>Open</th></tr></thead><tbody>${sources.map(s=>`<tr><td>${esc(s.title)}<br/><small class="subdued">${esc(s.source_type||'Document')}</small></td><td>${esc(s.publisher||s.author||'Not specified')}</td><td>${date(s.publication_date)}</td><td>${rows('claim_sources').filter(l=>l.source_id===s.id).length}</td><td>${sourceAnchor(s,'View source')}</td></tr>`).join('')}</tbody></table></div>`:blank('No sources found','Add primary documents, articles, or citations to your source library.',action('new-source','Add source')));}
+function peopleScreen(){return intro('REFERENCE INDEX','People & Organizations','An index of named entities and the specific cases they are associated with.',`${action('new-person','＋ Add person')}${action('new-org','＋ Add organization','secondary')}`)+`<div class="two-up">${panel('People',`<div class="panel-body">${rows('people').length?rows('people').map(p=>`<div class="key-figure"><div class="avatar">${esc(p.full_name.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase())}</div><div><h3>${esc(p.full_name)}</h3><p>${esc(p.occupation||'Occupation unspecified')}</p><div class="mini-meta">${rows('case_people').filter(l=>l.person_id===p.id).length} case connections</div></div></div>`).join(''):'<p class="mini-desc">No people recorded yet.</p>'}</div>`)}${panel('Organizations',`<div class="panel-body">${rows('organizations').length?rows('organizations').map(o=>`<div class="key-figure"><div class="avatar">◎</div><div><h3>${esc(o.name)}</h3><p>${esc(o.organization_type||'Organization')}${o.country?' · '+esc(o.country):''}</p><div class="mini-meta">${rows('case_organizations').filter(l=>l.organization_id===o.id).length} case connections</div></div></div>`).join(''):'<p class="mini-desc">No organizations recorded yet.</p>'}</div>`)}</div>`;}
+function timelineScreen(){let events=[];rows('cases').forEach(c=>{if(c.start_date)events.push({time:c.start_date,tag:'CASE BEGINS',title:c.title,description:c.summary});if(c.end_date)events.push({time:c.end_date,tag:'CASE ENDS',title:c.title,description:'Recorded end date of case scope.'})});rows('sources').forEach(s=>{if(s.publication_date)events.push({time:s.publication_date,tag:'DOCUMENT PUBLISHED',title:s.title,description:s.publisher,url:s.url})});events.sort((a,b)=>a.time.localeCompare(b.time));return intro('CHRONOLOGICAL RESEARCH','Timeline','Dates are shown only when recorded; this view does not infer event timing from the order of evidence.',action('new-source','＋ Add dated source'))+(events.length?`<section class="panel"><div class="panel-body"><div class="timeline">${events.map(e=>`<div class="timeline-item"><div class="timeline-date">${date(e.time)} &nbsp; / &nbsp; ${e.tag}</div><h3>${esc(e.title)}</h3><p>${esc(e.description||'')}${targetUrl(e.url)?` &nbsp; <a class="source-link" target="_blank" rel="noopener noreferrer" href="${esc(targetUrl(e.url))}">Open source ↗</a>`:''}</p></div>`).join('')}</div></div></section>`:blank('No dated records','Set dates on cases or source publications to build a grounded timeline.'))+`<div class="network-note">Claims without explicit event dates are intentionally excluded. The timeline does not imply that one event caused another.</div>`;}
+function networkScreen(){const nodes=[],edges=[];const add=(kind,id,title)=>{if(id==null)return;const k=`${kind}:${id}`;if(!nodes.find(n=>n.key===k))nodes.push({key:k,kind,id,title:String(title||k)});};const edge=(a,b,type)=>{if(a&&b)edges.push({a,b,type})};rows('cases').forEach(r=>add('case',r.id,r.title));rows('people').forEach(r=>add('person',r.id,r.full_name));rows('organizations').forEach(r=>add('organization',r.id,r.name));rows('claims').forEach(r=>{add('claim',r.id,cut(r.claim_text,50));if(r.case_id!=null)edge(`case:${r.case_id}`,`claim:${r.id}`,'Records claim')});rows('sources').forEach(r=>add('source',r.id,r.title));rows('case_people').forEach(r=>edge(`case:${r.case_id}`,`person:${r.person_id}`,r.role||'Linked'));rows('case_organizations').forEach(r=>edge(`case:${r.case_id}`,`organization:${r.organization_id}`,r.relationship||'Linked'));rows('claim_sources').forEach(r=>edge(`claim:${r.claim_id}`,`source:${r.source_id}`,r.supports_or_refutes||'Referenced'));const typeMap=t=>({cases:'case',people:'person',organizations:'organization',claims:'claim',sources:'source'}[t]||t);rows('relationships').forEach(r=>edge(`${typeMap(r.source_type)}:${r.source_id}`,`${typeMap(r.target_type)}:${r.target_id}`,r.relationship_type));const keys=new Set(nodes.map(n=>n.key));const connected=edges.filter(x=>keys.has(x.a)&&keys.has(x.b));const color={case:'#2bb99d',person:'#668ade',organization:'#967fe0',claim:'#deab57',source:'#e17c7c'};const columns={case:145,person:385,organization:385,claim:645,source:920};const group={};nodes.forEach(n=>(group[n.kind]??=[]).push(n));Object.entries(group).forEach(([type,ns])=>ns.forEach((n,i)=>{n.x=columns[type]||540;const segment=type==='person'?(100+390* (i+1)/(ns.length+1)):type==='organization'?(430+150*(i+1)/(ns.length+1)):80+500*(i+1)/(ns.length+1);n.y=Math.min(600,segment)}));const byId=Object.fromEntries(nodes.map(n=>[n.key,n]));const svg=`<svg class="network-svg" role="img" aria-label="Recorded investigation relationships" viewBox="0 0 1100 665" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#dce5ee"/></pattern></defs><rect width="1100" height="665" rx="8" fill="#fbfcfe"/><rect width="1100" height="665" fill="url(#dots)"/>${connected.map(e=>`<line x1="${byId[e.a].x}" y1="${byId[e.a].y}" x2="${byId[e.b].x}" y2="${byId[e.b].y}" stroke="#b5c8d6" stroke-width="1.7" opacity=".8"><title>${esc(e.type)}</title></line>`).join('')}${nodes.map(n=>`<g data-action="graph-node" data-kind="${n.kind}" data-id="${n.id}" style="cursor:pointer"><circle cx="${n.x}" cy="${n.y}" r="27" fill="white" stroke="${color[n.kind]}" stroke-width="3"/><circle cx="${n.x}" cy="${n.y}" r="20" fill="${color[n.kind]}" opacity=".13"/><text x="${n.x}" y="${n.y+5}" fill="${color[n.kind]}" font-size="16" text-anchor="middle" font-weight="700">${{case:'▤',person:'♙',organization:'◎',claim:'≡',source:'⌁'}[n.kind]}</text><text x="${n.x}" y="${n.y+44}" font-size="11" font-weight="700" fill="#33475c" text-anchor="middle">${esc(cut(n.title,24))}</text><title>${esc(n.title)}</title></g>`).join('')}</svg>`;return intro('RELATIONSHIP ANALYSIS','Connections Map','A visual record of the associations actually stored in your database.',action('new-relationship','＋ Add connection'))+`<div class="filterbar legend">${Object.entries(color).map(([n,c])=>`<span><i style="background:${c}"></i>${n.charAt(0).toUpperCase()+n.slice(1)}</span>`).join('')}<span style="margin-left:auto">${nodes.length} nodes · ${connected.length} links</span></div>`+(nodes.length?`<div class="network-wrap">${svg}</div>`:blank('No mapped entities','Create cases and associate records to populate the map.'))+`<div class="network-note"><strong>Interpretation warning:</strong> A visual link represents only a stored case association, citation, or explicit relationship. Proximity, direction and placement are for visualization and never establish collusion, culpability or causal connection.</div>`;}
+function solutionsScreen(){const sols=rows('solution_candidates'),outs=rows('possible_outcomes');return intro('STRUCTURED ASSESSMENT','Solutions Lab','Develop potential responses and possible outcomes without presenting models as established facts.',`${action('new-solution','＋ Draft solution')}${action('new-outcome','＋ Model outcome','secondary')}`)+`<div class="stat-grid">${[[sols.length,'Solution proposals','✧','Drafts, not proven actions'],[outs.length,'Possible outcomes','◎','Conditional, not predictions'],[rows('problem_areas').length,'Problem areas','▥','Structured categories'],[sols.filter(s=>s.workflow_status==='reviewed').length,'Reviewed proposals','✓','Review is not proof']].map(([v,l,i,t])=>`<div class="stat-card"><div class="stat-ic">${i}</div><div class="stat-label">${l}</div><div class="stat-number">${v}</div><div class="stat-note">${t}</div></div>`).join('')}</div><div class="two-up">${panel('Proposed solutions',sols.length?`<div class="panel-body">${sols.map(s=>`<div class="mini-card"><div class="mini-title">${esc(s.title)}</div><p class="mini-desc">${esc(s.description)}</p><div class="mini-meta">${label(s.workflow_status,'blue')}${label('Proposal','purple')}</div></div>`).join('')}</div>`:blank('No proposals yet','Record a solution hypothesis, including its mechanism and assumptions.',action('new-solution','Draft a proposal')))}${panel('Possible outcomes',outs.length?`<div class="panel-body">${outs.map(o=>`<div class="mini-card"><div class="mini-title">${esc(o.title)}</div><p class="mini-desc">${esc(o.description)}</p><div class="mini-meta">${label(o.workflow_status,'blue')}${label(o.record_kind,'orange')}</div></div>`).join('')}</div>`:blank('No modeled outcomes','Explore possible outcomes while documenting assumptions and uncertainty.',action('new-outcome','Model an outcome')))}</div><div class="network-note">These records describe proposed interventions and conditional scenarios. They do not establish facts, forecasts, or proven effectiveness.</div>`;}
+function watchScreen() {
+ const topics=rows('research_watch_topics');
+ const inbox=rows('research_inbox').slice().sort((a,b)=>String(b.discovered_at||'').localeCompare(String(a.discovered_at||'')));
+ const pending=inbox.filter(x=>x.review_status==='pending');
+ const reviewed=inbox.filter(x=>x.review_status==='reviewed');
+ const counts=[[pending.length,'To review','◉','Potential findings, not verified'],[reviewed.length,'Reviewed','✓','Reviewed does not mean confirmed'],[topics.filter(t=>t.active).length,'Active watch topics','⌕','Search areas'],[inbox.length,'Tracked sources','⌁','Deduplicated by URL']];
+ const card=x=>`<article class="record-card">
+  <div class="record-head"><div class="eyebrow">${esc(x.publisher||'Publisher not recorded')} · ${esc(x.coverage_type||'unclassified')}${x.group_slug?' · '+esc(rows('investigation_groups').find(g=>g.slug===x.group_slug)?.title||x.group_slug):''}</div>${label(x.review_status==='pending'?'Pending review':x.review_status==='reviewed'?'Reviewed':'Dismissed',x.review_status==='reviewed'?'teal':x.review_status==='dismissed'?'red':'orange')}</div>
+  <h3>${esc(x.title)}</h3>
+  <p>${esc(x.relevance_notes||'No significance assessment has been entered yet.')}</p>
+  <div class="mini-meta"><span>Discovered ${esc((x.discovered_at||'').slice(0,10)||'Date unknown')}</span>${x.published_at?`<span>Published ${esc(x.published_at.slice(0,10))}</span>`:''}${x.related_case_id?`<span>Case: ${esc(nameOfCase(x.related_case_id))}</span>`:''}</div>
+  ${x.evidence_notes?`<p><strong>Evidence notes:</strong> ${esc(x.evidence_notes)}</p>`:''}
+  ${x.competing_explanations?`<p><strong>Alternative explanations:</strong> ${esc(x.competing_explanations)}</p>`:''}
+  <div class="actions" style="margin-top:15px;gap:9px;align-items:center">
+   <button class="secondary" data-action="watch-edit" data-id="${esc(x.id)}">Edit notes</button>
+   ${sourceAnchor({url:x.source_url,title:'Open source'},'Open original ↗')}
+   <label class="mini-desc" style="margin:0">Assessment: <select class="filter-select" style="min-width:130px;padding:8px" data-watch-assessment="${esc(x.id)}">
+     ${[['unassessed','Not assessed'],['corroborated','Corroborated'],['disputed','Disputed'],['misleading','Misleading'],['insufficient_evidence','Insufficient evidence']].map(([v,n])=>`<option value="${v}" ${x.assessment===v?'selected':''}>${n}</option>`).join('')}
+    </select></label>
+   ${x.review_status==='pending'?`<button class="secondary" data-action="watch-review" data-id="${esc(x.id)}">Mark reviewed</button><button class="secondary" data-action="watch-dismiss" data-id="${esc(x.id)}">Dismiss</button>`:''}
+   ${x.review_status==='dismissed'?`<button class="secondary" data-action="watch-reopen" data-id="${esc(x.id)}">Reopen</button>`:''}
+   ${x.review_status==='reviewed'?`<button class="secondary" data-action="watch-promote" data-id="${esc(x.id)}">Add to source library</button><button class="secondary" data-action="watch-reopen" data-id="${esc(x.id)}">Reopen</button>`:''}
+  </div></article>`;
+ return intro('CONTINUOUS RESEARCH','Research Watch','Collect new source material, assess credibility and alternative explanations, then approve updates to your actual investigation records.',`${action('watch-add-item','＋ Add finding','primary')}${action('watch-add-topic','＋ Watch topic','secondary')}`)+
+  `<div class="stat-grid">${counts.map(([n,l,i,t])=>`<div class="stat-card"><div class="stat-ic">${i}</div><div class="stat-label">${l}</div><div class="stat-number">${n}</div><div class="stat-note">${t}</div></div>`).join('')}</div>
+  <div class="network-note" style="margin-bottom:23px"><strong>Evidence standards:</strong> An article, allegation, similarity or timeline overlap does not establish causation, collusion, or propaganda. Prefer primary records; compare independent coverage, note publication dates, and preserve uncertainties. Nothing in this queue is automatically published or labeled proven.</div>
+  <div class="two-up" style="margin-bottom:24px">
+   ${panel('Watch topics',`<div class="panel-body">${topics.map(t=>`<div class="mini-card"><div class="record-head"><div class="mini-title">${esc(t.name)}${t.group_slug?`<div class="mini-desc">Group: ${esc(rows('investigation_groups').find(g=>g.slug===t.group_slug)?.title||t.group_slug)}</div>`:''}</div>${label(t.active?'Active':'Paused',t.active?'teal':'orange')}</div><p class="mini-desc">${esc(t.search_query)}</p><div class="mini-meta"><span>Last checked: ${esc(t.last_checked_at?t.last_checked_at.slice(0,16).replace('T',' '):'No recorded run')}</span><button class="text-btn" data-action="watch-edit-topic" data-id="${esc(t.id)}">Edit</button><button class="text-btn" data-action="watch-toggle-topic" data-id="${esc(t.id)}">${t.active?'Pause':'Activate'}</button></div></div>`).join('')||'<p class="mini-desc">No watch topics yet.</p>'}</div>`) }
+   ${panel('Workflow',`<div class="panel-body"><p class="mini-desc"><strong>1.</strong> The daily research agent searches for credible new sources.</p><p class="mini-desc"><strong>2.</strong> New material is staged here, with source URLs and documented uncertainty.</p><p class="mini-desc"><strong>3.</strong> Review and assess a source before adding it to your main library.</p><p class="mini-desc"><strong>4.</strong> Link evidence to claims or cases only where the actual record supports it.</p><p class="mini-desc">Only the authorized owner can change watch topics or approve records.</p></div>`)}
+  </div>
+  ${panel('Pending research',pending.length?`<div class="panel-body stack">${pending.map(card).join('')}</div>`:blank('Your review queue is clear','Newly discovered material appears here for your assessment.'))}
+  <div style="height:20px"></div>
+  ${panel('Reviewed and dismissed',inbox.some(x=>x.review_status!=='pending')?`<div class="panel-body stack">${inbox.filter(x=>x.review_status!=='pending').map(card).join('')}</div>`:blank('No decisions recorded','Review, dismiss, or reopen sources as research develops.'))}`;
+}
+function settingsScreen(){return intro('WORKSPACE UTILITIES','Workspace','Connection details, data export, and research safeguards.',`${action('refresh','↻ Refresh data','secondary')}${action('export','↓ Export JSON','primary')}`)+`<div class="two-up">${panel('Connection',`<div class="panel-body"><div class="eyebrow">${signedInLabel()}</div><p class="mini-desc">Backend: ${esc(PROJECT_URL)}</p><p class="mini-desc">${state.demo?'Example records are not connected to the database.': 'The browser uses a publishable API key and the signed-in user session. Your existing row-level-security policies control access.'}</p><div class="mini-meta">${label(state.demo?'Preview only':'Access controlled by RLS','teal')}${label(state.errors.length?`${state.errors.length} table issues`:'Connected tables: '+TABLES.length,'blue')}</div></div>`)}${panel('Preservation & export',`<div class="panel-body"><p class="mini-desc">This app does not delete or overwrite existing records automatically. New entries are saved only when you submit a form. Export creates a JSON copy of the data currently loaded in the browser.</p>${action('export','Export research data','secondary')}</div>`)}</div><div class="notice">The app reads the existing schema. It does not create new database tables, relax owner policies, or change research status labels on its own.</div>`+languageSettingsPanel();}
+function opts(table,name,selected=null){return rows(table).map(r=>`<option value="${esc(r.id)}" ${String(selected)===String(r.id)?'selected':''}>${esc(cut(r[name],85))}</option>`).join('');}
+function field(name,labelText,kind='text',required=false,options='',initial=''){
+ const inputId="field-"+name;
+ const req=required?'required':'';
+ let inp=kind==='textarea'?`<textarea id="${inputId}" class="field" rows="3" name="${name}" ${req}>${esc(initial)}</textarea>`:kind==='select'?`<select id="${inputId}" class="field" name="${name}" ${req}>${options}</select>`:`<input id="${inputId}" class="field" name="${name}" type="${kind}" ${req} value="${esc(initial)}" ${kind==='url'?'placeholder="https://"':''}/>`;
+ return `<div class="form-row"><label for="${inputId}">${esc(labelText)}${required?' *':''}</label>${inp}</div>`;
+}
+function selectOpts(list,withBlank=false){return (withBlank?'<option value="">— Optional —</option>':'')+list.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('')}
+function recordsOptions(table,key,selected=null){return `<option value="" disabled ${selected==null?'selected':''}>Choose a record</option>`+opts(table,key,selected)}
+function caseOptions(){return rows('cases').map(c=>[c.id,`#${c.case_number||c.id} · ${c.title}`]);}
+function entityOptions(){let result=[];for(const [table,name,kind] of [['cases','title','case'],['people','full_name','person'],['organizations','name','organization'],['claims','claim_text','claim'],['sources','title','source']])for(const v of rows(table))result.push([`${kind}:${v.id}`,`${kind.toUpperCase()} · ${cut(v[name],72)}`]);return result;}
+function modalHtml(type,preset){let title='',fields='',note='';const cases=caseOptions(),caseId=preset?.caseId||state.caseId||rows('cases')[0]?.id;
+const claimOptions=rows('claims').map(c=>[c.id,`#${c.id} ${cut(c.claim_text,66)}`]);
+const sourceOptions=rows('sources').map(s=>[s.id,cut(s.title,78)]);
+const peopleOptions=rows('people').map(p=>[p.id,p.full_name]);
+const orgOptions=rows('organizations').map(o=>[o.id,o.name]);
+const selectedOpts=(arr,selected,blank=true)=>`${blank?'<option value="">Choose one</option>':''}${arr.map(([v,n])=>`<option value="${esc(v)}" ${String(v)===String(selected)?'selected':''}>${esc(n)}</option>`).join('')}`;
+switch(type){
+ case 'new-case':title='New case file';fields=field('title','Case title','text',true)+field('summary','Research summary','textarea')+field('category','Category')+field('country','Country or location')+field('start_date','Start date','date')+field('end_date','End date','date');note='Your case will receive the next available case number.';break;
+ case 'new-claim':title='Record a claim';fields=field('case_id','Case','select',true,selectedOpts(cases,caseId))+field('claim_text','Claim or question','textarea',true)+field('evidence_status','Evidence status (optional)')+field('analysis','Notes / interpretation','textarea');note='New claims are not automatically verified. Leave evidence status blank until assessed.';break;
+ case 'new-source':title='Add a source';fields=field('title','Source title','text',true)+field('publisher','Publisher')+field('publication_date','Publication date','date')+field('source_type','Document type')+field('url','Source URL','url');note='Prefer an original document or trustworthy publication with a direct URL.';break;
+ case 'new-person':title='Add a person';fields=field('full_name','Full name','text',true)+field('occupation','Occupation or role')+field('biography','Context notes','textarea');break;
+ case 'new-org':title='Add an organization';fields=field('name','Organization name','text',true)+field('organization_type','Type')+field('country','Country')+field('description','Description','textarea');break;
+ case 'link-source':title='Link a source to a claim';fields=field('claim_id','Claim','select',true,selectedOpts(claimOptions,preset?.claimId))+field('source_id','Source document','select',true,selectedOpts(sourceOptions))+field('supports_or_refutes','Relationship to claim','select',true,selectOpts([['Context','Context / background'],['Supports','Supports'],['Refutes','Refutes'],['Disputed','Disputed / mixed']]))+field('strength','Evidence strength (optional)')+field('relevant_pages','Relevant pages or location');note='A source link records how the source is being used; it does not independently verify the claim.';break;
+ case 'link-person':title='Connect person to case';fields=field('case_id','Case','select',true,selectedOpts(cases,caseId))+field('person_id','Person','select',true,selectedOpts(peopleOptions))+field('role','Documented role');note='Use a descriptive role grounded in research, not an unverified inference.';break;
+ case 'link-org':title='Connect organization to case';fields=field('case_id','Case','select',true,selectedOpts(cases,caseId))+field('organization_id','Organization','select',true,selectedOpts(orgOptions))+field('relationship','Documented relationship');break;
+ case 'new-relationship':title='Document a connection';fields=field('from_node','From record','select',true,selectedOpts(entityOptions()))+field('to_node','To record','select',true,selectedOpts(entityOptions()))+field('relationship_type','Relationship type','text',true)+field('source_id_reference','Supporting source (optional)','select',false,selectOpts(sourceOptions,true))+field('evidence_level','Evidence level (optional)')+field('notes','Notes / limitations','textarea');note='Connections must describe a documented association. A link does not establish causation.';break;
+ case 'new-solution':title='Draft a solution proposal';fields=field('case_id','Related case','select',true,selectedOpts(cases,caseId))+field('title','Proposal title','text',true)+field('description','What is being proposed?','textarea',true)+field('proposed_mechanism','How might this work?','textarea',true)+field('assumptions','Underlying assumptions','textarea',true)+field('uncertainty_notes','Limitations / uncertainty','textarea');note='Saved as a human-authored draft proposal, not an established result.';break;
+ case 'new-outcome':title='Model a possible outcome';fields=field('case_id','Related case','select',true,selectedOpts(cases,caseId))+field('title','Outcome title','text',true)+field('description','Describe the conditional outcome','textarea',true)+field('assumptions','Assumptions','textarea',true)+field('uncertainty_notes','Uncertainty','textarea');note='Saved as a draft modeled outcome. It is not a verified event or a prediction.';break;
+ default: return null;
+}
+return `<div class="modal-backdrop" id="modalBackdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-header"><h2 id="modalTitle">${title}</h2><button class="modal-close" data-action="close-modal" aria-label="Close">×</button></div><form id="recordForm" data-kind="${type}">${fields}${note?`<div class="form-note">${esc(note)}</div>`:''}<div id="modalError" role="alert"></div><div class="modal-actions"><button type="button" class="secondary" data-action="close-modal">Cancel</button><button type="submit" class="primary" id="saveBtn">Save record →</button></div></form></section></div>`;
+}
+function openModal(type,preset={}){if(!guardWrite())return;const html=modalHtml(type,preset);if(!html)return;const root=$('modalRoot');root.innerHTML=html;const form=$('recordForm');form.addEventListener('submit',saveForm);if(!form.querySelector('select:invalid, input:invalid, textarea:invalid')){}root.querySelector('.field')?.focus();}
+function closeModal(){$('modalRoot').innerHTML='';}
+async function saveForm(event){event.preventDefault();if(!guardWrite())return;const form=event.currentTarget,type=form.dataset.kind,raw=Object.fromEntries(new FormData(form)),v=Object.fromEntries(Object.entries(raw).map(([k,x])=>[k,String(x).trim()||null]));const toInt=x=>x==null?null:Number(x);let table=null,record={...v};if(type==='new-case'){table='cases';record.published=false;record.case_number=Math.max(0,...rows('cases').map(x=>Number(x.case_number)||0))+1;}
+else if(type==='new-claim'){table='claims';record.case_id=toInt(record.case_id);}
+else if(type==='new-source'){table='sources';record.published=false;}else if(type==='new-person')table='people';else if(type==='new-org')table='organizations';
+else if(type==='link-source'){table='claim_sources';record.claim_id=toInt(record.claim_id);record.source_id=toInt(record.source_id);}
+else if(type==='link-person'){table='case_people';record.case_id=toInt(record.case_id);record.person_id=toInt(record.person_id);}
+else if(type==='link-org'){table='case_organizations';record.case_id=toInt(record.case_id);record.organization_id=toInt(record.organization_id);}
+else if(type==='new-relationship'){table='relationships';const [sType,sId]=(record.from_node||'').split(':');const [tType,tId]=(record.to_node||'').split(':');if(!sId||!tId||record.from_node===record.to_node){$('modalError').innerHTML='<div class="error-box">Choose two different records to connect.</div>';return;}delete record.from_node;delete record.to_node;record.source_type=sType;record.source_id=Number(sId);record.target_type=tType;record.target_id=Number(tId);record.source_id_reference=toInt(record.source_id_reference);}
+else if(type==='new-solution'){table='solution_candidates';record.case_id=toInt(record.case_id);record.record_kind='proposal';record.origin='human';}
+else if(type==='new-outcome'){table='possible_outcomes';record.case_id=toInt(record.case_id);record.record_kind='modeled_outcome';record.origin='human';}
+if(!table)return;if(['cases','sources'].includes(table))record.content_language=contentLanguage();const save=$('saveBtn');save.disabled=true;save.textContent='Saving…';const {data,error}=await client.from(table).insert(record).select('*').single();save.disabled=false;save.textContent='Save record →';if(error){$('modalError').innerHTML=`<div class="error-box">${esc(error.message)}. No record was saved.</div>`;return;}if(type==='new-case')state.caseId=data.id;closeModal();toast('Record saved successfully.');await loadData();}
+function downloadData(){const payload={exported_at:new Date().toISOString(),app:'Evidence Atlas v1',mode:state.demo?'example':'live',tables:state.dataset};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`evidence-atlas-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('JSON export created.');}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const type=b.dataset.action;switch(type){case 'nav':nav(b.dataset.page);break;case 'open-case':state.caseId=Number(b.dataset.id);nav('cases');break;case 'graph-node':if(b.dataset.kind==='case'){state.caseId=Number(b.dataset.id);nav('cases')}else if(b.dataset.kind==='claim'){nav('claims')}else if(b.dataset.kind==='source'){nav('sources')}else{nav('people')}break;case 'close-modal':closeModal();break;case 'export':downloadData();break;case 'refresh':if(state.demo){toast('This is a sample preview.')}else await loadData();break;case 'new-case':case 'new-claim':case 'new-source':case 'new-person':case 'new-org':case 'link-source':case 'link-person':case 'link-org':case 'new-relationship':case 'new-solution':case 'new-outcome':openModal(type,{claimId:b.dataset.claim||null});break;}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.addEventListener('input',e=>{if(e.target.id!=='filterSearch')return;state.search=e.target.value;const section=state.screen;if(!['claims','sources'].includes(section))return;const pos=e.target.selectionStart;render();$('filterSearch')?.focus();$('filterSearch')?.setSelectionRange(pos,pos);});
+document.addEventListener('change',async e=>{if(e.target.id==='filterStatus'){state.filter=e.target.value;render();return;}if(e.target.id==='defaultContentLanguage'){if(!guardWrite()){e.target.value=contentLanguage();return;}const selected=e.target.value;if(!LANGUAGE_CHOICES.some(([code])=>code===selected))return;const {error}=await client.from('workspace_preferences').upsert({owner_id:OWNER_USER_ID,default_content_language:selected,updated_at:new Date().toISOString()},{onConflict:'owner_id'});if(error){toast('Language preference not saved: '+error.message);e.target.value=contentLanguage();return;}state.dataset.workspace_preferences=[{owner_id:OWNER_USER_ID,default_content_language:selected}];render();toast('Default content language saved.');}});
+$('mobileMenu').addEventListener('click',()=>$('sidebar').classList.toggle('visible'));
+$('signOutBtn').addEventListener('click',async()=>{if(!state.demo&&client)await client.auth.signOut();state.demo=false;state.dataset=emptyData();state.ready=false;state.owner=null;$('loginPassword').value='';closeModal();setAuthed(false);});
+$('demoBtn').addEventListener('click',enterDemo);
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('loginBtn'),err=$('authFeedback');err.textContent='';if(!client){err.textContent='Could not load Supabase. Check your internet connection and reopen the file.';return;}btn.disabled=true;btn.textContent='Signing in…';try{const {data,error}=await client.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error)throw error;if(data.user?.id!==OWNER_USER_ID){await client.auth.signOut();throw new Error('That account is not the owner account authorized in this project.');}state.owner=data.user.id;$('loginPassword').value='';await enterLive();}catch(error){err.textContent=error.message||'Sign-in failed.';}finally{btn.disabled=false;btn.innerHTML='Sign in <span>→</span>';}});
+(async()=>{setAuthed(false);if(new URLSearchParams(window.location.search).has('preview')){await enterDemo();return;}if(!client){$('authFeedback').textContent='The Supabase library needs an internet connection. Sample preview is still available.';return;}try{const {data,error}=await client.auth.getSession();if(error)throw error;if(data.session){const {data:userData,error:userError}=await client.auth.getUser();if(userError)throw userError;if(userData.user?.id===OWNER_USER_ID){state.owner=userData.user.id;await enterLive();}else{await client.auth.signOut();$('authFeedback').textContent='The signed-in account does not match the existing workspace owner.';}}}catch(err){$('authFeedback').textContent='Could not restore your session: '+err.message;}})();
+
+</script>
+<!-- Evidence Atlas enhancement tools -->
+<script>
+(function evidenceAtlasEnhancements() {
+  "use strict";
+  const editable = {
+    cases: [
+      ["title","Case title","text",true],["summary","Summary","textarea"],["description","Detailed research notes","textarea"],["category","Category","text"],["country","Location / country","text"],["start_date","Start date","date"],["end_date","End date","date"],["official_finding","Official finding","textarea"],["disputed_questions","Questions under review","textarea"],["evidence_level","Evidence level","text"]
+    ],
+    claims: [
+      ["claim_text","Claim / research question","textarea",true],["evidence_status","Evidence status","text"],["confidence","Confidence assessment","text"],["official_position","Official position","textarea"],["analysis","Analysis / limitations","textarea"]
+    ],
+    sources: [
+      ["title","Source title","text",true],["publisher","Publisher","text"],["author","Author","text"],["publication_date","Publication date","date"],["source_type","Source type","text"],["url","Source URL","url"],["archive_url","Archive URL","url"],["public_notes","Citation and context notes","textarea"]
+    ],
+    people: [
+      ["full_name","Name","text",true],["occupation","Occupation / role","text"],["biography","Context / biography","textarea"],["whistleblower_status","Whistleblower status (if documented)","text"]
+    ],
+    organizations: [
+      ["name","Organization name","text",true],["organization_type","Organization type","text"],["country","Country","text"],["description","Description","textarea"]
+    ]
+  };
+  const sets = [
+    ["cases","Case files","title"],["claims","Claims","claim_text"],["sources","Source references","title"],
+    ["people","People","full_name"],["organizations","Organizations","name"]
+  ];
+  function managePanel() {
+    return `<section class="panel" id="managePanel" style="margin-top:24px">
+      <div class="panel-head"><h2>Edit existing records</h2><span>Changes save to Supabase</span></div>
+      <div class="panel-body">
+      <p class="mini-desc">Find a record below, then choose Edit. Existing IDs and source links are preserved. Demo records cannot be changed.</p>
+      <input class="search" id="manageSearch" placeholder="Search across cases, claims, people, sources..." aria-label="Search editable records" style="width:100%;margin:10px 0 16px" />
+      ${sets.map(([table,title,key])=>`<details style="border-top:1px solid #e4eaf0;padding:14px 0"><summary style="cursor:pointer;font-weight:700;color:#31465a">${esc(title)} (${rows(table).length})</summary>
+        <div class="stack" style="margin-top:10px">${rows(table).map(rec=>`<div class="nested-row" data-manage-entry data-search="${esc((rec[key]||'').toLowerCase())}" style="display:flex;align-items:center;gap:10px;justify-content:space-between"><span style="font-size:12px;overflow-wrap:anywhere">${esc(cut(rec[key]||'Untitled',130))}</span><button class="secondary" type="button" data-action="edit-record" data-table="${table}" data-id="${esc(rec.id)}" style="flex-shrink:0">Edit</button></div>`).join('')||'<p class="mini-desc">No records yet.</p>'}</div></details>`).join('')}
+      </div></section>
+      <section class="panel" style="margin-top:24px" id="importPanel">
+      <div class="panel-head"><h2>Import a case catalog</h2><span>CSV · owner access</span></div>
+      <div class="panel-body"><p class="mini-desc">Upload a CSV with a <strong>title</strong> column. Optional columns: summary, description, category, country, start_date, end_date, official_finding, disputed_questions. Review the preview before importing. Existing titles are skipped and current records are never overwritten. Imported cases are private drafts for further verification.</p>
+      <label for="caseImportLanguage" class="mini-desc" style="display:block;margin:14px 0 7px;font-weight:700">Language of this CSV case text</label><select class="field" id="caseImportLanguage" style="width:100%;margin-bottom:12px">${languageOptions(contentLanguage())}</select><p class="mini-desc">English is selected by default. This selection records the language of imported text; it does not translate the CSV. If the file is in another language, select it explicitly and retain the original document.</p>
+      <input id="caseImportFile" type="file" accept=".csv,text/csv" class="field" aria-label="Select case catalog CSV" style="width:100%"/>
+      <p class="mini-desc" id="importPreview" role="status">Select a file to preview how many cases can be imported.</p>
+      <button class="primary" id="importCasesBtn" data-action="import-cases" type="button" disabled>Import new cases</button>
+      </div></section>`;
+  }
+  let staged = [];
+  let skipped = 0;
+  function normalize(v) {return String(v??"").trim().toLocaleLowerCase("en-US").replace(/\s+/g," ");}
+  function parseCsv(text) {
+    const all=[], row=[]; let cell="", quoted=false;
+    const input=text.replace(/^\uFEFF/,"");
+    for(let i=0;i<input.length;i++) {
+      const c=input[i];
+      if(c==='"') { if(quoted&&input[i+1]==='"'){cell+='"';i++;}else quoted=!quoted; }
+      else if(c===","&&!quoted){row.push(cell);cell="";}
+      else if((c==="\n"||c==="\r")&&!quoted){if(c==="\r"&&input[i+1]==="\n")i++;row.push(cell);if(row.some(v=>v.trim()))all.push([...row]);row.length=0;cell="";}
+      else cell+=c;
+    }
+    if(quoted)throw new Error("Unclosed quoted field in the CSV.");
+    row.push(cell);if(row.some(v=>v.trim()))all.push(row);
+    return all;
+  }
+  async function previewImport(file) {
+    staged=[];skipped=0;
+    $("importCasesBtn").disabled=true;
+    if(!file){$("importPreview").textContent="Select a CSV file to preview.";return;}
+    if(state.demo||!client){$("importPreview").textContent="Sign in as the workspace owner before importing.";return;}
+    if(file.size>5*1024*1024){$("importPreview").textContent="File is over 5 MB. Split large catalogs into smaller files.";return;}
+    try {
+      const data=parseCsv(await file.text());
+      if(data.length<2)throw new Error("The CSV needs a header and at least one case row.");
+      const headers=data.shift().map(x=>normalize(x).replaceAll(" ","_"));
+      if(!headers.includes("title"))throw new Error("Missing required 'title' column.");
+      const allowed=["title","summary","description","category","country","start_date","end_date","official_finding","disputed_questions"];
+      const seen=new Set(rows("cases").map(r=>normalize(r.title)));
+      const knownNumbers=new Set(rows("cases").map(r=>Number(r.case_number)));
+      let n=Math.max(0,...knownNumbers);
+      for(const values of data) {
+        const record={};
+        for(const f of allowed){const p=headers.indexOf(f);if(p>=0&&values[p]!=null&&values[p].trim())record[f]=values[p].trim();}
+        const name=normalize(record.title);
+        if(!name||seen.has(name)){skipped++;continue;}
+        for(const f of ["start_date","end_date"]) {
+          if(record[f]&&(!/^\d{4}-\d{2}-\d{2}$/.test(record[f])||Number.isNaN(Date.parse(record[f]))||new Date(record[f]).toISOString().slice(0,10)!==record[f]))throw new Error(`Date for "${record.title}" must be a valid calendar date in YYYY-MM-DD format in ${f}.`);
+        }
+        if(record.start_date&&record.end_date&&record.end_date<record.start_date)throw new Error(`End date precedes start date for "${record.title}".`);
+        while(knownNumbers.has(++n)){}
+        knownNumbers.add(n);record.case_number=n;record.published=false;record.content_language=$("caseImportLanguage")?.value||contentLanguage();
+        record.evidence_level="Pending review";
+        seen.add(name);staged.push(record);
+      }
+      $("importPreview").textContent=`Ready to import ${staged.length} private case draft(s). Skipped ${skipped} blank or duplicate title(s). No existing case will be overwritten.`;
+      $("importCasesBtn").disabled=!staged.length;
+    } catch(error) {$("importPreview").textContent=`Import error: ${error.message}`;}
+  }
+  async function importCases() {
+    if(!staged.length||!guardWrite())return;
+    if(!confirm(`Import ${staged.length} new case drafts into the live database? Existing records will not be overwritten.`))return;
+    const btn=$("importCasesBtn"),view=$("importPreview");btn.disabled=true;
+    let completed=0;
+    for(let k=0;k<staged.length;k+=25) {
+      const batch=staged.slice(k,k+25);
+      const {error}=await client.from("cases").insert(batch);
+      if(error) {
+        view.textContent=`Imported ${completed} cases before an error: ${error.message}. Refresh and preview again before retrying.`;
+        staged=[];await loadData();return;
+      }
+      completed+=batch.length;view.textContent=`Imported ${completed} of ${staged.length} private drafts...`;
+    }
+    staged=[];view.textContent=`Imported ${completed} case drafts. Review each case and attach evidence before marking it published.`;
+    $("caseImportFile").value="";
+    await loadData();toast(`${completed} cases imported without overwriting existing records.`);
+  }
+  function editRecord(table,id) {
+    if(!guardWrite()||!editable[table])return;
+    const original=rows(table).find(x=>String(x.id)===String(id));
+    if(!original){toast("Record not found. Refresh data.");return;}
+    const fields=editable[table].map(([name,label,kind,required])=>field(name,label,kind,!!required,"",original[name]??"")).join("");
+    $("modalRoot").innerHTML=`<div class="modal-backdrop" id="modalBackdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-header"><h2 id="modalTitle">Edit ${esc(table.slice(0,-1))}</h2><button class="modal-close" data-action="close-modal" aria-label="Close">×</button></div><form id="editExistingForm">${fields}<p class="form-note">This updates the selected record only. Its ID, citations, and other links remain intact.</p><div id="modalError" role="alert"></div><div class="modal-actions"><button type="button" class="secondary" data-action="close-modal">Cancel</button><button class="primary" id="saveEditedBtn" type="submit">Save changes</button></div></form></section></div>`;
+    $("editExistingForm").addEventListener("submit",async e=>{
+      e.preventDefault();if(!guardWrite())return;
+      const update={};const values=new FormData(e.currentTarget);
+      for(const [name] of editable[table]){update[name]=String(values.get(name)??"").trim()||null;}
+      const button=$("saveEditedBtn");button.disabled=true;button.textContent="Saving...";
+      const {error}=await client.from(table).update(update).eq("id",original.id).select("*").single();
+      if(error){$("modalError").textContent=`Could not save: ${error.message}`;button.disabled=false;button.textContent="Save changes";return;}
+      closeModal();toast("Changes saved in Supabase.");await loadData();
+    });
+    $("editExistingForm").querySelector(".field")?.focus();
+  }
+  const screen=$("screen");
+  const observer=new MutationObserver(()=>{
+    if(state.screen==="settings"&&!$("managePanel"))screen.insertAdjacentHTML("beforeend",managePanel());
+  });
+  observer.observe(screen,{childList:true});
+  if(state.screen==="settings"&&!$("managePanel"))screen.insertAdjacentHTML("beforeend",managePanel());
+  document.addEventListener("click",e=>{
+    const b=e.target.closest('[data-action="edit-record"],[data-action="import-cases"]');
+    if(!b)return;
+    if(b.dataset.action==="edit-record")editRecord(b.dataset.table,b.dataset.id);
+    else if(b.dataset.action==="import-cases")void importCases();
+  });
+  document.addEventListener("input",e=>{
+    if(e.target.id!=="manageSearch")return;
+    const q=normalize(e.target.value);
+    document.querySelectorAll("[data-manage-entry]").forEach(item=>item.hidden=!normalize(item.dataset.search).includes(q));
+  });
+  document.addEventListener("change",e=>{
+    if(e.target.id==="caseImportFile")void previewImport(e.target.files?.[0]);
+    if(e.target.id==="caseImportLanguage")void previewImport($("caseImportFile")?.files?.[0]);
+  });
+})();
+</script>
+<script>
+(function initWatchInteractions(){
+ function message(text){toast(text);}
+ function watchById(id){return rows("research_inbox").find(x=>String(x.id)===String(id));}
+ async function updateWatch(table,id,values){if(!guardWrite())return false;const {error}=await client.from(table).update(values).eq("id",id).select("*").single();if(error){message(`Could not save: ${error.message}`);return false;}await loadData();return true;}
+ function modal(content,title,handler){$("modalRoot").innerHTML=`<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-header"><h2>${esc(title)}</h2><button class="modal-close" type="button" data-action="close-modal" aria-label="Close">×</button></div><form id="watchForm">${content}<div id="watchFormError" role="alert"></div><div class="modal-actions"><button type="button" class="secondary" data-action="close-modal">Cancel</button><button type="submit" class="primary" id="watchSubmit">Save</button></div></form></section></div>`; $("watchForm").addEventListener("submit",handler); $("watchForm").querySelector(".field")?.focus();}
+ function addItem(){if(!guardWrite())return;let opts='<option value="">— Unassigned —</option>'+rows('cases').map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join('');let top='<option value="">— General watch —</option>'+rows('research_watch_topics').map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');let groups='<option value="">General (no group)</option>'+rows('investigation_groups').map(x=>`<option value="${esc(x.slug)}">${esc(x.title)}</option>`).join('');
+   const fields=field("title","Source title","text",true)+field("source_url","Source URL","url",true)+field("publisher","Publisher")+field("published_at","Publication date","date")+field("relevance_notes","Why this is relevant","textarea")+field("evidence_notes","What the original source actually shows","textarea")+field("competing_explanations","Alternative explanations / caveats","textarea")+field("related_case_id","Related case","select",false,opts)+field("watch_topic_id","Watch topic","select",false,top)+field("group_slug","Investigation group","select",false,groups)+field("coverage_type","Type of material","select",true,[["unclassified","Unclassified"],["primary_document","Primary document"],["reporting","News reporting"],["opinion","Opinion"],["fact_check","Fact check"]].map(([v,n])=>`<option value="${v}">${n}</option>`).join(''));
+   modal(fields,"Stage a research finding",async e=>{e.preventDefault();const form=Object.fromEntries(new FormData(e.currentTarget));let d={};for(let [k,v] of Object.entries(form)){v=String(v).trim();if(v)d[k]=v;}if(!d.related_case_id)delete d.related_case_id;if(!d.watch_topic_id)delete d.watch_topic_id;d.origin="manual";d.content_language=contentLanguage();const b=$("watchSubmit");b.disabled=true;const {error}=await client.from("research_inbox").insert(d);b.disabled=false;if(error){$("watchFormError").textContent=`Save failed: ${error.code==='23505'?'This URL is already in the review queue.':error.message}`;return;}closeModal();await loadData();message("Finding added for review. No claim was marked verified.");});
+ }
+ function addTopic(){if(!guardWrite())return;modal(field("name","Watch topic name","text",true)+field("search_query","What should the agent search for?","textarea",true),"Create research watch",async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.currentTarget));const b=$("watchSubmit");b.disabled=true;const {error}=await client.from("research_watch_topics").insert({name:String(f.name).trim(),search_query:String(f.search_query).trim()});b.disabled=false;if(error){$("watchFormError").textContent=error.message;return;}closeModal();await loadData();message("New watch topic saved.");});}
+
+ function editItem(id){
+  if(!guardWrite())return;
+  const current=watchById(id);
+  if(!current)return;
+  const caseOptionsHtml='<option value="">— Unassigned —</option>'+rows("cases").map(c=>`<option value="${c.id}" ${String(c.id)===String(current.related_case_id)?"selected":""}>${esc(c.title)}</option>`).join("");
+  const coverageTypes=[["unclassified","Unclassified"],["primary_document","Primary document"],["reporting","News reporting"],["opinion","Opinion"],["fact_check","Fact check"]].map(([v,n])=>`<option value="${v}" ${current.coverage_type===v?"selected":""}>${n}</option>`).join("");
+  const fields=field("title","Title","text",true,"",current.title)+field("source_url","Source URL","url",true,"",current.source_url)+field("publisher","Publisher","text",false,"",current.publisher)+field("published_at","Published (date)","date",false,"",current.published_at?.slice(0,10))+field("related_case_id","Related case","select",false,caseOptionsHtml)+field("coverage_type","Source type","select",false,coverageTypes)+field("relevance_notes","Relevance and reason for review","textarea",false,"",current.relevance_notes)+field("evidence_notes","What the source actually demonstrates","textarea",false,"",current.evidence_notes)+field("competing_explanations","Counter-evidence, alternative explanations, caveats","textarea",false,"",current.competing_explanations);
+  modal(fields,"Edit research assessment",async e=>{e.preventDefault();const values=Object.fromEntries(new FormData(e.currentTarget));const body={};for(const [key,val] of Object.entries(values))body[key]=String(val).trim()||null;body.updated_at=new Date().toISOString();const b=$("watchSubmit");b.disabled=true;const result=await updateWatch("research_inbox",id,body);b.disabled=false;if(result){closeModal();message("Research notes updated. Review status unchanged.");}else{$("watchFormError").textContent="Update could not be saved.";}});
+ }
+ function editTopic(id){
+  if(!guardWrite())return;
+  const current=rows("research_watch_topics").find(x=>x.id===id);if(!current)return;
+  modal(field("name","Watch name","text",true,"",current.name)+field("search_query","What to look for","textarea",true,"",current.search_query),"Edit research watch",async e=>{e.preventDefault();const values=Object.fromEntries(new FormData(e.currentTarget));const result=await updateWatch("research_watch_topics",id,{name:String(values.name).trim(),search_query:String(values.search_query).trim()});if(result){closeModal();message("Watch topic updated.");}else{$("watchFormError").textContent="Update failed. Check the topic name is unique."; }});
+ }
+ async function promote(id){
+  if(!guardWrite())return;
+  const x=watchById(id);if(!x||x.review_status!=="reviewed"){message("Review the source before adding it to a library.");return;}
+  if(!confirm("Add this reviewed source to your private library? This does not verify its claims or publish findings."))return;
+  const lookup=await client.from("sources").select("id").eq("url",x.source_url).limit(1);
+  if(lookup.error){message(lookup.error.message);return;}
+  let sourceId=lookup.data?.[0]?.id;
+  if(!sourceId){
+    const added=await client.from("sources").insert({title:x.title,publisher:x.publisher||null,url:x.source_url,publication_date:x.published_at?.slice(0,10)||null,source_type:x.coverage_type||null,public_notes:`Review assessment: ${x.assessment}. ${x.evidence_notes||x.relevance_notes||"No supporting analysis attached."}`.slice(0,10000),published:false}).select("id").single();
+    if(added.error){message("Could not save source: "+added.error.message);return;}
+    sourceId=added.data.id;
+  }
+  if(x.group_slug&&rows("investigation_groups").some(g=>g.slug===x.group_slug)){
+    const existing=await client.from("investigation_group_sources").select("source_id").eq("group_slug",x.group_slug).eq("source_id",sourceId).limit(1);
+    if(existing.error){message("Source saved, but group association could not be checked: "+existing.error.message);return;}
+    if(!existing.data?.length){
+      const link=await client.from("investigation_group_sources").insert({group_slug:x.group_slug,source_id:sourceId,evidence_role:"background",relevance_notes:x.evidence_notes||x.relevance_notes||"Reviewed in Research Watch",reviewed:true});
+      if(link.error){message("Source saved, but group association failed: "+link.error.message);return;}
+    }
+  }
+  message("Source added to the private library; no claim automatically verified.");
+  await loadData();
+  nav(x.group_slug&&rows("investigation_groups").some(g=>g.slug===x.group_slug)?x.group_slug:"sources");
+ }
+ document.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-action^='watch-']");if(!b)return;let id=Number(b.dataset.id);
+  switch(b.dataset.action){
+   case "watch-add-item":addItem();break;
+   case "watch-edit":editItem(id);break;
+   case "watch-edit-topic":editTopic(id);break;
+   case "watch-add-topic":addTopic();break;
+   case "watch-review":await updateWatch("research_inbox",id,{review_status:"reviewed",updated_at:new Date().toISOString()});break;
+   case "watch-dismiss":await updateWatch("research_inbox",id,{review_status:"dismissed",updated_at:new Date().toISOString()});break;
+   case "watch-reopen":await updateWatch("research_inbox",id,{review_status:"pending",updated_at:new Date().toISOString()});break;
+   case "watch-toggle-topic":{let t=rows("research_watch_topics").find(x=>x.id===id);if(t)await updateWatch("research_watch_topics",id,{active:!t.active});break;}
+   case "watch-promote":await promote(id);break;
+  }
+ });
+ document.addEventListener("change",async e=>{const a=e.target.closest("[data-watch-assessment]");if(!a)return;const id=Number(a.dataset.watchAssessment);await updateWatch("research_inbox",id,{assessment:a.value,updated_at:new Date().toISOString()});});
+})();
+</script>
+
+<!-- MASTER-INDEX-CASE-UI-V1 -->
+<script>
+(function masterIndexCaseUI(){
+ "use strict";
+ let caseFilter="";
+ const get=(n)=>document.getElementById(n);
+ function drawCaseEnhancements(){
+  const screen=get("screen");if(!screen||typeof state==="undefined")return;
+  if(state.screen==="cases"){
+   const list=screen.querySelector(".case-list"),summary=screen.querySelector(".case-summary");
+   if(!list||!summary)return;
+   list.style.maxHeight="72vh";list.style.overflowY="auto";list.style.paddingRight="6px";
+   if(!list.querySelector("#caseCatalogFilter")){
+    list.insertAdjacentHTML("afterbegin",`<div style="position:sticky;top:0;z-index:2;background:#f4f6fa;padding-bottom:8px"><input id="caseCatalogFilter" class="search" type="search" style="width:100%;min-width:0" aria-label="Find cases by number or title" placeholder="Find by case # or title..." value="${esc(caseFilter)}"/><div class="mini-desc" id="caseCatalogResults" style="margin:6px 0 1px"></div></div>`);
+    const el=get("caseCatalogFilter");
+    el.addEventListener("input",e=>{caseFilter=e.target.value;applyCaseFilter();});
+   }
+   applyCaseFilter();
+   if(!summary.querySelector("#masterIndexReferences")){
+    const selected=one("cases",state.caseId);
+    const mapped=rows("case_source_references").filter(x=>String(x.case_id)===String(selected?.id));
+    const refs=mapped.map(link=>{
+      const reg=rows("master_source_register").find(x=>String(x.id)===String(link.register_id));
+      const src=rows("sources").find(x=>String(x.id)===String(reg?.source_id));
+      return {reg,src};
+    }).filter(x=>x.reg).sort((a,b)=>Number(a.reg.reference_code.replace(/\D/g,""))-Number(b.reg.reference_code.replace(/\D/g,"")));
+    const display=refs.length?refs.map(({reg,src})=>
+       `<div class="nested-row"><b>${esc(reg.reference_code)} · ${esc(src?.title||"Source entry not loaded")}</b>
+       <p>${src?.url?sourceAnchor(src,"Open cited document ↗"):"Citation URL unavailable"}</p>
+       <div class="mini-meta">Master index bibliography · PDF page ${esc(reg.original_pdf_page)} · ${esc(reg.register_name.replaceAll("_","–"))}</div></div>`
+    ).join(""):`<p class="mini-desc">No master-index citations are linked to this case yet.</p>`;
+    summary.insertAdjacentHTML("beforeend",`<section class="panel" id="masterIndexReferences"><div class="panel-head"><h2>Master index source references</h2><span>${refs.length} citation${refs.length===1?"":"s"}</span></div><div class="panel-body"><div class="notice" style="margin-bottom:14px">These documents are cited by the uploaded working index. A citation does not independently prove every claim, and external URLs have not all been rechecked.</div>${display}</div></section>`);
+    if(selected&&selected.published===false){
+      const detail=summary.querySelector(".case-detail");
+      detail?.insertAdjacentHTML("afterbegin",`<div class="mini-meta" style="margin-bottom:12px"><span class="badge orange">PRIVATE DRAFT — REVIEW REQUIRED</span><span>Original index case #${esc(selected.case_number||selected.id)}</span></div>`);
+    }
+   }
+  }
+  if(state.screen==="dashboard"&&!screen.querySelector("#masterIndexImportNotice")&&rows("cases").length>20){
+   const drafts=rows("cases").filter(c=>c.published===false).length,refs=rows("case_source_references").length;
+   screen.insertAdjacentHTML("beforeend",`<div id="masterIndexImportNotice" class="network-note"><strong>Master index imported:</strong> ${rows("cases").length} numbered case files, ${refs} citation links, and ${drafts} private drafts pending review. Grades and citation links reflect the uploaded October 2026 working index; they are not blanket verification of allegations or cause-of-death theories.</div>`);
+  }
+ }
+ function applyCaseFilter(){
+  const list=get("screen")?.querySelector(".case-list");if(!list)return;
+  const query=caseFilter.trim().toLowerCase();
+  let shown=0;
+  for(const btn of list.querySelectorAll(".case-option")){
+   const txt=btn.textContent.toLowerCase();
+   const c=rows("cases").find(x=>String(x.id)===String(btn.dataset.id));
+   const matched=!query||txt.includes(query)||(c&&String(c.case_number)===query)||(c&&String(c.case_number).includes(query));
+   btn.hidden=!matched;if(matched)shown++;
+  }
+  const counter=get("caseCatalogResults");if(counter)counter.textContent=`Showing ${shown} of ${list.querySelectorAll(".case-option").length} cases`;
+ }
+ const screen=get("screen");
+ if(screen){const obs=new MutationObserver(()=>drawCaseEnhancements());obs.observe(screen,{childList:true,subtree:false});drawCaseEnhancements();}
+})();
+</script>
+
+<script>
+
+document.addEventListener("change",e=>{if(e.target&&e.target.id==="networkCaseSelect"){state.caseId=Number(e.target.value);render();}});
+</script>
+
+<script>
+(function setupInvestigationGroupControls(){
+ function currentGroup(slug){return rows("investigation_groups").find(g=>g.slug===slug);}
+ function groupModal(title,fields,handler){
+  if(!guardWrite())return;
+  $("modalRoot").innerHTML=`<div class="modal-backdrop" role="presentation"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="groupModalTitle"><div class="modal-header"><h2 id="groupModalTitle">${esc(title)}</h2><button class="modal-close" type="button" data-action="close-modal" aria-label="Close">×</button></div><form id="groupForm">${fields}<div id="groupError" role="alert"></div><div class="modal-actions"><button type="button" class="secondary" data-action="close-modal">Cancel</button><button id="groupSave" class="primary" type="submit">Save to group</button></div></form></section></div>`;
+  $("groupForm").addEventListener("submit",async e=>{
+    e.preventDefault();if(!guardWrite())return;
+    let save=$("groupSave");save.disabled=true;save.textContent="Saving…";
+    try{await handler(Object.fromEntries(new FormData(e.currentTarget)));}catch(err){$("groupError").textContent=err?.message||"Unable to save.";save.disabled=false;save.textContent="Save to group";}
+  });
+ }
+ async function finalize(){closeModal();await loadData();toast("Saved to your private investigation group.");}
+ function topicOpts(slug){return `<option value="">General group source</option>`+rows("investigation_group_topics").filter(t=>t.group_slug===slug).map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join("");}
+ function addTopic(slug){if(!currentGroup(slug))return;
+  const fields=field("title","Research section title","text",true)+field("summary","Scope and existing information","textarea",true)+field("research_question","What should we establish?","textarea",true);
+  groupModal("New research section",fields,async d=>{
+   const values={group_slug:slug,title:d.title.trim(),summary:d.summary.trim(),research_question:d.research_question.trim(),finding_status:"unassessed",review_state:"draft"};
+   const {error}=await client.from("investigation_group_topics").insert(values);
+   if(error)throw error;await finalize();
+  });
+ }
+ function addSource(slug){if(!currentGroup(slug))return;
+  const fields=field("title","Original document title","text",true)+field("url","Original source URL","url",true)+field("publisher","Publisher or archive","text",true)+field("topic_id","Research section","select",false,topicOpts(slug))+field("relevance_notes","What the document supports and its limits","textarea",true);
+  groupModal("Add document to group",fields,async d=>{
+   const url=new URL(String(d.url).trim());if(!["https:","http:"].includes(url.protocol))throw Error("Use an HTTP or HTTPS source URL.");
+   let {data:existing,error:err}=await client.from("sources").select("id").eq("url",url.href).limit(1);
+   if(err)throw err;
+   let sourceId=existing?.[0]?.id;
+   if(!sourceId){
+    const saved=await client.from("sources").insert({title:d.title.trim(),url:url.href,publisher:d.publisher.trim(),source_type:"investigation_group_reference",public_notes:"Group source awaiting independent review.",published:false}).select("id").single();
+    if(saved.error)throw saved.error;sourceId=saved.data.id;
+   }
+   const row={group_slug:slug,source_id:sourceId,evidence_role:"primary_reference",relevance_notes:d.relevance_notes.trim(),reviewed:false};
+   if(d.topic_id)row.topic_id=Number(d.topic_id);
+   const added=await client.from("investigation_group_sources").insert(row);
+   if(added.error)throw added.error;
+   await finalize();
+  });
+ }
+ function addEvent(slug){if(!currentGroup(slug))return;
+  const options='<option value="">No linked reference</option>'+rows("investigation_group_sources").filter(x=>x.group_slug===slug).map(x=>{
+   const s=one("sources",x.source_id);return `<option value="${x.source_id}">${esc(cut(s?.title||"Source",95))}</option>`;
+  }).join("");
+  const fields=field("title","Event title","text",true)+field("event_date","Date (YYYY-MM-DD)","date",true)+field("description","What is documented?","textarea",true)+field("source_id","Supporting document","select",false,options);
+  groupModal("Add documented timeline event",fields,async d=>{
+   const row={group_slug:slug,title:d.title.trim(),event_date:d.event_date,description:d.description.trim(),event_kind:"documented_event"};
+   if(d.source_id)row.source_id=Number(d.source_id);
+   const {error}=await client.from("investigation_group_events").insert(row);
+   if(error)throw error;await finalize();
+  });
+ }
+ document.addEventListener("click",async e=>{
+  const btn=e.target.closest("[data-action^='group-']");if(!btn)return;
+  const slug=btn.dataset.group;if(!currentGroup(slug))return;
+  switch(btn.dataset.action){
+   case "group-add-topic":addTopic(slug);break;
+   case "group-add-source":addSource(slug);break;
+   case "group-add-event":addEvent(slug);break;
+   case "group-toggle-reviewed":{
+    if(!guardWrite())return;
+    const src=rows("investigation_group_sources").find(x=>x.group_slug===slug&&String(x.source_id)===String(btn.dataset.id));
+    if(!src)return;
+    const {error}=await client.from("investigation_group_sources").update({reviewed:!src.reviewed}).eq("group_slug",slug).eq("source_id",src.source_id).select("source_id").single();
+    if(error){toast("Review status not saved: "+error.message);return;}
+    await loadData();break;
+   }
+  }
+ });
+})();
+</script>
+
+<!-- News & Information interaction controls -->
+<script>
+(function setupNewsInteraction(){
+ const byId=id=>rows("news_items").find(x=>String(x.id)===String(id));
+ const groupChoices=selected=>`<option value="">General (no linked investigation)</option>`+rows("investigation_groups").map(g=>`<option value="${esc(g.slug)}" ${selected===g.slug?"selected":""}>${esc(g.title)}</option>`).join("");
+ const sectionChoices=selected=>rows("news_sections").slice().sort((a,b)=>a.display_order-b.display_order).map(s=>`<option value="${s.id}" ${String(selected)===String(s.id)?"selected":""}>${esc(s.title)}</option>`).join("");
+ const topicChoices=selected=>rows("news_topics").filter(t=>t.active!==false).map(t=>`<option value="${t.id}" ${String(selected)===String(t.id)?"selected":""}>${esc(rows("news_sections").find(s=>s.id===t.section_id)?.title||"Other")} / ${esc(t.title)}</option>`).join("");
+ const kindChoices=selected=>[["news_report","News report"],["primary_document","Original document"],["legal_record","Legal record"],["research_paper","Scientific research"],["fact_check","Fact-check"],["background_explainer","Background explainer"],["opinion","Opinion"]].map(([k,v])=>`<option value="${k}" ${selected===k?"selected":""}>${v}</option>`).join("");
+ const assessmentChoices=selected=>[["unassessed","Not assessed"],["corroborated","Corroborated"],["contested","Contested"],["misleading","Misleading"],["insufficient_evidence","Insufficient evidence"]].map(([k,v])=>`<option value="${k}" ${selected===k?"selected":""}>${v}</option>`).join("");
+ const modal=(title,fields,handle)=>{
+  if(!guardWrite())return;
+  $("modalRoot").innerHTML=`<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="newsModalTitle"><div class="modal-header"><h2 id="newsModalTitle">${esc(title)}</h2><button type="button" class="modal-close" data-action="close-modal" aria-label="Close">×</button></div><form id="newsForm">${fields}<div id="newsFormError" role="alert" class="mini-desc"></div><div class="modal-actions"><button type="button" class="secondary" data-action="close-modal">Cancel</button><button type="submit" id="newsModalSave" class="primary">Save</button></div></form></section></div>`;
+  $("newsForm").addEventListener("submit",async e=>{
+   e.preventDefault();if(!guardWrite())return;
+   const button=$("newsModalSave");button.disabled=true;button.textContent="Saving…";
+   try{await handle(Object.fromEntries(new FormData(e.currentTarget)));closeModal();await loadData();toast("Saved to your private News & Information desk.");}
+   catch(err){$("newsFormError").textContent="Could not save: "+(err?.code==="23505"?"A section, topic, or source URL already exists.":err?.message||"Unknown error");}
+   finally{if(button.isConnected){button.disabled=false;button.textContent="Save";}}
+  });
+  $("newsForm").querySelector("input")?.focus();
+ };
+ const addSection=()=>{
+  modal("New news section",field("title","Section title","text",true)+field("description","What belongs in this section?","textarea",true),async x=>{
+   const title=String(x.title||"").trim();
+   let slug=title.normalize("NFKD").toLowerCase().replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,64);
+   if(slug.length<3)throw Error("Enter a descriptive section title.");
+   const existing=new Set(rows("news_sections").map(s=>s.slug));if(existing.has(slug))throw Error("A section with this name already exists.");
+   const {error}=await client.from("news_sections").insert({slug,title,description:String(x.description||"").trim(),display_order:rows("news_sections").length+1});
+   if(error)throw error;
+  });
+ };
+ const addTopic=()=>{
+  const selected=newsView.section==="all"?rows("news_sections")[0]?.id:newsView.section;
+  modal("New news topic",field("section_id","Section","select",true,sectionChoices(selected))+field("title","Topic title","text",true)+field("description","Topic description","textarea",true)+field("search_terms","Optional research/search keywords","textarea")+field("group_slug","Related investigation (optional)","select",false,groupChoices(newsView.group==="all"?"":newsView.group)),async x=>{
+   const {error}=await client.from("news_topics").insert({section_id:Number(x.section_id),title:String(x.title).trim(),description:String(x.description||"").trim(),search_terms:String(x.search_terms||"").trim(),group_slug:x.group_slug||null});
+   if(error)throw error;
+  });
+ };
+ const itemForm=(current=null)=>{
+  const t=newsView.topic==="all"?rows("news_topics").find(x=>x.active&&((newsView.section==="all")||String(x.section_id)===String(newsView.section)))?.id:newsView.topic;
+  const desiredTopic=current?.topic_id??t;
+  if(!desiredTopic){toast("Create a news topic first.");return;}
+  const sectionDefault=rows("news_topics").find(t=>String(t.id)===String(desiredTopic));
+  const desiredGroup=current?.group_slug||(newsView.group==="all"?sectionDefault?.group_slug:newsView.group)||"";
+  const fields=field("topic_id","News topic","select",true,topicChoices(desiredTopic))+
+    field("group_slug","Related investigation (optional)","select",false,groupChoices(desiredGroup))+
+    field("headline","Headline or original document title","text",true,"",current?.headline||"")+
+    field("source_url","Exact source URL","url",true,"",current?.source_url||"")+
+    field("publisher","Publisher, agency or original author","text",false,"",current?.publisher||"")+
+    field("published_at","Original publication date (optional)","date",false,"",current?.published_at?.slice(0,10)||"")+
+    field("content_kind","Content type","select",true,kindChoices(current?.content_kind||"news_report"))+
+    field("summary","Neutral summary","textarea",false,"",current?.summary||"")+
+    field("evidence_notes","Sources, limits and verification notes","textarea",false,"",current?.evidence_notes||"")+
+    field("alternative_views","Competing reports and interpretations","textarea",false,"",current?.alternative_views||"")+
+    field("assessment","Evidence assessment","select",true,assessmentChoices(current?.assessment||"unassessed"));
+  modal(current?"Edit news information":"Add a news or information source",fields,async x=>{
+   const url=String(x.source_url||"").trim();if(!targetUrl(url))throw Error("Enter a valid HTTP or HTTPS URL.");
+   const value={topic_id:Number(x.topic_id),group_slug:x.group_slug||null,headline:String(x.headline||"").trim(),source_url:url,publisher:String(x.publisher||"").trim(),published_at:x.published_at||null,content_kind:x.content_kind,summary:String(x.summary||"").trim(),evidence_notes:String(x.evidence_notes||"").trim(),alternative_views:String(x.alternative_views||"").trim(),assessment:x.assessment,updated_at:new Date().toISOString()};
+   if(current){const out=await client.from("news_items").update(value).eq("id",current.id).select("id").single();if(out.error)throw out.error;}
+   else{value.review_status="pending";value.origin="manual";value.content_language=contentLanguage();const out=await client.from("news_items").insert(value);if(out.error)throw out.error;}
+  });
+ };
+ async function setStatus(id,status){if(!guardWrite())return;const {error}=await client.from("news_items").update({review_status:status,updated_at:new Date().toISOString()}).eq("id",id).select("id").single();if(error){toast("Could not update item: "+error.message);return;}await loadData();toast(status==="reviewed"?"Reviewed. This does not verify any underlying claims.":"Review status changed.");}
+ async function sendToResearchInbox(id){
+  if(!guardWrite())return;
+  const item=byId(id);
+  if(!item||item.review_status!=="reviewed"){toast("Review the information before sending it to investigations.");return;}
+  if(!confirm("Stage this source in Research Watch for deeper investigation? No claim will be verified or published."))return;
+  const prior=await client.from("research_inbox").select("id").eq("source_url",item.source_url).limit(1);
+  if(prior.error){toast(prior.error.message);return;}
+  if(prior.data?.length){toast("This source is already in the research queue.");nav("watch");return;}
+  const coverage=item.content_kind==="primary_document"||item.content_kind==="legal_record"?"primary_document":item.content_kind==="fact_check"?"fact_check":item.content_kind==="opinion"?"opinion":item.content_kind==="news_report"?"reporting":"unclassified";
+  const watch=rows("research_watch_topics").find(x=>x.group_slug===item.group_slug&&x.active);
+  const data={title:item.headline,content_language:item.content_language||contentLanguage(),source_url:item.source_url,publisher:item.publisher||null,published_at:item.published_at||null,relevance_notes:item.summary||null,evidence_notes:item.evidence_notes||null,competing_explanations:item.alternative_views||null,group_slug:item.group_slug||null,watch_topic_id:watch?.id||null,coverage_type:coverage,assessment:"unassessed",review_status:"pending",origin:"manual"};
+  const added=await client.from("research_inbox").insert(data);
+  if(added.error){toast("Could not stage source: "+added.error.message);return;}
+  await loadData();nav("watch");toast("Source staged for further research.");
+ }
+ document.addEventListener("click",e=>{
+  const section=e.target.closest("[data-news-section]");if(section){newsView.section=section.dataset.newsSection;newsView.topic="all";render();return;}
+  const topic=e.target.closest("[data-news-topic]");if(topic){const row=rows("news_topics").find(x=>String(x.id)===String(topic.dataset.newsTopic));if(row){newsView.section=String(row.section_id);newsView.topic=String(row.id);render();$("newsRecords")?.scrollIntoView({block:"start",behavior:"smooth"});}return;}
+  const button=e.target.closest("[data-action^='news-']");if(!button)return;const id=Number(button.dataset.id);
+  switch(button.dataset.action){
+   case "news-add-section":addSection();break;
+   case "news-add-topic":addTopic();break;
+   case "news-add-item":itemForm();break;
+   case "news-edit":itemForm(byId(id));break;
+   case "news-review":void setStatus(id,"reviewed");break;
+   case "news-dismiss":void setStatus(id,"dismissed");break;
+   case "news-reopen":void setStatus(id,"pending");break;
+   case "news-send-inbox":void sendToResearchInbox(id);break;
+  }
+ });
+ document.addEventListener("change",e=>{
+  const v=e.target.value;
+  if(e.target.id==="newsFilterTopic"){newsView.topic=v;render();}
+  if(e.target.id==="newsFilterGroup"){newsView.group=v;render();}
+  if(e.target.id==="newsFilterKind"){newsView.kind=v;render();}
+  if(e.target.id==="newsFilterStatus"){newsView.review=v;render();}
+ });
+ document.addEventListener("input",e=>{
+  if(e.target.id!=="newsFilterSearch")return;
+  const caret=e.target.selectionStart;newsView.search=e.target.value;render();
+  const field=$("newsFilterSearch");if(field){field.focus();field.setSelectionRange(caret,caret);}
+ });
+})();
+</script>
+<script src="./assistant.js" defer></script>
+<script>
+(function agentControlAutoRefresh(){
+  setInterval(()=>{
+    if(state.screen==='agents'&&!state.demo&&!state.busy&&document.visibilityState==='visible')void loadData();
+  },60000);
+})();
+</script>
+</body>
+</html>
