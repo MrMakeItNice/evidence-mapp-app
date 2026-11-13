@@ -8,10 +8,10 @@
   <title>Evidence Atlas — Investigation Workspace</title>
   <script data-public-landing-redirect>
   // The public reader is the default website experience.
-  // ?workspace=1 preserves the authorized owner's existing research app.
+  // ?workspace=1 preserves the owner's existing research app. Other query flags must not bypass the public landing.
   (function () {
     var params = new URLSearchParams(window.location.search);
-    if (params.get('workspace') !== '1' && !params.has('preview')) {
+    if (params.get('workspace') !== '1') {
       window.location.replace('./homepage-v2-preview.html' + window.location.search + window.location.hash);
     }
   })();
