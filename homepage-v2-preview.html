@@ -280,6 +280,14 @@ try{
     const data=await response.json();
     if(!Array.isArray(data.events))throw new Error('Invalid feed');
     const reviewed=data.events.filter(e=>e&&e.review_status==='verified'&&['positive','negative','neutral'].includes(e.category)&&typeof e.source_url==='string'&&/^https:\/\//i.test(e.source_url)&&typeof e.event_date==='string'&&e.classification_rationale&&e.reviewer&&e.reviewed_at);
+    // Fail closed if event identity or dates are invalid: repeated articles must not inflate totals.
+    const ids=new Set();
+    for(const event of reviewed){
+      if(typeof event.id!=='string'||!event.id.trim()||ids.has(event.id)||!/^\d{4}-\d{2}-\d{2}$/.test(event.event_date)||Number.isNaN(Date.parse(event.event_date))){
+        throw new Error('Invalid or duplicate reviewed event');
+      }
+      ids.add(event.id);
+    }
     if(!reviewed.length){status.textContent='Awaiting verified data. No reviewed events are currently available; this does not mean zero news.';return;}
     for(const category of ['positive','negative','neutral'])document.getElementById('atlas-'+category).textContent=String(reviewed.filter(e=>e.category===category).length);
     const updated=data.updated_at?new Date(data.updated_at):null;
