@@ -123,6 +123,9 @@ try{
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  function resize(){const rect=canvas.getBoundingClientRect();renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();if(!canvas.dataset.userZoom){zoom=Math.max(8.5,5.8/Math.max(.45,camera.aspect));}}
  new ResizeObserver(resize).observe(canvas);resize();
- function animate(){requestAnimationFrame(animate);if(!dragging&&!reduced)targetY+=.0003;globe.rotation.x+=(targetX-globe.rotation.x)*.13;globe.rotation.y+=(targetY-globe.rotation.y)*.13;camera.position.z+=(zoom-camera.position.z)*.12;renderer.render(scene,camera)}animate();
+ let globeVisible=true;
+ const visibilityObserver=new IntersectionObserver(entries=>{globeVisible=entries[0]?.isIntersecting??true},{threshold:0});
+ visibilityObserver.observe(canvas);
+ function animate(){requestAnimationFrame(animate);if(document.hidden||!globeVisible)return;if(!dragging&&!reduced)targetY+=.0003;globe.rotation.x+=(targetX-globe.rotation.x)*.13;globe.rotation.y+=(targetY-globe.rotation.y)*.13;camera.position.z+=(zoom-camera.position.z)*.12;renderer.render(scene,camera)}animate();
 }catch(e){status.textContent='3D globe unavailable on this connection. Investigation links remain accessible.';fallback.style.display='block'}
 </script></body></html>
