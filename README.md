@@ -6,13 +6,13 @@ A source-grounded research workspace for case files, claims, source references, 
 
 **Primary browser address:** https://mrmakeitnice.github.io/evidence-mapp-app/
 
-**Owner workspace:** https://mrmakeitnice.github.io/evidence-mapp-app/index.html?workspace=1
+**Owner workspace:** https://mrmakeitnice.github.io/evidence-mapp-app/workspace.html?workspace=1
 
 GitHub Pages is the browser-facing host. Supabase Edge Functions serve JSON APIs and retain a synchronized HTML copy; Supabase gateway headers can prevent rendering HTML directly, so use the primary browser address.
 
 ## Private Agent Control Center (November 10, 2026)
 
-The signed-in owner workspace now has an **Agent Control Center** navigation item (in `index.html?workspace=1`). It is a read-only operational console, not automatic public publishing. It shows real snapshot counts for active RSS feeds, collected feed leads, pending private news items, and the Research Watch inbox, plus a recent-run log, seven per-feed last-check/error records, and the latest pending headlines with source links. It provides quick links to existing **News & Information** and **Research Watch** review actions.
+The signed-in owner workspace now has an **Agent Control Center** navigation item (in `workspace.html?workspace=1`). It is a read-only operational console, not automatic public publishing. It shows real snapshot counts for active RSS feeds, collected feed leads, pending private news items, and the Research Watch inbox, plus a recent-run log, seven per-feed last-check/error records, and the latest pending headlines with source links. It provides quick links to existing **News & Information** and **Research Watch** review actions.
 
 A private scheduled database job `evidence-atlas-control-center-sync` refreshes these owner-readable views every five minutes, independently of the user's browser. The source of truth remains the separate `atlas_monitor.feeds` and `atlas_monitor.runs` private tables and the existing review tables. Public mirrors are `public.agent_control_state` (one snapshot), `public.agent_control_feeds`, and `public.agent_control_activity`. All three have row-level security restricting reads to the existing owner UID; anonymous and other authenticated users cannot view these records. No anonymous-accessible monitoring function is added.
 
@@ -34,14 +34,14 @@ The separate hourly **Evidence Atlas 24/7 Research** ChatGPT automation can perf
 
 - **Public website:** https://mrmakeitnice.github.io/evidence-mapp-app/
 - **About / README:** https://mrmakeitnice.github.io/evidence-mapp-app/discover.html#about
-- **Private researcher workspace:** https://mrmakeitnice.github.io/evidence-mapp-app/index.html?workspace=1
+- **Private researcher workspace:** https://mrmakeitnice.github.io/evidence-mapp-app/workspace.html?workspace=1
 - **GitHub Pages setup (if the links return 404):** https://github.com/MrMakeItNice/evidence-mapp-app/settings/pages — select **Deploy from a branch**, **main**, **/(root)**, then Save.
 
 **Do not use** `https://nxlffnplqdobfqxogmxo.supabase.co/functions/v1/evidence-atlas` as the browser website. Supabase's Edge Function gateway can present an HTML response as `text/plain`, causing visitors to see HTML/code instead of the rendered application. The Edge Functions should be used for back-end API endpoints; GitHub Pages is the intended static web host. This does not affect the database or scheduled research tasks.
 
 The public reader presents available published educational summaries without a login. The separate owner workspace requires an authorized Supabase Auth account; research drafts and private records remain protected by database row-level security (RLS). The public reader and owner workspace should be opened through GitHub Pages once Pages deployment is enabled; Supabase Edge Functions remain available for backend APIs.
 
-The current release is committed as `index.html` and `discover.html` in this repository. Publish those files from the repository root with GitHub Pages rather than serving their HTML through an Edge Function.
+GitHub Pages serves the public homepage from `index.html` and the owner workspace from `workspace.html`. Existing links to `homepage-v2-preview.html` and `index.html?workspace=1` still reach their respective destinations.
 
 ## About / README — public reader and owner workspace
 
@@ -186,7 +186,7 @@ node tests/web-checks.mjs
 node scripts/build-edge.mjs
 ```
 
-Deploy `supabase/functions/evidence-atlas/index.ts` together with its generated `pages.ts`; deploy the other functions from their matching directories. `pages.ts` is build output, generated from `index.html`, `discover.html` and `privacy.html`. The SQL repair files record the remote database changes and are reference history, not blindly repeatable setup scripts.
+Deploy `supabase/functions/evidence-atlas/index.ts` together with its generated `pages.ts`; deploy the other functions from their matching directories. `pages.ts` is build output, generated from `workspace.html`, `discover.html` and `privacy.html`. The SQL repair files record the remote database changes and are reference history, not blindly repeatable setup scripts.
 
 The downloadable iPhone app and App Store submission are outside this web release.
 
