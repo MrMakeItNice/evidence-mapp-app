@@ -61,6 +61,9 @@
 .magazine .magazine-story:hover{background:#d9cfb9}
 .magazine .magazine-story .read{color:#272b2b}
 @media(max-width:650px){.edition-cover,.edition-news{grid-template-columns:minmax(0,1fr)}}
+
+/* Reviewed global pulse: never interpret an empty or unavailable feed as zero. */
+.atlas-pulse{margin:48px 0 16px;padding:26px;border:1px solid #31535b;border-radius:12px;background:linear-gradient(135deg,#102631,#0a1723);color:#edf6f4}.atlas-pulse h2{font-size:clamp(25px,3vw,36px);margin:7px 0 12px}.atlas-pulse p{color:#b9ccd0;line-height:1.6;max-width:850px}.atlas-pulse-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}.atlas-pulse-count{border:1px solid #35515a;border-radius:9px;padding:17px;background:#0b1c29}.atlas-pulse-count strong{display:block;font-size:clamp(22px,4vw,36px);color:#f1f7f5}.atlas-pulse-count span{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#b6cbd0}.atlas-pulse .atlas-pulse-status{font-size:13px;color:#c6d9dc}.atlas-pulse a{text-decoration:underline;text-underline-offset:3px;color:#b8f0dc}@media(max-width:520px){.atlas-pulse{padding:18px}.atlas-pulse-counts{gap:7px}.atlas-pulse-count{padding:11px}.atlas-pulse-count span{font-size:10px}}
 </style></head><body>
 <dialog id="ea-opening" class="ea-opening" aria-label="Welcome to Evidence Atlas" aria-describedby="ea-opening-instructions">
   <div class="ea-opening-brand">EVIDENCE <b>◇</b> ATLAS</div>
@@ -87,6 +90,18 @@
 <div class="globe-area"><section class="pulse" aria-labelledby="pulse-title"><h2 id="pulse-title">Global Evidence Pulse</h2><p>Reviewed, unique events—not headlines. Counters appear when a verified event feed is connected.</p><div class="pulse-grid"><button type="button" data-pulse="positive" aria-pressed="false">Positive<strong>—</strong></button><button type="button" data-pulse="negative" aria-pressed="false">Harmful<strong>—</strong></button><button type="button" data-pulse="neutral" aria-pressed="false">Neutral / mixed<strong>—</strong></button></div><div id="pulse-panel" class="pulse-panel" role="status">Choose a category to see its criteria and source status.</div><p>Coverage: not yet measured. No global balance can be inferred until an audited event dataset exists.</p></section><div class="geo-panel" id="geo-panel" role="status">Click the Earth to inspect a location. Drag to rotate; scroll to zoom. Event markers will only appear when verified coordinates are available.</div><div id="fallback" class="fallback" aria-hidden="true"></div><canvas id="earth" class="globe-canvas" tabindex="0" role="application" aria-label="Interactive Earth. Arrow keys rotate; plus and minus zoom; Home resets. Drag rotates; pinch zooms."></canvas><div class="globe-overlay"></div><a class="globe-cta" href="#explore">Ready to explore? ◇</a><div class="globe-tools"><button type="button" id="globe-out" aria-label="Zoom out">−</button><button type="button" id="globe-reset">Reset view</button><button type="button" id="globe-in" aria-label="Zoom in">+</button></div><div class="globe-hint">Click to inspect · Drag to rotate · Scroll to zoom</div><div id="globe-status" class="globe-status" role="status">Loading interactive Earth…</div></div></section>
 <div class="intro-footer"><figure class="quote"><blockquote>“The accumulation of all powers, legislative, executive, and judiciary, in the same hands … may justly be pronounced the very definition of tyranny.”</blockquote><figcaption>James Madison · <a href="https://avalon.law.yale.edu/18th_century/fed47.asp" target="_blank" rel="noopener noreferrer">The Federalist No. 47 (1788)</a> · Abridged excerpt</figcaption></figure></div>
 <section class="content" id="explore"><div class="section-kicker">Choose a path into the evidence</div><h2>Every connection has a story.<br>Every story needs a source.</h2><div class="pathways"><a class="path" href="./discover.html"><span class="number">01 / INVESTIGATE</span><h3>Case Files</h3><p>Explore documented events, competing explanations and original source records.</p><span class="go">Explore investigations ↗</span></a><a class="path" href="./paper-trails.html"><span class="number">02 / TRACE</span><h3>Paper Trails</h3><p>Follow the records behind claims, financial trails and institutional relationships.</p><span class="go">Follow the paper trail ↗</span></a><a class="path" href="./connection-explorer.html"><span class="number">03 / CONNECT</span><h3>Connection Explorer</h3><p>Navigate evidence-backed links across people, organizations and investigations.</p><span class="go">Explore connections ↗</span></a></div>
+<section class="atlas-pulse" id="atlas-pulse" aria-labelledby="atlas-pulse-title">
+  <div class="section-kicker">Global Evidence Pulse · Reviewed events</div>
+  <h2 id="atlas-pulse-title">What is happening in the world?</h2>
+  <p>Positive, negative and neutral classifications of <strong>distinct, source-reviewed events</strong> in our curated feed—not a tally of all news articles or a measure of the world's overall condition.</p>
+  <div class="atlas-pulse-counts" aria-label="Reviewed event categories">
+    <div class="atlas-pulse-count"><strong id="atlas-positive">—</strong><span>Positive</span></div>
+    <div class="atlas-pulse-count"><strong id="atlas-negative">—</strong><span>Negative</span></div>
+    <div class="atlas-pulse-count"><strong id="atlas-neutral">—</strong><span>Neutral</span></div>
+  </div>
+  <p class="atlas-pulse-status" id="atlas-pulse-status" role="status" aria-live="polite">Loading reviewed feed…</p>
+  <p><a href="./global-evidence-pulse.json">Inspect the source feed and methodology</a></p>
+</section>
 <section class="magazine" aria-labelledby="magazine-title"><div class="magazine-masthead"><div class="magazine-topline"><span>Independent Inquiry · Global Edition</span><span>Vol. 01 · November 13, 2026</span></div><h2 id="magazine-title" class="magazine-name">THE EVIDENCE</h2><p class="magazine-deck">An Atlas of People, Power, Patterns & Possibilities</p></div>
       <nav class="edition-links edition-nav" aria-label="Magazine sections">
         <a href="#magazine-cover">Cover story</a>
@@ -211,6 +226,8 @@ try{
  texture.colorSpace=THREE.SRGBColorSpace;
  const earth=new THREE.Mesh(new THREE.SphereGeometry(1.53,96,64),new THREE.MeshPhongMaterial({map:texture,shininess:5,specular:0x163b4a}));globe.add(earth);
  const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(1.565,64,48),new THREE.MeshBasicMaterial({color:0x5b9fc0,transparent:true,opacity:.065,side:THREE.BackSide}));globe.add(atmosphere);
+ // Subtle fixed-opacity atmospheric rim; no new animation loop.
+ const rimGlow=new THREE.Mesh(new THREE.SphereGeometry(1.595,64,48),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.BackSide,uniforms:{glowColor:{value:new THREE.Color(0x5baac4)}},vertexShader:'varying vec3 vNormal;varying vec3 vView;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);vNormal=normalize(normalMatrix*normal);vView=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',fragmentShader:'uniform vec3 glowColor;varying vec3 vNormal;varying vec3 vView;void main(){float rim=pow(1.0-abs(dot(normalize(vNormal),normalize(vView))),3.0);gl_FragColor=vec4(glowColor,rim*0.19);}' }));globe.add(rimGlow);
  scene.add(new THREE.AmbientLight(0x90b6da,1.6));const sun=new THREE.DirectionalLight(0xffffff,2.5);sun.position.set(-3,2,5);scene.add(sun);
  // No speculative location pins or decorative relationships: only grounded events should be mapped.
  const markerMeshes=[];const markerColors={positive:0x4edba8,negative:0xf27f75,neutral:0xd9b778};function positionFor(lat,lon,r=1.565){const a=(90-lat)*Math.PI/180,b=(lon+180)*Math.PI/180;return new THREE.Vector3(-r*Math.sin(a)*Math.cos(b),r*Math.cos(a),r*Math.sin(a)*Math.sin(b));}for(const event of reviewedEvents){const pin=new THREE.Mesh(new THREE.SphereGeometry(.024,12,12),new THREE.MeshBasicMaterial({color:markerColors[event.category]}));pin.position.copy(positionFor(event.lat,event.lon));pin.userData.event=event;globe.add(pin);markerMeshes.push(pin);} 
@@ -226,7 +243,7 @@ try{
  canvas.addEventListener('pointercancel',e=>{activePointers.delete(e.pointerId);dragging=false;pinchDistance=0;moved=true});
  canvas.addEventListener('keydown',e=>{const key=e.key;if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','=','-','_','Home'].includes(key))return;e.preventDefault();if(key==='ArrowLeft')targetY-=.18;else if(key==='ArrowRight')targetY+=.18;else if(key==='ArrowUp')targetX=Math.max(-1.1,targetX-.15);else if(key==='ArrowDown')targetX=Math.min(1.1,targetX+.15);else if(key==='+'||key==='='){canvas.dataset.userZoom='1';zoom=Math.max(5.5,zoom-.65)}else if(key==='-'||key==='_'){canvas.dataset.userZoom='1';zoom=Math.min(14,zoom+.65)}else{delete canvas.dataset.userZoom;targetX=.13;targetY=.35;zoom=Math.max(8.5,5.8/Math.max(.45,camera.aspect))}});
  document.getElementById('globe-out').addEventListener('click',()=>{canvas.dataset.userZoom='1';zoom=Math.min(14,zoom+.65)});document.getElementById('globe-in').addEventListener('click',()=>{canvas.dataset.userZoom='1';zoom=Math.max(5.5,zoom-.65)});document.getElementById('globe-reset').addEventListener('click',()=>{delete canvas.dataset.userZoom;targetX=.13;targetY=.35;zoom=Math.max(8.5,5.8/Math.max(.45,camera.aspect))});
- canvas.addEventListener('wheel',e=>{e.preventDefault();canvas.dataset.userZoom='1';zoom=Math.max(5.5,Math.min(14,zoom+Math.sign(e.deltaY)*.32))},{passive:false});
+ canvas.addEventListener('wheel',e=>{if(document.activeElement!==canvas)return;e.preventDefault();canvas.dataset.userZoom='1';zoom=Math.max(5.5,Math.min(14,zoom+Math.sign(e.deltaY)*.32))},{passive:false});
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  function resize(){const rect=canvas.getBoundingClientRect();renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();if(!canvas.dataset.userZoom){zoom=Math.max(8.5,5.8/Math.max(.45,camera.aspect));}}
  new ResizeObserver(resize).observe(canvas);resize();
@@ -252,5 +269,31 @@ try{
       results.textContent = terms.length ? `${visible} matching ${visible === 1 ? "story" : "stories"}` : "";
     });
   }
+</script>
+<script>
+/* Counts reflect the reviewed feed at fetch time; no synthetic scores or zero-for-empty. */
+(async function loadAtlasPulse(){
+  const status=document.getElementById('atlas-pulse-status');
+  try{
+    const response=await fetch('./global-evidence-pulse.json',{cache:'no-store'});
+    if(!response.ok)throw new Error('Feed unavailable');
+    const data=await response.json();
+    if(!Array.isArray(data.events))throw new Error('Invalid feed');
+    const reviewed=data.events.filter(e=>e&&e.review_status==='verified'&&['positive','negative','neutral'].includes(e.category)&&typeof e.source_url==='string'&&/^https:\/\//i.test(e.source_url)&&typeof e.event_date==='string'&&e.classification_rationale&&e.reviewer&&e.reviewed_at);
+    // Fail closed if event identity or dates are invalid: repeated articles must not inflate totals.
+    const ids=new Set();
+    for(const event of reviewed){
+      if(typeof event.id!=='string'||!event.id.trim()||ids.has(event.id)||!/^\d{4}-\d{2}-\d{2}$/.test(event.event_date)||Number.isNaN(Date.parse(event.event_date))){
+        throw new Error('Invalid or duplicate reviewed event');
+      }
+      ids.add(event.id);
+    }
+    if(!reviewed.length){status.textContent='Awaiting verified data. No reviewed events are currently available; this does not mean zero news.';return;}
+    for(const category of ['positive','negative','neutral'])document.getElementById('atlas-'+category).textContent=String(reviewed.filter(e=>e.category===category).length);
+    const updated=data.updated_at?new Date(data.updated_at):null;
+    const updatedText=updated&&!Number.isNaN(updated.getTime())?' · Feed updated '+updated.toLocaleDateString():'';
+    status.textContent=reviewed.length+' reviewed events in this curated feed'+updatedText+'. Counts are not representative of all news; see methodology.';
+  }catch(error){status.textContent='Live tally temporarily unavailable. No counts are displayed without a verified feed.';}
+})();
 </script>
 </body></html>
