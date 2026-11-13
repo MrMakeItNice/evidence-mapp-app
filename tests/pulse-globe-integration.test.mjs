@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const page = readFileSync(new URL('../homepage-v2-preview.html', import.meta.url), 'utf8');
+const page = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const feed = JSON.parse(readFileSync(new URL('../global-evidence-pulse.json', import.meta.url), 'utf8'));
 
 test('Pulse renders three honest categories with accessible status', () => {
