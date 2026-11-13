@@ -61,6 +61,9 @@
 .magazine .magazine-story:hover{background:#d9cfb9}
 .magazine .magazine-story .read{color:#272b2b}
 @media(max-width:650px){.edition-cover,.edition-news{grid-template-columns:minmax(0,1fr)}}
+
+/* Keep the magazine news ticker readable without horizontal scrolling on phones. */
+@media(max-width:600px){.magazine-ticker{flex-wrap:wrap;align-items:flex-start}.magazine-ticker span{flex:1 1 180px;min-width:0;overflow-wrap:anywhere}}
 </style></head><body>
 <dialog id="ea-opening" class="ea-opening" aria-label="Welcome to Evidence Atlas" aria-describedby="ea-opening-instructions">
   <div class="ea-opening-brand">EVIDENCE <b>◇</b> ATLAS</div>
