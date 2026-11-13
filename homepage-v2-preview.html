@@ -41,7 +41,7 @@
 .magazine .edition-nav{margin:16px 0}
 .magazine .edition-links{display:flex;flex-wrap:wrap;gap:8px 20px}
 .magazine .edition-links a{text-decoration:underline;text-underline-offset:3px;font-weight:700}
-.magazine a:focus-visible,.magazine input:focus-visible{outline:3px solid #92352d;outline-offset:3px}
+.magazine a:focus-visible,.magazine input:focus-visible,.magazine button:focus-visible{outline:3px solid #92352d;outline-offset:3px}
 .edition-cover{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:clamp(16px,4vw,48px);align-items:center;padding:22px 0;border-top:1px solid #37332c;border-bottom:4px double #37332c}
 .edition-cover h3{font:900 clamp(34px,5.6vw,76px)/.99 Georgia,serif;letter-spacing:-.055em;margin:10px 0 14px}
 .edition-cover p,.edition-item p{font:16px/1.45 Georgia,serif;margin:8px 0}
@@ -50,6 +50,8 @@
 .edition-stat{border:4px double #6a654f;background:#d8cfb8;padding:clamp(14px,3vw,34px);color:#263b33;font:700 17px/1.4 Georgia,serif}
 .edition-stat strong{display:block;font:900 clamp(56px,9vw,125px)/1 Georgia,serif;letter-spacing:-.08em}
 .edition-search{margin:22px 0 12px}
+.edition-search-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.edition-search button{border:1px solid #6a654f;background:#f6f0e0;color:#1d2222;padding:10px 12px;font:700 16px Georgia,serif;cursor:pointer}
 .edition-search label{display:block;font:700 15px Georgia,serif;margin-bottom:8px}
 .edition-search input{width:min(100%,420px);padding:10px 12px;border:1px solid #6a654f;background:#f6f0e0;color:#1d2222;font:16px Georgia,serif}
 .edition-section{border-top:1px solid #6a654f;margin-top:22px;padding-top:14px}
@@ -110,7 +112,10 @@
       </article>
       <div class="edition-search" hidden>
         <label for="edition-query">Search this issue’s news and investigations</label>
-        <input id="edition-query" type="search" placeholder="Try housing, climate, or history" autocomplete="off">
+        <div class="edition-search-controls">
+          <input id="edition-query" type="search" placeholder="Try housing, climate, or history" autocomplete="off">
+          <button type="button" id="edition-clear" hidden>Clear search</button>
+        </div>
         <p id="edition-results" class="edition-meta" role="status"></p>
       </div>
       <section class="edition-section" aria-labelledby="magazine-news">
@@ -238,19 +243,32 @@ try{
     const search = magazine.querySelector(".edition-search");
     const input = search.querySelector("input");
     const results = search.querySelector("[role=status]");
+    const clear = search.querySelector("#edition-clear");
     const stories = Array.from(magazine.querySelectorAll("[data-edition-story]"));
     const indexedStories = stories.map(story => story.textContent.toLowerCase());
     search.hidden = false;
 
-    input.addEventListener("input", () => {
+    function filterStories() {
       const terms = input.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
       let visible = 0;
       stories.forEach((story, index) => {
         story.hidden = !terms.every(term => indexedStories[index].includes(term));
         if (!story.hidden) visible += 1;
       });
-      results.textContent = terms.length ? `${visible} matching ${visible === 1 ? "story" : "stories"}` : "";
+      clear.hidden = input.value.length === 0;
+      results.textContent = !terms.length ? "" : visible === 0
+        ? "No matching stories. Try another search or clear it to see all stories."
+        : `${visible} matching ${visible === 1 ? "story" : "stories"}`;
+    }
+
+    input.addEventListener("input", filterStories);
+    clear.addEventListener("click", () => {
+      input.value = "";
+      input.focus();
+      filterStories();
+      results.textContent = "Showing all stories.";
     });
+    filterStories();
   }
 </script>
 </body></html>
