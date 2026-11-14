@@ -70,6 +70,11 @@
 
 /* Reviewed global pulse: never interpret an empty or unavailable feed as zero. */
 .atlas-pulse{margin:48px 0 16px;padding:26px;border:1px solid #31535b;border-radius:12px;background:linear-gradient(135deg,#102631,#0a1723);color:#edf6f4}.atlas-pulse h2{font-size:clamp(25px,3vw,36px);margin:7px 0 12px}.atlas-pulse p{color:#b9ccd0;line-height:1.6;max-width:850px}.atlas-pulse-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}.atlas-pulse-count{border:1px solid #35515a;border-radius:9px;padding:17px;background:#0b1c29}.atlas-pulse-count strong{display:block;font-size:clamp(22px,4vw,36px);color:#f1f7f5}.atlas-pulse-count span{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#b6cbd0}.atlas-pulse .atlas-pulse-status{font-size:13px;color:#c6d9dc}.atlas-pulse a{text-decoration:underline;text-underline-offset:3px;color:#b8f0dc}@media(max-width:520px){.atlas-pulse{padding:18px}.atlas-pulse-counts{gap:7px}.atlas-pulse-count{padding:11px}.atlas-pulse-count span{font-size:10px}}
+.atlas-pulse-sources summary{cursor:pointer;min-height:44px;padding:11px 0;font-weight:700}
+.atlas-pulse-sources summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.atlas-pulse-sources ul{margin:6px 0 14px;padding-inline-start:22px}
+.atlas-pulse-sources li{margin-bottom:10px;overflow-wrap:anywhere}
+.atlas-pulse-sources li span{color:var(--muted);font-size:.9em}
 </style></head><body>
 <dialog id="ea-opening" class="ea-opening" aria-label="Welcome to Evidence Atlas" aria-describedby="ea-opening-instructions">
   <div class="ea-opening-brand">EVIDENCE <b>◇</b> ATLAS</div>
@@ -106,6 +111,10 @@
     <div class="atlas-pulse-count"><strong id="atlas-neutral">—</strong><span>Neutral</span></div>
   </div>
   <p class="atlas-pulse-status" id="atlas-pulse-status" role="status" aria-live="polite">Loading reviewed feed…</p>
+  <details class="atlas-pulse-sources" id="atlas-pulse-sources" hidden>
+    <summary>Browse reviewed event sources</summary>
+    <ul id="atlas-pulse-source-list"></ul>
+  </details>
   <p><a href="./global-evidence-pulse.json">Inspect the source feed and methodology</a></p>
 </section>
 <section class="magazine" aria-labelledby="magazine-title"><div class="magazine-masthead"><div class="magazine-topline"><span>Independent Inquiry · Global Edition</span><span>Vol. 01 · November 13, 2026</span></div><h2 id="magazine-title" class="magazine-name">THE EVIDENCE</h2><p class="magazine-deck">An Atlas of People, Power, Patterns & Possibilities</p></div>
@@ -288,14 +297,29 @@ try{
     const reviewed=data.events.filter(e=>e&&e.review_status==='verified'&&['positive','negative','neutral'].includes(e.category)&&typeof e.source_url==='string'&&/^https:\/\//i.test(e.source_url)&&typeof e.event_date==='string'&&e.classification_rationale&&e.reviewer&&e.reviewed_at);
     // Fail closed if event identity or dates are invalid: repeated articles must not inflate totals.
     const ids=new Set();
+    const sourceLinks=document.createDocumentFragment();
     for(const event of reviewed){
       if(typeof event.id!=='string'||!event.id.trim()||ids.has(event.id)||!/^\d{4}-\d{2}-\d{2}$/.test(event.event_date)||Number.isNaN(Date.parse(event.event_date))){
         throw new Error('Invalid or duplicate reviewed event');
       }
+      const source=new URL(event.source_url);
+      if(source.protocol!=='https:'||source.username||source.password||typeof event.title!=='string'||!event.title.trim()){
+        throw new Error('Invalid reviewed event source');
+      }
       ids.add(event.id);
+      const item=document.createElement('li');
+      const link=document.createElement('a');
+      link.href=source.href;
+      link.textContent=event.title;
+      const metadata=document.createElement('span');
+      metadata.textContent=' · '+event.event_date+' · '+(event.category==='neutral'?'Neutral / mixed':event.category[0].toUpperCase()+event.category.slice(1));
+      item.append(link,metadata);
+      sourceLinks.append(item);
     }
     if(!reviewed.length){status.textContent='Awaiting verified data. No reviewed events are currently available; this does not mean zero news.';return;}
     for(const category of ['positive','negative','neutral'])document.getElementById('atlas-'+category).textContent=String(reviewed.filter(e=>e.category===category).length);
+    document.getElementById('atlas-pulse-source-list').append(sourceLinks);
+    document.getElementById('atlas-pulse-sources').hidden=false;
     const updated=data.updated_at?new Date(data.updated_at):null;
     const updatedText=updated&&!Number.isNaN(updated.getTime())?' · Feed updated '+updated.toLocaleDateString():'';
     status.textContent=reviewed.length+' reviewed events in this curated feed'+updatedText+'. Counts are not representative of all news; see methodology.';
