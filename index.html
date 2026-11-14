@@ -47,6 +47,8 @@
 .magazine .edition-nav{margin:16px 0}
 .magazine .edition-links{display:flex;flex-wrap:wrap;gap:8px 20px}
 .magazine .edition-links a{text-decoration:underline;text-underline-offset:3px;font-weight:700}
+.magazine .edition-nav a{display:inline-flex;align-items:center;min-height:44px}
+.magazine [tabindex="-1"]:focus-visible{outline:3px solid #92352d;outline-offset:3px}
 .magazine a:focus-visible,.magazine input:focus-visible{outline:3px solid #92352d;outline-offset:3px}
 .edition-cover{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:clamp(16px,4vw,48px);align-items:center;padding:22px 0;border-top:1px solid #37332c;border-bottom:4px double #37332c}
 .edition-cover h3{font:900 clamp(34px,5.6vw,76px)/.99 Georgia,serif;letter-spacing:-.055em;margin:10px 0 14px}
@@ -115,10 +117,10 @@
         <a href="#magazine-investigations">Investigations</a>
         <a href="#magazine-corrections">Corrections</a>
       </nav>
-      <article class="edition-cover" id="magazine-cover">
+      <article class="edition-cover" id="magazine-cover" aria-labelledby="magazine-cover-title" tabindex="-1">
         <div>
           <p class="edition-label">Cover story · Global health</p>
-          <h3>Tuberculosis deaths are falling worldwide</h3>
+          <h3 id="magazine-cover-title">Tuberculosis deaths are falling worldwide</h3>
           <p>WHO’s 2026 report finds that global deaths from tuberculosis continued to decline in 2025. The global incidence rate also fell 14% from 2015 to 2025, though progress varied widely by region.</p>
           <p class="edition-meta">Report released <time datetime="2026-11-12">November 12, 2026</time> · WHO global estimates</p>
           <p class="edition-meta"><strong>Why it leads.</strong> Fewer people dying from TB is measurable progress. WHO estimates that about 10.6 million people still developed TB in 2025.</p>
@@ -135,7 +137,7 @@
         <p id="edition-results" class="edition-meta" role="status"></p>
       </div>
       <section class="edition-section" aria-labelledby="magazine-news">
-        <h3 id="magazine-news">Top stories</h3>
+        <h3 id="magazine-news" tabindex="-1">Top stories</h3>
         <p class="edition-meta">Ordered by editors using timeliness, public impact and scope. Audience popularity is unmeasured. Each story identifies the reporting or original record it relies on.</p>
         <ol class="edition-news">
           <li class="edition-item" data-edition-story>
@@ -181,11 +183,11 @@
         </ol>
       </section>
       <section class="edition-section" aria-labelledby="magazine-investigations">
-        <h3 id="magazine-investigations">Investigations &amp; ideas</h3>
+        <h3 id="magazine-investigations" tabindex="-1">Investigations &amp; ideas</h3>
         <div class="magazine-grid"><a class="magazine-story" data-edition-story href="./investigation-reader.html?story=history"><span class="tag">History & Power</span><div><h3>EMPIRES RISE.<br>EMPIRES FALL.<br>WHAT REPEATS?</h3><div class="magazine-art"><svg viewBox="0 0 460 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="460" height="200" fill="#b1a58a"/><circle cx="352" cy="58" r="75" fill="#d4c8aa"/><path d="M0 185L0 145 60 145 60 80 92 80 92 145 124 145 124 55 155 55 155 145 186 145 186 96 216 96 216 145 250 145 250 65 285 65 285 145 320 145 320 110 350 110 350 145 460 145 460 200H0" fill="#5c625b"/><path d="M0 185L460 185" stroke="#353b38" stroke-width="6"/><path d="M73 78V27M138 54V17M267 64V18" stroke="#474f4b" stroke-width="8"/><path d="M60 27H90M125 17H155M252 18H283" stroke="#474f4b" stroke-width="8"/></svg></div><div class="magazine-caption">Illustration · Historical comparison, not a depiction of a specific event</div><p>Behind every turning point: choices, pressures, institutions and people. Compare the patterns—and the exceptions.</p></div><span class="read">Open the historical patterns engine</span></a><a class="magazine-story" data-edition-story href="./investigation-reader.html?story=money"><span class="tag">The Money Desk · Accountability</span><div><h3>WHO FUNDS<br>WHAT?</h3><div class="magazine-art"><svg viewBox="0 0 300 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="300" height="160" fill="#b6ad96"/><g fill="none" stroke="#5c655e" stroke-width="2"><path d="M15 133L90 30 151 105 240 35 290 73"/><path d="M15 60L90 30 151 105 240 35"/><circle cx="90" cy="30" r="17"/><circle cx="151" cy="105" r="17"/><circle cx="240" cy="35" r="17"/></g><g fill="#59685e"><circle cx="90" cy="30" r="8"/><circle cx="151" cy="105" r="8"/><circle cx="240" cy="35" r="8"/></g><g stroke="#77705f"><path d="M0 130H300M0 90H300M0 50H300M50 0V160M130 0V160M210 0V160"/></g></svg></div><div class="magazine-caption">Illustration · Relationship mapping</div><p>Documents, financial records, institutional ties. Trace the evidence before drawing conclusions.</p></div><span class="read">Follow the paper trail</span></a><a class="magazine-story" data-edition-story href="./investigation-reader.html?story=mind"><span class="tag">Ideas & Inquiry · Consciousness</span><div><h3>MIND, MATTER<br>& MEANING.</h3><div class="magazine-art"><svg viewBox="0 0 300 160" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="300" height="160" fill="#b7ae98"/><circle cx="150" cy="82" r="60" fill="none" stroke="#4c625c" stroke-width="4"/><circle cx="150" cy="82" r="35" fill="none" stroke="#4c625c" stroke-width="2"/><circle cx="150" cy="82" r="9" fill="#4c625c"/><path d="M150 2V162M70 82H230M92 24L208 140M92 140L208 24" stroke="#67766b" stroke-width="2"/><g fill="#4c625c"><circle cx="150" cy="22" r="6"/><circle cx="210" cy="82" r="6"/><circle cx="90" cy="82" r="6"/><circle cx="150" cy="142" r="6"/></g></svg></div><div class="magazine-caption">Illustration · Consciousness and perception</div><p>Where science meets spirituality—and where evidence, experience and interpretation differ.</p></div><span class="read">Explore the research principles</span></a></div>
       </section>
       <section class="edition-section" aria-labelledby="magazine-corrections">
-        <h3 id="magazine-corrections">Updates &amp; corrections</h3>
+        <h3 id="magazine-corrections" tabindex="-1">Updates &amp; corrections</h3>
         <p class="edition-meta"><time datetime="2026-11-13">November 13, 2026</time> · First current-news edition published.</p>
       </section>
       <div class="magazine-foot"><span>THE EVIDENCE · Question Power · Follow the Evidence · Connect Humanity</span><a href="./shared-future.html">Explore Our Shared Future ↗</a></div>
