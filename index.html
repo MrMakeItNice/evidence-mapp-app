@@ -70,6 +70,7 @@
 
 /* Reviewed global pulse: never interpret an empty or unavailable feed as zero. */
 .atlas-pulse{margin:48px 0 16px;padding:26px;border:1px solid #31535b;border-radius:12px;background:linear-gradient(135deg,#102631,#0a1723);color:#edf6f4}.atlas-pulse h2{font-size:clamp(25px,3vw,36px);margin:7px 0 12px}.atlas-pulse p{color:#b9ccd0;line-height:1.6;max-width:850px}.atlas-pulse-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0}.atlas-pulse-count{border:1px solid #35515a;border-radius:9px;padding:17px;background:#0b1c29}.atlas-pulse-count strong{display:block;font-size:clamp(22px,4vw,36px);color:#f1f7f5}.atlas-pulse-count span{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#b6cbd0}.atlas-pulse .atlas-pulse-status{font-size:13px;color:#c6d9dc}.atlas-pulse a{text-decoration:underline;text-underline-offset:3px;color:#b8f0dc}@media(max-width:520px){.atlas-pulse{padding:18px}.atlas-pulse-counts{gap:7px}.atlas-pulse-count{padding:11px}.atlas-pulse-count span{font-size:10px}}
+.globe-area [hidden]{display:none}
 </style></head><body>
 <dialog id="ea-opening" class="ea-opening" aria-label="Welcome to Evidence Atlas" aria-describedby="ea-opening-instructions">
   <div class="ea-opening-brand">EVIDENCE <b>◇</b> ATLAS</div>
@@ -254,7 +255,13 @@ try{
  function resize(){const rect=canvas.getBoundingClientRect();renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();if(!canvas.dataset.userZoom){zoom=Math.max(8.5,5.8/Math.max(.45,camera.aspect));}}
  new ResizeObserver(resize).observe(canvas);resize();
  function animate(){requestAnimationFrame(animate);if(!dragging&&!reduced)targetY+=.0003;globe.rotation.x+=(targetX-globe.rotation.x)*.13;globe.rotation.y+=(targetY-globe.rotation.y)*.13;camera.position.z+=(zoom-camera.position.z)*.12;renderer.render(scene,camera)}animate();
-}catch(e){status.textContent='3D globe unavailable on this connection. Investigation links remain accessible.';fallback.style.display='block'}
+}catch(e){
+ for(const selector of ['#earth','#geo-panel','.globe-tools','.globe-hint']){
+   document.querySelector(selector).hidden=true;
+ }
+ fallback.style.display='block';
+ status.textContent='Interactive Earth unavailable. Use the Explore link to browse investigations.';
+}
 </script><script>
   {
     const magazine = document.querySelector(".magazine");
