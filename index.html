@@ -215,7 +215,10 @@
   let alreadySeen=false;
   try{alreadySeen=sessionStorage.getItem(seenKey)==='1'}catch(_){}
   const force=new URLSearchParams(location.search).get('intro')==='1';
-  if(!alreadySeen||force){intro.showModal();render()}
+  let sectionTarget=null;
+  try{sectionTarget=document.getElementById(decodeURIComponent(location.hash.slice(1)))}catch(_){}
+  const opensSection=sectionTarget?.closest('main');
+  if(force||(!alreadySeen&&!opensSection)){intro.showModal();render()}
 })();
 </script>
 <script type="module">
