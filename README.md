@@ -10,6 +10,12 @@ A source-grounded research workspace for case files, claims, source references, 
 
 GitHub Pages is the browser-facing host. Supabase Edge Functions serve JSON APIs and retain a synchronized HTML copy; Supabase gateway headers can prevent rendering HTML directly, so use the primary browser address.
 
+## World Religions & Accountability (November 14, 2026)
+
+The public GitHub Pages site now links to `religion-accountability.html` from the homepage and reader menu. The section begins with Watch Tower/Bible Students research and the existing `jehovahs-witnesses.html` hub. `watchtower-authority-history.html` compares Russell’s 1904 congregational model, the 1932 transition, and the 1938 appointment resolution. It identifies source types and reading limits, distinguishes documented policy from religious interpretation, and includes one understanding check. Study continuity and the next research topic are recorded in `docs/watchtower-study-progress.md`.
+
+The section links to the Australian Royal Commission’s official Case Study 29 archive without treating submissions or testimony as criminal convictions. Additional traditions are future research, not seeded allegations. **Survivor-story intake is not enabled:** no forms, uploads, visitor accounts, or moderation backend are added. The page explains the privacy, consent, correction/withdrawal, retention, and safeguarding work needed before collection. Do not direct sensitive stories to public GitHub issues. This static content release does not alter Supabase records, authentication, or access policies.
+
 ## Private Agent Control Center (November 10, 2026)
 
 The signed-in owner workspace now has an **Agent Control Center** navigation item (in `workspace.html?workspace=1`). It is a read-only operational console, not automatic public publishing. It shows real snapshot counts for active RSS feeds, collected feed leads, pending private news items, and the Research Watch inbox, plus a recent-run log, seven per-feed last-check/error records, and the latest pending headlines with source links. It provides quick links to existing **News & Information** and **Research Watch** review actions.
@@ -232,3 +238,4 @@ The current pillars are Self-Care & Inner Peace, Positive Progress, Government A
 The manual two-report comparison keeps notes in page memory, escapes input, allows only http(s) links, and gives reading prompts. It does not fetch article bodies, verify claims, or detect propaganda automatically. The Gates farmland starting note links dated personal statements and an independent ownership profile, separates acreage categories and personal investments from foundation activity, and makes no allegation of wrongdoing. No complete ownership audit has been performed.
 
 Community posting, public Q&A, movement organising, automated source-quality review, and automatically publishing monitored findings are not implemented. A separately configured ChatGPT hourly public-source watch reports only substantive new findings to the user; it does not modify this website.
+
