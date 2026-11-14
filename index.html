@@ -115,7 +115,12 @@
         <a href="#magazine-investigations">Investigations</a>
         <a href="#magazine-corrections">Corrections</a>
       </nav>
-      <article class="edition-cover" id="magazine-cover">
+      <div class="edition-search" hidden>
+        <label for="edition-query">Search this issue’s news and investigations</label>
+        <input id="edition-query" type="search" placeholder="Try tuberculosis, housing, or history" autocomplete="off">
+        <p id="edition-results" class="edition-meta" role="status"></p>
+      </div>
+      <article class="edition-cover" id="magazine-cover" data-edition-story>
         <div>
           <p class="edition-label">Cover story · Global health</p>
           <h3>Tuberculosis deaths are falling worldwide</h3>
@@ -129,11 +134,6 @@
           <span>decline in the global TB incidence rate, 2015–2025</span>
         </div>
       </article>
-      <div class="edition-search" hidden>
-        <label for="edition-query">Search this issue’s news and investigations</label>
-        <input id="edition-query" type="search" placeholder="Try housing, climate, or history" autocomplete="off">
-        <p id="edition-results" class="edition-meta" role="status"></p>
-      </div>
       <section class="edition-section" aria-labelledby="magazine-news">
         <h3 id="magazine-news">Top stories</h3>
         <p class="edition-meta">Ordered by editors using timeliness, public impact and scope. Audience popularity is unmeasured. Each story identifies the reporting or original record it relies on.</p>
@@ -261,6 +261,8 @@ try{
     const search = magazine.querySelector(".edition-search");
     const input = search.querySelector("input");
     const results = search.querySelector("[role=status]");
+    const cover = magazine.querySelector("#magazine-cover");
+    const coverLink = magazine.querySelector('a[href="#magazine-cover"]');
     const stories = Array.from(magazine.querySelectorAll("[data-edition-story]"));
     const indexedStories = stories.map(story => story.textContent.toLowerCase());
     search.hidden = false;
@@ -272,6 +274,7 @@ try{
         story.hidden = !terms.every(term => indexedStories[index].includes(term));
         if (!story.hidden) visible += 1;
       });
+      coverLink.hidden = cover.hidden;
       results.textContent = terms.length ? `${visible} matching ${visible === 1 ? "story" : "stories"}` : "";
     });
   }
