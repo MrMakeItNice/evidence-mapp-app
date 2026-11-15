@@ -10,7 +10,7 @@ const cors = {
   "cache-control": "public, max-age=120",
   "x-content-type-options": "nosniff",
 };
-const stop = new Set(["what","where","when","why","who","which","would","could","should","about","does","have","with","from","that","this","there","they","them","these","those","were","been","into","some","tell","find","show","give","did","the","and","for","are","was","had","how","can","has","its","any","our","all"]);
+const stop = new Set(["what","where","when","why","who","which","would","could","should","about","does","have","with","from","that","this","there","they","them","these","those","were","been","into","some","tell","find","show","give","did","the","and","for","are","was","had","how","can","has","its","any","our","all","documented","evidence","record","records","explain","please","know","known"]);
 
 const norm = (v: unknown) => String(v ?? "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 const tokens = (v: string) => [...new Set(norm(v).split(" ").filter(w => w.length > 2 && !stop.has(w)).slice(0,16))];
@@ -92,3 +92,4 @@ Deno.serve(async (request) => {
     return Response.json({error:"Public evidence search is temporarily unavailable."}, {status:503, headers:{...cors, "cache-control":"no-store"}});
   }
 });
+

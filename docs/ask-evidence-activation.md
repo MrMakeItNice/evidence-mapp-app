@@ -8,6 +8,7 @@ Checked November 15, 2026 against the live website and Supabase backend.
 - The existing database budget is installed, uses an atomic counter, and is accessible only to the backend service role. Its default is **30 attempted AI requests per UTC day for the entire site**, not per visitor. Failed provider requests after reservation still count.
 - The floating assistant is included on the homepage, public reader, owner workspace and Healing page. The public reader supports `discover.html#ask-evidence` to open the assistant directly.
 - Questions and responses stay in page memory. There is no chat-history database. AI-enabled requests send the current question and selected published excerpts to OpenAI with `store:false`; this does not mean zero provider retention.
+- Natural-language topic searches ignore generic research wording rather than pulling unrelated cases into the citation list. The regression check is `node tests/evidence-research.mjs`.
 
 **AI answer activation is pending.** The live status check returns `ai_available:false`. Source-finder results must not be described as live AI-generated answers. No successful paid-provider answer has been verified.
 

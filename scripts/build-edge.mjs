@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 const dir='supabase/functions/evidence-atlas';
-const read=p=>fs.readFileSync(p,'utf8').replace('<script src="./assistant.js" defer></script>',()=>'<script>'+fs.readFileSync('assistant.js','utf8')+'</script>');
+const read=p=>fs.readFileSync(p,'utf8').replace(/<script src="\.\/assistant\.js(?:\?[^"\s]*)?" defer><\/script>/g,()=>'<script>'+fs.readFileSync('assistant.js','utf8')+'</script>');
 const frontend=read('workspace.html');
 const publicPage=read('discover.html').replaceAll('./index.html?workspace=1','?workspace=1').replaceAll('./discover.html','#');
 fs.writeFileSync(dir+'/pages.ts','export const OWNER_HTML='+JSON.stringify(frontend)+';\nexport const PUBLIC_HTML='+JSON.stringify(publicPage)+';\nexport const PRIVACY_HTML='+JSON.stringify(read('privacy.html'))+';\n');
 console.log('Prepared Edge Function pages from current source.');
 fs.writeFileSync(dir+'/healing.ts','export const HEALING_HTML='+JSON.stringify(read('healing.html'))+';\n');
+
