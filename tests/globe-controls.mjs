@@ -9,7 +9,7 @@ const end=html.indexOf('\n}catch(e){',begin);
 assert.ok(begin>0&&end>begin,'Globe controls must be present');
 function setup({width=358,height=351,compact=true,reduced=false}={}){
  const handlers=new Map(),windowHandlers=new Map(),buttons=new Map();let inspections=0,rendered=0;
- const document={activeElement:null,getElementById(id){if(!buttons.has(id))buttons.set(id,{addEventListener(type,fn){this[type]=fn}});return buttons.get(id)}};
+ const document={activeElement:null,getElementById(id){if(!buttons.has(id))buttons.set(id,{addEventListener(type,fn){this[type]=fn},setAttribute(name,value){this[name]=value}});return buttons.get(id)}};
  const canvas={dataset:{},clientWidth:width,clientHeight:height,
   getBoundingClientRect(){return {left:0,top:0,width:this.clientWidth,height:this.clientHeight}},
   addEventListener(type,fn){if(!handlers.has(type))handlers.set(type,[]);handlers.get(type).push(fn)},
@@ -33,7 +33,7 @@ function setup({width=358,height=351,compact=true,reduced=false}={}){
   for(const fn of handlers.get(type)||[])fn(event);
  };
  const release=(id,x,y)=>{emit('pointerup',id,x,y);emit('lostpointercapture',id,x,y)};
- return {...api,canvas,camera,globe,emit,release,click:id=>buttons.get(id).click(),
+ return {...api,canvas,camera,globe,emit,release,click:id=>buttons.get(id).click(),zoomUnavailable:id=>buttons.get(id)['aria-disabled'],
   blur:()=>windowHandlers.get('blur')(),inspections:()=>inspections,renders:()=>rendered};
 }
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-9,`${a} should equal ${b}`);
@@ -84,8 +84,17 @@ app.emit('pointerdown',7,100,100);app.release(7,180,100);
 assert.equal(app.inspections(),1,'A quick swipe without an intermediate move must not inspect');
 
 // Zoom limits, pole access, keyboard controls, resize and reset remain usable.
-app=setup();for(let i=0;i<80;i++)app.click('globe-in');close(app.read().zoom,app.read().minZoom);
-for(let i=0;i<80;i++)app.click('globe-out');close(app.read().zoom,app.read().maxZoom);
+app=setup();
+for(const id of ['globe-in','globe-out'])assert.equal(app.zoomUnavailable(id),'false');
+for(let i=0;i<80;i++)app.emit('keydown',0,0,0,{key:'+'});
+close(app.read().zoom,app.read().minZoom);
+assert.equal(app.zoomUnavailable('globe-in'),'true');
+app.click('globe-in');close(app.read().zoom,app.read().minZoom);
+app.click('globe-out');assert.equal(app.zoomUnavailable('globe-in'),'false');
+for(let i=0;i<80;i++)app.click('globe-out');
+close(app.read().zoom,app.read().maxZoom);
+assert.equal(app.zoomUnavailable('globe-out'),'true');
+app.click('globe-reset');assert.equal(app.zoomUnavailable('globe-out'),'false');
 app.emit('pointerdown',1,100,100);app.emit('pointermove',1,100,10000);
 close(app.read().targetX,Math.PI/2);app.release(1,100,10000);
 app.emit('keydown',0,0,0,{key:'ArrowLeft'});before=app.read();
