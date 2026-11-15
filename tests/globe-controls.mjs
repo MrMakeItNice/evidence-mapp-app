@@ -97,6 +97,28 @@ assert.equal(app.read().userInteracted,false);before=app.read();app.frame();
 assert.ok(app.read().targetY>before.targetY);
 app.click('globe-reset');assert.equal(app.canvas.dataset.userZoom,undefined);
 
+// Browser shortcuts remain available while plain globe shortcuts still work.
+app=setup();app.canvas.focus({preventScroll:true});before=app.read();
+const browserEvent={preventDefault(){assert.fail('Browser shortcut must not be cancelled')}};
+for(const modifier of ['ctrlKey','metaKey','altKey']){
+ app.emit('keydown',0,0,0,{key:'+',...browserEvent,[modifier]:true});
+ app.emit('keydown',0,0,0,{key:'ArrowLeft',...browserEvent,[modifier]:true});
+}
+for(const modifier of ['ctrlKey','metaKey']){
+ app.emit('wheel',0,0,0,{deltaY:-1,...browserEvent,[modifier]:true});
+}
+close(app.read().zoom,before.zoom);
+close(app.read().targetY,before.targetY);
+assert.equal(app.read().userInteracted,false);
+let cancelled=0;
+const globeEvent={preventDefault(){cancelled++}};
+app.emit('keydown',0,0,0,{key:'+',shiftKey:true,...globeEvent});
+const keyboardZoom=app.read().zoom;
+assert.ok(keyboardZoom<before.zoom);
+app.emit('wheel',0,0,0,{deltaY:1,...globeEvent});
+assert.ok(app.read().zoom>keyboardZoom);
+assert.equal(cancelled,2);
+
 // Default mobile size fills 72% of the smaller dimension, without clipping.
 for(const [width,height] of [[288,288],[358,351],[736,480]]){
  app=setup({width,height});const radius=1.595*.72;
