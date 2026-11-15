@@ -17,6 +17,7 @@
 .globe-viewport .fallback{inset:50% auto auto 50%;width:70%;max-width:470px;aspect-ratio:1;transform:translate(-50%,-50%)}
 .globe-canvas{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab}
 .globe-tools button{min-width:44px;min-height:44px;touch-action:manipulation}
+.globe-tools button[aria-disabled="true"]{opacity:.55;cursor:default}
 .globe-hint-touch{display:none}
 @media(pointer:coarse){.globe-hint-mouse{display:none}.globe-hint-touch{display:inline}}
 @media(max-width:800px){
@@ -282,8 +283,17 @@ try{
   maxZoom=Math.max(14,initial*1.6);
   return initial;
  }
- function resetView(){delete canvas.dataset.userZoom;targetX=.13;targetY=.35;zoom=defaultZoom();userInteracted=false}
- function changeZoom(value){interact();canvas.dataset.userZoom='1';zoom=clampZoom(value)}
+ const zoomIn=document.getElementById('globe-in'),zoomOut=document.getElementById('globe-out');
+ function syncZoomButtons(){
+  zoomIn.setAttribute('aria-disabled',String(zoom<=minZoom));
+  zoomOut.setAttribute('aria-disabled',String(zoom>=maxZoom));
+ }
+ function resetView(){delete canvas.dataset.userZoom;targetX=.13;targetY=.35;zoom=defaultZoom();userInteracted=false;syncZoomButtons()}
+ function changeZoom(value){
+  const next=clampZoom(value);
+  if(next===zoom)return;
+  interact();canvas.dataset.userZoom='1';zoom=next;syncZoomButtons();
+ }
  function inspectLocation(e){
   const rect=canvas.getBoundingClientRect();mouse.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(mouse,camera);const markerHits=raycaster.intersectObjects(markerMeshes);const hit=raycaster.intersectObject(earth)[0];const markerHit=markerHits.find(h=>!hit||h.distance<=hit.distance+.015);if(markerHit){const event=markerHit.object.userData.event;geoPanel.replaceChildren();const heading=document.createElement("strong");heading.textContent=event.title;const info=document.createElement("p");info.textContent=event.category+" · "+(event.event_date||"Date unspecified")+" · Source reviewed";const link=document.createElement("a");link.href=event.source_url;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Read original source ↗";geoPanel.append(heading,info,link);return}if(!hit)return;const point=globe.worldToLocal(hit.point.clone()).normalize();const lat=Math.asin(Math.max(-1,Math.min(1,point.y)))*180/Math.PI;const rawLon=Math.atan2(point.z,-point.x)*180/Math.PI-180;const lon=((rawLon+180)%360+360)%360-180;geoPanel.textContent='Selected location: '+lat.toFixed(1)+'° latitude, '+lon.toFixed(1)+'° longitude. Verified local news events are not yet connected; no claims are assigned to this point.';
  }
@@ -340,8 +350,8 @@ try{
   else if(key==='ArrowUp')targetX=Math.max(-pitchLimit,targetX-.15);else if(key==='ArrowDown')targetX=Math.min(pitchLimit,targetX+.15);
   else if(key==='+'||key==='=')changeZoom(zoom-.65);else if(key==='-'||key==='_')changeZoom(zoom+.65);else resetView();
  });
- document.getElementById('globe-out').addEventListener('click',()=>changeZoom(zoom+.65));
- document.getElementById('globe-in').addEventListener('click',()=>changeZoom(zoom-.65));
+ zoomOut.addEventListener('click',()=>changeZoom(zoom+.65));
+ zoomIn.addEventListener('click',()=>changeZoom(zoom-.65));
  document.getElementById('globe-reset').addEventListener('click',resetView);
  canvas.addEventListener('wheel',e=>{if(document.activeElement!==canvas)return;e.preventDefault();changeZoom(zoom+Math.sign(e.deltaY)*.32)},{passive:false});
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -349,7 +359,7 @@ try{
  function resize(){
   const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;
   renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();
-  const initial=defaultZoom();zoom=canvas.dataset.userZoom?clampZoom(zoom):initial;
+  const initial=defaultZoom();zoom=canvas.dataset.userZoom?clampZoom(zoom):initial;syncZoomButtons();
   if(!sized){camera.position.z=zoom;sized=true}
  }
  new ResizeObserver(resize).observe(canvas);resize();
