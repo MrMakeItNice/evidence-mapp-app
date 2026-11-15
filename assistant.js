@@ -8,10 +8,25 @@ const style=document.createElement('style');style.textContent=`
 const toggle=document.createElement('button');toggle.id='ea-bot-toggle';toggle.textContent='✦ Ask Evidence Atlas';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls','ea-bot');document.body.append(toggle);
 const panel=document.createElement('section');panel.id='ea-bot';panel.hidden=true;panel.setAttribute('aria-label','Ask Evidence Atlas');panel.innerHTML=`<header><h2>Ask Evidence Atlas</h2><button id="ea-bot-close" type="button" aria-label="Close assistant">×</button></header><div id="ea-bot-content"><p>Follow the evidence. Find your next question.</p><p id="ea-bot-mode" class="ea-muted" role="status">Source finder · AI availability is being checked.</p><div id="ea-bot-prompts"><button type="button">What is documented about MKULTRA?</button><button type="button">How do I use this site?</button><button type="button">Healing & support</button></div><div id="ea-bot-messages" role="log" aria-live="polite" aria-relevant="additions"></div></div><form id="ea-bot-form"><label for="ea-bot-input">Ask about a topic or the website</label><textarea id="ea-bot-input" maxlength="160" rows="2" placeholder="What evidence is published about…?" required minlength="3"></textarea><label id="ea-bot-ai-row" hidden><input type="checkbox" id="ea-bot-ai">Use AI: send this question and public excerpts to OpenAI.</label><button id="ea-bot-send" type="submit">Ask</button><button id="ea-bot-clear" type="button">Clear chat</button><p class="ea-muted" style="margin:8px 0 0">Published records only. Avoid private or sensitive information. Chat stays in this page’s memory. <a href="./privacy.html">Privacy</a></p></form>`;document.body.append(panel);
 const by=id=>document.getElementById(id),messages=by('ea-bot-messages'),input=by('ea-bot-input');let busy=false,controller;
-function open(value){panel.hidden=!value;toggle.setAttribute('aria-expanded',String(value));if(value)input.focus();else toggle.focus();}
-toggle.onclick=()=>open(panel.hidden);by('ea-bot-close').onclick=()=>open(false);panel.addEventListener('keydown',e=>{if(e.key==='Escape')open(false)});
-for(const trigger of document.querySelectorAll('[data-ea-open]'))trigger.addEventListener('click',e=>{e.preventDefault();open(true)});
-function openFromLink(){if(location.hash==='#ask-evidence')open(true)}
+let opener=toggle;
+function open(trigger=toggle){
+  opener=trigger;
+  panel.hidden=false;
+  toggle.setAttribute('aria-expanded','true');
+  input.focus();
+}
+function close(){
+  panel.hidden=true;
+  toggle.setAttribute('aria-expanded','false');
+  (opener.isConnected?opener:toggle).focus();
+}
+toggle.onclick=()=>panel.hidden?open():close();
+by('ea-bot-close').onclick=close;
+panel.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+for(const trigger of document.querySelectorAll('[data-ea-open]')){
+  trigger.addEventListener('click',e=>{e.preventDefault();open(trigger)});
+}
+function openFromLink(){if(location.hash==='#ask-evidence'&&panel.hidden)open()}
 window.addEventListener('hashchange',openFromLink);openFromLink();
 function message(who,text,sources=[],notice=''){const item=document.createElement('article'),label=document.createElement('strong'),p=document.createElement('p');label.textContent=who;p.textContent=text;item.append(label,p);for(const s of sources){try{const url=new URL(s.url);if(!['http:','https:'].includes(url.protocol))continue;const a=document.createElement('a');a.href=url.href;a.textContent=(s.id?s.id+' · ':'')+s.title;a.target='_blank';a.rel='noopener noreferrer';item.append(a);}catch{}}if(notice){const note=document.createElement('p');note.className='ea-muted';note.textContent=notice;item.append(note)}messages.append(item);while(messages.children.length>20)messages.firstElementChild.remove();by('ea-bot-content').scrollTop=by('ea-bot-content').scrollHeight;}
 async function ask(q){if(busy||q.length<3||q.length>160)return;busy=true;by('ea-bot-send').disabled=true;by('ea-bot-send').textContent='Looking…';message('YOU',q);input.value='';controller=new AbortController();const timer=setTimeout(()=>controller.abort(),48000);try{const ai=by('ea-bot-ai').checked;const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},signal:controller.signal,body:JSON.stringify({question:q,ai,consent:ai})});const data=await r.json();if(!r.ok)throw Error(data.error||'Please try again.');message(data.ai_generation?'AI SUMMARY':data.mode==='site_guide'?'SITE GUIDE':'SOURCE FINDER',data.answer,data.sources,data.notice);}catch(e){if(e.name!=='AbortError')message('ASSISTANT',e.message||'The search is unavailable. Please try again.');else message('ASSISTANT','The request was stopped. You can ask again.');}finally{clearTimeout(timer);busy=false;by('ea-bot-send').disabled=false;by('ea-bot-send').textContent='Ask';}}
