@@ -362,6 +362,7 @@ try{
   zoomBy:factor=>changeZoom(zoom*factor),inspect:inspectLocation,interact
  });
  canvas.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
   const key=e.key;if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','=','-','_','Home'].includes(key))return;
   e.preventDefault();interact();
   if(key==='ArrowLeft')targetY-=.18;else if(key==='ArrowRight')targetY+=.18;
@@ -371,7 +372,7 @@ try{
  document.getElementById('globe-out').addEventListener('click',()=>changeZoom(zoom+.65));
  document.getElementById('globe-in').addEventListener('click',()=>changeZoom(zoom-.65));
  document.getElementById('globe-reset').addEventListener('click',resetView);
- canvas.addEventListener('wheel',e=>{if(document.activeElement!==canvas)return;e.preventDefault();changeZoom(zoom+Math.sign(e.deltaY)*.32)},{passive:false});
+ canvas.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey||document.activeElement!==canvas)return;e.preventDefault();changeZoom(zoom+Math.sign(e.deltaY)*.32)},{passive:false});
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  let sized=false;
  function resize(){
