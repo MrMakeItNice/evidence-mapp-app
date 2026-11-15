@@ -45,7 +45,16 @@
   }
   el('q').addEventListener('input',()=>{count=18;render()});
   el('filter').addEventListener('change',()=>{count=18;render()});
-  el('more').addEventListener('click',()=>{count+=18;render()});
+  el('more').addEventListener('click',()=>{
+    const firstNewIndex=count;
+    count+=18;
+    render();
+    const heading=el('caseList').children[firstNewIndex]?.querySelector('h3');
+    if(heading){
+      heading.tabIndex=-1;
+      heading.focus();
+    }
+  });
   (async()=>{try{const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),12000);let response;try{response=await fetch(endpoint,{signal:ctl.signal,cache:'no-store'})}finally{clearTimeout(timeout)}if(!response.ok)throw Error('Status '+response.status);const data=await response.json();if(!Array.isArray(data))throw Error('Unexpected response');cases=data.filter(c=>c&&c.id&&c.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));chart();render();}catch(e){el('status').textContent='Published cases cannot be loaded right now. Try again later. ('+String(e.message||'network error')+')';}})();
 })();
 </script></body></html>
