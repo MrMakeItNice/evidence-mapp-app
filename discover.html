@@ -301,15 +301,20 @@ function renderCases(){
  $("caseStatus").textContent="Showing "+visible.length+" of "+matches.length;
  $("moreCases").hidden=visible.length>=matches.length;
 }
-function openCase(id){
+function openCase(id,trigger){
  const c=cases.find(c=>String(c.id)===String(id));if(!c)return;
  const pane=$("caseDetail");pane.dataset.caseId=String(c.id);const flagged=sensitive.test(String(c.title)+" "+String(c.summary));
  const body='<p>'+esc(c.summary||"No summary listed.")+'</p>'+
  (c.official_finding?'<div class="details-section"><h3>Recorded official finding</h3><p>'+esc(c.official_finding)+'</p></div>':"")+
  (c.disputed_questions?'<div class="details-section"><h3>Disputed or unanswered questions</h3><p>'+esc(c.disputed_questions)+'</p></div>':"")+
  '<div class="details-section"><h3>Source check</h3><p>Look for original documents and independent corroboration before deciding what is established. Documents returned by a topic search are not necessarily verified citations for this particular case.</p><button type="button" class="btn" id="checkSources">Find published source records →</button><div id="related"></div></div>';
- const showBody=()=>{pane.innerHTML='<div class="eyebrow">PUBLIC CASE #'+esc(c.case_number)+'</div><h2>'+esc(c.title)+'</h2>'+body+'<div class="actions"><button type="button" class="btn" id="closeCase">Close</button></div>';
-  $("closeCase").addEventListener("click",()=>pane.hidden=true);
+ const focusHeading=()=>pane.querySelector('h2').focus();
+ const closePane=()=>{
+  pane.hidden=true;
+  (trigger?.isConnected?trigger:$("searchInput")).focus();
+ };
+ const showBody=()=>{pane.innerHTML='<div class="eyebrow">PUBLIC CASE #'+esc(c.case_number)+'</div><h2 tabindex="-1">'+esc(c.title)+'</h2>'+body+'<div class="actions"><button type="button" class="btn" id="closeCase">Close</button></div>';
+  $("closeCase").addEventListener("click",closePane);
   $("checkSources").addEventListener("click",async()=>{const t=$("related");t.textContent="Searching topic-matched source records…";try{
    const controller=new AbortController(),time=setTimeout(()=>controller.abort(),14000);
    let r;try{r=await fetch(API+"evidence-research?q="+encodeURIComponent(c.title.slice(0,140)),{signal:controller.signal})}finally{clearTimeout(time)}
@@ -318,14 +323,14 @@ function openCase(id){
   }catch{t.textContent="Document search is temporarily unavailable."}});
  };
  pane.hidden=false;
- if(flagged){pane.innerHTML='<div class="eyebrow">SENSITIVE HISTORICAL SUBJECT</div><h2>'+esc(c.title)+'</h2><p>This case discusses potentially disturbing historical material. The public view is text-only. Would you like to read the summary?</p><div class="actions"><button type="button" class="btn primary" id="confirmCase">Read summary</button><button type="button" class="btn" id="cancelCase">Not now</button></div>';
-  $("confirmCase").addEventListener("click",showBody);
-  $("cancelCase").addEventListener("click",()=>pane.hidden=true);
+ if(flagged){pane.innerHTML='<div class="eyebrow">SENSITIVE HISTORICAL SUBJECT</div><h2 tabindex="-1">'+esc(c.title)+'</h2><p>This case discusses potentially disturbing historical material. The public view is text-only. Would you like to read the summary?</p><div class="actions"><button type="button" class="btn primary" id="confirmCase">Read summary</button><button type="button" class="btn" id="cancelCase">Not now</button></div>';
+  $("confirmCase").addEventListener("click",()=>{showBody();focusHeading()});
+  $("cancelCase").addEventListener("click",closePane);
  }else showBody();
- pane.scrollIntoView({behavior:"smooth",block:"start"});
+ if(trigger)focusHeading();else pane.scrollIntoView({block:"start"});
 }
-$("caseGrid").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(b)openCase(b.dataset.id)});
-$("featuredCase").addEventListener("click",()=>{let c=cases.find(c=>/cointelpro/i.test(c.title));if(c)openCase(c.id);else document.getElementById("history").scrollIntoView()});
+$("caseGrid").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(b)openCase(b.dataset.id,b)});
+$("featuredCase").addEventListener("click",e=>{let c=cases.find(c=>/cointelpro/i.test(c.title));if(c)openCase(c.id,e.currentTarget);else document.getElementById("history").scrollIntoView()});
 $("moreCases").addEventListener("click",()=>{shown+=9;renderCases()});
 $("searchForm").addEventListener("submit",e=>{e.preventDefault();search=$("searchInput").value.trim();shown=9;renderCases()});
 $("caseCategory").addEventListener("change",e=>{category=e.target.value;shown=9;renderCases()});
