@@ -13,6 +13,12 @@
 @media (max-width:1100px){.stat-grid{grid-template-columns:repeat(2,1fr)}.screen{padding:30px 25px 50px}.topbar{padding:0 25px}.columns{grid-template-columns:1fr}.split-pane{grid-template-columns:240px 1fr}}@media(max-width:720px){.sidebar{transform:translateX(-100%);transition:transform .2s}.sidebar.visible{transform:translateX(0)}.main-shell{margin-left:0;width:100%}.mobile-menu{display:block}.topbar{height:62px;padding:0 17px}.topbar-left{display:flex;gap:11px;align-items:center}.iconbutton{border:0;background:none;font-size:18px;color:#54677b}.screen{padding:25px 15px 40px}.screen-intro{flex-direction:column;margin-bottom:22px}.screen-intro h1{font-size:28px}.stat-grid{gap:10px}.stat-card{padding:15px}.stat-number{font-size:28px}.split-pane{grid-template-columns:1fr}.case-list{display:flex;overflow:auto}.case-option{min-width:195px}.two-up{grid-template-columns:1fr}.meta-grid{grid-template-columns:1fr 1fr}.auth-screen{grid-template-columns:1fr}.auth-decoration{min-height:185px;padding:30px}.auth-decoration h1{font-size:30px}.auth-decoration p,.auth-foot{display:none}.auth-mark{font-size:35px}.auth-panel{padding:32px 23px}.status-chip{font-size:0;padding:9px}.status-dot{margin:0}}
 
 
+.sidebar-close{display:none}
+@media(max-width:720px){
+ .sidebar:not(.visible){visibility:hidden}
+ .sidebar-close{display:block;position:absolute;top:84px;right:12px;min-height:44px;min-width:44px;padding:8px;border:0;border-radius:8px;background:#1b2b44;color:#f5fcff;font:inherit;font-size:12px}
+}
+
 /* Responsive sizing: allow grid and flex children to shrink within the viewport. */
 .app-shell{width:100%;min-width:0}.main-shell{flex:1;max-width:100%}
 .screen,.topbar,.topbar-left,.screen-intro>div,.panel,.panel-body,.record-head>div,.meta-cell{min-width:0}
@@ -40,13 +46,14 @@
 <body>
   <div class="app-shell" id="appShell">
     <aside class="sidebar" id="sidebar">
+      <button type="button" class="sidebar-close" id="sidebarClose" aria-label="Close workspace navigation">Close</button>
       <div class="brand"><div class="brand-mark"><span>◈</span></div><div><strong>EVIDENCE</strong><small>ATLAS <i> / RESEARCH OS</i></small></div></div>
       <div class="workspace-label">WORKSPACE</div>
       <nav id="nav" class="nav" aria-label="Main navigation"></nav>
       <div class="sidebar-bottom"><div class="security-note"><span class="green-dot"></span> Private workspace<br/><small>Owner-protected by Supabase RLS</small></div><button class="sidebar-signout" id="signOutBtn">⇥ &nbsp; Sign out</button></div>
     </aside>
     <div class="main-shell">
-      <header class="topbar"><div class="topbar-left"><button id="mobileMenu" class="iconbutton mobile-menu" aria-label="Toggle navigation">☰</button><span class="breadcrumb">WORKSPACE <span> / </span> <b id="breadcrumbName">Overview</b></span></div><div class="topbar-right"><span class="status-chip" id="connectionStatus"><span class="status-dot"></span> Connecting</span><span class="user-bubble" title="Signed-in account">EA</span></div></header>
+      <header class="topbar"><div class="topbar-left"><button type="button" id="mobileMenu" class="iconbutton mobile-menu" aria-label="Workspace navigation" aria-controls="sidebar" aria-expanded="false">☰</button><span class="breadcrumb">WORKSPACE <span> / </span> <b id="breadcrumbName">Overview</b></span></div><div class="topbar-right"><span class="status-chip" id="connectionStatus"><span class="status-dot"></span> Connecting</span><span class="user-bubble" title="Signed-in account">EA</span></div></header>
       <main id="screen" class="screen" tabindex="-1"></main>
     </div>
   </div>
@@ -95,7 +102,30 @@ const show = id=>$(id).hidden=false; const hide = id=>$(id).hidden=true;
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._toast);window._toast=setTimeout(()=>t.classList.remove('show'),3500)}
 function status(text,mode='online'){const el=$('connectionStatus');el.innerHTML=`<span class="status-dot" style="background:${mode==='error'?'#dc6573':mode==='demo'?'#d3a249':'#32bf8f'}"></span> ${esc(text)}`;}
 function initNav(){ $('nav').innerHTML=NAV.map(([k,i,n])=>`<button class="nav-item ${k===state.screen?'active':''}" data-action="nav" data-page="${k}"><span class="ni">${i}</span>${n}<span class="count" data-navcount="${k}"></span></button>`).join(''); }
-function nav(k){if(k==='healing'||k==='human-design'){window.location.assign('./healing.html'+(k==='human-design'?'#human-design':''));return;}state.screen=k;state.search='';state.filter='all';$('sidebar').classList.remove('visible');render();window.scrollTo({top:0,behavior:'instant'});}
+function setMobileNav(open){
+  const sidebar=$('sidebar');
+  const wasOpen=sidebar.classList.contains('visible');
+  sidebar.classList.toggle('visible',open);
+  $('mobileMenu').setAttribute('aria-expanded',String(open));
+  if(open)$('sidebarClose').focus();
+  return wasOpen;
+}
+function dismissMobileNav(){
+  if(setMobileNav(false))$('mobileMenu').focus();
+}
+function nav(k){
+  if(k==='healing'||k==='human-design'){
+    window.location.assign('./healing.html'+(k==='human-design'?'#human-design':''));
+    return;
+  }
+  state.screen=k;
+  state.search='';
+  state.filter='all';
+  const wasOpen=setMobileNav(false);
+  render();
+  window.scrollTo({top:0,behavior:'instant'});
+  if(wasOpen)$('screen').focus({preventScroll:true});
+}
 function setAuthed(yes){$('authScreen').hidden=yes;$('appShell').hidden=!yes;}
 async function fetchAll(t){let result=[];for(let offset=0;offset<5000;offset+=1000){const {data,error}=await client.from(t).select('*').range(offset,offset+999);if(error)throw new Error(`${t}: ${error.message}`);result.push(...(data||[]));if(!data||data.length<1000)break;}return result;}
 async function loadData(){if(!client||state.demo)return;state.busy=true;status('Syncing');const results=await Promise.allSettled(TABLES.map(t=>fetchAll(t)));state.errors=[];results.forEach((r,i)=>{if(r.status==='fulfilled'){state.dataset[TABLES[i]]=r.value}else{state.errors.push(r.reason.message)}});state.busy=false;state.ready=true;status(state.errors.length?'Sync issues':'Live database',state.errors.length?'error':'online');render();}
@@ -590,10 +620,22 @@ else if(type==='new-outcome'){table='possible_outcomes';record.case_id=toInt(rec
 if(!table)return;if(['cases','sources'].includes(table))record.content_language=contentLanguage();const save=$('saveBtn');save.disabled=true;save.textContent='Saving…';const {data,error}=await client.from(table).insert(record).select('*').single();save.disabled=false;save.textContent='Save record →';if(error){$('modalError').innerHTML=`<div class="error-box">${esc(error.message)}. No record was saved.</div>`;return;}if(type==='new-case')state.caseId=data.id;closeModal();toast('Record saved successfully.');await loadData();}
 function downloadData(){const payload={exported_at:new Date().toISOString(),app:'Evidence Atlas v1',mode:state.demo?'example':'live',tables:state.dataset};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=`evidence-atlas-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);toast('JSON export created.');}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const type=b.dataset.action;switch(type){case 'nav':nav(b.dataset.page);break;case 'open-case':state.caseId=Number(b.dataset.id);nav('cases');break;case 'graph-node':if(b.dataset.kind==='case'){state.caseId=Number(b.dataset.id);nav('cases')}else if(b.dataset.kind==='claim'){nav('claims')}else if(b.dataset.kind==='source'){nav('sources')}else{nav('people')}break;case 'close-modal':closeModal();break;case 'export':downloadData();break;case 'refresh':if(state.demo){toast('This is a sample preview.')}else await loadData();break;case 'new-case':case 'new-claim':case 'new-source':case 'new-person':case 'new-org':case 'link-source':case 'link-person':case 'link-org':case 'new-relationship':case 'new-solution':case 'new-outcome':openModal(type,{claimId:b.dataset.claim||null});break;}});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if($('modalRoot').firstElementChild)closeModal();
+  else dismissMobileNav();
+});
 document.addEventListener('input',e=>{if(e.target.id!=='filterSearch')return;state.search=e.target.value;const section=state.screen;if(!['claims','sources'].includes(section))return;const pos=e.target.selectionStart;render();$('filterSearch')?.focus();$('filterSearch')?.setSelectionRange(pos,pos);});
 document.addEventListener('change',async e=>{if(e.target.id==='filterStatus'){state.filter=e.target.value;render();return;}if(e.target.id==='defaultContentLanguage'){if(!guardWrite()){e.target.value=contentLanguage();return;}const selected=e.target.value;if(!LANGUAGE_CHOICES.some(([code])=>code===selected))return;const {error}=await client.from('workspace_preferences').upsert({owner_id:OWNER_USER_ID,default_content_language:selected,updated_at:new Date().toISOString()},{onConflict:'owner_id'});if(error){toast('Language preference not saved: '+error.message);e.target.value=contentLanguage();return;}state.dataset.workspace_preferences=[{owner_id:OWNER_USER_ID,default_content_language:selected}];render();toast('Default content language saved.');}});
-$('mobileMenu').addEventListener('click',()=>$('sidebar').classList.toggle('visible'));
+$('mobileMenu').addEventListener('click',()=>{
+  if($('sidebar').classList.contains('visible'))dismissMobileNav();
+  else setMobileNav(true);
+});
+$('sidebarClose').addEventListener('click',dismissMobileNav);
+$('sidebar').addEventListener('focusout',e=>{
+  if(e.relatedTarget && !$('sidebar').contains(e.relatedTarget))setMobileNav(false);
+});
+window.matchMedia('(max-width:720px)').addEventListener('change',()=>setMobileNav(false));
 $('signOutBtn').addEventListener('click',async()=>{if(!state.demo&&client)await client.auth.signOut();state.demo=false;state.dataset=emptyData();state.ready=false;state.owner=null;$('loginPassword').value='';closeModal();setAuthed(false);});
 $('demoBtn').addEventListener('click',enterDemo);
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('loginBtn'),err=$('authFeedback');err.textContent='';if(!client){err.textContent='Could not load Supabase. Check your internet connection and reopen the file.';return;}btn.disabled=true;btn.textContent='Signing in…';try{const {data,error}=await client.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error)throw error;if(data.user?.id!==OWNER_USER_ID){await client.auth.signOut();throw new Error('That account is not the owner account authorized in this project.');}state.owner=data.user.id;$('loginPassword').value='';await enterLive();}catch(error){err.textContent=error.message||'Sign-in failed.';}finally{btn.disabled=false;btn.innerHTML='Sign in <span>→</span>';}});
