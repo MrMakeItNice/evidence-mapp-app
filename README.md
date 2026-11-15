@@ -220,7 +220,9 @@ Mental-health source pages: NIMH Caring for Your Mental Health; NHS breathing ex
 
 ## Ask Evidence Atlas (1.10)
 
-The floating assistant is available on the public reader, workspace and Healing page. It searches published records only, provides source links and site guidance, and clearly labels keyword retrieval versus AI summaries. Case links open the selected case; sensitive case disclosure still applies. No chat, mood selection, reflection or private workspace record is included in saved chat data. There is no chat-history database.
+The floating assistant is available on the homepage, public reader, workspace and Healing page. Open `discover.html#ask-evidence` for a direct assistant link. It searches published records only, provides source links and site guidance, and clearly labels keyword retrieval versus AI summaries. Case links open the selected case; sensitive case disclosure still applies. No chat, mood selection, reflection or private workspace record is included in saved chat data. There is no chat-history database.
+
+**Activation check, November 15, 2026:** the live source finder returns published records, the budget table/function are installed with backend-only privileges, and the endpoint reports `ai_available:false`. AI-generated answers remain pending provider setup and a successful real-provider test. See [activation instructions and verification](docs/ask-evidence-activation.md). Connecting a provider account alone does not install its key in Supabase Edge Function secrets.
 
 Deploy `evidence-chat` and apply `supabase/assistant-budget.sql`. Source-finder mode works without a paid AI provider. To enable optional AI summaries, add `OPENAI_API_KEY` and `EVIDENCE_AI_PUBLIC_ENABLED=true` in Supabase Edge Function secrets, then redeploy `evidence-chat`. Never put provider keys in the frontend or repository. `EVIDENCE_AI_MODEL` defaults to `gpt-4.1-mini`; `EVIDENCE_AI_DAILY_LIMIT` defaults to 30 requests per UTC day, clamped to 1–100. Use provider account spend controls too. The aggregate counter is atomic, service-role only, with RLS and no user/chat identifiers. Requests failing after reserving a slot still count.
 
@@ -238,4 +240,5 @@ The current pillars are Self-Care & Inner Peace, Positive Progress, Government A
 The manual two-report comparison keeps notes in page memory, escapes input, allows only http(s) links, and gives reading prompts. It does not fetch article bodies, verify claims, or detect propaganda automatically. The Gates farmland starting note links dated personal statements and an independent ownership profile, separates acreage categories and personal investments from foundation activity, and makes no allegation of wrongdoing. No complete ownership audit has been performed.
 
 Community posting, public Q&A, movement organising, automated source-quality review, and automatically publishing monitored findings are not implemented. A separately configured ChatGPT hourly public-source watch reports only substantive new findings to the user; it does not modify this website.
+
 
