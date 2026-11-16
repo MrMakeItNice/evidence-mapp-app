@@ -40,7 +40,7 @@
       return true;
     });
     el('status').textContent='Showing '+Math.min(filtered.length,count)+' of '+filtered.length+' matching published cases';
-    el('caseList').innerHTML=filtered.slice(0,count).map(c=>'<article class="case"><h3>Case #'+esc(c.case_number)+' · '+esc(c.title)+'</h3><p>'+esc(c.summary||'No summary recorded.')+'</p><div class="meta">'+tag('Official finding '+(nonempty(c.official_finding)?'recorded':'not recorded'),nonempty(c.official_finding))+tag('Disputed questions '+(nonempty(c.disputed_questions)?'recorded':'not recorded'),nonempty(c.disputed_questions))+tag('Start date '+(nonempty(c.start_date)?'recorded':'not recorded'),nonempty(c.start_date))+'</div><a href="./discover.html?case='+encodeURIComponent(c.id)+'#history">Read published case →</a></article>').join('')||'<p class="note">No cases match these filters.</p>';
+    el('caseList').innerHTML=filtered.slice(0,count).map(c=>'<article class="case"><h3>Case #'+esc(c.case_number)+' · '+esc(c.title)+'</h3><p>'+esc(c.summary||'No summary recorded.')+'</p><div class="meta">'+tag('Official finding '+(nonempty(c.official_finding)?'recorded':'not recorded'),nonempty(c.official_finding))+tag('Disputed questions '+(nonempty(c.disputed_questions)?'recorded':'not recorded'),nonempty(c.disputed_questions))+tag('Start date '+(nonempty(c.start_date)?'recorded':'not recorded'),nonempty(c.start_date))+'</div><a href="./discover.html?case='+encodeURIComponent(c.id)+'#history" aria-label="Read published case #'+esc(c.case_number)+': '+esc(c.title)+'">Read published case →</a></article>').join('')||'<p class="note">No cases match these filters.</p>';
     el('more').hidden=count>=filtered.length;
   }
   el('q').addEventListener('input',()=>{count=18;render()});
