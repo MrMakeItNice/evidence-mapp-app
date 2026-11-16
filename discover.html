@@ -11,6 +11,7 @@
 :root{--navy:#101c31;--teal:#30cba9;--ink:#1b3047;--sub:#617486;--line:#dde7ed;font-family:'DM Sans',system-ui,sans-serif;color:var(--ink);background:#f5f7fa}
 *{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}button,input{font:inherit}a{color:inherit}button{cursor:pointer}button:disabled{opacity:.6;cursor:wait}
 button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #34b89c;outline-offset:3px}
+.case h3:focus-visible{outline:3px solid #34b89c;outline-offset:3px}
 .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
 .top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:10;border-bottom:1px solid #264258}
 .top-inner{min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:14px}
@@ -326,7 +327,16 @@ function openCase(id){
 }
 $("caseGrid").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(b)openCase(b.dataset.id)});
 $("featuredCase").addEventListener("click",()=>{let c=cases.find(c=>/cointelpro/i.test(c.title));if(c)openCase(c.id);else document.getElementById("history").scrollIntoView()});
-$("moreCases").addEventListener("click",()=>{shown+=9;renderCases()});
+$("moreCases").addEventListener("click",()=>{
+ const firstNewIndex=shown;
+ shown+=9;
+ renderCases();
+ const firstNewHeading=$("caseGrid").children[firstNewIndex]?.querySelector("h3");
+ if(firstNewHeading){
+  firstNewHeading.tabIndex=-1;
+  firstNewHeading.focus();
+ }
+});
 $("searchForm").addEventListener("submit",e=>{e.preventDefault();search=$("searchInput").value.trim();shown=9;renderCases()});
 $("caseCategory").addEventListener("change",e=>{category=e.target.value;shown=9;renderCases()});
 $("caseSort").addEventListener("change",e=>{sortBy=e.target.value;shown=9;renderCases()});
