@@ -303,11 +303,14 @@ function renderCases(){
 }
 function openCase(id){
  const c=cases.find(c=>String(c.id)===String(id));if(!c)return;
- const pane=$("caseDetail");pane.dataset.caseId=String(c.id);const flagged=sensitive.test(String(c.title)+" "+String(c.summary));
+ const caseId=String(c.id);
+ const caseFragment=/^\d+$/.test(caseId)?'#case-'+caseId:'';
+ const trailLabel=caseFragment?'Open this case in Paper Trails':'Browse Paper Trails';
+ const pane=$("caseDetail");pane.dataset.caseId=caseId;const flagged=sensitive.test(String(c.title)+" "+String(c.summary));
  const body='<p>'+esc(c.summary||"No summary listed.")+'</p>'+
  (c.official_finding?'<div class="details-section"><h3>Recorded official finding</h3><p>'+esc(c.official_finding)+'</p></div>':"")+
  (c.disputed_questions?'<div class="details-section"><h3>Disputed or unanswered questions</h3><p>'+esc(c.disputed_questions)+'</p></div>':"")+
- '<div class="details-section"><h3>Source check</h3><p>Look for original documents and independent corroboration before deciding what is established. Documents returned by a topic search are not necessarily verified citations for this particular case.</p><button type="button" class="btn" id="checkSources">Find published source records →</button><div id="related"></div></div>';
+ '<div class="details-section"><h3>Source check</h3><p>Look for original documents and independent corroboration before deciding what is established. Documents returned by a topic search are not necessarily verified citations for this particular case.</p><div class="actions"><a class="btn primary" href="./paper-trails.html'+caseFragment+'">'+trailLabel+' →</a><button type="button" class="btn" id="checkSources">Search for sources by topic</button></div><div id="related"></div></div>';
  const showBody=()=>{pane.innerHTML='<div class="eyebrow">PUBLIC CASE #'+esc(c.case_number)+'</div><h2>'+esc(c.title)+'</h2>'+body+'<div class="actions"><button type="button" class="btn" id="closeCase">Close</button></div>';
   $("closeCase").addEventListener("click",()=>pane.hidden=true);
   $("checkSources").addEventListener("click",async()=>{const t=$("related");t.textContent="Searching topic-matched source records…";try{
