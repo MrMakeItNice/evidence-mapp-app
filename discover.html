@@ -307,15 +307,40 @@ function openCase(id){
  const body='<p>'+esc(c.summary||"No summary listed.")+'</p>'+
  (c.official_finding?'<div class="details-section"><h3>Recorded official finding</h3><p>'+esc(c.official_finding)+'</p></div>':"")+
  (c.disputed_questions?'<div class="details-section"><h3>Disputed or unanswered questions</h3><p>'+esc(c.disputed_questions)+'</p></div>':"")+
- '<div class="details-section"><h3>Source check</h3><p>Look for original documents and independent corroboration before deciding what is established. Documents returned by a topic search are not necessarily verified citations for this particular case.</p><button type="button" class="btn" id="checkSources">Find published source records →</button><div id="related"></div></div>';
+ '<div class="details-section"><h3>Source check</h3><p>Look for original documents and independent corroboration before deciding what is established. Documents returned by a topic search are not necessarily verified citations for this particular case.</p><button type="button" class="btn" id="checkSources" aria-controls="related">Find published source records →</button><p id="sourceSearchStatus" role="status"></p><div id="related"></div></div>';
  const showBody=()=>{pane.innerHTML='<div class="eyebrow">PUBLIC CASE #'+esc(c.case_number)+'</div><h2>'+esc(c.title)+'</h2>'+body+'<div class="actions"><button type="button" class="btn" id="closeCase">Close</button></div>';
   $("closeCase").addEventListener("click",()=>pane.hidden=true);
-  $("checkSources").addEventListener("click",async()=>{const t=$("related");t.textContent="Searching topic-matched source records…";try{
+  const sourceButton=$("checkSources");
+  const sourceStatus=$("sourceSearchStatus");
+  const sourceResults=$("related");
+  sourceButton.addEventListener("click",async()=>{
+   if(sourceButton.getAttribute("aria-disabled")==="true")return;
+   sourceButton.setAttribute("aria-disabled","true");
+   sourceResults.replaceChildren();
+   sourceStatus.textContent="Searching topic-matched source records…";
    const controller=new AbortController(),time=setTimeout(()=>controller.abort(),14000);
-   let r;try{r=await fetch(API+"evidence-research?q="+encodeURIComponent(c.title.slice(0,140)),{signal:controller.signal})}finally{clearTimeout(time)}
-   if(!r.ok)throw Error("Document search unavailable");const d=await r.json(),docs=d.matches?.documents||[];
-   t.innerHTML=docs.length?'<p class="citation">These are topic matches, NOT automatically case-specific evidence.</p>'+docs.map(x=>{const u=urlOK(x.url)||urlOK(x.archive_url);return '<p>'+esc(x.title)+(u?' · <a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">Original document ↗</a>':'')+'</p>'}).join(""):'<p>No separately published source matches found.</p>';
-  }catch{t.textContent="Document search is temporarily unavailable."}});
+   try{
+    const response=await fetch(API+"evidence-research?q="+encodeURIComponent(c.title.slice(0,140)),{signal:controller.signal});
+    if(!response.ok)throw Error("Document search unavailable");
+    const data=await response.json();
+    const docs=Array.isArray(data.matches?.documents)?data.matches.documents:[];
+    if(!docs.length){
+     sourceStatus.textContent="No separately published source matches found.";
+     return;
+    }
+    sourceResults.innerHTML='<p class="citation">These are topic matches, NOT automatically case-specific evidence.</p>'+
+     docs.map(doc=>{
+      const url=urlOK(doc.url)||urlOK(doc.archive_url);
+      return '<p>'+esc(doc.title)+(url?' · <a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">Original document ↗</a>':'')+'</p>';
+     }).join("");
+    sourceStatus.textContent=docs.length===1?"1 topic-matched source record found.":docs.length+" topic-matched source records found.";
+   }catch{
+    sourceStatus.textContent="Document search is temporarily unavailable.";
+   }finally{
+    clearTimeout(time);
+    sourceButton.removeAttribute("aria-disabled");
+   }
+  });
  };
  pane.hidden=false;
  if(flagged){pane.innerHTML='<div class="eyebrow">SENSITIVE HISTORICAL SUBJECT</div><h2>'+esc(c.title)+'</h2><p>This case discusses potentially disturbing historical material. The public view is text-only. Would you like to read the summary?</p><div class="actions"><button type="button" class="btn primary" id="confirmCase">Read summary</button><button type="button" class="btn" id="cancelCase">Not now</button></div>';
