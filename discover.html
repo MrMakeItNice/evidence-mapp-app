@@ -344,7 +344,10 @@ async function getNews(topic){
  newsController?.abort();const controller=new AbortController();newsController=controller;
  $("newsStatus").textContent="Checking recently published "+topic+" coverage…";$("newsGrid").innerHTML="";
  try{const timer=setTimeout(()=>controller.abort(),18000);let r;try{r=await fetch(API+"evidence-public-news?topic="+encodeURIComponent(topic),{signal:controller.signal})}finally{clearTimeout(timer)}
- if(!r.ok)throw Error("News provider temporarily unavailable");const d=await r.json(),items=Array.isArray(d.articles)?d.articles:[];
+ if(!r.ok)throw Error("News provider temporarily unavailable");
+ const d=await r.json();
+ if(newsController!==controller)return;
+ const items=Array.isArray(d.articles)?d.articles:[];
  $("newsStatus").textContent=items.length+" article references · "+(d.provider||"News discovery")+" · "+(d.notice||"Headlines have not been independently verified.");
  $("newsGrid").innerHTML=items.length?items.map((a,i)=>{
  const u=urlOK(a.url),flag=a.sensitive===true;
