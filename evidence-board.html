@@ -17,8 +17,14 @@ card.addEventListener('pointermove', e => {
   drag.moved = true;
   const dx = screenX / zoom;
   const dy = screenY / zoom;
-  n.x = Math.max(0, Math.min(1000, drag.startX + dx));
-  n.y = Math.max(0, Math.min(660, drag.startY + dy));
+  const nextX = Math.max(0, Math.min(1000, drag.startX + dx));
+  const nextY = Math.max(0, Math.min(660, drag.startY + dy));
+  if (!drag.unsavedAnnounced && (nextX !== n.x || nextY !== n.y)) {
+    $('status').textContent = 'Layout has unsaved changes. Choose Save layout to keep this arrangement in this browser.';
+    drag.unsavedAnnounced = true;
+  }
+  n.x = nextX;
+  n.y = nextY;
   card.style.left = n.x + 'px';
   card.style.top = n.y + 'px';
   drawWires();
