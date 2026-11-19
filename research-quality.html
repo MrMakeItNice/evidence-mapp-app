@@ -46,9 +46,9 @@
   el('q').addEventListener('input',()=>{count=18;render()});
   el('filter').addEventListener('change',()=>{count=18;render()});
   el('more').addEventListener('click',()=>{count+=18;render()});
-  (async()=>{try{const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),12000);let response;try{response=await fetch(endpoint,{signal:ctl.signal,cache:'no-store'})}finally{clearTimeout(timeout)}if(!response.ok)throw Error('Status '+response.status);const data=await response.json();if(!Array.isArray(data))throw Error('Unexpected response');cases=data.filter(c=>c&&c.id&&c.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));chart();render();
+  (async()=>{const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),12000);try{const response=await fetch(endpoint,{signal:ctl.signal,cache:'no-store'});if(!response.ok)throw Error('Status '+response.status);const data=await response.json();if(!Array.isArray(data))throw Error('Unexpected response');cases=data.filter(c=>c&&c.id&&c.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));chart();render();
     el('q').disabled=false;
     el('filter').disabled=false;
-  }catch(e){el('status').textContent='Published cases cannot be loaded right now. Try again later. ('+String(e.message||'network error')+')';}})();
+  }catch(e){el('status').textContent='Published cases cannot be loaded right now. Try again later. ('+String(ctl.signal.aborted?'Loading timed out':e.message||'network error')+')';}finally{clearTimeout(timeout)}})();
 })();
 </script></body></html>
