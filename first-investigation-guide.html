@@ -9,7 +9,7 @@ const stepLinks=steps.map(([label],index)=>{
   progress.append(link);
   return link;
 });
-function draw(){const [label,title,items,tip]=steps[n];story.replaceChildren();const marker=el("div","STEP "+(n+1)+" OF "+steps.length+" / "+label);marker.className="step";story.append(marker,el("h2",title));const ul=el("ul","");items.forEach(x=>ul.append(el("li",x)));story.append(ul);const t=el("div",tip);t.className="tip";story.append(t);
+function draw(){const [label,title,items,tip]=steps[n];document.title='Step '+(n+1)+' of '+steps.length+': '+label+' | Evidence Atlas Guide';story.replaceChildren();const marker=el("div","STEP "+(n+1)+" OF "+steps.length+" / "+label);marker.className="step";story.append(marker,el("h2",title));const ul=el("ul","");items.forEach(x=>ul.append(el("li",x)));story.append(ul);const t=el("div",tip);t.className="tip";story.append(t);
   stepLinks.forEach((link,index)=>{
     if(index===n)link.setAttribute('aria-current','step');
     else link.removeAttribute('aria-current');
