@@ -14,8 +14,23 @@ for(const trigger of document.querySelectorAll('[data-ea-open]'))trigger.addEven
 function openFromLink(){if(location.hash==='#ask-evidence')open(true)}
 window.addEventListener('hashchange',openFromLink);openFromLink();
 function message(who,text,sources=[],notice=''){const item=document.createElement('article'),label=document.createElement('strong'),p=document.createElement('p');label.textContent=who;p.textContent=text;item.append(label,p);for(const s of sources){try{const url=new URL(s.url);if(!['http:','https:'].includes(url.protocol))continue;const a=document.createElement('a');a.href=url.href;a.textContent=(s.id?s.id+' · ':'')+s.title;a.target='_blank';a.rel='noopener noreferrer';item.append(a);}catch{}}if(notice){const note=document.createElement('p');note.className='ea-muted';note.textContent=notice;item.append(note)}messages.append(item);while(messages.children.length>20)messages.firstElementChild.remove();by('ea-bot-content').scrollTop=by('ea-bot-content').scrollHeight;}
-async function ask(q){if(busy||q.length<3||q.length>160)return;busy=true;by('ea-bot-send').disabled=true;by('ea-bot-send').textContent='Looking…';message('YOU',q);input.value='';controller=new AbortController();const timer=setTimeout(()=>controller.abort(),48000);try{const ai=by('ea-bot-ai').checked;const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},signal:controller.signal,body:JSON.stringify({question:q,ai,consent:ai})});const data=await r.json();if(!r.ok)throw Error(data.error||'Please try again.');message(data.ai_generation?'AI SUMMARY':data.mode==='site_guide'?'SITE GUIDE':'SOURCE FINDER',data.answer,data.sources,data.notice);}catch(e){if(e.name!=='AbortError')message('ASSISTANT',e.message||'The search is unavailable. Please try again.');else message('ASSISTANT','The request was stopped. You can ask again.');}finally{clearTimeout(timer);busy=false;by('ea-bot-send').disabled=false;by('ea-bot-send').textContent='Ask';}}
-by('ea-bot-form').onsubmit=e=>{e.preventDefault();ask(input.value.trim())};for(const button of by('ea-bot-prompts').querySelectorAll('button'))button.onclick=()=>ask(button.textContent);by('ea-bot-clear').onclick=()=>{if(busy)return;messages.replaceChildren();input.value='';by('ea-bot-ai').checked=false;input.focus()};
+function clearQuestion(){
+  input.value='';
+  input.setCustomValidity('');
+}
+async function ask(q){if(busy||q.length<3||q.length>160)return;busy=true;by('ea-bot-send').disabled=true;by('ea-bot-send').textContent='Looking…';message('YOU',q);clearQuestion();controller=new AbortController();const timer=setTimeout(()=>controller.abort(),48000);try{const ai=by('ea-bot-ai').checked;const r=await fetch(API,{method:'POST',headers:{'content-type':'application/json'},signal:controller.signal,body:JSON.stringify({question:q,ai,consent:ai})});const data=await r.json();if(!r.ok)throw Error(data.error||'Please try again.');message(data.ai_generation?'AI SUMMARY':data.mode==='site_guide'?'SITE GUIDE':'SOURCE FINDER',data.answer,data.sources,data.notice);}catch(e){if(e.name!=='AbortError')message('ASSISTANT',e.message||'The search is unavailable. Please try again.');else message('ASSISTANT','The request was stopped. You can ask again.');}finally{clearTimeout(timer);busy=false;by('ea-bot-send').disabled=false;by('ea-bot-send').textContent='Ask';}}
+input.addEventListener('input',()=>input.setCustomValidity(''));
+by('ea-bot-form').onsubmit=e=>{
+  e.preventDefault();
+  const question=input.value.trim();
+  if(question.length<3){
+    input.setCustomValidity('Enter at least 3 characters, excluding spaces at the start and end.');
+    input.reportValidity();
+    return;
+  }
+  ask(question);
+};
+for(const button of by('ea-bot-prompts').querySelectorAll('button'))button.onclick=()=>ask(button.textContent);by('ea-bot-clear').onclick=()=>{if(busy)return;messages.replaceChildren();clearQuestion();by('ea-bot-ai').checked=false;input.focus()};
 fetch(API,{signal:AbortSignal.timeout(8000)}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(data=>{by('ea-bot-mode').textContent=data.ai_available?'Published-source finder · AI summaries available by choice.':'Published-source finder · AI answers are not connected yet.';by('ea-bot-ai-row').hidden=!data.ai_available}).catch(()=>{by('ea-bot-mode').textContent='Published-source finder · Availability check failed. You can still try a question.'});
 })();
 
