@@ -33,3 +33,8 @@ test('source indexing and external opening validate URLs', () => {
   assert.ok(html.includes("card.addEventListener('dblclick',()=>{if(!n.case){const url=safeSourceUrl(n.item.url);"));
   assert.match(html, /if\(url\)window\.open\(url,/);
 });
+
+test('source inspector validates the hyperlink at render time', () => {
+  assert.match(html, /function showDetails\(n\)[\s\S]*?const url=safeSourceUrl\(n\.item\.url\);if\(url\)\{const a=document\.createElement\('a'\);a\.href=url;/);
+  assert.doesNotMatch(html, /a\.href=n\.item\.url/);
+});
