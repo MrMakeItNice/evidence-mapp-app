@@ -30,6 +30,6 @@ test('does not treat misleading scheme prefixes as HTTP(S)', () => {
 
 test('source indexing and external opening validate URLs', () => {
   assert.match(html, /function uniqueDocs\(id\)\{[^}]*safeSourceUrl\(r\.url\)/);
-  assert.match(html, /card\.addEventListener\('dblclick',[^;]*safeSourceUrl\(n\.item\.url\)/);
+  assert.ok(html.includes("card.addEventListener('dblclick',()=>{if(!n.case){const url=safeSourceUrl(n.item.url);"));
   assert.match(html, /if\(url\)window\.open\(url,/);
 });
