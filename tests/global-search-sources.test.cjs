@@ -2,12 +2,12 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const html=fs.readFileSync('global-search.html','utf8'),script=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(script);assert.doesNotThrow(()=>new Function(script));assert.match(html,/id="source-results"/);
-function setup(){
+function setup(options={}){
  const els=new Map();
  const node=(tag='div')=>({tag,children:[],textContent:'',value:'',addEventListener(){},append(...x){this.children.push(...x)},replaceChildren(...x){this.children=x}});
  const document={getElementById:id=>{if(!els.has(id))els.set(id,node());return els.get(id)},createElement:node,createTextNode:t=>({tag:'#text',textContent:t,children:[]})};
- const app=new Function('document','location','history','fetch','URL','URLSearchParams','AbortController','setTimeout','clearTimeout',script+';return {seed:(c,r)=>{cases=c;loaded=true;refs=r;sourcesLoaded=true},renderSourceRecords,originalDocumentUrl}')(
- document,{search:''},{replaceState(){}},()=>new Promise(()=>{}),URL,URLSearchParams,AbortController,()=>1,()=>{});
+ const app=new Function('document','location','history','fetch','URL','URLSearchParams','AbortController','setTimeout','clearTimeout',script+';return {seed:(c,r)=>{cases=c;loaded=true;refs=r;sourcesLoaded=true},renderSourceRecords,originalDocumentUrl,search}')(
+ document,{search:options.search||'',href:'https://atlas.example/global-search.html'},{replaceState(){}},options.fetch||(()=>new Promise(()=>{})),URL,URLSearchParams,AbortController,()=>1,()=>{});
  return {app,get:id=>document.getElementById(id)};
 }
 const all=n=>[n,...(n.children||[]).flatMap(all)];
@@ -37,4 +37,49 @@ test('does not expose source records without a published linked case',()=>{
  const {app,get}=setup();app.seed([], [{case_id:99,source_id:9,title:'Not published',url:'https://example.com'}]);
  app.renderSourceRecords('not published');assert.equal(get('source-results').children.length,1);
  assert.match(get('source-results').children[0].textContent,/No matching indexed source records/);
+});
+
+const settle=()=>new Promise(resolve=>setImmediate(resolve));
+for(const first of ['cases','sources'])test('delayed '+first+' uses latest submitted query, not URL or unsent edits',async()=>{
+ let casesReady,sourcesReady;
+ const {app,get}=setup({search:'?q=old',fetch:url=>{
+  if(url==='./paper-trails-data.json')return new Promise(r=>sourcesReady=r);
+  if(String(url).includes('/api/cases'))return new Promise(r=>casesReady=r);
+  return new Promise(()=>{});
+ }});
+ app.search(' newest ');get('q').value='unsent';
+ assert.match(get('archive-status').textContent,/Loading/);
+ assert.match(get('source-status').textContent,/Waiting/);
+ const resolveCases=()=>casesReady({ok:true,json:async()=>[{id:1,title:'newest case'},{id:2,title:'old case'},{id:3,title:'unsent case'}]});
+ const resolveSources=()=>sourcesReady({ok:true,json:async()=>({references:[
+  {case_id:1,source_id:1,title:'newest report',url:'https://example.org/new'},
+  {case_id:2,source_id:2,title:'old report',url:'https://example.org/old'},
+  {case_id:3,source_id:3,title:'unsent report',url:'https://example.org/unsent'}]})});
+ (first==='cases'?resolveCases:resolveSources)();await settle();
+ (first==='cases'?resolveSources:resolveCases)();await settle();
+ assert.equal(get('q').value,'unsent');
+ assert.match(get('archive-status').textContent,/^1 matching/);
+ assert.match(get('source-status').textContent,/^1 matching/);
+ for(const id of ['results','source-results']){
+  const text=all(get(id)).map(n=>n.textContent).join(' ');
+  assert.match(text,/newest/);assert.doesNotMatch(text,/old (case|report)|unsent (case|report)/);
+ }
+});
+for(const failure of ['cases','sources'])test(failure+' failure stays distinct from no matches',async()=>{
+ const {app,get}=setup({fetch:async url=>{
+  if(String(url).includes('/api/cases')){
+   if(failure==='cases')throw Error('offline');
+   return {ok:true,json:async()=>[{id:1,title:'newest case'}]};
+  }
+  if(url==='./paper-trails-data.json'){
+   if(failure==='sources')throw Error('offline');
+   return {ok:true,json:async()=>({references:[]})};
+  }
+  return new Promise(()=>{});
+ }});
+ app.search('newest');await settle();
+ assert.doesNotMatch(get('source-status').textContent,/No matching|Loading|Waiting/);
+ assert.match(get('source-status').textContent,/unavailable/);
+ if(failure==='sources')assert.match(get('archive-status').textContent,/^1 matching/);
+ else assert.match(get('archive-status').textContent,/could not be loaded/);
 });
