@@ -44,3 +44,17 @@ test('pan movement scales with current diagram zoom, not pixels', () => {
 test('full inline script parses as JavaScript', () => {
   assert.doesNotThrow(() => new vm.Script(script));
 });
+
+test('all navigation buttons target the diagram and share wrapping touch-sized groups', () => {
+  for(const id of ['panLeft','panUp','panDown','panRight','zoomIn','zoomOut','resetView']){
+    const button=html.match(new RegExp('<button id="'+id+'"[^>]*>'))?.[0];
+    assert.ok(button,id);
+    assert.match(button,/type="button"/);
+    assert.match(button,/aria-controls="graph"/);
+  }
+  assert.match(html,/<div role="group" aria-label="Zoom and reset diagram"><button id="zoomIn"/);
+  assert.match(html,/\.graph-actions \[role=group\]\{[^}]*display:flex;[^}]*flex-wrap:wrap/);
+  assert.match(html,/\.graph-actions \[role=group\] button\{min-width:44px;min-height:44px\}/);
+  assert.match(html,/<svg id="graph"[^>]*aria-describedby="diagram-navigation-help"/);
+  assert.match(html,/id="diagram-navigation-help">Explore the public citation network · drag or use the pan buttons/);
+});
