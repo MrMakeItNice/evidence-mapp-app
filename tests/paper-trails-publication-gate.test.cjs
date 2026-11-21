@@ -47,13 +47,14 @@ test('Paper Trails filters source links by the allowlist and reports snapshot st
   assert.match(html, /Source publication gate unavailable; citation links are withheld/);
 });
 
-async function loadPage(snapshot,fail=false){
+async function loadPage(snapshot,fail=false,options={}){
  const elements=new Map();
  const get=id=>{if(!elements.has(id))elements.set(id,{value:'',innerHTML:'',textContent:'',addEventListener(){},focus(){},scrollIntoView(){}});return elements.get(id)};
  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
- new Function('document','window','history','location','fetch',script)(
+ new Function('document','window','history','location','fetch','AbortController','setTimeout','clearTimeout',script)(
   {getElementById:get},{addEventListener(){}},{replaceState(){}},{hash:'#case-42'},
-  async url=>({ok:!fail,json:async()=>url==='./paper-trails-data.json'?snapshot:[{id:42,case_number:42,title:'Test case',category:'Test'}]})
+  options.fetch||(async url=>({ok:!fail,json:async()=>url==='./paper-trails-data.json'?snapshot:[{id:42,case_number:42,title:'Test case',category:'Test'}]})),
+  AbortController,options.setTimeout||setTimeout,options.clearTimeout||clearTimeout
  );
  await new Promise(resolve=>setImmediate(resolve));return get;
 }
@@ -93,4 +94,42 @@ test('archive failure replaces the pending snapshot message',async()=>{
  assert.match(get('sourceGate').textContent,/could not be checked.*remain withheld/);
  assert.doesNotMatch(get('sourceGate').textContent,/Checking/);
  assert.match(get('summary').textContent,/temporarily unavailable/);
+});
+
+
+for(const phase of ['headers','case-body','source-body'])test('deadline covers stalled '+phase+' and withholds citations',async()=>{
+ let fire,cleared=0;const signals=[];
+ const get=await loadPage({},false,{
+  setTimeout(fn,ms){assert.equal(ms,15000);fire=fn;return 77},
+  clearTimeout(id){assert.equal(id,77);cleared++},
+  fetch:async(url,{signal})=>{
+   signals.push(signal);
+   const stalled=()=>new Promise((_resolve,reject)=>signal.addEventListener('abort',()=>reject(Error('aborted')),{once:true}));
+   if(phase==='headers')return stalled();
+   return {ok:true,json:()=>{
+    const isSource=url==='./paper-trails-data.json';
+    if((phase==='case-body'&&!isSource)||(phase==='source-body'&&isSource))return stalled();
+    return Promise.resolve(isSource?publishedFixture([]):[{id:42,title:'Test case'}]);
+   }};
+  }
+ });
+ assert.equal(cleared,0,'deadline stays active through response parsing');
+ fire();await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(cleared,1);assert.equal(signals.length,2);assert.ok(signals.every(s=>s.aborted));
+ assert.match(get('summary').textContent,/timed out/);
+ assert.match(get('sourceGate').textContent,/timed out.*remain withheld/);
+ assert.match(get('caseList').innerHTML,/Reload this page to try again/);
+ assert.doesNotMatch(get('detail').innerHTML,/Linked public records/);
+});
+
+test('success and HTTP failure both clean up their pending deadline',async()=>{
+ for(const failure of [false,true]){
+  let cleared=0;
+  const get=await loadPage(publishedFixture([]),failure,{
+   setTimeout(_fn,ms){assert.equal(ms,15000);return 88},
+   clearTimeout(id){assert.equal(id,88);cleared++}
+  });
+  assert.equal(cleared,1);
+  assert.doesNotMatch(get('summary').textContent,/timed out/);
+ }
 });
