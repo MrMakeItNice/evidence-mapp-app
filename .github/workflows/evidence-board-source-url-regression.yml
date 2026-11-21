@@ -1,6 +1,13 @@
 name: Evidence Board source URL regression
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'evidence-board.html'
+      - 'tests/evidence-board-source-url.test.cjs'
+      - '.github/workflows/evidence-board-source-url-regression.yml'
   pull_request:
     paths:
       - 'evidence-board.html'
