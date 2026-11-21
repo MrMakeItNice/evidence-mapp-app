@@ -40,6 +40,7 @@ export function auditCaseEvidenceCoverage({cases=[], sources=[], masterSourceReg
     orphanSourceIdLinks = [], duplicateCaseRegisterLinks = [], duplicateClaimSourceLinks = [],
     claimsMissingCaseIds = [], orphanClaimLinkIds = [], orphanClaimSourceIds = [];
   const seenCaseRefs = new Set(), seenClaimRefs = new Set();
+  const caseSourceViaRegisters = new Map();
   for (const [id, row] of register) {
     if (row.source_id == null) { registerWithoutSourceIds.push(id); continue; }
     const sourceId = safeId(row.source_id, 'register.source_id');
@@ -53,7 +54,15 @@ export function auditCaseEvidenceCoverage({cases=[], sources=[], masterSourceReg
     seenCaseRefs.add(key);
     if (!c.has(caseId)) orphanCaseLinkIds.push(caseId);
     if (!register.has(registerId)) orphanRegisterIds.push(registerId);
-    if (c.has(caseId) && register.has(registerId)) caseWithRegister.add(caseId);
+    if (c.has(caseId) && register.has(registerId)) {
+      caseWithRegister.add(caseId);
+      const sourceId = register.get(registerId).source_id;
+      if (sourceId != null && s.has(sourceId)) {
+        const caseSourceKey = `${caseId}:${sourceId}`;
+        if (!caseSourceViaRegisters.has(caseSourceKey)) caseSourceViaRegisters.set(caseSourceKey,new Set());
+        caseSourceViaRegisters.get(caseSourceKey).add(registerId);
+      }
+    }
   }
   for (const [id, row] of cl) {
     if (row.case_id == null || !c.has(safeId(row.case_id, 'claims.case_id'))) claimsMissingCaseIds.push(id);
@@ -68,6 +77,13 @@ export function auditCaseEvidenceCoverage({cases=[], sources=[], masterSourceReg
     if (!s.has(sourceId)) orphanClaimSourceIds.push(sourceId);
     if (cl.has(claimId) && s.has(sourceId)) claimWithSource.add(claimId);
   }
+  const multiRegisterCaseSourceReviewCandidates = [...caseSourceViaRegisters]
+    .filter(([,ids])=>ids.size > 1)
+    .map(([key,ids])=>{
+      const [case_id,source_id] = key.split(':').map(Number);
+      return {case_id,source_id,register_ids:[...ids].sort((a,b)=>a-b)};
+    })
+    .sort((a,b)=>a.case_id-b.case_id || a.source_id-b.source_id);
   const caseIdsWithClaims=new Set([...cl.values()].filter(v=>v.case_id != null && c.has(v.case_id)).map(v=>v.case_id));
   return {
     cases_total:c.size, cases_with_registered_source_links:caseWithRegister.size,
@@ -79,7 +95,8 @@ export function auditCaseEvidenceCoverage({cases=[], sources=[], masterSourceReg
     claims_without_valid_case_ids:sorted(claimsMissingCaseIds), orphan_claim_link_ids:sorted(orphanClaimLinkIds),
     orphan_claim_source_ids:sorted(orphanClaimSourceIds),
     duplicate_case_register_links:duplicateCaseRegisterLinks, duplicate_claim_source_links:duplicateClaimSourceLinks,
-    caveat:'Only structural linkage is assessed. No registered source link or structured claim does NOT establish a case is unsupported. Review other evidence fields, imported references, case status and publisher originals; never auto-create, merge or publish records.'
+    multi_register_same_source_review_candidates:multiRegisterCaseSourceReviewCandidates,
+    caveat:'Only structural linkage is assessed. No registered source link or structured claim does NOT establish a case is unsupported. Review other evidence fields, imported references, case status and publisher originals; never auto-create, merge or publish records. Multiple register entries for one case/source may represent distinct citations and must not be auto-deduplicated.'
   };
 }
 
