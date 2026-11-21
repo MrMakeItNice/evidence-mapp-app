@@ -97,3 +97,33 @@ test('map actions expose zoom and position without moving focus', () => {
   adjust('fit'); assert.match(status.textContent, /Zoom: 100%.*50% across, 50% down/);
   const reset=status.textContent;adjust('invalid');assert.equal(status.textContent,reset);
 });
+
+test('SVG relationship nodes are keyboard reachable and visibly focusable', () => {
+  assert.match(html, /<svg id="connectionsSvg" class="network-svg" role="group" aria-label="Recorded investigation relationships"/);
+  assert.match(html, /<g data-action="graph-node" data-kind="\$\{n.kind\}" data-id="\$\{n.id\}" role="button" tabindex="0" aria-label="Inspect \$\{esc\(n.kind\)\}: \$\{esc\(n.title\)\}"/);
+  assert.match(html, /\.network-svg \[data-action="graph-node"\]:focus-visible > circle:first-of-type\{stroke:/);
+});
+
+test('Enter and Space inspect focused relationship nodes without overriding other keys', () => {
+  const line = html.split('\n').find(s => s.startsWith("document.addEventListener('keydown',e=>{const node="));
+  assert.ok(line, 'delegated map keyboard handler exists');
+  let handler, closed = 0;
+  vm.runInNewContext(line, {
+    document: { addEventListener(type, fn) { assert.equal(type, 'keydown'); handler = fn; } },
+    MouseEvent: class { constructor(type, options) { this.type = type; this.bubbles = options.bubbles; } },
+    closeModal() { closed++; }
+  });
+  const events = [];
+  const node = { dispatchEvent(event) { events.push([event.type, event.bubbles]); } };
+  let prevented = 0;
+  const target = { closest(selector) { assert.equal(selector, '[data-action="graph-node"]'); return node; } };
+  for (const key of ['Enter', ' ', 'ArrowLeft', 'Escape']) {
+    handler({ key, target, preventDefault() { prevented++; } });
+  }
+  assert.equal(prevented, 2, 'only activation keys are intercepted');
+  assert.equal(events.length, 2);
+  assert.ok(events.every(([type, bubbles]) => type === 'click' && bubbles === true));
+  assert.equal(closed, 1, 'Escape continues to close a modal');
+  handler({ key: 'Enter', target: { closest() { return null; } }, preventDefault() { throw Error('Unrelated controls must not be intercepted'); } });
+  assert.equal(events.length, 2, 'unrelated inputs are left alone');
+});
