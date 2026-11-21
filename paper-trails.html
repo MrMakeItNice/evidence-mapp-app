@@ -19,12 +19,24 @@ const declaredIds=gate.approved_source_ids;
 const idsValid=Array.isArray(declaredIds)&&declaredIds.every(id=>Number.isSafeInteger(id)&&id>0);
 const approvedSourceIds=new Set(idsValid?declaredIds:[]);
 const sourceIdsInRows=new Set(rows?rows.map(r=>r?.source_id):[]);
+const seenCaseSources=new Set(),sourceMetadata=new Map();
+const rowsConsistent=rows!==null&&rows.every(r=>{
+ if(!r||!Number.isSafeInteger(r.case_id)||r.case_id<=0||!Number.isSafeInteger(r.source_id)||r.source_id<=0||!approvedSourceIds.has(r.source_id))return false;
+ const pair=r.case_id+':'+r.source_id;
+ if(seenCaseSources.has(pair))return false;
+ seenCaseSources.add(pair);
+ const fingerprint=JSON.stringify([r.title??null,r.url??null,r.publisher??null,r.publication_date??null,r.reference_code??null]);
+ const previous=sourceMetadata.get(r.source_id);
+ if(previous!==undefined&&previous!==fingerprint)return false;
+ sourceMetadata.set(r.source_id,fingerprint);
+ return true;
+});
 const gateReady=gate.field==='public.sources.published'
  &&/^\d{4}-\d{2}-\d{2}$/.test(String(gate.checked_on||''))
  &&d.generated_on===gate.checked_on
  &&idsValid&&approvedSourceIds.size===declaredIds.length
  &&rows!==null
- &&rows.every(r=>r&&Number.isSafeInteger(r.case_id)&&r.case_id>0&&Number.isSafeInteger(r.source_id)&&r.source_id>0&&approvedSourceIds.has(r.source_id))
+ &&rowsConsistent
  &&Number.isSafeInteger(gate.reference_count)&&gate.reference_count===rows.length
  &&Number.isSafeInteger(gate.distinct_source_count)&&gate.distinct_source_count===approvedSourceIds.size
  &&sourceIdsInRows.size===approvedSourceIds.size;
