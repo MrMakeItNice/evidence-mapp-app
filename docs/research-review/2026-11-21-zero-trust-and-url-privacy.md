@@ -19,7 +19,7 @@
 - `sources`: **285**, with **146** missing publisher, **215** missing publication date, and **1** missing URL.
 - **36** active news topics; **11** have no news items. All **11** active research-watch timestamps are more than seven days old; all **7** news-watch `last_collected_at` fields are null.
 - Exact repeated URL groups: **0** within news items and **0** within sources; **8** groups of matching long news headlines merit manual review. The separate 17-article collection still has **0** article-topic links.
-- Positive News collector latest run was **pending at 2026-11-21 18:15 UTC**, so no success/failure outcome was assumed for that run. Its most recent recorded success was **2026-11-11 16:46 UTC**. The COVID-19 feed's latest completed run saved **1** news item; six other feeds' latest completed runs saved **0**.
+- Positive News collector latest run was **pending at 2026-11-21 18:15 UTC**, so no success/failure outcome was assumed for that run. Its most recent recorded success was **2026-11-11 16:46 UTC**. The COVID-19 feed's latest completed run saved **1** news item; five other feeds' latest completed runs saved **0**.
 - SQL used exclusively `SELECT` against production. A timestamp updated by external collection is not attributed to this review.
 
 ## Review-branch code privacy hardening
