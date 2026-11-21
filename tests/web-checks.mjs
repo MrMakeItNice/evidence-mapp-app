@@ -44,3 +44,14 @@ handler=edge('evidence-public-news',{fetch:async u=>{if(String(u).includes('reas
 data=await(await handler(new Request(base+'evidence-public-news?topic=positive'))).json();assert.equal(data.mode,'constructive_reporting_discovery');assert.equal(data.articles.length,1);assert.equal(data.articles[0].author,'A Reporter');assert.equal(data.sources[1].status,'unavailable');assert.equal(data.provider,'Positive News RSS');
 handler=edge('evidence-public-news',{fetch:async()=>new Response('',{status:503})});r=await handler(new Request(base+'evidence-public-news?topic=positive'));assert.equal(r.status,503);data=await r.json();assert.equal(data.sources.length,2);assert.equal(data.articles.length,0);
 console.log('PASS: positive-progress bylines, safe URLs, partial feed failure, and explicit total unavailability without unrelated fallback.');
+
+
+const rabbitHole = fs.readFileSync('rabbit-hole.html','utf8');
+for (const target of ['./paper-trails.html','./evidence-board.html','./connection-explorer.html#contribute']) {
+  assert.ok(rabbitHole.includes('href="'+target+'"'), 'Missing Rabbit Hole evidence path: '+target);
+  assert.ok(fs.existsSync(target.split('#')[0].slice(2)), 'Missing linked research page: '+target);
+}
+assert.match(rabbitHole,/Board lines represent indexed citations, not proof/);
+assert.match(rabbitHole,/private draft tool does not publish, review, or add proposed links/);
+assert.match(fs.readFileSync('connection-explorer.html','utf8'),/id="contribute"/);
+console.log('PASS: Rabbit Hole links to published cases, source-backed Evidence Board and private draft explorer without implying unverified causal links.');
