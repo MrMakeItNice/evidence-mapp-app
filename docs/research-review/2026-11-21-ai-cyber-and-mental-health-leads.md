@@ -47,3 +47,10 @@ A recurring HTTP 403 HTML access challenge was observed in earlier audits. New `
 **Integration not complete:** The actual scheduled collector is managed separately in `atlas_monitor`; this PR does not modify its runtime, authentication, feeds, retry logic, or database records. To fix the live issue, a maintainer must inspect the deployed collector, validate a permitted official RSS endpoint or seek publisher support, and add safe integration tests before any controlled rollout. Never defeat CAPTCHAs or access controls.
 
 **Required pre-publication review:** Confirm primary documents, competing explanations, precise dates, methodology and scope; cross-check provenance and duplicates; have a human editor approve explicit claims and links. No changes to production schema/data, published research, or deployments are authorized by this note.
+
+
+## Follow-up operational check at 02:46 PST
+
+The Positive News feed's 02:40 PST attempt **completed with `last_run_status='error'`**, and its last-error excerpt shows an HTML "Just a moment..." page rather than an RSS document. The previously stated `pending` status was accurate **only at the 02:44 snapshot**. The latest error excerpt does not independently establish the HTTP status code; earlier audits had observed HTTP 403. Its last success remains November 11.
+
+For source/correlation quality, a separate read-only link check found **0/877 news items missing topic IDs, 0 invalid topic references, 17 `news_articles` records but 0 `news_article_topics` links, and 4 historical connections**. These are coverage counts, not proof that the separate news models ought to be joined automatically. Also found 219 case-source-register references and 7 claim-source links. Proposed next step: review schema and intended linking semantics before considering human-reviewed association suggestions.
