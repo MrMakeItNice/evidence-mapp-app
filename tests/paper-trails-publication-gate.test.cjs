@@ -53,8 +53,8 @@ async function loadPage(snapshot,fail=false,options={}){
  const get=id=>{if(!elements.has(id))elements.set(id,{value:'',innerHTML:'',textContent:'',hidden:true,attributes:{},handlers:{},setAttribute(k,v){this.attributes[k]=v},addEventListener(k,fn){this.handlers[k]=fn},focus(){},scrollIntoView(){}});return elements.get(id)};
  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
  new Function('document','window','history','location','fetch','AbortController','setTimeout','clearTimeout',script)(
-  {getElementById:get},{addEventListener(){}},{replaceState(){}},{hash:'#case-42'},
-  options.fetch||(async url=>({ok:!fail,json:async()=>url==='./paper-trails-data.json'?snapshot:[{id:42,case_number:42,title:'Test case',category:'Test'}]})),
+  {getElementById:get},{addEventListener(type,handler){if(options.events)options.events[type]=handler}},{replaceState(){}},options.location||{hash:options.hash??'#case-42'},
+  options.fetch||(async url=>({ok:!fail,json:async()=>url==='./paper-trails-data.json'?snapshot:(options.cases??[{id:42,case_number:42,title:'Test case',category:'Test'}])})),
   AbortController,options.setTimeout||setTimeout,options.clearTimeout||clearTimeout
  );
  await new Promise(resolve=>setImmediate(resolve));return get;
@@ -226,4 +226,30 @@ test('retry remains available while the publication snapshot is invalid',async()
  assert.equal(get('retryArchive').hidden,false);assert.equal(get('retryArchive').attributes['aria-disabled'],'false');
  assert.match(get('sourceGate').textContent,/links are withheld/);
  assert.equal(get('search').disabled,false,'case searching remains available when cases load');
+});
+
+
+test('completed loads show distinct prompts for no selection, missing bookmark and empty cases',async()=>{
+ for(const [options,message] of [
+  [{hash:''},'Choose a case to follow its paper trail'],
+  [{hash:'#case-999'},'Case unavailable in this archive'],
+  [{cases:[]},'No published cases available']
+ ]){
+  const get=await loadPage(publishedFixture([]),false,options);
+  assert.ok(get('detail').innerHTML.includes(message));
+  assert.doesNotMatch(get('detail').innerHTML,/Checking archive/);
+  assert.match(get('sourceGate').textContent,/checked 2026-11-21/);
+ }
+});
+
+test('hash changes clear stale case details and selection when the bookmark is unavailable',async()=>{
+ const location={hash:'#case-42'},events={};
+ const get=await loadPage(publishedFixture([]),false,{location,events});
+ assert.match(get('detail').innerHTML,/Test case/);
+ location.hash='#case-999';events.hashchange();
+ assert.match(get('detail').innerHTML,/Case unavailable in this archive/);
+ assert.doesNotMatch(get('detail').innerHTML,/Test case|Linked public records/);
+ assert.doesNotMatch(get('caseList').innerHTML,/aria-pressed="true"/);
+ location.hash='';events.hashchange();assert.match(get('detail').innerHTML,/Choose a case/);
+ location.hash='#case-42';events.hashchange();assert.match(get('detail').innerHTML,/Test case/);
 });
