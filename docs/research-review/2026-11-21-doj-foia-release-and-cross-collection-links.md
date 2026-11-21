@@ -40,6 +40,6 @@ Targeted Supabase searches found no direct title/order-number or PDF-ID match in
 The GAO's live COVID-19 recommendations page reports **95 open recommendations, 8 priority**, **as of November 21, 2026**: https://www.gao.gov/coronavirus/coronavirus-recommendations . These are agency index counts, not proof of compliance or resolution; preserve dated snapshots and verify individual recommendations.
 
 ## Collector health
-At inspection: Positive News last run **2026-11-21 22:55 UTC / 14:55 PST** returned HTML access challenge; last success November 11. World News — BBC saved three records in latest completed run. Five other completed feeds reported zero saved, and Public Health — BBC remained pending. Do not bypass access controls; pursue a sanctioned endpoint and proper feed metadata capture.
+At inspection: Positive News last run **2026-11-21 22:55 UTC / 14:55 PST** returned HTML access challenge; last success November 11. World News — BBC saved three records in latest completed run. Four other completed feeds reported zero saved, and Public Health — BBC remained pending. Do not bypass access controls; pursue a sanctioned endpoint and proper feed metadata capture.
 
 **No Supabase writes, schema changes, automated links, publication, PR merge, or deployment.**
