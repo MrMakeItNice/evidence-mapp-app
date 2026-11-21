@@ -12,7 +12,7 @@ const gate = data.publication_gate;
 
 test('export records its explicit source-publication gate and snapshot date', () => {
   assert.equal(gate.field, 'public.sources.published');
-  assert.match(gate.checked_on, /^\\d{4}-\\d{2}-\\d{2}$/);
+  assert.match(gate.checked_on, /^\d{4}-\d{2}-\d{2}$/);
   assert.equal(data.generated_on, gate.checked_on);
   assert.match(data.note, /not independent verification/i);
 });
@@ -41,8 +41,8 @@ test('known unapproved sources from QA #341 remain excluded until intentional re
 });
 
 test('Paper Trails filters source links by the allowlist and reports snapshot status', () => {
-  assert.match(html, /approvedSourceIds=new Set\\(gateReady\\?/);
-  assert.match(html, /d\\.references\\.filter\\(r=>approvedSourceIds\\.has\\(String\\(r\\.source_id\\)\\)\\)/);
+  assert.match(html, /approvedSourceIds=new Set\(gateReady\?/);
+  assert.match(html, /d\.references\.filter\(r=>approvedSourceIds\.has\(String\(r\.source_id\)\)\)/);
   assert.match(html, /id="sourceGate"/);
   assert.match(html, /Source publication gate unavailable; citation links are withheld/);
 });
