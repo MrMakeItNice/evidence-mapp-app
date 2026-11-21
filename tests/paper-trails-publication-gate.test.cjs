@@ -50,7 +50,7 @@ test('Paper Trails filters source links by the allowlist and reports snapshot st
 
 async function loadPage(snapshot,fail=false,options={}){
  const elements=new Map();
- const get=id=>{if(!elements.has(id))elements.set(id,{value:'',innerHTML:'',textContent:'',addEventListener(){},focus(){},scrollIntoView(){}});return elements.get(id)};
+ const get=id=>{if(!elements.has(id))elements.set(id,{value:'',innerHTML:'',textContent:'',hidden:true,attributes:{},handlers:{},setAttribute(k,v){this.attributes[k]=v},addEventListener(k,fn){this.handlers[k]=fn},focus(){},scrollIntoView(){}});return elements.get(id)};
  const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
  new Function('document','window','history','location','fetch','AbortController','setTimeout','clearTimeout',script)(
   {getElementById:get},{addEventListener(){}},{replaceState(){}},{hash:'#case-42'},
@@ -184,7 +184,7 @@ for(const phase of ['headers','case-body','source-body'])test('deadline covers s
  assert.equal(cleared,1);assert.equal(signals.length,2);assert.ok(signals.every(s=>s.aborted));
  assert.match(get('summary').textContent,/timed out/);
  assert.match(get('sourceGate').textContent,/timed out.*remain withheld/);
- assert.match(get('caseList').innerHTML,/Reload this page to try again/);
+ assert.match(get('caseList').innerHTML,/Retry archive to try again/);
  assert.doesNotMatch(get('detail').innerHTML,/Linked public records/);
 });
 
@@ -198,4 +198,32 @@ test('success and HTTP failure both clean up their pending deadline',async()=>{
   assert.equal(cleared,1);
   assert.doesNotMatch(get('summary').textContent,/timed out/);
  }
+});
+
+test('in-page retry recovers without duplicate requests or losing search, topic and case',async()=>{
+ let recovering=false,calls=0;const pending=[];
+ const get=await loadPage({},false,{fetch:async url=>{
+  calls++;if(!recovering)return {ok:false};
+  return new Promise(resolve=>pending.push({url,resolve}));
+ }});
+ assert.equal(get('retryArchive').hidden,false);assert.equal(calls,2);
+ get('search').value='Test';get('topic').value='Test';recovering=true;
+ get('retryArchive').handlers.click();get('retryArchive').handlers.click();
+ assert.equal(calls,4,'second activation cannot start overlapping loads');
+ assert.equal(get('retryArchive').attributes['aria-disabled'],'true');
+ assert.equal(get('search').disabled,true);assert.equal(get('topic').disabled,true);
+ assert.doesNotMatch(get('detail').innerHTML,/Linked public records/);
+ for(const {url,resolve} of pending)resolve({ok:true,json:async()=>url==='./paper-trails-data.json'?publishedFixture([]):[{id:42,case_number:42,title:'Test case',category:'Test'}]});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(get('search').value,'Test');assert.equal(get('topic').value,'Test');
+ assert.equal(get('search').disabled,false);assert.equal(get('topic').disabled,false);
+ assert.match(get('detail').innerHTML,/Test case/);assert.match(get('summary').textContent,/1 case files/);
+ assert.equal(get('retryArchive').hidden,true);assert.equal(get('retryArchive').attributes['aria-disabled'],'false');
+});
+
+test('retry remains available while the publication snapshot is invalid',async()=>{
+ const get=await loadPage({references:[]});
+ assert.equal(get('retryArchive').hidden,false);assert.equal(get('retryArchive').attributes['aria-disabled'],'false');
+ assert.match(get('sourceGate').textContent,/links are withheld/);
+ assert.equal(get('search').disabled,false,'case searching remains available when cases load');
 });
