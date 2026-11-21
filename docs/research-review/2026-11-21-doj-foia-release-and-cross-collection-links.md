@@ -3,13 +3,13 @@
 **Review-only checkpoint: November 21, 2026, ~15:10 PST.** Production was inspected with read-only SQL. This note is staged in a public draft PR, not an editorial publication or authorization to insert data.
 
 ## Pipeline snapshot
-- 888 news items, all pending editorial review; +3 versus preceding 885-record audit. 415 lack \`published_at\`. All 396 Google News proxy entries lack publication dates; 19 other news records also lack them. This concentration does **not** prove root cause.
-- 36 active news topics, 11 without items. 40 research-inbox entries pending, with 25 exact inbox/news URL overlaps. Eleven active research watches have checks older than 24 hours; all seven news-watch topics have null \`last_collected_at\`. Collector runs are a separate signal.
+- 888 news items, all pending editorial review; +3 versus preceding 885-record audit. 415 lack `published_at`. All 396 Google News proxy entries lack publication dates; 19 other news records also lack them. This concentration does **not** prove root cause.
+- 36 active news topics, 11 without items. 40 research-inbox entries pending, with 25 exact inbox/news URL overlaps. Eleven active research watches have checks older than 24 hours; all seven news-watch topics have null `last_collected_at`. Collector runs are a separate signal.
 - 285 source records: 146 lack publisher, 215 lack publication date, one lacks URL. Eight repeated long-headline groups are potential duplicates, not confirmed. No exact repeated-URL groups within news or sources.
 - Seventeen news articles still lack article-topic links.
 
 ## New structural provenance result
-Five exact trimmed-URL matches exist between \`sources.url\` and \`news_items.source_url\`:
+Five exact trimmed-URL matches exist between `sources.url` and `news_items.source_url`:
 
 | Source ID | News ID | Publisher stored on both sides | Publication-date evidence |
 | --- | --- | --- | --- |
@@ -19,9 +19,9 @@ Five exact trimmed-URL matches exist between \`sources.url\` and \`news_items.so
 | 160 | 5 | World Health Organization | Source missing; news 2025-06-27 |
 | 161 | 2 | World Health Organization | Source missing; news 2025-06-27 |
 
-All five source entries are \`published=false\`, and all five news entries are pending. These are possible source/news relationships, **not** independent corroboration, proof of the same document edition, or permission to auto-link. No exact source/inbox URL overlap exists in this snapshot. Two WHO source dates must not be backfilled from news without verifying the official originals.
+All five source entries are `published=false`, and all five news entries are pending. These are possible source/news relationships, **not** independent corroboration, proof of the same document edition, or permission to auto-link. No exact source/inbox URL overlap exists in this snapshot. Two WHO source dates must not be backfilled from news without verifying the official originals.
 
-New \`scripts/audit-source-news-links.mjs\` accepts offline source and news JSON arrays, identifies exact one-to-one URL pairs, flags missing/conflicting publisher/date metadata, and emits only numeric IDs and comparison categories. It rejects unsafe URL credentials and known secret-bearing query parameters, retains functional document IDs and fragments, rejects ambiguous automatic pairings, and performs **no** database or network I/O. Eight local Node tests and a CLI smoke test passed; review and CI remain outstanding.
+New `scripts/audit-source-news-links.mjs` accepts offline source and news JSON arrays, identifies exact one-to-one URL pairs, flags missing/conflicting publisher/date metadata, and emits only numeric IDs and comparison categories. It rejects unsafe URL credentials and known secret-bearing query parameters, retains functional document IDs and fragments, rejects ambiguous automatic pairings, and performs **no** database or network I/O. Eight local Node tests and a CLI smoke test passed; review and CI remain outstanding.
 
 ## Primary-document lead — DOJ FOIA, posted November 20, 2026
 - Official OIP index: https://www.justice.gov/oip/available-documents-oip
