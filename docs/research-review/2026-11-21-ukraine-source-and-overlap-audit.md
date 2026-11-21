@@ -9,7 +9,7 @@
 - Research inbox missing metadata: **0** without URL, **0** without publisher, **4** without publication timestamp. This does not establish source verification or ingest correctness.
 - News source gaps: **412** records without `published_at`; **393** with `news.google.com` URLs. Source library: **146/285** missing publisher, **215/285** missing publication date, **1** missing URL.
 - No exact duplicate non-null URL groups were found **within** news_items or **within** sources. Separate long headline collision analysis still returns **8 groups**; canonical or semantic duplicate classification remains undone.
-- **11** active research watches have last-check timestamps no later than November 11 (five? check each individually rather than automatically asserting coverage); **7** active news watches have NULL `last_collected_at`. Do not overwrite freshness timestamps just to remove this warning.
+- **11** active research watches have last-check timestamps no later than November 11; **7** active news watches have NULL `last_collected_at`. Do not overwrite freshness timestamps just to remove this warning.
 - Collector status: Positive News failed at **2026-11-21T15:20:00Z** with an HTML challenge, last success **2026-11-11T16:46:00Z**; the deployed collector remains unfixed. At inspection five other feeds were marked successful with zero saved records (COVID-19, Epstein Files, Government/BBC, Palestine/Gaza, World News/BBC). Public Health/BBC was **pending** at 15:35Z; its outcome cannot yet be classified. 
 - Parallel news_articles graph: **17** articles, **0** article-topic links, **4** historical links. Keep distinct from news_items, whose topic IDs all exist.
 
