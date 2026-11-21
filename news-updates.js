@@ -3,8 +3,8 @@
   const base='https://nxlffnplqdobfqxogmxo.supabase.co/rest/v1/';
   const key='sb_publishable_cZZLI1DFQBybPEvr8zA0_Q_jz8afL0i';
   const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const safe=u=>{try{const x=new URL(u);return /^https?:$/.test(x.protocol)?x.href:null}catch{return null}};
-  const link=(u,text)=>safe(u)?'<a href="'+escape(safe(u))+'" target="_blank" rel="noopener noreferrer">'+escape(text)+' ↗</a>':escape(text);
+  const safe=u=>{try{const x=new URL(u);return /^https?:$/.test(x.protocol)&&!x.username&&!x.password?x.href:null}catch{return null}};
+  const link=(u,text)=>{const href=safe(u);return href?'<a href="'+escape(href)+'" target="_blank" rel="noopener noreferrer">'+escape(text)+' ↗</a>':escape(text)};
   let articles=[],connections=[],catalog=[],loaded=false,failed=false;
   const host=document.getElementById('updatesGrid');
   if(!host)return;
