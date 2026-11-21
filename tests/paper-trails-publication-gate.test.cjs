@@ -41,8 +41,9 @@ test('known unapproved sources from QA #341 remain excluded until intentional re
 });
 
 test('Paper Trails filters source links by the allowlist and reports snapshot status', () => {
-  assert.match(html, /approvedSourceIds=new Set\(gateReady\?/);
-  assert.match(html, /d\.references\.filter\(r=>approvedSourceIds\.has\(String\(r\.source_id\)\)\)/);
+  assert.match(html, /const idsValid=Array\.isArray\(declaredIds\)/);
+  assert.match(html, /gate\.reference_count===rows\.length/);
+  assert.match(html, /sourceGateReady=gateReady;refs=gateReady\?rows:\[\]/);
   assert.match(html, /id="sourceGate"/);
   assert.match(html, /Source publication gate unavailable; citation links are withheld/);
 });
@@ -58,7 +59,11 @@ async function loadPage(snapshot,fail=false,options={}){
  );
  await new Promise(resolve=>setImmediate(resolve));return get;
 }
-const publishedFixture=references=>({publication_gate:{field:'public.sources.published',checked_on:'2026-11-21',approved_source_ids:[1]},references});
+const publishedFixture=(references,approvedIds=[...new Set(references.map(r=>r.source_id))])=>({
+ generated_on:'2026-11-21',
+ publication_gate:{field:'public.sources.published',checked_on:'2026-11-21',approved_source_ids:approvedIds,reference_count:references.length,distinct_source_count:approvedIds.length},
+ references
+});
 
 test('missing snapshot explains withheld citations throughout the rendered case',async()=>{
  const get=await loadPage({references:[{case_id:42,source_id:1,title:'Do not expose',url:'https://example.org'}]});
@@ -79,14 +84,45 @@ test('checked empty archive stays distinct from unavailable publication checks',
  assert.doesNotMatch(get('detail').innerHTML,/Citation links withheld/);
 });
 
-test('approved citations remain visible and pending citations stay excluded',async()=>{
+test('approved citations remain visible with a consistent export manifest',async()=>{
  const get=await loadPage(publishedFixture([
-  {case_id:42,source_id:1,title:'Approved report',url:'https://example.org/approved',publication_date:'2026-11-20'},
-  {case_id:42,source_id:2,title:'Pending report',url:'https://example.org/pending'}
+  {case_id:42,source_id:1,title:'Approved report',url:'https://example.org/approved',publication_date:'2026-11-20'}
  ]));
+ assert.match(get('sourceGate').textContent,/checked 2026-11-21/);
  assert.match(get('summary').textContent,/1 public source links/);
  assert.match(get('detail').innerHTML,/Approved report/);
- assert.doesNotMatch(get('detail').innerHTML,/Pending report|example.org\/pending/);
+});
+
+test('an unexpected unapproved source row invalidates the entire snapshot',async()=>{
+ const get=await loadPage(publishedFixture([
+  {case_id:42,source_id:1,title:'Approved report',url:'https://example.org/approved'},
+  {case_id:42,source_id:2,title:'Pending report',url:'https://example.org/pending'}
+ ],[1]));
+ assert.match(get('sourceGate').textContent,/unavailable; citation links are withheld/);
+ assert.match(get('summary').textContent,/citation links withheld/);
+ assert.doesNotMatch(get('detail').innerHTML,/Approved report|Pending report|example.org\/pending/);
+});
+
+test('missing or inconsistent snapshot manifest always withholds citations',async()=>{
+ const ref={case_id:42,source_id:1,title:'Unconfirmed citation',url:'https://example.org/unconfirmed'};
+ const fixtures=[
+  x=>{delete x.publication_gate.reference_count},
+  x=>{x.publication_gate.reference_count=2},
+  x=>{x.publication_gate.distinct_source_count=2},
+  x=>{x.publication_gate.approved_source_ids=[1,1]},
+  x=>{x.publication_gate.approved_source_ids=['1']},
+  x=>{x.publication_gate.approved_source_ids=[1,2]},
+  x=>{x.generated_on='2026-11-10'},
+  x=>{x.references=null},
+  x=>{x.references[0].case_id='42'}
+ ];
+ for(const mutate of fixtures){
+  const snapshot=publishedFixture([{...ref}]);mutate(snapshot);
+  const get=await loadPage(snapshot);
+  assert.match(get('sourceGate').textContent,/unavailable; citation links are withheld/);
+  assert.match(get('summary').textContent,/citation links withheld/);
+  assert.doesNotMatch(get('detail').innerHTML,/Unconfirmed citation/);
+ }
 });
 
 test('archive failure replaces the pending snapshot message',async()=>{
