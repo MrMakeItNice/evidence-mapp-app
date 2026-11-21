@@ -13,15 +13,16 @@ assert.ok(start >= 0 && end > start, 'Connections Map view helper exists');
 
 function app() {
   let viewBox = '0 0 1100 665';
+  const status={textContent:''};
   const svg = {
     getAttribute(name) { assert.equal(name, 'viewBox'); return viewBox; },
     setAttribute(name, value) { assert.equal(name, 'viewBox'); viewBox = value; }
   };
   const adjust = vm.runInNewContext(
     html.slice(start, end) + ';adjustNetworkView',
-    { $: id => id === 'connectionsSvg' ? svg : null }
+    { $: id => id === 'connectionsSvg' ? svg : id === 'network-view-status' ? status : null }
   );
-  return { adjust, read: () => viewBox.split(' ').map(Number) };
+  return { adjust, status, read: () => viewBox.split(' ').map(Number) };
 }
 
 test('seven accessible controls are wired to the map rather than the case nodes', () => {
@@ -81,4 +82,18 @@ test('workspace inline JavaScript still parses', () => {
   for (const [i, match] of scripts.entries()) {
     if (match[1].trim()) new vm.Script(match[1], { filename: 'workspace-script-' + i });
   }
+});
+
+
+test('map actions expose zoom and position without moving focus', () => {
+  assert.match(html, /id="network-view-status" role="status" aria-atomic="true"/);
+  assert.match(html, /aria-label="Connections map navigation" aria-describedby="network-view-status"/);
+  const {adjust,status}=app();
+  adjust('in'); assert.match(status.textContent, /Zoom: 125%.*50% across, 50% down/);
+  const beforePan=status.textContent;
+  adjust('left'); assert.match(status.textContent, /Zoom: 125%.*34% across, 50% down/);
+  assert.notEqual(status.textContent,beforePan);
+  adjust('down'); assert.match(status.textContent, /34% across, 66% down/);
+  adjust('fit'); assert.match(status.textContent, /Zoom: 100%.*50% across, 50% down/);
+  const reset=status.textContent;adjust('invalid');assert.equal(status.textContent,reset);
 });
