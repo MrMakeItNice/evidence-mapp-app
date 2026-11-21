@@ -66,7 +66,7 @@ main{padding:30px 0 65px}
 .warning{background:#fff7e9;border:1px solid #ecdfb8;border-radius:9px;padding:13px;color:#755e39;font-size:12px;line-height:1.6;margin:14px 0}
 .news{background:white;border:1px solid var(--line);border-radius:15px;padding:25px;margin:40px 0}
 .topics{margin:19px 0}.topics button{border:1px solid #d7e3e8;background:#f8fafb;border-radius:22px;padding:9px 13px;font-size:11px;color:#45617b;font-weight:800}
-.topics button.active{background:#173f39;border-color:#173f39;color:#f4fffb}
+.topics button[aria-pressed="true"]{background:#173f39;border-color:#173f39;color:#f4fffb}
 .newsgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .newsitem{border:1px solid #e1e8eb;border-radius:11px;background:#f9fbfc;padding:17px}
 .newsitem h3{font:700 15px/1.45 'Space Grotesk';margin:9px 0}.newsitem p{font-size:11px;color:#6c8193}
@@ -190,7 +190,7 @@ html{scroll-behavior:smooth;scroll-padding-top:86px}body{line-height:1.55}.wrap{
 <div class="actions" style="margin-top:16px"><button type="button" id="moreCases" class="btn">Show more cases</button><span class="message" id="caseStatus" role="status"></span></div>
 </section>
 <section class="news" id="news"><div class="sectionhead"><div><div class="kicker">Broader news discovery</div><h2>Compare what’s being reported?</h2><p>International news discovery. Read original publishers, compare claims, and stay curious.</p></div></div>
-<div class="topics" id="topics"><button type="button" data-topic="world">World</button><button type="button" data-topic="government">Government</button><button type="button" data-topic="environment">Environment</button><button type="button" data-topic="science">Science & Tech</button><button type="button" data-topic="health">Health</button><button type="button" data-topic="rights">Human rights</button></div>
+<div class="topics" id="topics" role="group" aria-label="News topics"><button type="button" aria-pressed="false" data-topic="world">World</button><button type="button" aria-pressed="false" data-topic="government">Government</button><button type="button" aria-pressed="false" data-topic="environment">Environment</button><button type="button" aria-pressed="false" data-topic="science">Science & Tech</button><button type="button" aria-pressed="false" data-topic="health">Health</button><button type="button" aria-pressed="false" data-topic="rights">Human rights</button></div>
 <p class="message" id="newsStatus" role="status" aria-live="polite">Select a topic to load broader reporting.</p>
 <div class="newsgrid" id="newsGrid"></div>
 <div class="warning">News titles are claims made by publishers, not independent findings by Evidence Atlas. This feed is not exhaustive. Shared headlines can result from wire services or common sources, not necessarily coordinated messaging. Potentially distressing titles are initially hidden.</div>
@@ -355,7 +355,15 @@ async function getNews(topic){
  }).join(""):'<div class="message">No coverage returned for this category at this moment. Try another section.</div>';
  }catch(e){if(newsController===controller){$("newsStatus").textContent="Live headlines unavailable right now.";$("newsGrid").innerHTML='<div class="message">The external discovery service may be rate-limited or temporarily offline. You can still explore historical cases above.</div>';}}
 }
-$("topics").addEventListener("click",e=>{const b=e.target.closest("[data-topic]");if(!b)return;document.querySelectorAll("[data-topic]").forEach(x=>x.classList.toggle("active",x===b));getNews(b.dataset.topic)});
+const newsTopics=$("topics");
+newsTopics.addEventListener("click",e=>{
+ const button=e.target.closest("[data-topic]");
+ if(!button)return;
+ newsTopics.querySelectorAll("[data-topic]").forEach(topic=>{
+  topic.setAttribute("aria-pressed",String(topic===button));
+ });
+ getNews(button.dataset.topic);
+});
 $("newsGrid").addEventListener("click",e=>{const b=e.target.closest("[data-reveal]");if(!b)return;const i=b.dataset.reveal,slot=$("headline"+i),hidden=$("hidden"+i);if(slot&&hidden){slot.textContent=hidden.textContent;b.remove();}});
 
 let progressBusy=false;
