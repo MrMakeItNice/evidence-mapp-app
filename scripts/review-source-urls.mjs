@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 
 // Advisory-only URL review. No network, database access, or record mutation.
+// Exclude credential-bearing URLs from audit output and matching; review by record ID.
+const SENSITIVE_KEYS = new Set(['access_token', 'api_key', 'apikey', 'auth', 'authorization', 'client_secret', 'id_token', 'password', 'secret', 'sig', 'signature', 'token', 'x-amz-credential', 'x-amz-security-token', 'x-amz-signature', 'x-goog-credential', 'x-goog-signature']);
 const TRACKING_KEYS = new Set(['fbclid', 'gclid', 'mc_cid', 'mc_eid']);
 
 export function inspectSourceUrl(raw) {
@@ -22,6 +24,10 @@ export function inspectSourceUrl(raw) {
   if (url.hostname === 'news.google.com') flags.push('google_news_proxy_review_publisher');
   if ([...url.searchParams.keys()].some((key) => key.includes(';'))) {
     flags.push('suspicious_semicolon_query_key');
+  }
+  if (url.username || url.password || [...url.searchParams.keys()].some((key) => SENSITIVE_KEYS.has(key.toLowerCase()))) {
+    flags.push('sensitive_credentials_in_url');
+    return { normalized_url: null, flags };
   }
 
   // Only remove widely recognized tracking parameters and fragments. Never
@@ -47,7 +53,9 @@ export function reviewSourceUrls(records) {
     const url = record.source_url ?? record.url;
     const { normalized_url, flags } = inspectSourceUrl(url);
     const id = record.id ?? `row_${index + 1}`;
-    if (flags.length) issues.push({ id, url: url ?? null, flags });
+    // Avoid writing tokens or malformed/unsafe strings into local audit reports.
+    const unsafeToPrint = flags.some((flag) => ['sensitive_credentials_in_url', 'invalid_url', 'unsupported_scheme'].includes(flag));
+    if (flags.length) issues.push({ id, url: unsafeToPrint ? '[REDACTED: inspect original record by ID]' : (url ?? null), flags });
     if (normalized_url) {
       if (!buckets.has(normalized_url)) buckets.set(normalized_url, []);
       buckets.get(normalized_url).push(id);
