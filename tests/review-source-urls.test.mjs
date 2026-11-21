@@ -46,3 +46,24 @@ test('never automatically strips functional query fields or mutates source input
   assert.deepEqual(source, before);
   assert.throws(() => reviewSourceUrls({}), TypeError);
 });
+
+test('keeps sensitive credentials and unparseable values out of review output', () => {
+  const rows = [
+    { id: 70, url: 'https://alice:credential123@example.org/private?token=token123&id=1' },
+    { id: 71, url: 'https://example.org/private?API_KEY=secret123' },
+    { id: 72, url: 'not a url?password=badsecret123' },
+    { id: 73, url: 'javascript:alert("hidden123")' },
+    { id: 74, url: 'https://example.org/document?id=123' },
+  ];
+  const output = reviewSourceUrls(rows);
+  assert.equal(output.record_count, 5);
+  assert.equal(output.duplicate_suggestions.length, 0);
+  assert.ok(output.issues[0].flags.includes('sensitive_credentials_in_url'));
+  assert.ok(output.issues[1].flags.includes('sensitive_credentials_in_url'));
+  assert.equal(inspectSourceUrl(rows[0].url).normalized_url, null);
+  const rendered = JSON.stringify(output);
+  for (const secret of ['credential123', 'token123', 'secret123', 'badsecret123', 'hidden123']) {
+    assert.equal(rendered.includes(secret), false, `leaked ${secret}`);
+  }
+  assert.equal(rows[0].url.includes('credential123'), true, 'input record is not modified');
+});
