@@ -15,6 +15,7 @@ function app() {
   let viewBox = '0 0 1100 665';
   const status={textContent:''};
   const svg = {
+    contains(node) { return node?.belongs===true; },
     getAttribute(name) { assert.equal(name, 'viewBox'); return viewBox; },
     setAttribute(name, value) { assert.equal(name, 'viewBox'); viewBox = value; }
   };
@@ -22,7 +23,8 @@ function app() {
     html.slice(start, end) + ';adjustNetworkView',
     { $: id => id === 'connectionsSvg' ? svg : id === 'network-view-status' ? status : null }
   );
-  return { adjust, status, read: () => viewBox.split(' ').map(Number) };
+  const reveal=vm.runInNewContext(html.slice(start,end)+';revealNetworkNode',{$:id=>id==='connectionsSvg'?svg:id==='network-view-status'?status:null});
+  return { adjust, reveal, status, read: () => viewBox.split(' ').map(Number) };
 }
 
 test('seven accessible controls are wired to the map rather than the case nodes', () => {
@@ -126,4 +128,30 @@ test('Enter and Space inspect focused relationship nodes without overriding othe
   assert.equal(closed, 1, 'Escape continues to close a modal');
   handler({ key: 'Enter', target: { closest() { return null; } }, preventDefault() { throw Error('Unrelated controls must not be intercepted'); } });
   assert.equal(events.length, 2, 'unrelated inputs are left alone');
+});
+
+
+test('keyboard focus reveals offscreen nodes at every edge without changing zoom', () => {
+ const {adjust,reveal,read,status}=app();
+ const node=(cx,cy)=>({belongs:true,querySelector:()=>({getAttribute:name=>String(name==='cx'?cx:cy)})});
+ for(const [cx,cy] of [[100,100],[1000,100],[100,600],[1000,600]]){
+  adjust('fit');for(let i=0;i<6;i++)adjust('in');
+  const before=read();reveal(node(cx,cy));const [x,y,w,h]=read();
+  assert.equal(w,before[2]);assert.equal(h,before[3]);
+  assert.ok(cx>=x+40-1e-8&&cx<=x+w-40+1e-8);
+  assert.ok(cy>=y+40-1e-8&&cy<=y+h-40+1e-8);
+  assert.match(status.textContent,/Zoom: 314%/);
+ }
+ adjust('fit');const initial=read();reveal(node(550,332.5));assert.deepEqual(read(),initial);
+ reveal({...node(1000,600),belongs:false});assert.deepEqual(read(),initial);
+ reveal(node(NaN,100));assert.deepEqual(read(),initial);
+ reveal({belongs:true,querySelector:()=>null});assert.deepEqual(read(),initial);
+});
+
+test('focus handler reveals graph nodes without intercepting focus or activating records', () => {
+ const line=html.split('\n').find(s=>s.startsWith("document.addEventListener('focusin',e=>{const node="));
+ assert.ok(line);let handler;const calls=[];
+ vm.runInNewContext(line,{document:{addEventListener(type,fn){assert.equal(type,'focusin');handler=fn}},revealNetworkNode:node=>calls.push(node)});
+ const node={};handler({target:{closest:()=>node}});assert.deepEqual(calls,[node]);
+ handler({target:{closest:()=>null}});handler({target:{}});assert.equal(calls.length,1);
 });
