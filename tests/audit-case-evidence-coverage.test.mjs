@@ -67,3 +67,25 @@ test('does not mutate frozen input rows',()=>{
   assert.equal(r.cases_total,2);
   assert.equal(o.cases.length,2);
 });
+
+
+test('flags repeated case-to-source paths across distinct register IDs, not confirmed duplicates',()=>{
+  const o=example();
+  o.masterSourceRegister.push({id:22,source_id:11,original_pdf_page:12});
+  o.caseSourceReferences.push({case_id:1,register_id:22},{case_id:1,register_id:21});
+  const r=auditCaseEvidenceCoverage(o);
+  assert.deepEqual(r.multi_register_same_source_review_candidates,
+    [{case_id:1,source_id:11,register_ids:[21,22]}]);
+  assert.deepEqual(r.duplicate_case_register_links,[{case_id:1,register_id:21}]);
+  assert.match(r.caveat,/not be auto-deduplicated/);
+});
+
+test('does not count unresolved register sources as duplicate case-source paths',()=>{
+  const o=example();
+  o.masterSourceRegister.push({id:22,source_id:999},{id:23,source_id:null});
+  o.caseSourceReferences.push({case_id:1,register_id:22},{case_id:1,register_id:23});
+  const r=auditCaseEvidenceCoverage(o);
+  assert.deepEqual(r.multi_register_same_source_review_candidates,[]);
+  assert.deepEqual(r.orphan_source_register_ids,[22]);
+  assert.deepEqual(r.register_rows_without_source_ids,[23]);
+});
