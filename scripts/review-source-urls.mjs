@@ -52,10 +52,10 @@ export function reviewSourceUrls(records) {
     }
     const url = record.source_url ?? record.url;
     const { normalized_url, flags } = inspectSourceUrl(url);
-    const id = record.id ?? `row_${index + 1}`;
-    // Avoid writing tokens or malformed/unsafe strings into local audit reports.
-    const unsafeToPrint = flags.some((flag) => ['sensitive_credentials_in_url', 'invalid_url', 'unsupported_scheme'].includes(flag));
-    if (flags.length) issues.push({ id, url: unsafeToPrint ? '[REDACTED: inspect original record by ID]' : (url ?? null), flags });
+    const id = Number.isSafeInteger(record.id) && record.id > 0 ? record.id : `row_${index + 1}`;
+    // Report IDs and flags only. URL paths and unknown query keys can contain
+    // opaque credentials that cannot safely be recognized by any blocklist.
+    if (flags.length) issues.push({ id, flags });
     if (normalized_url) {
       if (!buckets.has(normalized_url)) buckets.set(normalized_url, []);
       buckets.get(normalized_url).push(id);
@@ -63,8 +63,8 @@ export function reviewSourceUrls(records) {
   }
   const duplicate_suggestions = [...buckets.entries()]
     .filter(([, ids]) => ids.length > 1)
-    .map(([normalized_url, ids]) => ({ normalized_url, ids }))
-    .sort((a, b) => b.ids.length - a.ids.length || a.normalized_url.localeCompare(b.normalized_url));
+    .map(([, ids]) => ({ ids }))
+    .sort((a, b) => b.ids.length - a.ids.length || String(a.ids[0]).localeCompare(String(b.ids[0])));
   return {
     record_count: records.length,
     issues,
