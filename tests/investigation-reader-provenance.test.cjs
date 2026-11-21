@@ -66,3 +66,16 @@ test('all three stories retain their original research links', () => {
     assert.equal(selected[0].href, '?story=' + story);
   }
 });
+
+test('each rendered article exposes its source limitation as an accessible description', () => {
+  const target = html.match(/<article\b[^>]*id="article"[^>]*aria-describedby="([^"]+)"/);
+  assert.ok(target, 'article references its source status');
+  for (const story of ['history', 'money', 'mind', 'unavailable-story']) {
+    const { article } = renderStory(story);
+    const notes = article.children.filter(node => node.id === target[1]);
+    assert.equal(notes.length, 1, 'one description target per rendered article');
+    assert.equal(notes[0].attributes.role, 'note');
+    assert.match(notes[0].textContent, /Editorial overview.*No original documents are cited/);
+    assert.ok(!('tabindex' in notes[0].attributes), 'note does not add an extra Tab stop');
+  }
+});
