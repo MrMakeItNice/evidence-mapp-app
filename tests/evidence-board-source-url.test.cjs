@@ -38,3 +38,14 @@ test('source inspector validates the hyperlink at render time', () => {
   assert.match(html, /function showDetails\(n\)[\s\S]*?const url=safeSourceUrl\(n\.item\.url\);if\(url\)\{const a=document\.createElement\('a'\);a\.href=url;/);
   assert.doesNotMatch(html, /a\.href=n\.item\.url/);
 });
+
+test('preserves HTTPS source paths, queries, and fragments', () => {
+  const url = 'https://archive.example.org/report%20one.pdf?edition=2#page=4';
+  assert.equal(safeSourceUrl(url), url);
+});
+
+test('rejects non-web protocols even when a web URL appears in the payload', () => {
+  for (const value of ['mailto:editor@example.org', 'ftp://example.org/report', 'data:text/html,https://example.org', 'javascript:location.href="https://example.org"']) {
+    assert.equal(safeSourceUrl(value), null, value);
+  }
+});
