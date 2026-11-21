@@ -155,6 +155,40 @@ test('missing or inconsistent snapshot manifest always withholds citations',asyn
  }
 });
 
+test('checked-in export does not duplicate case-source pairs or disagree on source identity',()=>{
+ const pairs=new Set(),metadata=new Map();
+ for(const row of data.references){
+  const pair=row.case_id+':'+row.source_id;
+  assert.equal(pairs.has(pair),false,'duplicate exported link: '+pair);
+  pairs.add(pair);
+  const fingerprint=JSON.stringify([row.title??null,row.url??null,row.publisher??null,row.publication_date??null,row.reference_code??null]);
+  if(metadata.has(row.source_id))assert.equal(fingerprint,metadata.get(row.source_id),'conflicting exported metadata for source '+row.source_id);
+  metadata.set(row.source_id,fingerprint);
+ }
+});
+
+test('repeated source IDs need unique case associations and consistent document provenance',async()=>{
+ const shared={source_id:7,title:'Archive report',url:'https://records.example.org/7',publisher:'National Archive',publication_date:'2026-11-20',reference_code:'DOC-7'};
+ const first={...shared,case_id:42,source_role:'Primary evidence'};
+ const second={...shared,case_id:43,source_role:'Context only'};
+ const getValid=await loadPage(publishedFixture([first,second]));
+ assert.match(getValid('sourceGate').textContent,/checked 2026-11-21/,'different citation roles across cases are legitimate');
+ const mutations=[
+  [first,{...first}],
+  [first,{...second,url:'https://other.example.org/7'}],
+  [first,{...second,title:'Different document'}],
+  [first,{...second,publisher:'Different publisher'}],
+  [first,{...second,publication_date:'2026-11-19'}],
+  [first,{...second,reference_code:'DOC-8'}]
+ ];
+ for(const rows of mutations){
+  const get=await loadPage(publishedFixture(rows));
+  assert.match(get('sourceGate').textContent,/unavailable; citation links are withheld/);
+  assert.match(get('summary').textContent,/citation links withheld/);
+  assert.doesNotMatch(get('detail').innerHTML,/Archive report|records.example.org\/7/);
+ }
+});
+
 test('archive failure replaces the pending snapshot message',async()=>{
  const get=await loadPage({},true);
  assert.match(get('sourceGate').textContent,/could not be checked.*remain withheld/);
