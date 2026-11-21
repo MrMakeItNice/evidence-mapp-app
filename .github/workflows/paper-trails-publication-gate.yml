@@ -1,0 +1,22 @@
+name: Paper Trails publication snapshot regression
+
+on:
+  pull_request:
+    paths:
+      - 'paper-trails.html'
+      - 'paper-trails-data.json'
+      - 'tests/paper-trails-publication-gate.test.cjs'
+      - '.github/workflows/paper-trails-publication-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publication-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check source publication export gate
+        run: node --test tests/paper-trails-publication-gate.test.cjs
