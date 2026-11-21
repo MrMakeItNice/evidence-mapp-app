@@ -93,6 +93,36 @@ test('approved citations remain visible with a consistent export manifest',async
  assert.match(get('detail').innerHTML,/Approved report/);
 });
 
+test('source previews identify the recorded publisher, original website, reference and catalog role',async()=>{
+ const get=await loadPage(publishedFixture([{
+  case_id:42,source_id:7,title:'Archive report',publisher:'National Archive',
+  publication_date:'2026-11-20',reference_code:'DOC-7',source_role:'Historical source citation',
+  url:'https://records.example.org/archive/7'
+ }]));
+ const pane=get('detail').innerHTML;
+ assert.match(pane, /Indexed publisher:<\/strong> National Archive/);
+ assert.match(pane, /Publication date:<\/strong> 2026-11-20/);
+ assert.match(pane, /Reference code:<\/strong> DOC-7/);
+ assert.match(pane, /Source record ID:<\/strong> 7/);
+ assert.match(pane, /Index role:<\/strong> Historical source citation/);
+ assert.match(pane, /Document host:<\/strong> records\.example\.org · Opens in a new tab/);
+ assert.match(pane, /not independent verification of its claims/);
+});
+
+test('incomplete metadata and invalid source links stay visible as non-clickable limitations',async()=>{
+ const get=await loadPage(publishedFixture([{
+  case_id:42,source_id:9,title:'Unavailable archived record',url:'javascript:alert(1)'
+ }]));
+ const pane=get('detail').innerHTML;
+ assert.match(pane, /<strong>Unavailable archived record<\/strong>/);
+ assert.match(pane, /Indexed publisher:<\/strong> Not recorded/);
+ assert.match(pane, /Publication date:<\/strong> Not recorded/);
+ assert.match(pane, /Reference code:<\/strong> Not recorded/);
+ assert.match(pane, /Index role:<\/strong> Not recorded/);
+ assert.match(pane, /Document host:<\/strong> Not available · No validated HTTPS document link/);
+ assert.doesNotMatch(pane, /href="javascript:/);
+});
+
 test('an unexpected unapproved source row invalidates the entire snapshot',async()=>{
  const get=await loadPage(publishedFixture([
   {case_id:42,source_id:1,title:'Approved report',url:'https://example.org/approved'},
