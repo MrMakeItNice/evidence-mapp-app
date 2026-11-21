@@ -46,3 +46,51 @@ test('Paper Trails filters source links by the allowlist and reports snapshot st
   assert.match(html, /id="sourceGate"/);
   assert.match(html, /Source publication gate unavailable; citation links are withheld/);
 });
+
+async function loadPage(snapshot,fail=false){
+ const elements=new Map();
+ const get=id=>{if(!elements.has(id))elements.set(id,{value:'',innerHTML:'',textContent:'',addEventListener(){},focus(){},scrollIntoView(){}});return elements.get(id)};
+ const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+ new Function('document','window','history','location','fetch',script)(
+  {getElementById:get},{addEventListener(){}},{replaceState(){}},{hash:'#case-42'},
+  async url=>({ok:!fail,json:async()=>url==='./paper-trails-data.json'?snapshot:[{id:42,case_number:42,title:'Test case',category:'Test'}]})
+ );
+ await new Promise(resolve=>setImmediate(resolve));return get;
+}
+const publishedFixture=references=>({publication_gate:{field:'public.sources.published',checked_on:'2026-11-21',approved_source_ids:[1]},references});
+
+test('missing snapshot explains withheld citations throughout the rendered case',async()=>{
+ const get=await loadPage({references:[{case_id:42,source_id:1,title:'Do not expose',url:'https://example.org'}]});
+ assert.match(get('sourceGate').textContent,/unavailable; citation links are withheld/);
+ assert.match(get('summary').textContent,/citation links withheld/);
+ assert.match(get('caseList').innerHTML,/Citation links withheld/);
+ assert.match(get('detail').innerHTML,/<h3>Citation links withheld<\/h3>/);
+ assert.doesNotMatch(get('detail').innerHTML,/Do not expose|Linked public records \(0\)/);
+ assert.match(get('documentTimeline').innerHTML,/timeline withheld/);
+ assert.match(get('connectionMap').innerHTML,/connections withheld/);
+});
+
+test('checked empty archive stays distinct from unavailable publication checks',async()=>{
+ const get=await loadPage(publishedFixture([]));
+ assert.match(get('sourceGate').textContent,/checked 2026-11-21/);
+ assert.match(get('summary').textContent,/0 public source links/);
+ assert.match(get('detail').innerHTML,/Linked public records \(0\)/);
+ assert.doesNotMatch(get('detail').innerHTML,/Citation links withheld/);
+});
+
+test('approved citations remain visible and pending citations stay excluded',async()=>{
+ const get=await loadPage(publishedFixture([
+  {case_id:42,source_id:1,title:'Approved report',url:'https://example.org/approved',publication_date:'2026-11-20'},
+  {case_id:42,source_id:2,title:'Pending report',url:'https://example.org/pending'}
+ ]));
+ assert.match(get('summary').textContent,/1 public source links/);
+ assert.match(get('detail').innerHTML,/Approved report/);
+ assert.doesNotMatch(get('detail').innerHTML,/Pending report|example.org\/pending/);
+});
+
+test('archive failure replaces the pending snapshot message',async()=>{
+ const get=await loadPage({},true);
+ assert.match(get('sourceGate').textContent,/could not be checked.*remain withheld/);
+ assert.doesNotMatch(get('sourceGate').textContent,/Checking/);
+ assert.match(get('summary').textContent,/temporarily unavailable/);
+});
