@@ -8,7 +8,7 @@ test('finds tracking-only near-duplicates but retains evidence identifiers', () 
     { id: 2, url: 'https://example.org/document?id=123' },
     { id: 3, url: 'https://example.org/document?id=124' },
   ]);
-  assert.deepEqual(data.duplicate_suggestions, [{ normalized_url: 'https://example.org/document?id=123', ids: [1, 2] }]);
+  assert.deepEqual(data.duplicate_suggestions, [{ ids: [1, 2] }]);
   assert.equal(data.record_count, 3);
 });
 
@@ -66,4 +66,21 @@ test('keeps sensitive credentials and unparseable values out of review output', 
     assert.equal(rendered.includes(secret), false, `leaked ${secret}`);
   }
   assert.equal(rows[0].url.includes('credential123'), true, 'input record is not modified');
+});
+
+
+test('review output contains only trusted record IDs and flags, not opaque URL values', () => {
+  const opaque = 'private-opaque-credential-9471';
+  const records = [
+    { id: 88, url: 'https://news.google.com/rss/articles/' + opaque + '?unknown=' + opaque },
+    { id: 89, url: 'https://example.org/document?identifier=' + opaque },
+    { id: 90, url: 'https://example.org/document?identifier=' + opaque + '&utm_source=email' },
+    { id: opaque, url: 'not a valid URL' },
+  ];
+  const output = reviewSourceUrls(records);
+  assert.deepEqual(output.duplicate_suggestions, [{ ids: [89, 90] }]);
+  assert.deepEqual(output.issues[0], { id: 88, flags: ['google_news_proxy_review_publisher'] });
+  assert.deepEqual(output.issues[1], { id: 'row_4', flags: ['invalid_url'] });
+  assert.equal(JSON.stringify(output).includes(opaque), false);
+  assert.equal(records[0].url.includes(opaque), true, 'input remains untouched');
 });
