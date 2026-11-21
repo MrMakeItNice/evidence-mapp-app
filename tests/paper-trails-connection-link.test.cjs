@@ -28,7 +28,7 @@ const app = new Function('document', 'window', 'history', 'location', 'fetch', s
 );
 
 app.setData([
-  {id:42, case_number:2, title:'Research <File>', category:'Documented'},
+  {id:42, case_number:2, title:'Research <File> "quoted" & public', category:'Documented'},
   {id:99, case_number:31, title:'Other public case', category:'Documented'}
 ], []);
 
@@ -38,10 +38,22 @@ assert.match(element('detail').innerHTML, /shared source records, not proof of c
 assert.match(element('detail').innerHTML, /Research &lt;File&gt;/);
 assert.doesNotMatch(element('detail').innerHTML, /Research <File>/);
 assert.equal(latestHash, '#case-42');
+const firstLink = element('detail').innerHTML.match(/<a class="explore-network"[^>]*>/)?.[0];
+assert.ok(firstLink);
+assert.match(firstLink, /aria-label="Inspect source connections for Research &lt;File&gt; &quot;quoted&quot; &amp; public"/);
+assert.match(firstLink, /aria-describedby="connection-network-note"/);
+assert.match(element('detail').innerHTML, /<p id="connection-network-note">Open the public citation graph/);
+assert.equal([...element('detail').innerHTML.matchAll(/id="connection-network-note"/g)].length, 1);
+
 
 app.openCase(99);
 assert.match(element('detail').innerHTML, /href="\.\/connection-explorer\.html#case=99"/);
 assert.doesNotMatch(element('detail').innerHTML, /href="\.\/connection-explorer\.html#case=42"/);
 assert.equal(latestHash, '#case-99');
+const nextLink = element('detail').innerHTML.match(/<a class="explore-network"[^>]*>/)?.[0];
+assert.match(nextLink, /aria-label="Inspect source connections for Other public case"/);
+assert.doesNotMatch(nextLink, /Research/);
+assert.equal([...element('detail').innerHTML.matchAll(/id="connection-network-note"/g)].length, 1);
+
 
 console.log('PASS: each published case links to its matching read-only citation network; provenance caveat and HTML escaping preserved.');
