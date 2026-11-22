@@ -3,8 +3,8 @@
   const base='https://nxlffnplqdobfqxogmxo.supabase.co/rest/v1/';
   const key='sb_publishable_cZZLI1DFQBybPEvr8zA0_Q_jz8afL0i';
   const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const safe=u=>{try{const x=new URL(u);return /^https?:$/.test(x.protocol)&&!x.username&&!x.password?x.href:null}catch{return null}};
-  const link=(u,text)=>{const href=safe(u);return href?'<a href="'+escape(href)+'" target="_blank" rel="noopener noreferrer">'+escape(text)+' ↗</a>':escape(text)};
+  const safe=u=>{if(typeof u!=='string'||!u.trim()||/[\u0000-\u001f\u007f\\]/.test(u))return null;try{const x=new URL(u);return /^https?:$/.test(x.protocol)&&!x.username&&!x.password?x.href:null}catch{return null}};
+  const link=(u,text)=>{const href=safe(u);if(!href)return escape(text);const destination=new URL(href).host;return '<a href="'+escape(href)+'" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="'+escape(String(text??'')+' (opens '+destination+' in a new tab; destination not independently verified)')+'">'+escape(text)+' ↗</a><small class="source-destination" style="overflow-wrap:anywhere"> Destination: '+escape(destination)+' · indexed URL only</small>'};
   let articles=[],connections=[],catalog=[],loaded=false,failed=false;
   const host=document.getElementById('updatesGrid');
   if(!host)return;
