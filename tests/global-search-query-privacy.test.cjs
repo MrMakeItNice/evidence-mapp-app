@@ -36,6 +36,7 @@ test('actual page sends no scholarly query on prefill or typing, then sends subm
   const element = () => ({children:[], value:'', textContent:'', handlers:{},
     append(...children){this.children.push(...children)},
     replaceChildren(...children){this.children=children},
+    setAttribute(name, value) { (this.attributes ||= {})[name] = value; },
     addEventListener(type,handler){this.handlers[type]=handler}});
   const get = id => { if(!nodes.has(id)) nodes.set(id,element()); return nodes.get(id) };
   const fetch = async url => {
@@ -72,6 +73,7 @@ test('scholarly previews do not make credential-bearing or non-web source URLs c
     tag, children: [], value: '', textContent: '', href: '', handlers: {},
     append(...children) { this.children.push(...children) },
     replaceChildren(...children) { this.children = children },
+    setAttribute(name, value) { (this.attributes ||= {})[name] = value; },
     addEventListener(type, handler) { this.handlers[type] = handler }
   });
   const get = id => { if (!nodes.has(id)) nodes.set(id, element('div')); return nodes.get(id) };
@@ -110,8 +112,10 @@ test('scholarly previews do not make credential-bearing or non-web source URLs c
 function delayedArchivePage(options = {}) {
   const nodes = new Map(), calls = [];
   const element = () => ({children: [], value: '', textContent: '', handlers: {},
+    focus() { document.activeElement = this; },
     append(...children) { this.children.push(...children) },
     replaceChildren(...children) { this.children = children },
+    setAttribute(name, value) { (this.attributes ||= {})[name] = value; },
     addEventListener(type, handler) { this.handlers[type] = handler }});
   const get = id => { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id) };
   let resolveArchive;
@@ -121,9 +125,10 @@ function delayedArchivePage(options = {}) {
     if (String(url).includes('/api/cases')) return archive;
     return {ok: true, json: async () => String(url).includes('openalex') ? {results: []} : {message: {items: []}}};
   });
+  const document = {getElementById: get, createElement: element};
   new Function('document','location','history','fetch','URL','URLSearchParams','AbortController','setTimeout','clearTimeout',
     html.match(/<script>([\s\S]*?)<\/script>/)[1])(
-    {getElementById: get, createElement: element},
+    document,
     {search: '?q=Original', href: 'https://atlas.example/global-search.html?q=Original'},
     {replaceState() {}}, fetch, URL, URLSearchParams, AbortController, options.setTimeout || (() => 1), options.clearTimeout || (() => {}));
   const submit = term => { get('q').value = term; get('search').handlers.submit({preventDefault() {}}) };
@@ -134,7 +139,7 @@ function delayedArchivePage(options = {}) {
     await new Promise(resolve => setImmediate(resolve));
   };
   const text = node => node.textContent + node.children.map(text).join(' ');
-  return {get, calls, submit, complete, resultText: () => text(get('results'))};
+  return {get, calls, submit, complete, document, resultText: () => text(get('results'))};
 }
 
 test('late archive results use the latest submission and preserve unsent input', async () => {
@@ -227,6 +232,7 @@ test('scholarly coverage distinguishes outage, partial response and truly empty 
       tag, children: [], textContent: '', value: '', href: '', handlers: {},
       append(...children) { this.children.push(...children); },
       replaceChildren(...children) { this.children = children; },
+      setAttribute(name, value) { (this.attributes ||= {})[name] = value; },
       addEventListener(type, handler) { this.handlers[type] = handler; }
     });
     const get = id => {
@@ -283,6 +289,7 @@ test('oversized scholarly searches preserve complete Unicode terms and cannot tr
     value: '', textContent: '', children: [], handlers: {}, validationMessage: '', reports: 0, focused: false,
     append(...children) { this.children.push(...children); },
     replaceChildren(...children) { this.children = children; },
+    setAttribute(name, value) { (this.attributes ||= {})[name] = value; },
     addEventListener(type, handler) { this.handlers[type] = handler; },
     setCustomValidity(message) { this.validationMessage = message; },
     reportValidity() { this.reports++; return !this.validationMessage; },
@@ -327,4 +334,69 @@ test('oversized scholarly searches preserve complete Unicode terms and cannot tr
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(new URL(currentUrl).searchParams.get('q'), '📜'.repeat(300));
   assert.equal(calls.filter(x => /api\.(openalex|crossref)\.org/.test(x)).length, 4);
+});
+
+function retryableArchivePage() {
+  let attempts = 0, resolveRetry;
+  const requests = [];
+  const page = delayedArchivePage({fetch: async url => {
+    requests.push(String(url));
+    if (String(url).includes('/api/cases')) {
+      attempts++;
+      if (attempts === 1) return {ok: false};
+      return new Promise(resolve => { resolveRetry = resolve });
+    }
+    return {ok: true, json: async () => String(url).includes('openalex') ? {results: []} : {message: {items: []}}};
+  }});
+  return {...page, requests, attempts: () => attempts,
+    async finish(ok = true, records = [{id: 2, title: 'Latest investigation'}]) {
+      resolveRetry({ok, json: async () => records});
+      await new Promise(resolve => setImmediate(resolve));
+    }};
+}
+
+test('archive retry preserves submitted and unsent terms without resending scholarly queries', async () => {
+  assert.match(html, /id="retry-archive"[^>]*type="button"[^>]*aria-controls="results"[^>]*aria-describedby="archive-status"/);
+  const page = retryableArchivePage();
+  await new Promise(resolve => setImmediate(resolve));
+  const retry = page.get('retry-archive');
+  assert.equal(retry.hidden, false);
+  page.submit('Latest');page.get('q').value = 'Unsent';
+  await new Promise(resolve => setImmediate(resolve));
+  const externalCount = page.requests.filter(url => !url.includes('/api/cases')).length;
+  page.document.activeElement = retry;
+  retry.handlers.click();retry.handlers.click();
+  assert.equal(page.attempts(), 2, 'duplicate activation cannot start a third load');
+  assert.equal(retry.attributes['aria-disabled'], 'true');
+  assert.match(page.get('archive-status').textContent, /Loading/);
+  await page.finish();
+  assert.match(page.resultText(), /Latest investigation/);
+  assert.equal(page.get('q').value, 'Unsent');
+  assert.equal(page.requests.filter(url => !url.includes('/api/cases')).length, externalCount);
+  assert.equal(page.document.activeElement, page.get('archive-status'));
+  assert.equal(retry.hidden, true);assert.equal(retry.attributes['aria-disabled'], 'false');
+});
+
+test('retry recovery does not steal focus after the reader returns to typing', async () => {
+  const page = retryableArchivePage();
+  await new Promise(resolve => setImmediate(resolve));
+  page.get('retry-archive').handlers.click();
+  page.get('q').value = 'Still editing';page.get('q').focus();
+  await page.finish(true, []);
+  assert.equal(page.document.activeElement, page.get('q'));
+  assert.equal(page.get('q').value, 'Still editing');
+  assert.equal(page.get('retry-archive').hidden, true);
+  assert.match(page.get('archive-status').textContent, /0 matching cases/);
+});
+
+test('failed retries remain available and permit another attempt', async () => {
+  const page = retryableArchivePage();
+  await new Promise(resolve => setImmediate(resolve));
+  const retry = page.get('retry-archive');
+  retry.handlers.click();await page.finish(false);
+  assert.equal(retry.hidden, false);assert.equal(retry.attributes['aria-disabled'], 'false');
+  assert.match(page.get('archive-status').textContent, /could not be loaded/);
+  retry.handlers.click();assert.equal(page.attempts(), 3);
+  await page.finish();assert.equal(retry.hidden, true);
+  assert.equal(page.requests.filter(url => !url.includes('/api/cases')).length, 0);
 });
