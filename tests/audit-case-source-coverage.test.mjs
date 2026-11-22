@@ -169,3 +169,49 @@ test('ordinary HTTPS query strings and fragments remain valid',()=>{
   assert.equal(x.summary.references_to_invalid_source_url,0);
   assert.equal(x.summary.published_cases_with_complete_marked_published_source,1);
 });
+
+
+test('distinguishes bibliography-only cases from independently cataloged source types',()=>{
+  const s=sample();
+  s.sources[0].source_type='Congressional Hearing';
+  s.sources[1].source_type='master_index_bibliography';
+  s.case_source_references.forEach(r=>r.source_role='cited_by_master_index');
+  const x=audit(s);
+  assert.equal(x.summary.references_with_master_index_role,3);
+  assert.equal(x.summary.references_to_master_index_bibliography,2);
+  assert.equal(x.summary.published_cases_with_only_master_index_bibliography_sources,1);
+  assert.ok(x.flagged_cases.find(c=>c.case_id===2).reasons.includes('only_master_index_bibliography_sources'));
+  assert.equal(x.flagged_cases.some(c=>c.case_id===1),false);
+});
+
+test('a mix of bibliography and non-bibliography source is not bibliography-only',()=>{
+  const s=sample();
+  s.sources[0].source_type='official investigation announcement';
+  s.sources[1].source_type='master_index_bibliography';
+  const x=audit(s);
+  assert.equal(x.summary.published_cases_with_only_master_index_bibliography_sources,1);
+  assert.equal(x.flagged_cases.some(c=>c.case_id===1),false);
+});
+
+test('no source links are a separate reason, not bibliography-only',()=>{
+  const s=sample();s.case_source_references=[];
+  s.expected_counts.case_source_references=0;
+  const x=audit(s);
+  assert.equal(x.summary.published_cases_with_only_master_index_bibliography_sources,0);
+  assert.equal(x.summary.published_cases_without_references,2);
+  assert.ok(x.flagged_cases.every(c=>!c.reasons.includes('only_master_index_bibliography_sources')));
+});
+
+test('a published bibliography record still needs its original document checked',()=>{
+  const s=sample();
+  s.sources[0].source_type='master_index_bibliography';
+  s.sources[1].source_type='master_index_bibliography';
+  const x=audit(s);
+  assert.equal(x.summary.published_cases_with_only_master_index_bibliography_sources,2);
+  assert.ok(x.flagged_cases.find(c=>c.case_id===1).reasons.includes('only_master_index_bibliography_sources'));
+});
+
+test('non-string source type is rejected as an invalid snapshot',()=>{
+  const s=sample();s.sources[0].source_type={unexpected:'value'};
+  assert.throws(()=>audit(s),/Invalid source/);
+});
