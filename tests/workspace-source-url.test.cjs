@@ -14,7 +14,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 })[char]);
 const { targetUrl, sourceAnchor, sourceLibraryLink } = vm.runInNewContext(
-  html.slice(start, end) + '\n({ targetUrl, sourceAnchor })',
+  html.slice(start, end) + '\n({ targetUrl, sourceAnchor, sourceLibraryLink })',
   { URL, esc }
 );
 
@@ -68,7 +68,7 @@ test('unsafe source links display escaped metadata without a clickable destinati
 
 test('source-library and dated-timeline links remain routed through the policy', () => {
   assert.match(html, /const sourceAnchor = .*?targetUrl\(s\.url\)/);
-  assert.match(html, /function sourcesScreen\(\)[\s\S]*?sourceLibraryLink\(s\)\)/);
+  assert.match(html, /function sourcesScreen\(\)[\s\S]*?sourceLibraryLink\(s\)/);
   assert.match(html, /function timelineScreen\(\)[\s\S]*?targetUrl\(e\.url\)/);
   assert.doesNotMatch(html, /href="\$\{esc\(s\.url\)\}"/);
 });
