@@ -1,0 +1,23 @@
+name: Review queue age (offline regressions)
+on:
+  pull_request:
+    paths:
+      - scripts/audit-review-queue-age.mjs
+      - tests/audit-review-queue-age.test.mjs
+      - .github/workflows/review-queue-age-regression.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax and tests (no DB or secrets)
+        run: |
+          node --check scripts/audit-review-queue-age.mjs
+          node --test tests/audit-review-queue-age.test.mjs
