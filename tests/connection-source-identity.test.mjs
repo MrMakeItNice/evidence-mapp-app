@@ -22,9 +22,18 @@ test('different document identifiers on the same endpoint stay distinct', () => 
 
 test('query ordering and page fragments do not create false duplicates', () => {
   const a = 'https://records.example/record?series=12&document=41';
-  const b = 'https://RECORDS.EXAMPLE:443/record/?document=41&series=12#page=3';
+  const b = 'https://RECORDS.EXAMPLE:443/record?document=41&series=12#page=3';
   assert.equal(urlKey(a), urlKey(b));
   assert.notEqual(urlKey(a), urlKey('https://records.example/record?series=12&document=42'));
+});
+
+
+test('slash-sensitive source endpoints do not merge unrelated document paths', () => {
+  const file = 'https://records.example/public/report';
+  const directory = 'https://records.example/public/report/';
+  assert.notEqual(urlKey(file), urlKey(directory));
+  assert.notEqual(urlKey('https://records.example/'), urlKey('https://records.example/public/'));
+  assert.equal(urlKey(directory + '?document=41#page=1'), urlKey(directory + '?document=41#page=9'));
 });
 
 test('different origins are not merged', () => {
