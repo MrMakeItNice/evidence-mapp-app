@@ -189,6 +189,39 @@ test('repeated source IDs need unique case associations and consistent document 
  }
 });
 
+test('shared-source connections show a distinct record count and provenance names',async()=>{
+ const first={source_id:7,title:'Report A & supporting files',url:'https://records.example.org/a',publisher:'Archive'};
+ const second={source_id:8,title:'Report B',url:'https://records.example.org/b',publisher:'Archive'};
+ const rows=[first,second].flatMap(source=>[
+  {...source,case_id:42,source_role:'Primary citation'},
+  {...source,case_id:99,source_role:'Historical context'}
+ ]);
+ const get=await loadPage(publishedFixture(rows),false,{cases:[
+  {id:42,case_number:42,title:'Selected case',category:'Test'},
+  {id:99,case_number:99,title:'Related case',category:'Test'}
+ ]});
+ const map=get('connectionMap').innerHTML;
+ assert.equal((map.match(/class="connection-node"/g)||[]).length,1,'one destination per related case');
+ assert.match(map,/data-related="99"/);
+ assert.match(map,/Shared published records \(2\): Report A &amp; supporting files; Report B/);
+ assert.doesNotMatch(map,/Shared record: Report B/,'do not silently discard earlier overlapping sources');
+});
+
+test('long shared-source lists disclose the full count and distinguish withheld links',async()=>{
+ const sources=[7,8,9,10].map((id,index)=>({
+  source_id:id,title:'Report '+(index+1),url:'https://records.example.org/'+id
+ }));
+ const rows=sources.flatMap(source=>[{...source,case_id:42},{...source,case_id:99}]);
+ const options={cases:[{id:42,case_number:42,title:'Selected case'},{id:99,case_number:99,title:'Related case'}]};
+ const approved=await loadPage(publishedFixture(rows),false,options);
+ const map=approved('connectionMap').innerHTML;
+ assert.match(map,/Shared published records \(4\): Report 1; Report 2; Report 3 · 1 more \(open case to inspect\)/);
+ assert.doesNotMatch(map,/Report 4/,'long previews must remain concise');
+ const withUnapproved=await loadPage(publishedFixture(rows,[7,8,9]),false,options);
+ assert.match(withUnapproved('connectionMap').innerHTML,/Shared-source connections withheld/);
+ assert.doesNotMatch(withUnapproved('connectionMap').innerHTML,/Report 1|Report 2/);
+});
+
 test('archive failure replaces the pending snapshot message',async()=>{
  const get=await loadPage({},true);
  assert.match(get('sourceGate').textContent,/could not be checked.*remain withheld/);
