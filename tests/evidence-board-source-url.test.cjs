@@ -38,3 +38,16 @@ test('source inspector validates the hyperlink at render time', () => {
   assert.match(html, /function showDetails\(n\)[\s\S]*?const url=safeSourceUrl\(n\.item\.url\);if\(url\)\{const a=document\.createElement\('a'\);a\.href=url;/);
   assert.doesNotMatch(html, /a\.href=n\.item\.url/);
 });
+
+test('rejects embedded URL credentials in cited source destinations', () => {
+  for (const address of [
+    'https://reader@archives.gov/record',
+    'https://reader:secret@archives.gov/record',
+    'https://:secret@archives.gov/record',
+    'http://reader@archives.gov/record'
+  ]) {
+    assert.equal(safeSourceUrl(address), null, address);
+  }
+  const publicRecord = 'https://archives.gov/report?id=42#page=2';
+  assert.equal(safeSourceUrl(publicRecord), publicRecord, 'Preserve legitimate query and fragment');
+});
