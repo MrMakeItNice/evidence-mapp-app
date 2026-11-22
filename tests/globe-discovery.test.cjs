@@ -226,3 +226,55 @@ test('mobile research lens reflows before the globe and restores the original la
       'open mobile lens must place ' + selector + ' in row ' + row);
   }
 });
+
+test('globe search preserves long topics rather than creating misleading truncated searches', () => {
+  assert.doesNotMatch(html, /id="globe-explore-query"[^>]*maxlength=/);
+  assert.match(html, /id="globe-explore-help"[^>]*up to 160 characters/);
+
+  const { elements, submit, document, globeArea } = setup();
+  submit('Rabbit Holes');
+  assert.equal(elements['globe-explore-panel'].hidden, false);
+  const query = 'government archive record ' + 'x'.repeat(170);
+  submit(query);
+  assert.equal(elements['globe-explore-query'].value, query, 'original terms must not be clipped');
+  assert.match(elements['globe-explore-query'].validationMessage, /160 characters or fewer/);
+  assert.match(elements['globe-explore-query'].validationMessage, /not shortened/);
+  assert.equal(elements['globe-explore-panel'].hidden, true, 'stale prior lens must close');
+  assert.equal(elements['globe-explore-links'].children.length, 0);
+  assert.equal(globeArea.classList.contains('globe-lens-open'), false);
+  assert.equal(document.activeElement, elements['globe-explore-query']);
+  assert.match(elements['globe-explore-status'].textContent, /not shortened/);
+
+  elements['globe-explore-query'].value = 'MKULTRA';
+  elements['globe-explore-query'].input();
+  assert.equal(elements['globe-explore-query'].validationMessage, '');
+  elements['globe-explore-form'].requestSubmit();
+  assert.equal(elements['globe-explore-panel'].hidden, false);
+  assert.equal(elements['globe-explore-links'].children[0].href, './global-search.html?q=MKULTRA');
+});
+
+test('globe search permits up to 160 whole Unicode characters without cutting identifiers', () => {
+  const { elements, submit } = setup();
+  const valid = '🙂'.repeat(160);
+  submit(valid);
+  assert.equal(elements['globe-explore-panel'].hidden, false);
+  assert.equal(elements['globe-explore-links'].children[0].href,
+    './global-search.html?q=' + encodeURIComponent(valid));
+  const invalid = valid + '🙂';
+  submit(invalid);
+  assert.equal(elements['globe-explore-panel'].hidden, true);
+  assert.equal(elements['globe-explore-query'].value, invalid);
+  assert.match(elements['globe-explore-query'].validationMessage, /160 characters/);
+});
+
+test('blank search after an open lens does not leave stale research destinations visible', () => {
+  const { elements, submit, globeArea } = setup();
+  submit('Case Files');
+  assert.equal(elements['globe-explore-links'].children.length, 3);
+  submit('  ');
+  assert.equal(elements['globe-explore-panel'].hidden, true);
+  assert.equal(elements['globe-explore-links'].children.length, 0);
+  assert.equal(globeArea.classList.contains('globe-lens-open'), false);
+  assert.equal(elements['globe-explore-query'].validationMessage,
+    'Enter a topic or choose a research shortcut.');
+});
