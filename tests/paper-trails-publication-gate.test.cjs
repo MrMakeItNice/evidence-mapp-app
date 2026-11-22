@@ -320,3 +320,48 @@ test('hash changes clear stale case details and selection when the bookmark is u
  location.hash='';events.hashchange();assert.match(get('detail').innerHTML,/Choose a case/);
  location.hash='#case-42';events.hashchange();assert.match(get('detail').innerHTML,/Test case/);
 });
+
+test('filter counts are a polite status with singular, plural and empty results',async()=>{
+ assert.match(html, /id="resultCount"[^>]*role="status"[^>]*aria-live="polite"[^>]*aria-atomic="true"/);
+ const get=await loadPage(publishedFixture([]),false,{hash:'',cases:[
+  {id:42,case_number:42,title:'Alpha record',category:'Archive'},
+  {id:99,case_number:99,title:'Beta record',category:'Finance'}
+ ]});
+ assert.equal(get('resultCount').textContent,'2 matching cases');
+ get('search').focus=()=>assert.fail('filtering must not move focus');
+ get('topic').focus=()=>assert.fail('filtering must not move focus');
+ get('search').value='Alpha';get('search').handlers.input();
+ assert.equal(get('resultCount').textContent,'1 matching case');
+ get('topic').value='Finance';get('topic').handlers.change();
+ assert.equal(get('resultCount').textContent,'0 matching cases');
+ assert.match(get('caseList').innerHTML,/No matching cases/);
+ get('search').value='';get('search').handlers.input();
+ assert.equal(get('resultCount').textContent,'1 matching case');
+ get('topic').value='';get('topic').handlers.change();
+ assert.equal(get('resultCount').textContent,'2 matching cases');
+});
+
+test('selecting and revisiting a case does not repeat an unchanged result announcement',async()=>{
+ const location={hash:''},events={};
+ const get=await loadPage(publishedFixture([]),false,{location,events});
+ let text=get('resultCount').textContent,writes=0;
+ Object.defineProperty(get('resultCount'),'textContent',{get:()=>text,set(value){text=value;writes++}});
+ location.hash='#case-42';events.hashchange();events.hashchange();
+ assert.match(get('detail').innerHTML,/Test case/);
+ assert.equal(text,'1 matching case');assert.equal(writes,0);
+});
+
+test('unavailable and retrying archives never announce a stale or false zero-match count',async()=>{
+ let recovering=false;const pending=[];
+ const get=await loadPage({},false,{fetch:async url=>{
+  if(!recovering)return {ok:false};
+  return new Promise(resolve=>pending.push({url,resolve}));
+ }});
+ assert.equal(get('resultCount').textContent,'');
+ get('resultCount').textContent='3 matching cases';recovering=true;
+ get('retryArchive').handlers.click();
+ assert.equal(get('resultCount').textContent,'');
+ for(const {url,resolve} of pending)resolve({ok:true,json:async()=>url==='./paper-trails-data.json'?publishedFixture([]):[{id:42,title:'Test case'}]});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(get('resultCount').textContent,'1 matching case');
+});
