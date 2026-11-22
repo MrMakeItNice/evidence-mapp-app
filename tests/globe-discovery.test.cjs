@@ -12,6 +12,9 @@ function setup() {
   const ids = ['globe-explore-form', 'globe-explore-query', 'globe-explore-panel',
     'globe-explore-title', 'globe-explore-summary', 'globe-explore-links', 'globe-explore-status', 'globe-explore-close'];
   const elements = Object.fromEntries(ids.map(id => [id, {
+    validationMessage: '', validityReports: 0,
+    setCustomValidity(message) { this.validationMessage = message; },
+    reportValidity() { this.validityReports++; return !this.validationMessage; },
     textContent: '', value: '', hidden: id === 'globe-explore-panel', children: [],
     addEventListener(type, fn) { this[type] = fn; },
     replaceChildren(...nodes) { this.children = nodes; },
@@ -27,7 +30,10 @@ function setup() {
     assert.equal(selector, '[data-globe-topic]');
     return quickTopics;
   };
-  form.requestSubmit = () => form.submit({ preventDefault() {} });
+  form.requestSubmit = () => {
+    // Native constraint validation blocks submit events while a custom error remains.
+    if (!elements['globe-explore-query'].validationMessage) form.submit({ preventDefault() {} });
+  };
   const document = {
     getElementById: id => elements[id] || null,
     createElement: tag => ({ tag, href: '', textContent: '' })
@@ -146,6 +152,42 @@ test('mobile-friendly research shortcuts follow the same accessible lens path', 
     assert.equal(elements['globe-explore-query'].value, button.dataset.globeTopic);
     assert.equal(elements['globe-explore-panel'].hidden, false);
     assert.equal(elements['globe-explore-links'].children[0].href, paths[i]);
+    assert.equal(document.activeElement, elements['globe-explore-panel']);
+  }
+});
+
+test('whitespace-only submission explains the missing topic and focuses search', () => {
+  const { elements, submit, document } = setup();
+  submit(' \t  ');
+  const input = elements['globe-explore-query'];
+  assert.equal(input.validationMessage, 'Enter a topic or choose a research shortcut.');
+  assert.equal(input.validityReports, 1);
+  assert.equal(document.activeElement, input);
+  assert.equal(elements['globe-explore-panel'].hidden, true);
+  assert.equal(elements['globe-explore-links'].children.length, 0);
+});
+
+test('editing an invalid topic clears native validation and permits the next submission', () => {
+  const { elements, submit, document } = setup();
+  submit('   ');
+  const input = elements['globe-explore-query'];
+  input.value = 'MKULTRA';input.input();
+  assert.equal(input.validationMessage, '');
+  elements['globe-explore-form'].requestSubmit();
+  assert.equal(elements['globe-explore-panel'].hidden, false);
+  assert.equal(document.activeElement, elements['globe-explore-panel']);
+  assert.equal(elements['globe-explore-links'].children[0].href, './global-search.html?q=MKULTRA');
+});
+
+test('each shortcut clears an earlier custom error before requesting native submission', () => {
+  for (let i = 0; i < 4; i++) {
+    const { elements, submit, document, quickTopics } = setup();
+    submit('   ');
+    assert.ok(elements['globe-explore-query'].validationMessage);
+    quickTopics[i].click();
+    assert.equal(elements['globe-explore-query'].validationMessage, '');
+    assert.equal(elements['globe-explore-query'].value, quickTopics[i].dataset.globeTopic);
+    assert.equal(elements['globe-explore-panel'].hidden, false);
     assert.equal(document.activeElement, elements['globe-explore-panel']);
   }
 });

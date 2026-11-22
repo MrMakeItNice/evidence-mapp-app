@@ -43,10 +43,18 @@
     return 'topic';
   }
 
+  input.addEventListener('input', () => input.setCustomValidity(''));
+
   form.addEventListener('submit', event => {
     event.preventDefault();
     const query = input.value.trim().replace(/\s+/g, ' ').slice(0, 160);
-    if (!query) return;
+    if (!query) {
+      input.setCustomValidity('Enter a topic or choose a research shortcut.');
+      input.reportValidity();
+      input.focus();
+      return;
+    }
+    input.setCustomValidity('');
     const lens = classify(query);
     const data = lenses[lens] || {
       title: 'Explore a research topic',
@@ -71,6 +79,7 @@
   for (const button of form.querySelectorAll('[data-globe-topic]')) {
     button.addEventListener('click', () => {
       input.value = button.dataset.globeTopic;
+      input.setCustomValidity('');
       form.requestSubmit();
     });
   }
