@@ -13,7 +13,7 @@ assert.ok(start >= 0 && end > start, 'Workspace source URL and anchor helpers ex
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 })[char]);
-const { targetUrl, sourceAnchor } = vm.runInNewContext(
+const { targetUrl, sourceAnchor, sourceLibraryLink } = vm.runInNewContext(
   html.slice(start, end) + '\n({ targetUrl, sourceAnchor })',
   { URL, esc }
 );
@@ -68,9 +68,44 @@ test('unsafe source links display escaped metadata without a clickable destinati
 
 test('source-library and dated-timeline links remain routed through the policy', () => {
   assert.match(html, /const sourceAnchor = .*?targetUrl\(s\.url\)/);
-  assert.match(html, /function sourcesScreen\(\)[\s\S]*?sourceAnchor\(s,'View source'\)/);
+  assert.match(html, /function sourcesScreen\(\)[\s\S]*?sourceLibraryLink\(s\)\)/);
   assert.match(html, /function timelineScreen\(\)[\s\S]*?targetUrl\(e\.url\)/);
   assert.doesNotMatch(html, /href="\$\{esc\(s\.url\)\}"/);
+});
+
+test('Source Library discloses the actual indexed destination host and port', () => {
+  const html = sourceLibraryLink({
+    title: 'Records <Archive> & notes',
+    url: 'https://Records.example:8443/docs?id=A%2FB&lang=en#page=7'
+  });
+  assert.match(html, /href="https:\/\/records\.example:8443\/docs\?id=A%2FB&amp;lang=en#page=7"/);
+  assert.match(html, /Destination: records\.example:8443/);
+  assert.match(html, /not independently verified/);
+  assert.match(html, /rel="noopener noreferrer"/);
+  assert.match(html, /aria-label="Open indexed source link for Records &lt;Archive&gt; &amp; notes at records\.example:8443 \(new tab\)"/);
+});
+
+test('Source Library never hides a misleading hostname behind a publisher label', () => {
+  const misleading = sourceLibraryLink({
+    title: 'Official agency report',
+    url: 'https://agency.gov.attacker.example/document'
+  });
+  assert.match(misleading, /Destination: agency\.gov\.attacker\.example/);
+  assert.doesNotMatch(misleading, /Destination: agency\.gov\s/);
+  const rejected = sourceLibraryLink({
+    title: 'Official agency report',
+    url: 'https://agency.gov@attacker.example/document'
+  });
+  assert.match(rejected, /Source URL unavailable or blocked/);
+  assert.doesNotMatch(rejected, /<a\b/);
+});
+
+test('Source Library does not make invalid URLs clickable', () => {
+  for (const value of ['', null, undefined, 'javascript:alert(1)', 'https://name:password@bad.example/file']) {
+    const html = sourceLibraryLink({ title: 'Citation', url: value });
+    assert.match(html, /Source URL unavailable or blocked/);
+    assert.doesNotMatch(html, /href=/);
+  }
 });
 
 test('workspace inline scripts retain valid JavaScript syntax', () => {
