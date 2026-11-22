@@ -27,7 +27,7 @@ function urlSafe(v:unknown){
     if(!["https:","http:"].includes(u.protocol)||u.username||u.password)return null;
     u.hash="";
     for(const p of [...u.searchParams.keys()]){
-      if(p.startsWith("utm_")||["fbclid","gclid"].includes(p))u.searchParams.delete(p);
+      if(p.toLowerCase().startsWith("utm_")||["fbclid","gclid"].includes(p.toLowerCase()))u.searchParams.delete(p);
     }
     // Reject overlong values rather than silently truncating document identifiers.
     const canonical=u.toString();
