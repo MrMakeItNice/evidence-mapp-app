@@ -230,3 +230,36 @@ test('published and unpublished source records with the same URL stay separate f
   assert.equal(result.reason_counts.shared_source_record_url, 1);
   assert.equal(result.reason_counts.shared_unpublished_source_url, 1);
 });
+
+
+test('flags publication-time variance over 24 hours for an exact news/inbox URL', () => {
+  const data = snapshot();
+  data.news_items[0].published_at = '2026-10-23T12:00:00Z';
+  const before = structuredClone(data);
+  const result = triageReviewQueue(data);
+  const news = result.review_queue.find(r => r.queue === 'news_items' && r.id === 1);
+  const inbox = result.review_queue.find(r => r.queue === 'research_inbox' && r.id === 11);
+  assert.ok(news.reasons.includes('shared_news_inbox_date_variance'));
+  assert.ok(inbox.reasons.includes('shared_news_inbox_date_variance'));
+  assert.equal(result.reason_counts.shared_news_inbox_date_variance, 2);
+  assert.deepEqual(data, before);
+});
+
+test('does not flag same-source timestamps within 24 hours or infer missing dates', () => {
+  const data = snapshot();
+  data.news_items[0].published_at = '2026-10-20T00:00:00Z';
+  assert.equal(triageReviewQueue(data).reason_counts.shared_news_inbox_date_variance, 0);
+  data.news_items[0].published_at = null;
+  assert.equal(triageReviewQueue(data).reason_counts.shared_news_inbox_date_variance, 0);
+});
+
+test('reviewed inbox metadata can inform pending news but reviewed item stays excluded', () => {
+  const data = snapshot();
+  data.research_inbox[0].review_status = 'reviewed';
+  data.news_items[0].published_at = '2026-10-23T00:00:00Z';
+  const result = triageReviewQueue(data);
+  assert.equal(result.reason_counts.shared_news_inbox_date_variance, 1);
+  assert.ok(result.review_queue.some(r => r.queue === 'news_items' && r.id === 1 &&
+    r.reasons.includes('shared_news_inbox_date_variance')));
+  assert.ok(!result.review_queue.some(r => r.queue === 'research_inbox' && r.id === 11));
+});
