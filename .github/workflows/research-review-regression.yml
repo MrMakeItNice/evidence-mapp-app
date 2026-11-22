@@ -6,7 +6,7 @@ on:
       - 'scripts/audit-*.mjs'
       - 'scripts/review-*.mjs'
       - 'scripts/classify-feed-response.mjs'
-      - 'scripts/suggest-source-links.mjs'
+      - 'scripts/suggest-*.mjs'
       - 'tests/*.test.mjs'
       - '.github/workflows/research-review-regression.yml'
   workflow_dispatch:
