@@ -590,3 +590,20 @@ test('Clear search during archive loading keeps late case matches cleared', asyn
   assert.equal(page.get('q').value, '');assert.equal(page.resultText(), '');
   assert.match(page.get('archive-status').textContent, /3 published cases loaded/);
 });
+
+test('scholarly coverage names the responding and unavailable indexes for every availability combination', async () => {
+  for (const openalexOK of [false, true]) for (const crossrefOK of [false, true]) {
+    const page = await scholarlyResponsePage(openalexOK ? {results: []} : {}, crossrefOK ? {message: {items: []}} : {});
+    const responding = [openalexOK && 'OpenAlex', crossrefOK && 'Crossref'].filter(Boolean);
+    const unavailable = [!openalexOK && 'OpenAlex', !crossrefOK && 'Crossref'].filter(Boolean);
+    if (responding.length) assert.ok(page.status.includes('Responding indexes: ' + responding.join(', ')));
+    else assert.doesNotMatch(page.status, /Responding indexes:/);
+    if (unavailable.length) assert.ok(page.status.includes('Unavailable indexes: ' + unavailable.join(', ')));
+    else assert.doesNotMatch(page.status, /Unavailable indexes:/);
+    if (responding.length === 1) assert.match(page.status, /partial coverage/);
+    if (!responding.length) {
+      assert.match(page.status, /Live scholarly APIs unavailable/);
+      assert.match(page.results, /No scholarly indexes responded/);
+    }
+  }
+});
