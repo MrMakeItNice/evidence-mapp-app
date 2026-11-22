@@ -4,6 +4,8 @@ on:
     paths:
       - index.html
       - globe-explore.js
+      - global-search.html
+      - tests/global-search-query-privacy.test.cjs
       - tests/globe-discovery.test.cjs
       - .github/workflows/globe-discovery.yml
   workflow_dispatch:
@@ -16,4 +18,4 @@ jobs:
         with:
           node-version: '22'
       - run: node --check globe-explore.js
-      - run: node --test tests/globe-discovery.test.cjs
+      - run: node --test tests/globe-discovery.test.cjs tests/global-search-query-privacy.test.cjs
