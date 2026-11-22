@@ -82,7 +82,14 @@ const nameOfCase = id => one('cases',id)?.title||'Unassigned';
 const sourceFor = id => one('sources',id);
 const matches = (...s)=>`${s.join(' ')}`.toLowerCase().includes(state.search.toLowerCase().trim());
 const targetUrl = u=>{try{const raw=String(u??'').trim();if(!/^https?:\/\/[^\/\\?#\s]+/i.test(raw)||/[\u0000-\u001f\u007f\\]/.test(raw))return null;const parsed=new URL(raw);return ['https:','http:'].includes(parsed.protocol)&&parsed.hostname&&!parsed.username&&!parsed.password?parsed.href:null}catch{return null}};
-const sourceAnchor = (s,text)=>s?.url&&targetUrl(s.url)?`<a class="source-link" href="${esc(targetUrl(s.url))}" target="_blank" rel="noopener noreferrer">${esc(text||s.title)} ↗</a>`:esc(text||s?.title||'Unknown source');
+const sourceAnchor = (s,text)=>{
+  const caption=String(text||s?.title||'Unknown source');
+  const safe=targetUrl(s?.url);
+  if(!safe)return esc(caption);
+  const host=new URL(safe).host;
+  const linkText=caption.replace(/\s*↗\s*$/u,'');
+  return `<a class="source-link" href="${esc(safe)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(linkText+' — indexed destination '+host+' (new tab; provenance not independently verified)')}">${esc(linkText)} ↗</a> <small class="subdued" style="overflow-wrap:anywhere">Destination: ${esc(host)} · indexed URL only</small>`;
+};
 // A visible destination is metadata about the indexed URL, not proof of publisher identity.
 const sourceLibraryLink = s=>{
   const safe=targetUrl(s?.url);
