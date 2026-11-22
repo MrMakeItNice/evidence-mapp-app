@@ -138,7 +138,7 @@ function delayedArchivePage(options = {}) {
     html.match(/<script>([\s\S]*?)<\/script>/)[1])(
     document,
     {search: '?q=Original', href: 'https://atlas.example/global-search.html?q=Original'},
-    {replaceState() {}}, fetch, URL, URLSearchParams, AbortController, options.setTimeout || (() => 1), options.clearTimeout || (() => {}));
+    {replaceState: options.replaceState || (() => {})}, fetch, URL, URLSearchParams, AbortController, options.setTimeout || (() => 1), options.clearTimeout || (() => {}));
   const submit = term => { get('q').value = term; get('search').handlers.submit({preventDefault() {}}) };
   const complete = async (ok = true) => {
     resolveArchive({ok, json: async () => [
@@ -536,4 +536,57 @@ test('result-section navigation links to unique keyboard-focusable headings with
   assert.match(html, /\.result-heading:focus-visible\{[^}]*outline:3px solid/);
   assert.match(html, /id="live-research"/, 'existing scholarly section fragment remains supported');
   assert.doesNotMatch(nav[1], /onclick|button|submit/, 'section jumps use native fragment navigation without submitting terms');
+});
+
+test('Clear search is a separate touch-sized non-submit action', () => {
+  assert.match(html, /<button type="button" id="clear-search" class="clear-search">Clear search<\/button>/);
+  assert.match(html, /\.search \.clear-search\{[^}]*min-height:44px/);
+});
+
+test('Clear search removes submitted and unsent terms, resets validation and focuses the input', async () => {
+  const urls = [];
+  const page = delayedArchivePage({replaceState(_state, _title, url) { urls.push(String(url)) }});
+  await page.complete();
+  page.submit('Original');await new Promise(resolve => setImmediate(resolve));
+  assert.match(page.resultText(), /Original investigation/);
+  const input = page.get('q');input.value = 'Unsent';
+  input.setCustomValidity = message => { input.validationMessage = message };
+  input.setCustomValidity('Earlier validation error');
+  const count = page.calls.length;
+  page.get('clear-search').handlers.click();
+  assert.equal(input.value, '');assert.equal(input.validationMessage, '');
+  assert.equal(page.document.activeElement, input);
+  assert.equal(page.resultText(), '');
+  assert.equal(page.get('live-results').children.length, 0);
+  assert.match(page.get('live-status').textContent, /Enter a search/);
+  assert.match(page.get('archive-status').textContent, /3 published cases loaded/);
+  assert.equal(new URL(urls.at(-1)).searchParams.has('q'), false);
+  assert.equal(page.calls.length, count, 'reset does not submit another provider request');
+  for (const link of page.get('sources').children) {
+    assert.doesNotMatch(link.href, /Original|Unsent/);
+  }
+});
+
+test('Clear search cancels scholarly requests and late completions cannot restore cleared results', async () => {
+  const page = pendingScholarlyPage('headers', true);
+  await new Promise(resolve => setImmediate(resolve));
+  page.submit('old');
+  page.get('q').setCustomValidity = () => {};
+  page.get('clear-search').handlers.click();
+  assert.ok(page.requests.every(request => request.signal.aborted));
+  assert.equal(page.requests.length, 2, 'clear must not start a new scholarly search');
+  page.requests.forEach(request => request.finish());
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.liveText(), '');assert.equal(page.resultText(), '');
+  assert.match(page.get('live-status').textContent, /Enter a search/);
+});
+
+test('Clear search during archive loading keeps late case matches cleared', async () => {
+  const page = delayedArchivePage();
+  page.submit('Original');
+  page.get('q').setCustomValidity = () => {};
+  page.get('clear-search').handlers.click();
+  await page.complete();
+  assert.equal(page.get('q').value, '');assert.equal(page.resultText(), '');
+  assert.match(page.get('archive-status').textContent, /3 published cases loaded/);
 });
