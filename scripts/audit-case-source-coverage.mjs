@@ -51,12 +51,22 @@ export function auditCaseSourceCoverage(snapshot) {
     id(r.source_id) && sources.has(r.source_id));
   const links = new Map([...cases.keys()].map(c => [c, []]));
   const pairs = new Set();
+  // Different master-register IDs may point to the same underlying source.
+  // Count both catalog references and distinct case/source relationships.
+  const sourcePairs = new Map();
+  const sourceCases = new Map();
   for (const r of snapshot.case_source_references) {
     if (!object(r) || !id(r.case_id) || !id(r.register_id) ||
         !cases.has(r.case_id) || !register.has(r.register_id) ||
         pairs.has(key(r.case_id,r.register_id))) throw new Error('Invalid case source reference');
     pairs.add(key(r.case_id,r.register_id));
-    links.get(r.case_id).push(sources.get(register.get(r.register_id).source_id));
+    const sourceId = register.get(r.register_id).source_id;
+    const sourcePair = key(r.case_id,sourceId);
+    if (!sourcePairs.has(sourcePair)) sourcePairs.set(sourcePair,{case_id:r.case_id,source_id:sourceId,register_ids:[]});
+    sourcePairs.get(sourcePair).register_ids.push(r.register_id);
+    if (!sourceCases.has(sourceId)) sourceCases.set(sourceId,new Set());
+    sourceCases.get(sourceId).add(r.case_id);
+    links.get(r.case_id).push(sources.get(sourceId));
   }
   const summary = {
     cases_total: cases.size,
@@ -67,6 +77,12 @@ export function auditCaseSourceCoverage(snapshot) {
     published_cases_without_dated_source: 0,
     published_cases_without_attributed_publisher: 0,
     references_total: pairs.size,
+    unique_case_source_pairs: sourcePairs.size,
+    repeated_case_source_pairs: 0,
+    excess_register_references_to_same_source: 0,
+    underlying_sources_shared_across_cases: 0,
+    published_cases_with_complete_marked_published_source: 0,
+    published_cases_without_complete_marked_published_source: 0,
     references_to_not_marked_published: 0,
     references_to_undated_sources: 0,
     references_to_unattributed_sources: 0,
@@ -74,6 +90,14 @@ export function auditCaseSourceCoverage(snapshot) {
     unique_referenced_sources: 0,
     unique_referenced_sources_not_marked_published: 0
   };
+  const repeated = [...sourcePairs.values()].filter(x=>x.register_ids.length>1)
+    .sort((a,b)=>a.case_id-b.case_id || a.source_id-b.source_id);
+  summary.repeated_case_source_pairs = repeated.length;
+  summary.excess_register_references_to_same_source =
+    repeated.reduce((n,p)=>n+p.register_ids.length-1,0);
+  summary.underlying_sources_shared_across_cases =
+    [...sourceCases.values()].filter(caseIds=>caseIds.size>1).length;
+  const repeatedCases = new Set(repeated.map(x=>x.case_id));
   const used = new Set();
   const flagged = [];
   for (const c of cases.values()) {
@@ -103,6 +127,15 @@ export function auditCaseSourceCoverage(snapshot) {
       summary.published_cases_without_attributed_publisher++;
       reasons.push('no_attributed_publisher');
     }
+    // Metadata must coexist on ONE linked record, not across unrelated sources.
+    if (refs.some(s => s.published === true && !missing(s.publisher) &&
+                       datePresent(s.publication_date) && !missing(s.url))) {
+      summary.published_cases_with_complete_marked_published_source++;
+    } else {
+      summary.published_cases_without_complete_marked_published_source++;
+      reasons.push('no_single_complete_marked_published_source');
+    }
+    if (repeatedCases.has(c.id)) reasons.push('repeated_underlying_source');
     if (reasons.length) flagged.push({case_id:c.id,case_number:c.case_number,reasons});
   }
   summary.unique_referenced_sources = used.size;
@@ -112,7 +145,9 @@ export function auditCaseSourceCoverage(snapshot) {
   // Only numeric IDs and reason codes: no titles, URLs, descriptions or private notes.
   return {summary,flagged_case_count:flagged.length,
     flagged_cases:flagged.slice(0,50),omitted_flagged_cases:Math.max(0,flagged.length-50),
-    caveat:'Links are catalog relationships, not independent verification of source contents or claims.'};
+    repeated_underlying_source_pairs:repeated.slice(0,25),
+    omitted_repeated_pairs:Math.max(0,repeated.length-25),
+    caveat:'Register references may repeat a source. Shared URLs or source IDs are not independent corroboration; metadata completion does not verify claims.'};
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
