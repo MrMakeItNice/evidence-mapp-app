@@ -278,3 +278,38 @@ test('blank search after an open lens does not leave stale research destinations
   assert.equal(elements['globe-explore-query'].validationMessage,
     'Enter a topic or choose a research shortcut.');
 });
+
+
+test('editing a submitted globe topic hides stale research destinations until resubmission', () => {
+  const { elements, submit, document, globeArea } = setup();
+  submit('MKULTRA');
+  assert.equal(elements['globe-explore-panel'].hidden, false);
+  assert.equal(elements['globe-explore-links'].children[0].href, './global-search.html?q=MKULTRA');
+  const input = elements['globe-explore-query'];
+  input.value = 'Epstein files';
+  input.input();
+  assert.equal(elements['globe-explore-panel'].hidden, true);
+  assert.equal(elements['globe-explore-links'].children.length, 0);
+  assert.equal(globeArea.classList.contains('globe-lens-open'), false);
+  assert.match(elements['globe-explore-status'].textContent, /cleared after editing/);
+  assert.equal(document.activeElement, input, 'typing retains input focus');
+  submit('Epstein files');
+  assert.equal(elements['globe-explore-panel'].hidden, false);
+  assert.equal(elements['globe-explore-links'].children[0].href, './global-search.html?q=Epstein%20files');
+});
+
+test('typing without an open lens does not announce a closure on every keystroke', () => {
+  const { elements, submit } = setup();
+  const input = elements['globe-explore-query'];
+  input.value = 'Case';
+  input.input();
+  assert.equal(elements['globe-explore-status'].textContent, '');
+  submit('Case Files');
+  elements['globe-explore-close'].click();
+  const status = elements['globe-explore-status'].textContent;
+  input.value = 'another';
+  input.input();
+  assert.equal(elements['globe-explore-status'].textContent, status);
+  assert.equal(elements['globe-explore-links'].children.length, 3,
+    'editing a previously closed lens does not alter hidden, inert links');
+});
