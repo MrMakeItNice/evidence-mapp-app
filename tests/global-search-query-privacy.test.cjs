@@ -408,3 +408,62 @@ test('failed retries remain available and permit another attempt', async () => {
   await page.finish();assert.equal(retry.hidden, true);
   assert.equal(page.requests.filter(url => !url.includes('/api/cases')).length, 0);
 });
+
+function pendingScholarlyPage(phase, ignoreAbort = false) {
+  const requests = [], timers = new Map(), cleared = new Set();let timerId = 0;
+  const page = delayedArchivePage({
+    setTimeout(fn, ms) { const id = ++timerId;timers.set(id, {fn, ms});return id },
+    clearTimeout(id) { cleared.add(id) },
+    fetch: async (url, {signal}) => {
+      if (String(url).includes('/api/cases')) return {ok: true, json: async () => []};
+      const query = new URL(url).searchParams;
+      const term = query.get('search') || query.get('query');
+      let finish, reject;
+      const pending = new Promise((resolve, fail) => { finish = resolve;reject = fail });
+      if (!ignoreAbort) signal.addEventListener('abort', () => reject(Error('aborted')), {once: true});
+      requests.push({signal, term, finish() { finish(String(url).includes('openalex') ? {
+        results: [{display_name: 'Result for ' + term, doi: 'https://doi.org/10.1234/' + encodeURIComponent(term)}]
+      } : {message: {items: []}}) }});
+      if (phase === 'headers') return pending.then(data => ({ok: true, json: async () => data}));
+      return {ok: true, json: () => pending};
+    }
+  });
+  const text = node => node.textContent + node.children.map(text).join(' ');
+  return {...page, requests, timers, cleared, liveText: () => text(page.get('live-results'))};
+}
+
+for (const phase of ['headers', 'body']) test('replacement cancels both scholarly ' + phase + ' requests and cleans their timer', async () => {
+  const page = pendingScholarlyPage(phase);
+  await new Promise(resolve => setImmediate(resolve));
+  page.submit('old');await new Promise(resolve => setImmediate(resolve));
+  page.submit('latest');await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.requests.length, 4);
+  assert.ok(page.requests.slice(0, 2).every(request => request.signal.aborted));
+  assert.ok(page.requests.slice(2).every(request => !request.signal.aborted));
+  const scholarlyTimers = [...page.timers].filter(([, timer]) => timer.ms === 11000).map(([id]) => id);
+  assert.equal(page.cleared.has(scholarlyTimers[0]), true);
+  assert.equal(page.cleared.has(scholarlyTimers[1]), false);
+  assert.match(page.get('live-status').textContent, /Searching/);
+  page.requests.slice(2).forEach(request => request.finish());
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(page.liveText(), /Result for latest/);assert.doesNotMatch(page.liveText(), /Result for old/);
+  assert.equal(page.cleared.has(scholarlyTimers[1]), true);
+  page.submit('');
+  assert.ok(page.requests.slice(2).every(request => !request.signal.aborted), 'completed controllers are released');
+});
+
+test('a late stale completion cannot lose the current cancellation handle or repaint cleared results', async () => {
+  const page = pendingScholarlyPage('headers', true);
+  await new Promise(resolve => setImmediate(resolve));
+  page.submit('old');page.submit('latest');
+  assert.ok(page.requests.slice(0, 2).every(request => request.signal.aborted));
+  page.requests.slice(0, 2).forEach(request => request.finish());
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(page.get('live-status').textContent, /Searching/);assert.equal(page.liveText(), '');
+  page.submit('');
+  assert.ok(page.requests.slice(2).every(request => request.signal.aborted), 'clearing still aborts the current pair');
+  page.requests.slice(2).forEach(request => request.finish());
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(page.get('live-status').textContent, /Enter a search/);assert.equal(page.liveText(), '');
+  assert.ok([...page.timers.keys()].every(id => page.cleared.has(id)), 'all archive and scholarly timers are released');
+});
