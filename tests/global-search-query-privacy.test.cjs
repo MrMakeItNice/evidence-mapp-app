@@ -467,3 +467,55 @@ test('a late stale completion cannot lose the current cancellation handle or rep
   assert.match(page.get('live-status').textContent, /Enter a search/);assert.equal(page.liveText(), '');
   assert.ok([...page.timers.keys()].every(id => page.cleared.has(id)), 'all archive and scholarly timers are released');
 });
+
+async function scholarlyResponsePage(openalex, crossref) {
+  const page = delayedArchivePage({fetch: async url => ({ok: true, json: async () =>
+    String(url).includes('/api/cases') ? [] : String(url).includes('openalex') ? openalex : crossref
+  })});
+  page.submit('oversight');
+  await new Promise(resolve => setImmediate(resolve));
+  const text = node => node.textContent + node.children.map(text).join(' ');
+  return {status: page.get('live-status').textContent, results: text(page.get('live-results'))};
+}
+
+for (const provider of ['OpenAlex', 'Crossref']) test(provider + ' malformed envelopes do not count as a responding search index', async () => {
+  // HTTP 200 is insufficient: errors, absent/null fields and non-array payloads
+  // must not be described as a completed search with zero matches.
+  const malformed = provider === 'OpenAlex'
+    ? [null, {}, {error: 'rate limited'}, {results: null}, {results: {}}, {results: 'empty'}]
+    : [null, {}, {message: null}, {message: {}}, {message: {items: null}}, {message: {items: {}}}];
+  for (const payload of malformed) {
+    const page = await scholarlyResponsePage(
+      provider === 'OpenAlex' ? payload : {results: []},
+      provider === 'Crossref' ? payload : {message: {items: []}}
+    );
+    assert.match(page.status, /0 scholarly records returned from 1 of 2 indexes · partial coverage/);
+    assert.match(page.results, /No records returned by the responding scholarly indexes/);
+    assert.doesNotMatch(page.status, /from 2 of 2 indexes/);
+  }
+});
+
+test('two malformed scholarly envelopes show unavailability rather than zero search matches', async () => {
+  const page = await scholarlyResponsePage({}, {message: {}});
+  assert.match(page.status, /Live scholarly APIs unavailable/);
+  assert.match(page.results, /No scholarly indexes responded/);
+  assert.doesNotMatch(page.results, /No records returned/);
+});
+
+test('a malformed scholarly response does not suppress valid records from the other provider', async () => {
+  for (const provider of ['OpenAlex', 'Crossref']) {
+    const page = await scholarlyResponsePage(
+      provider === 'OpenAlex' ? {results: [{display_name: 'Valid OpenAlex record', id: 'https://openalex.org/W1'}]} : {},
+      provider === 'Crossref' ? {message: {items: [{title: ['Valid Crossref record'], URL: 'https://doi.org/10.1234/test'}]}} : {}
+    );
+    assert.match(page.status, /1 scholarly record returned from 1 of 2 indexes · partial coverage/);
+    assert.match(page.results, new RegExp('Valid ' + provider + ' record'));
+  }
+});
+
+test('genuine empty scholarly result arrays remain successful zero-match searches', async () => {
+  const page = await scholarlyResponsePage({results: []}, {message: {items: []}});
+  assert.match(page.status, /0 scholarly records returned from 2 of 2 indexes/);
+  assert.doesNotMatch(page.status, /partial coverage|unavailable/);
+  assert.match(page.results, /No records returned by the responding scholarly indexes/);
+});
