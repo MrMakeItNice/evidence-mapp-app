@@ -15,7 +15,8 @@ function setup() {
     textContent: '', value: '', hidden: id === 'globe-explore-panel', children: [],
     addEventListener(type, fn) { this[type] = fn; },
     replaceChildren(...nodes) { this.children = nodes; },
-    append(node) { this.children.push(node); }
+    append(node) { this.children.push(node); },
+    focus() { document.activeElement = this; }
   }]));
   const document = {
     getElementById: id => elements[id] || null,
@@ -29,7 +30,7 @@ function setup() {
     assert.ok(prevented, 'form submits without a page reload');
     return elements;
   };
-  return { elements, submit };
+  return { elements, submit, document };
 }
 
 test('accessible search panel and deferred script exist on the globe homepage', () => {
@@ -76,4 +77,25 @@ test('blank input leaves the panel closed, without external requests', () => {
   const e = setup().submit('  ');
   assert.equal(e['globe-explore-panel'].hidden, true);
   assert.equal(e['globe-explore-links'].children.length, 0);
+});
+
+test('keyboard focus follows the opened lens and Escape returns to search', () => {
+  const { elements, submit, document } = setup();
+  submit('Rabbit Holes');
+  assert.equal(document.activeElement, elements['globe-explore-panel']);
+  let prevented = false;
+  elements['globe-explore-panel'].keydown({ key: 'Escape', preventDefault() { prevented = true; } });
+  assert.ok(prevented, 'Escape is handled inside the lens');
+  assert.equal(elements['globe-explore-panel'].hidden, true);
+  assert.equal(document.activeElement, elements['globe-explore-query']);
+  assert.match(elements['globe-explore-status'].textContent, /closed/);
+  submit('Case Files');
+  assert.equal(elements['globe-explore-panel'].hidden, false);
+  assert.equal(document.activeElement, elements['globe-explore-panel']);
+});
+
+test('the focused research lens is named by its heading and has touch-sized links', () => {
+  assert.match(html, /id="globe-explore-panel"[^>]*tabindex="-1"[^>]*aria-labelledby="globe-explore-title"/);
+  assert.match(html, /\.globe-explore-panel a\{[^}]*min-height:44px/);
+  assert.match(html, /\.globe-explore-panel:focus-visible/);
 });
