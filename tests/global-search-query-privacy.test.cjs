@@ -661,3 +661,25 @@ test('case pagination stays hidden during loading and after empty matches or arc
   assert.match(html, /<button id="more-cases" type="button" aria-controls="results" aria-describedby="archive-status" hidden>/);
   assert.match(html, /#more-cases\{[^}]*min-height:44px/);
 });
+
+test('invalid search cannot unlock a pending archive retry or permit duplicate loads', async () => {
+  const page = retryableArchivePage();
+  await new Promise(resolve => setImmediate(resolve));
+  const retry = page.get('retry-archive'), input = page.get('q');
+  input.setCustomValidity = message => { input.validationMessage = message };
+  input.reportValidity = () => false;
+  retry.handlers.click();assert.equal(page.attempts(), 2);
+  page.submit('x'.repeat(301));
+  assert.match(input.validationMessage, /300 characters or fewer/);
+  assert.match(page.get('archive-status').textContent, /Search not submitted/);
+  assert.equal(retry.attributes['aria-disabled'], 'true');
+  retry.handlers.click();
+  assert.equal(page.attempts(), 2, 'validation must not release the active archive request guard');
+  assert.equal(page.requests.filter(url => !url.includes('/api/cases')).length, 0);
+  await page.finish();
+  assert.equal(page.resultText(), '', 'completion must not revive the invalid query');
+  assert.match(page.get('archive-status').textContent, /1 published cases loaded/);
+  assert.equal(input.value, 'x'.repeat(301));
+  assert.equal(page.document.activeElement, input, 'recovery preserves validation focus');
+  assert.equal(retry.hidden, true);assert.equal(retry.attributes['aria-disabled'], 'false');
+});
