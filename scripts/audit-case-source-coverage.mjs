@@ -112,7 +112,10 @@ export function auditCaseSourceCoverage(snapshot) {
     references_to_invalid_source_url: 0,
     published_cases_without_valid_source_url: 0,
     unique_referenced_sources: 0,
-    unique_referenced_sources_not_marked_published: 0
+    unique_referenced_sources_not_marked_published: 0,
+    library_sources_marked_published: 0,
+    library_sources_marked_published_outside_case_register: 0,
+    outside_register_marked_published_sources_undated: 0
   };
   const repeated = [...sourcePairs.values()].filter(x=>x.register_ids.length>1)
     .sort((a,b)=>a.case_id-b.case_id || a.source_id-b.source_id);
@@ -184,13 +187,25 @@ export function auditCaseSourceCoverage(snapshot) {
   summary.unique_referenced_sources = used.size;
   summary.unique_referenced_sources_not_marked_published =
     [...used].filter(sourceId => sources.get(sourceId).published !== true).length;
+  // Count library records absent from the case→register join separately from
+  // case coverage. They may still support claims or research elsewhere; this
+  // is a relationship inventory, NOT an orphan or invalidity judgment.
+  const publishedLibrarySources = [...sources.values()].filter(s=>s.published===true);
+  const publishedOutsideCaseRegister = publishedLibrarySources
+    .filter(s=>!used.has(s.id)).sort((a,b)=>a.id-b.id);
+  summary.library_sources_marked_published = publishedLibrarySources.length;
+  summary.library_sources_marked_published_outside_case_register = publishedOutsideCaseRegister.length;
+  summary.outside_register_marked_published_sources_undated =
+    publishedOutsideCaseRegister.filter(s=>!datePresent(s.publication_date)).length;
   flagged.sort((a,b) => a.case_number-b.case_number || a.case_id-b.case_id);
   // Only numeric IDs and reason codes: no titles, URLs, descriptions or private notes.
   return {summary,flagged_case_count:flagged.length,
     flagged_cases:flagged.slice(0,50),omitted_flagged_cases:Math.max(0,flagged.length-50),
     repeated_underlying_source_pairs:repeated.slice(0,25),
+    marked_published_source_ids_outside_case_register:publishedOutsideCaseRegister.slice(0,25).map(s=>s.id),
+    omitted_outside_case_register_sources:Math.max(0,publishedOutsideCaseRegister.length-25),
     omitted_repeated_pairs:Math.max(0,repeated.length-25),
-    caveat:'Register references may repeat a source. Shared URLs or source IDs are not independent corroboration; metadata completion does not verify claims.'};
+    caveat:'Register references may repeat sources. Library sources outside the case-register join may be used elsewhere; no link, status or metadata metric proves validity or independent corroboration.'};
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
