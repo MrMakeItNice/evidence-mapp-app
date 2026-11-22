@@ -248,3 +248,34 @@ test('invalid non-string citation role is rejected',()=>{
   const s=sample();s.case_source_references[0].source_role={untrusted:'value'};
   assert.throws(()=>audit(s),/Invalid case source reference/);
 });
+
+test('separates library source visibility from case-register linkage',()=>{
+  const s=sample();
+  s.sources.push({id:12,published:true,publisher:'Agency',publication_date:null,
+    url:'https://agency.gov/unlinked',title:'PRIVATE LIBRARY SOURCE'});
+  s.expected_counts.sources++;
+  const x=audit(s);
+  assert.equal(x.summary.library_sources_marked_published,2);
+  assert.equal(x.summary.library_sources_marked_published_outside_case_register,1);
+  assert.equal(x.summary.outside_register_marked_published_sources_undated,1);
+  assert.deepEqual(x.marked_published_source_ids_outside_case_register,[12]);
+  assert.equal(x.omitted_outside_case_register_sources,0);
+  assert.ok(!JSON.stringify(x).includes('PRIVATE LIBRARY SOURCE'));
+});
+test('draft-case register citation counts as linked, without requiring publication',()=>{
+  const s=sample();
+  s.case_source_references.push({case_id:3,register_id:100});
+  s.expected_counts.case_source_references++;
+  const x=audit(s);
+  assert.equal(x.summary.library_sources_marked_published_outside_case_register,0);
+});
+test('unlinked published-source list is capped, while counts remain complete',()=>{
+  const s=sample();
+  for (let i=0;i<28;i++) s.sources.push({id:100+i,published:true,url:'https://example.gov/'+i,publication_date:null});
+  s.expected_counts.sources=s.sources.length;
+  const x=audit(s);
+  assert.equal(x.summary.library_sources_marked_published_outside_case_register,28);
+  assert.equal(x.summary.outside_register_marked_published_sources_undated,28);
+  assert.deepEqual(x.marked_published_source_ids_outside_case_register,[...Array(25)].map((_,i)=>100+i));
+  assert.equal(x.omitted_outside_case_register_sources,3);
+});
