@@ -63,3 +63,46 @@ test('actual page sends no scholarly query on prefill or typing, then sends subm
   assert.equal(new URL(scholarly.find(url=>url.includes('crossref'))).searchParams.get('query'),'submitted & current');
   assert.ok(scholarly.every(url=>!url.includes('prefilled')));
 });
+
+
+test('scholarly previews do not make credential-bearing or non-web source URLs clickable', async () => {
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  const nodes = new Map();
+  const element = tag => ({
+    tag, children: [], value: '', textContent: '', href: '', handlers: {},
+    append(...children) { this.children.push(...children) },
+    replaceChildren(...children) { this.children = children },
+    addEventListener(type, handler) { this.handlers[type] = handler }
+  });
+  const get = id => { if (!nodes.has(id)) nodes.set(id, element('div')); return nodes.get(id) };
+  const fetch = async url => {
+    const address = String(url);
+    if (address.includes('/api/cases')) return { ok: true, json: async () => [] };
+    if (address.includes('api.openalex.org')) return { ok: true, json: async () => ({ results: [
+      { display_name: 'Safe DOI', doi: 'https://doi.org/10.1234/atlas-test', id: 'https://openalex.org/W1' },
+      { display_name: 'Deceptive URL', doi: 'https://records.gov@attacker.example/record', id: 'https://openalex.org/W2' },
+      { display_name: 'Unsafe scheme', doi: 'javascript:alert(1)', id: 'https://openalex.org/W3' }
+    ] }) };
+    return { ok: true, json: async () => ({ message: { items: [] } }) };
+  };
+  new Function('document', 'location', 'history', 'fetch', 'URL', 'URLSearchParams',
+    'AbortController', 'setTimeout', 'clearTimeout', script)(
+    { getElementById: get, createElement: element },
+    { search: '', href: 'https://atlas.example/global-search.html' },
+    { replaceState() {} }, fetch, URL, URLSearchParams, AbortController, () => 1, () => {});
+  await new Promise(resolve => setImmediate(resolve));
+  get('q').value = 'declassified files';
+  get('search').handlers.submit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  const rows = get('live-results').children;
+  const findHeading = name => rows.find(row => row.children[1]?.textContent === name ||
+    row.children[1]?.children[0]?.textContent?.startsWith(name))?.children[1];
+  const safe = findHeading('Safe DOI');
+  assert.ok(safe?.children[0], 'safe DOI should have a clickable preview');
+  assert.equal(safe.children[0].href, 'https://doi.org/10.1234/atlas-test');
+  for (const title of ['Deceptive URL', 'Unsafe scheme']) {
+    const heading = findHeading(title);
+    assert.ok(heading, title + ' remains visible as unverified scholarly metadata');
+    assert.equal(heading.children.length, 0, title + ' must not have a clickable link');
+  }
+});
