@@ -39,3 +39,28 @@ DOJ reports the November 20 arrest of **Fausto Isidro Meza Flores** by Mexican f
 - PR-specific 15-test regression suite and scoped read-only CI workflow. Tests must pass in GitHub before review; do not infer application or browser readiness from this suite.
 
 **Review requirement:** This document records staging candidates, not verified cross-source investigations or approval to publish. No schema, production data, publishing status, merge or deployment should be changed.
+
+## Follow-up evidence and engineering audit — November 22, 2026, 14:55–14:56 UTC
+
+**Read-only inventory:** 934 of 934 news items remain pending (+1 since 14:04 UTC); 55 were discovered in the preceding 24 hours. 441 news items are undated, including 422 Google News proxy URLs. All 40 research-inbox records remain pending; four are undated and four lack watch-topic assignments. Of 123 published-flagged sources, 53 have no publication date; one lacks its URL and one its publisher. Eleven of 36 active news topics have no items; 11/11 research watches and 7/7 news watches have missing or older-than-24-hour update stamps. Exact news/inbox URL overlaps remain 25 and news/source overlaps remain five; no repeated exact URL groups were found within news or sources.
+
+**Collector observations:** 344 activity rows were retained at query time, 287 completed within the query's preceding 24 hours (41 for each of seven feeds). Positive News accounted for all 41 of its observed HTTP 403 completions. One COVID-19 Google News HTTP 429 occurred during the same window, followed by successful later collection. Most other latest feed completions succeeded; Public Health BBC was pending at the 14:55 UTC snapshot. No contradictory telemetry rows were found: zero HTTP >=400 rows marked `ok`, zero completed runs marked `pending`, zero HTTP 2xx rows marked `error`. This is an audit of available retention, not proof that older logs are complete.
+
+**Code improvement:** Added conservative handling for contradictory future collector telemetry. HTTP >=400 can no longer count as an observed successful completion merely because `status` says `ok`. The review-only output now flags `status_ok_with_http_error` and `completed_run_still_pending` for reconciliation. Two dedicated regression tests were added; no production fetch, credential, pipeline, collector configuration, database write, release or auto-publication is involved.
+
+### New primary-source lead A — SEC / CFTC Backward Hat Capital matter
+
+- SEC release **2026-116** (November 20, 2026): https://www.sec.gov/newsroom/press-releases/2026-116-sec-charges-indianapolis-based-backward-hat-capital-its-co-founders-560-million-dollar-offering
+- CFTC release **9328-26** (November 20, 2026): https://www.cftc.gov/PressRoom/PressReleases/9328-26
+- The SEC says its civil complaint alleges approximately **$560 million** raised from **more than 2,000 investors**; CFTC describes **more than $550 million** from **at least 2,100 participants**. Both describe parallel actions in the alleged enterprise, not independent confirmation of guilt. Preserve the distinct agency figures and distinguish allegations, temporary court relief, and any future adjudication.
+- SEC states a temporary restraining order, asset freeze and related relief were obtained; CFTC reports a temporary receiver was appointed. These court-process events are distinct from final liability findings. Before publication, retrieve the complaints and orders, compare overlapping defendants and transaction/accounting scope, seek responses and court updates.
+- Targeted title-phrase and SEC URL checks returned **zero direct matches** in `news_items`, `research_inbox`, `sources`. This does not establish absence from every case or external research source.
+
+### New primary-source lead B — NARA GRS 4.5 digitization FAQ
+
+- NARA authoritative FAQ (updated **November 2026**, exact day not provided): https://www.archives.gov/records-mgmt/grs/faqs-for-grs-4-5
+- NARA explains conditional disposition of original source records after valid digitization or NARA acceptance, with important exclusions including certain pre-1950 permanent records, formats lacking applicable digitization standards, and intrinsically valuable originals. The digitized record remains subject to its applicable retention or permanent-transfer schedule.
+- Research angle: compare the official schedule, 36 CFR 1236 and the relevant agency's disposition practices before any claim about destruction, digitization or inaccessible records. This FAQ is **not evidence of unlawful destruction**.
+- Targeted title-phrase and exact FAQ URL checks returned **zero direct matches** in the same three research collections; a full case-index search was not performed.
+
+**Editorial status:** Both leads are new unpublished review candidates, not verified multi-source investigations. All write operations in this checkpoint are confined to this draft GitHub PR; no production Supabase changes, merge, deployment or release.
