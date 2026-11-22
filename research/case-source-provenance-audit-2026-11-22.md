@@ -176,3 +176,37 @@ The collector telemetry has **288 observed requested runs** in the retained prec
 **Editorial state:** both sources remain in this draft PR memo for review; nothing was inserted into production. Exact-URL and title/identifier checks are limited to the three queried collections and do not prove that related documents or reports are absent elsewhere.
 
 **Safety and verification boundary:** no production schema/data writes, source status changes, case/source link creation, collector configuration changes, publication, merge or deploy. PR-scoped tests cover only the offline diagnostic; full application/browser readiness requires separate verification.
+
+
+## Follow-up: November 22, 2026, 22:43 UTC / 2:43 PM Pacific — **critical graph-linkage clarification**
+
+### Why the register-only result must NOT be interpreted as overall source coverage
+
+An expanded, SELECT-only audit found **a second, populated case→source relationship path** in `public.relationships`. This materially qualifies the earlier focus on the master-register join:
+
+- The master case-register contains **219 citation rows** representing **218 distinct case/source pairs**, and covers all **140 published cases**. **Five** published cases have a linked source with publication date, publisher, valid-looking HTTP(S) URL and published flag on that same record **in this particular register path**.
+- Separately, `relationships` contains **244 case→source edges** across **140 distinct case IDs** and **188 distinct source IDs**. All 244 have existing case IDs and source targets; for every row, `target_id = source_id_reference`. The relationship type is `Annotated research reference`. These entries are **not verified independent evidence merely because they are in a graph**.
+- **75** underlying case/source pairs occur in both paths. The combined *unique* case/source catalog relationships total **387** (218 + 244 − 75), not 462 independent corroborations.
+- **59 of 140 published cases** have at least one graph-linked source whose **same record** has a publication date, nonblank publisher, published flag and syntactically HTTP(S)-shaped URL. The combined graph-or-register figure is **59**, leaving **81 without a same-record complete *marked-published* citation on either checked path**. Metadata completeness is *not* original-document review or a claim-veracity verdict. This count uses a SQL URL syntax screen, not a network resolution or editorial review.
+- Of **122 published-marked sources outside the case-register join**, **120 are referenced by the relationship graph**, **one more by `claim_sources`**, and **one by neither of those paths nor the other checked structured source paths** (`source.id=285`, which lacks publisher, source type and publication date). Consequently, **do not call the 122 sources orphans or automatically attach them to cases**. This supersedes any interpretation of earlier register-only statistics as whole-platform coverage.
+- The current `relationships` table's `source_type='case'` and `target_type='source'` labels refer to endpoint entity types; its `source_id_reference` is the supporting source ID. This dual use of the word "source" makes schema-aware joins essential.
+
+### Engineering scope
+
+The offline `audit-case-source-coverage.mjs` now accepts an **optional complete** `relationships` snapshot and matching expected count. If it is absent, `relationship_graph` is **null**, not an inferred zero. It rejects truncated graph snapshots, resolves case→source endpoint IDs against the included complete case/source tables, counts graph-register overlap and duplicate pair rows, and reports combined published-source metadata coverage only as distinct *cases*. It counts target/source-reference ID disagreement without attempting a repair. Five new regression tests cover completeness, privacy, overlap and cross-path discovery. **No snapshot is committed.** Published-marked citation metadata is not evidence of factual accuracy.
+
+### Fresh ingestion and collector checks
+
+`news_items`: **940 pending**, **55** discovered in the preceding 24 hours, **447** missing publication timestamps (including **428** Google News proxy URLs), **135** pending longer than 14 days. `research_inbox`: **40 pending**, four undated and four without watch assignment; its latest discovery timestamp is November 10. `sources`: **123** published-marked, **53** without dates and **one** without publisher. **11 of 36** active news topics have no news items. All **11 research-watch last_checked_at** fields are dated November 11 or earlier; all seven news-watch last_collected_at fields are null. These timestamp gaps do not prove ingestion is stopped.
+
+Seven enabled collector summaries show six recent HTTP 200 completions (latest checks November 22). **Positive News** still returns a challenge page/HTTP 403 (41 completed 403 observations in the retained prior-24-hour activity); last successful collection remains November 11. **COVID-19 Google News** had one 429 observation followed by successful HTTP 200 polls. No access control or rate-limit bypass was attempted.
+
+### New original-agency research leads — editorial staging only
+
+**GAO-27-109349 — FEMA Assistance for People with Disabilities (Easy Read supplement)**: https://www.gao.gov/products/gao-27-109349 . **Published/publicly released November 19, 2026.** This is an *accessible-format supplement* to GAO-27-108057, **not an independent investigation**. GAO says FEMA ended a training program for state/community disability preparedness in 2025, some specialist roles were unclear, and some forms were difficult to understand; it made three recommendations in the underlying report. Review the underlying full report and agency response before correlating with disability access and disaster aid. Do not double-count supplement and original as independent corroborations.
+
+**GAO-27-108087 — Tribal Justice: Congressional Action Needed to Support Tribal Sovereignty**: https://www.gao.gov/products/gao-27-108087 . **Published/publicly released November 16, 2026.** GAO found limits under Public Law 280 on Tribes initiating jurisdictional retrocession and consent, and reported funding differences in specified historical years. Two congressional matters for consideration are listed open. Carefully distinguish legal analysis, Tribal/state perspectives and selected funding data from any inference of intentional harm. Related to, but distinct from, the GAO BIA staffing report already staged.
+
+Targeted ID/title/URL queries in `news_items`, `research_inbox`, and `sources` found **no direct matches** to these two identifiers/titles. This does not rule out variants, linked topics, previous memos or other sources. Both leads are **staged here in the review-only memo**, not inserted into production or published.
+
+**Safety:** no database writes/schema changes, credential exposure, source-status changes, PR merges, deployment or automatic publication. Focused tests and workflow status must be checked on the new head commit before calling the update verified.
