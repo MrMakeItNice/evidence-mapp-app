@@ -519,3 +519,21 @@ test('genuine empty scholarly result arrays remain successful zero-match searche
   assert.doesNotMatch(page.status, /partial coverage|unavailable/);
   assert.match(page.results, /No records returned by the responding scholarly indexes/);
 });
+
+test('result-section navigation links to unique keyboard-focusable headings with touch targets', () => {
+  const nav = html.match(/<nav class="result-jumps" aria-label="Search result sections">([\s\S]*?)<\/nav>/);
+  assert.ok(nav, 'section navigation is named for assistive technology');
+  const targets = ['scholarly-results-heading', 'archive-results-heading', 'external-tools-heading'];
+  const links = [...nav[1].matchAll(/<a href="#([^"]+)">([^<]+)<\/a>/g)];
+  assert.deepEqual(links.map(link => link[1]), targets);
+  assert.deepEqual(links.map(link => link[2]), ['Scholarly results', 'Published case matches', 'External search tools']);
+  for (const id of targets) {
+    assert.equal([...html.matchAll(new RegExp('id="' + id + '"', 'g'))].length, 1);
+    assert.match(html, new RegExp('<h2 id="' + id + '" class="result-heading" tabindex="-1">'));
+  }
+  assert.match(html, /\.result-jumps\{[^}]*flex-wrap:wrap/);
+  assert.match(html, /\.result-jumps a\{[^}]*min-height:44px/);
+  assert.match(html, /\.result-heading:focus-visible\{[^}]*outline:3px solid/);
+  assert.match(html, /id="live-research"/, 'existing scholarly section fragment remains supported');
+  assert.doesNotMatch(nav[1], /onclick|button|submit/, 'section jumps use native fragment navigation without submitting terms');
+});
