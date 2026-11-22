@@ -31,6 +31,17 @@ test('strips only known tracking keys and the fragment while retaining document 
   );
 });
 
+test('strips case-variant tracking keys without changing document identifiers', () => {
+  assert.equal(
+    urlSafe('https://records.example.org/view?DocID=AB%2F42&UTM_Source=news&FbClId=click&gClId=ad&id=9#part-1'),
+    'https://records.example.org/view?DocID=AB%2F42&id=9'
+  );
+  assert.equal(
+    urlSafe('https://records.example.org/view?utm_medium=email&Utm_Campaign=test&doc=1'),
+    'https://records.example.org/view?doc=1'
+  );
+});
+
 test('rejects source userinfo, including deceptive host prefixes and encoded credentials', () => {
   for (const value of [
     'https://archives.gov@unexpected.example/document',
