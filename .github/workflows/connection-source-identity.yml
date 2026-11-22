@@ -1,0 +1,21 @@
+name: Connection Explorer citation identity
+
+on:
+  pull_request:
+    paths:
+      - 'connection-explorer.html'
+      - 'tests/connection-source-identity.test.mjs'
+      - '.github/workflows/connection-source-identity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  citation-identity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test distinct source URL identity
+        run: node --test tests/connection-source-identity.test.mjs
