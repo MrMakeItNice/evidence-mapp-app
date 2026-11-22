@@ -11,6 +11,7 @@ const REASONS = Object.freeze({
   primary_kind_missing_date: 100,
   shared_source_record_url: 90,
   shared_news_inbox_url: 80,
+  shared_unpublished_source_url: 55,
   inbox_unassigned_watch: 70,
   inbox_missing_date: 65,
   google_proxy_missing_date: 60,
@@ -103,7 +104,12 @@ export function triageReviewQueue(snapshot, { limit = 50 } = {}) {
   // Exact URL identity is a potential editorial correlation, not corroboration or a merge key.
   const inboxUrls = new Set(collections.research_inbox.map(r => r.source_url));
   const newsUrls = new Set(collections.news_items.map(r => r.source_url));
-  const sourceUrls = new Set(collections.sources.filter(s => s.url).map(s => s.url));
+  // A matched registry URL is not independent corroboration. Distinguish source
+  // records marked published from unpublished or unknown-status placeholders.
+  const publishedSourceUrls = new Set(collections.sources
+    .filter(s => s.url && s.published === true).map(s => s.url));
+  const unconfirmedSourceUrls = new Set(collections.sources
+    .filter(s => s.url && s.published !== true).map(s => s.url));
   const candidates = [];
 
   for (const n of collections.news_items) {
@@ -112,7 +118,8 @@ export function triageReviewQueue(snapshot, { limit = 50 } = {}) {
     const missingDate = n.published_at == null;
     const hostname = validUrl(n.source_url);
     if (missingDate && PRIMARY_KINDS.has(n.content_kind)) reasons.push('primary_kind_missing_date');
-    if (sourceUrls.has(n.source_url)) reasons.push('shared_source_record_url');
+    if (publishedSourceUrls.has(n.source_url)) reasons.push('shared_source_record_url');
+    if (unconfirmedSourceUrls.has(n.source_url)) reasons.push('shared_unpublished_source_url');
     if (inboxUrls.has(n.source_url)) reasons.push('shared_news_inbox_url');
     if (missingDate && hostname === 'news.google.com') reasons.push('google_proxy_missing_date');
     if (validInstant(n.discovered_at) < now - 14 * DAY) reasons.push('aged_pending_14d');
