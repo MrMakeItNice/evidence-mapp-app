@@ -176,3 +176,37 @@ test('malformed inbox publication date rejected; reviewed undated entry is not t
   assert.equal(result.reason_counts.inbox_missing_date, 0);
   assert.ok(!result.review_queue.some(r => r.queue === 'research_inbox' && r.id === 12));
 });
+
+test('rejects impossible calendar dates across snapshot and record timestamps', () => {
+  const bad = '2026-02-30T18:00:00Z';
+  for (const field of ['as_of', 'news_discovered', 'news_published',
+    'inbox_discovered', 'inbox_published']) {
+    const data = snapshot();
+    if (field === 'as_of') data.as_of = bad;
+    if (field === 'news_discovered') data.news_items[0].discovered_at = bad;
+    if (field === 'news_published') data.news_items[0].published_at = bad;
+    if (field === 'inbox_discovered') data.research_inbox[0].discovered_at = bad;
+    if (field === 'inbox_published') data.research_inbox[0].published_at = bad;
+    assert.throws(() => triageReviewQueue(data), /Invalid timestamp/, field);
+  }
+});
+
+test('rejects non-leap February 29 and invalid time components', () => {
+  for (const timestamp of ['2025-02-29T00:00:00Z', '2026-04-31T00:00:00Z',
+    '2026-00-01T00:00:00Z', '2026-11-22T24:00:00Z',
+    '2026-11-22T12:60:00Z', '2026-11-22T12:00:60Z',
+    '2026-11-22T12:00:00+04:60']) {
+    const data = snapshot();
+    data.news_items[0].published_at = timestamp;
+    assert.throws(() => triageReviewQueue(data), /Invalid timestamp/, timestamp);
+  }
+});
+
+test('accepts valid leap-day timestamps and explicit offsets without changing data', () => {
+  const data = snapshot();
+  data.news_items[0].published_at = '2024-02-29T23:30:00+01:30';
+  data.research_inbox[0].published_at = '2024-02-29T23:30:00-05:00';
+  const original = structuredClone(data);
+  assert.doesNotThrow(() => triageReviewQueue(data));
+  assert.deepEqual(data, original);
+});
