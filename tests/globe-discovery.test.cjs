@@ -21,6 +21,18 @@ function setup() {
     append(node) { this.children.push(node); },
     focus() { document.activeElement = this; }
   }]));
+  const stateClasses = new Set();
+  const globeArea = {
+    classList: {
+      add: name => stateClasses.add(name),
+      remove: name => stateClasses.delete(name),
+      contains: name => stateClasses.has(name)
+    }
+  };
+  elements['globe-explore-panel'].closest = selector => {
+    assert.equal(selector, '.globe-area');
+    return globeArea;
+  };
   const quickTopics = ['Rabbit Holes', 'Case Files', 'Declassified records', 'Connections'].map(label => ({
     dataset: { globeTopic: label },
     addEventListener(type, fn) { this[type] = fn; }
@@ -46,7 +58,7 @@ function setup() {
     assert.ok(prevented, 'form submits without a page reload');
     return elements;
   };
-  return { elements, submit, document, quickTopics };
+  return { elements, submit, document, quickTopics, globeArea };
 }
 
 test('accessible search panel and deferred script exist on the globe homepage', () => {
@@ -189,5 +201,28 @@ test('each shortcut clears an earlier custom error before requesting native subm
     assert.equal(elements['globe-explore-query'].value, quickTopics[i].dataset.globeTopic);
     assert.equal(elements['globe-explore-panel'].hidden, false);
     assert.equal(document.activeElement, elements['globe-explore-panel']);
+  }
+});
+
+test('mobile research lens reflows before the globe and restores the original layout when closed', () => {
+  const { elements, submit, globeArea } = setup();
+  assert.equal(globeArea.classList.contains('globe-lens-open'), false);
+  submit('Rabbit Holes');
+  assert.equal(globeArea.classList.contains('globe-lens-open'), true);
+  assert.equal(elements['globe-explore-panel'].hidden, false);
+  elements['globe-explore-close'].click();
+  assert.equal(globeArea.classList.contains('globe-lens-open'), false);
+  assert.equal(elements['globe-explore-panel'].hidden, true);
+  submit('Case Files');
+  assert.equal(globeArea.classList.contains('globe-lens-open'), true);
+
+  assert.match(html, /@media\(max-width:800px\)\{\s*\.globe-explore-panel\{position:static;grid-row:8/);
+  for (const [selector, row] of [
+    ['globe-explore-panel', 2], ['globe-viewport', 3],
+    ['globe-tools', 4], ['globe-hint', 5], ['globe-status', 6],
+    ['geo-panel', 7], ['globe-cta', 8]
+  ]) {
+    assert.ok(html.includes('.globe-area.globe-lens-open .' + selector + '{grid-row:' + row + '}'),
+      'open mobile lens must place ' + selector + ' in row ' + row);
   }
 });
