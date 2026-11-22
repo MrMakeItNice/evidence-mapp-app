@@ -62,6 +62,15 @@
       links.append(link);
     }
     panel.hidden = false;
+    panel.focus();
     status.textContent = data.title + ' opened beside the globe. Choose a research destination.';
+  });
+
+  panel.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || panel.hidden) return;
+    event.preventDefault();
+    panel.hidden = true;
+    input.focus();
+    status.textContent = 'Research lens closed. Search another topic.';
   });
 })();
