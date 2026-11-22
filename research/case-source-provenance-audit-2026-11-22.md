@@ -89,3 +89,38 @@ Targeted exact identifiers, official URL substrings and title-phrase queries aga
 ### Limits
 
 These checks read production and create draft-branch review artifacts only. URL syntax is not a live link check; source status is not source veracity; timestamp staleness is not proven collector downtime. Focused unit/CI checks do not replace a full application review. **No production schema/data, collector schedule, merge, deploy or published content changed.**
+
+
+## Follow-up: 2026-11-22 20:10 UTC / 12:10 Pacific — source *kind* versus documentary verification
+
+### New source-kind gap discovered by read-only join
+
+An examination of the **219 case-to-master-register citation links** found:
+- **219/219** links carry `source_role=cited_by_master_index`. A reference in the master index is *not* a separate fact-check, independent witness or guarantee the underlying original was reviewed.
+- **213/219** links target sources labeled `source_type=master_index_bibliography`; **5** link to a `Congressional Hearing` source type and **1** to an `official investigation announcement` type.
+- **134 of the 140 published cases** have *only* master-index bibliography-type linked references; **6** published cases have at least one linked source with a different source type. The latter records are **not automatically verified** merely because their source type differs.
+- Case **26**, source **26**, repeats through register IDs **32** and **46**. Both are in register `cases_1_100`, use distinct reference codes `S32` and `S46`, and both indicate original PDF page **11**. This is a catalog-level review lead, not proof of redundant original evidence or an instruction to delete either citation.
+
+A bibliography pointer may identify an authentic released government document. Source type is an *editorial classification*, not a conclusion about truth or source availability. Prioritize opening the original primary document, confirming the page/record context, publisher/date, and linking it with an explicitly attributed source role. Do not infer that 134 cases have zero primary evidence.
+
+The offline diagnostic in this draft PR now counts references of the `master_index_bibliography` type and published cases whose linked references are *exclusively* that type; it adds a separate review reason, `only_master_index_bibliography_sources`, and counts `cited_by_master_index` roles. Counts are by catalog *links*, not unique independent sources. The source-type field is validated as an optional string; unrecognized or missing types are **not** classified as bibliography merely by assumption. Five new focused regression tests check mixed types, bibliography-only cases, missing links, and invalid types.
+
+### Latest ingestion/collector inventory (read-only, 20:10 UTC)
+
+- `news_items`: **940 pending**, **57 discovered in previous 24 hours**, **447 lacking publication dates**, including **428 Google News proxy-URL items**; **135 pending beyond 14 days**.
+- `research_inbox`: **40 pending**, four undated and four without a watch assignment. The published-marked library sources remain **123**, of which **53** lack publication dates.
+- Exact URL joins: **25** news/inbox and **5** news/source links. No within-table exact URL duplicate groups in news, inbox or sources. Exact URLs are possible record links, not independent corroboration.
+- **11/36** active news topics have no news items; **11/11** active research watch timestamps and **7/7** active news-watch timestamps are older than 24 hours or blank. Stale watch timestamps do not alone mean polling has stopped.
+- `Positive News`: **41 observed completed HTTP 403** responses in the retained 24-hour activity; last recorded success **November 11**. The current feed status is error with a challenge-page response. No anti-bot bypass attempted.
+- `COVID-19 — Google News`: one observed HTTP 429 in 24 hours but **later HTTP 200**; do not describe it as an ongoing outage. Government BBC, World BBC, Gaza Google News, COVID Google News and Epstein Google News latest completed checks were successful. Public Health BBC had a **pending** run at the observation instant, after earlier successes.
+- These activity counts describe the retained observed rows, **not** total attempt counts or availability guarantees.
+
+### Two additional original-agency review leads (not published)
+
+**Federal Election Commission Office of Inspector General — Fraud Alert 2027-01**, issued **November 20, 2026**. Original OIG alert listed by Oversight.gov: https://www.oversight.gov/reports/fec-oig-fraud-alert-2027-01 . Original FEC document linked by the listing: https://www.fec.gov/resources/cms-content/documents/Fraud-Alert-Nov-2026.pdf . The FEC OIG reports a malicious impersonation attempt targeting vendors by falsely posing as the FEC procurement director to obtain equipment. This is an official *fraud alert*, **not** an adjudication of identity, losses, or convictions. Review the original attachment, scope and updates before any claim about an identified perpetrator. Candidate connection: government official impersonation, contractor fraud prevention.
+
+**GAO-27-108433 — Bureau of Indian Affairs: Additional Actions Needed to Address Law Enforcement Staffing Challenges**, published and released **November 19, 2026**. Original agency page: https://www.gao.gov/products/gao-27-108433 . GAO found high law-enforcement vacancy rates and problems recruiting and retaining officers at BIA; its page records **two open recommendations**. This is a staffing/capacity finding, not evidence of deliberate denial of policing to Tribes. Compare the methodology, agency response and later implementation. Candidate cross-link: tribal public safety and previously published GAO workforce-capacity oversight; these are related reports, **not independent confirmations of every claim**.
+
+Targeted identifier/title/URL-phrase searches of `news_items`, `research_inbox` and `sources` yielded **zero direct matches** for either new lead. This does not rule out indirect mentions, related existing cases, variants or other editorial staging memos. Both leads remain in **this PR memo only** for editorial review; no database insertion, publication or automatic case creation.
+
+**Release boundary:** source-type classification is a catalog-triage measure, not a validity verdict. No production DB writes, schema changes, merges, deployments, web fetches against source URLs, collector changes or automatic publication. CI checks are focused only.
