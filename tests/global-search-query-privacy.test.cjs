@@ -141,7 +141,7 @@ function delayedArchivePage(options = {}) {
     {replaceState: options.replaceState || (() => {})}, fetch, URL, URLSearchParams, AbortController, options.setTimeout || (() => 1), options.clearTimeout || (() => {}));
   const submit = term => { get('q').value = term; get('search').handlers.submit({preventDefault() {}}) };
   const complete = async (ok = true) => {
-    resolveArchive({ok, json: async () => [
+    resolveArchive({ok, json: async () => options.caseRecords || [
       {id: 1, title: 'Original investigation'}, {id: 2, title: 'Latest investigation'}, {id: 3, title: 'Unsent investigation'}
     ]});
     await new Promise(resolve => setImmediate(resolve));
@@ -606,4 +606,58 @@ test('scholarly coverage names the responding and unavailable indexes for every 
       assert.match(page.results, /No scholarly indexes responded/);
     }
   }
+});
+
+test('case pagination exposes every match once and focuses the first link of each revealed batch', async () => {
+  const caseRecords = Array.from({length: 83}, (_, i) => ({id: i + 1, title: 'Original case ' + (i + 1)}));
+  const page = delayedArchivePage({caseRecords});await page.complete();
+  const rows = () => page.get('results').children;
+  const link = row => row.children[1].children[0];
+  const more = page.get('more-cases');
+  assert.equal(rows().length, 40);assert.equal(more.hidden, false);
+  assert.match(page.get('archive-status').textContent, /Showing 40 of 83/);
+  const calls = page.calls.length;
+  more.focus();more.handlers.click();
+  assert.equal(rows().length, 80);assert.equal(page.document.activeElement, link(rows()[40]));
+  assert.match(page.get('archive-status').textContent, /Showing 80 of 83/);
+  more.focus();more.handlers.click();
+  assert.equal(rows().length, 83);assert.equal(page.document.activeElement, link(rows()[80]));
+  assert.equal(more.hidden, true);
+  assert.match(page.get('archive-status').textContent, /Showing 83 of 83/);
+  const urls = rows().map(row => link(row).href);
+  assert.equal(new Set(urls).size, 83);
+  assert.equal(urls.at(-1), './paper-trails.html#case-83');
+  more.handlers.click();assert.equal(rows().length, 83, 'extra activation cannot duplicate matches');
+  assert.equal(page.calls.length, calls, 'showing local matches makes no new archive or scholarly request');
+});
+
+test('case pagination uses the submitted query through unsent edits and resets on resubmission or clear', async () => {
+  const caseRecords = Array.from({length: 83}, (_, i) => ({id: i + 1, title: 'Original case ' + (i + 1)}));
+  caseRecords.push({id: 'different', title: 'Different topic'});
+  const page = delayedArchivePage({caseRecords});await page.complete();
+  const more = page.get('more-cases');
+  page.get('q').value = 'Different';page.get('q').focus();more.handlers.click();
+  assert.equal(page.get('results').children.length, 80);
+  assert.equal(page.document.activeElement, page.get('q'), 'programmatic expansion does not steal focus');
+  assert.doesNotMatch(page.resultText(), /Different topic/);
+  page.submit('Different');
+  assert.equal(page.get('results').children.length, 1);assert.equal(more.hidden, true);
+  assert.match(page.resultText(), /Different topic/);
+  page.submit('Original');assert.equal(page.get('results').children.length, 40);assert.equal(more.hidden, false);
+  page.get('q').setCustomValidity = () => {};
+  page.get('clear-search').handlers.click();
+  assert.equal(page.resultText(), '');assert.equal(more.hidden, true);
+  more.handlers.click();assert.equal(page.resultText(), '');
+});
+
+test('case pagination stays hidden during loading and after empty matches or archive failure', async () => {
+  const page = delayedArchivePage();page.submit('missing');
+  assert.equal(page.get('more-cases').hidden, true);
+  await page.complete();assert.equal(page.get('more-cases').hidden, true);
+  const failed = delayedArchivePage();await failed.complete(false);
+  assert.equal(failed.get('more-cases').hidden, true);
+  failed.get('more-cases').handlers.click();
+  assert.match(failed.get('archive-status').textContent, /could not be loaded/);
+  assert.match(html, /<button id="more-cases" type="button" aria-controls="results" aria-describedby="archive-status" hidden>/);
+  assert.match(html, /#more-cases\{[^}]*min-height:44px/);
 });
