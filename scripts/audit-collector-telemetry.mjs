@@ -79,7 +79,7 @@ export function auditCollectorTelemetry(snapshot) {
     const lastSuccess = optionalInstant(f.last_success_at);
     const counts = {
       completed: recent.length,
-      successful: recent.filter(a => a.status === 'ok').length,
+      successful: recent.filter(a => a.status === 'ok' && !(a.http_status >= 400)).length,
       http_403: recent.filter(a => a.http_status === 403).length,
       http_429: recent.filter(a => a.http_status === 429).length,
       saved: recent.reduce((sum, a) => sum + (a.saved_count ?? 0), 0)
@@ -91,6 +91,13 @@ export function auditCollectorTelemetry(snapshot) {
       if (counts.http_403 >= 3) flags.push('repeated_observed_http_403');
       else if (counts.http_403 > 0) flags.push('observed_http_403');
       if (counts.http_429 > 0) flags.push('observed_http_429');
+      // Conflicting telemetry is a data-quality lead, not proof of collection success.
+      if (recent.some(a => a.status === 'ok' && a.http_status >= 400)) {
+        flags.push('status_ok_with_http_error');
+      }
+      if (recent.some(a => a.status === 'pending')) {
+        flags.push('completed_run_still_pending');
+      }
       if (f.last_run_status === 'error') flags.push('last_run_error');
     }
     return {
