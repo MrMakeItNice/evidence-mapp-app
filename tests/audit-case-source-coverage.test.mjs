@@ -84,3 +84,50 @@ test('caps case-ID output while preserving aggregate totals',()=>{
   assert.equal(x.flagged_cases.length,50);
   assert.equal(x.omitted_flagged_cases,5);
 });
+
+test('counts distinct underlying sources independently from register references',()=>{
+  const x=audit(sample());
+  assert.equal(x.summary.references_total,3);
+  assert.equal(x.summary.unique_case_source_pairs,3);
+  assert.equal(x.summary.repeated_case_source_pairs,0);
+  assert.equal(x.summary.underlying_sources_shared_across_cases,1);
+  assert.equal(x.summary.published_cases_with_complete_marked_published_source,1);
+  assert.equal(x.summary.published_cases_without_complete_marked_published_source,1);
+});
+test('flags two register IDs to the same underlying source without deleting either',()=>{
+  const s=sample();
+  s.master_source_register.push({id:102,source_id:11});
+  s.case_source_references.push({case_id:1,register_id:102});
+  s.expected_counts.master_source_register++;
+  s.expected_counts.case_source_references++;
+  const x=audit(s);
+  assert.equal(x.summary.references_total,4);
+  assert.equal(x.summary.unique_case_source_pairs,3);
+  assert.equal(x.summary.repeated_case_source_pairs,1);
+  assert.equal(x.summary.excess_register_references_to_same_source,1);
+  assert.deepEqual(x.repeated_underlying_source_pairs,[{case_id:1,source_id:11,register_ids:[101,102]}]);
+  assert.ok(x.flagged_cases.find(c=>c.case_id===1).reasons.includes('repeated_underlying_source'));
+});
+test('two incomplete published sources cannot combine metadata to appear complete',()=>{
+  const s=sample();
+  s.sources[0].publisher=null;
+  s.sources[1].published=true;
+  s.sources[1].publisher='Public Agency';
+  const x=audit(s);
+  assert.equal(x.summary.published_cases_with_complete_marked_published_source,0);
+  assert.equal(x.summary.published_cases_without_complete_marked_published_source,2);
+  const first=x.flagged_cases.find(c=>c.case_id===1).reasons;
+  assert.ok(!first.includes('no_dated_source'));
+  assert.ok(!first.includes('no_attributed_publisher'));
+  assert.ok(first.includes('no_single_complete_marked_published_source'));
+});
+test('shared source among cases is one source, not independent corroboration',()=>{
+  const s=sample();
+  s.case_source_references.push({case_id:3,register_id:101});
+  s.expected_counts.case_source_references++;
+  const x=audit(s);
+  assert.equal(x.summary.underlying_sources_shared_across_cases,1);
+  assert.equal(x.summary.unique_referenced_sources,2);
+  assert.equal(x.summary.unique_case_source_pairs,4);
+  assert.equal(x.summary.published_cases,2);
+});
