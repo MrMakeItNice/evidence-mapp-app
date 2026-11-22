@@ -365,3 +365,22 @@ test('unavailable and retrying archives never announce a stale or false zero-mat
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(get('resultCount').textContent,'1 matching case');
 });
+
+test('credentialed approved records remain non-clickable in previews and timelines',async()=>{
+ for(const url of ['https://archives.gov@untrusted.example/report','https://reader:password@archives.gov/report','https://:password@archives.gov/report']){
+  const get=await loadPage(publishedFixture([
+   {case_id:42,source_id:1,title:'Restricted destination',url,publication_date:'2020-01-01'},
+   {case_id:42,source_id:2,title:'Public document',url:'https://archives.gov/report?id=42#page=2',publication_date:'2020-01-02'}
+  ]));
+  assert.match(get('sourceGate').textContent,/checked/,'source publication approval remains distinct from URL validation');
+  assert.match(get('detail').innerHTML,/<strong>Restricted destination<\/strong>/);
+  assert.match(get('detail').innerHTML,/No validated HTTPS document link/);
+  assert.ok(!get('detail').innerHTML.includes(url),'blocked destination must not appear in preview markup');
+  assert.match(get('detail').innerHTML,/href="https:\/\/archives.gov\/report\?id=42#page=2"/);
+  const timeline=get('documentTimeline').innerHTML;
+  assert.match(timeline,/Restricted destination/,'retain the non-clickable record title and date');
+  assert.ok(!timeline.includes(url));
+  assert.equal((timeline.match(/<a href=/g)||[]).length,1,'only the public destination gets a timeline link');
+  assert.match(timeline,/href="https:\/\/archives.gov\/report\?id=42#page=2"/);
+ }
+});

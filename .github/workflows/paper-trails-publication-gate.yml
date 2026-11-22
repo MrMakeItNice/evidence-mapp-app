@@ -6,6 +6,7 @@ on:
       - 'paper-trails.html'
       - 'paper-trails-data.json'
       - 'tests/paper-trails-publication-gate.test.cjs'
+      - 'tests/paper-trails-source-url.test.cjs'
       - '.github/workflows/paper-trails-publication-gate.yml'
   workflow_dispatch:
 
@@ -19,4 +20,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check source publication export gate
-        run: node --test tests/paper-trails-publication-gate.test.cjs
+        run: node --test tests/paper-trails-publication-gate.test.cjs tests/paper-trails-source-url.test.cjs
