@@ -11,6 +11,7 @@ const REASONS = Object.freeze({
   primary_kind_missing_date: 100,
   shared_source_record_url: 90,
   shared_news_inbox_url: 80,
+  shared_news_inbox_date_variance: 75,
   shared_unpublished_source_url: 55,
   inbox_unassigned_watch: 70,
   inbox_missing_date: 65,
@@ -104,6 +105,21 @@ export function triageReviewQueue(snapshot, { limit = 50 } = {}) {
   // Exact URL identity is a potential editorial correlation, not corroboration or a merge key.
   const inboxUrls = new Set(collections.research_inbox.map(r => r.source_url));
   const newsUrls = new Set(collections.news_items.map(r => r.source_url));
+  // Date differences across the *same exact URL* are editorial metadata leads.
+  // Never infer which date is correct or edit either record.
+  const datedTimesByUrl = rows => {
+    const times = new Map();
+    for (const row of rows) {
+      if (row.published_at == null) continue;
+      if (!times.has(row.source_url)) times.set(row.source_url, []);
+      times.get(row.source_url).push(validInstant(row.published_at));
+    }
+    return times;
+  };
+  const newsDates = datedTimesByUrl(collections.news_items);
+  const inboxDates = datedTimesByUrl(collections.research_inbox);
+  const differsByOverADay = (date, others) =>
+    date != null && !!others?.some(t => Math.abs(validInstant(date) - t) > DAY);
   // A matched registry URL is not independent corroboration. Distinguish source
   // records marked published from unpublished or unknown-status placeholders.
   const publishedSourceUrls = new Set(collections.sources
@@ -121,6 +137,9 @@ export function triageReviewQueue(snapshot, { limit = 50 } = {}) {
     if (publishedSourceUrls.has(n.source_url)) reasons.push('shared_source_record_url');
     if (unconfirmedSourceUrls.has(n.source_url)) reasons.push('shared_unpublished_source_url');
     if (inboxUrls.has(n.source_url)) reasons.push('shared_news_inbox_url');
+    if (differsByOverADay(n.published_at, inboxDates.get(n.source_url))) {
+      reasons.push('shared_news_inbox_date_variance');
+    }
     if (missingDate && hostname === 'news.google.com') reasons.push('google_proxy_missing_date');
     if (validInstant(n.discovered_at) < now - 14 * DAY) reasons.push('aged_pending_14d');
     if (missingDate && !PRIMARY_KINDS.has(n.content_kind) && hostname !== 'news.google.com') {
@@ -137,6 +156,9 @@ export function triageReviewQueue(snapshot, { limit = 50 } = {}) {
     if (i.watch_topic_id == null) reasons.push('inbox_unassigned_watch');
     if (i.published_at == null) reasons.push('inbox_missing_date');
     if (newsUrls.has(i.source_url)) reasons.push('shared_news_inbox_url');
+    if (differsByOverADay(i.published_at, newsDates.get(i.source_url))) {
+      reasons.push('shared_news_inbox_date_variance');
+    }
     if (validInstant(i.discovered_at) < now - 14 * DAY) reasons.push('aged_pending_14d');
     if (reasons.length) candidates.push({
       queue: 'research_inbox', id: i.id, reasons,
