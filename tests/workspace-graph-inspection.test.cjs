@@ -22,6 +22,7 @@ function fixture() {
   };
   const pages = [], focused = [], notices = [], state = { caseId: null };
   const targets = [
+    ...records.cases.map(r => ['case', r.id]),
     ...records.sources.map(r => ['source', r.id]),
     ...records.claims.map(r => ['claim', r.id]),
     ...records.people.map(r => ['person', r.id]),
@@ -57,6 +58,16 @@ test('source and claim nodes focus their distinct IDs, never an arbitrary index 
   }
   assert.equal(app.focused.length, 6);
   assert.deepEqual(app.notices, []);
+});
+
+test('case map inspection focuses the specific named Case File details', () => {
+  const app = fixture();
+  app.inspect('case', 'case-a');
+  assert.equal(app.pages.at(-1), 'cases');
+  assert.equal(app.state.caseId, 'case-a');
+  assert.equal(app.focused.at(-1), 'case:case-a');
+  assert.match(html, /class="panel case-detail graph-record-target" tabindex="-1" data-graph-kind="case" data-graph-id="\$\{esc\(c\.id\)\}" aria-labelledby="case-detail-title"/);
+  assert.match(html, /<h2 id="case-detail-title">\$\{esc\(c\.title\)\}<\/h2>/);
 });
 
 test('missing or unknown graph nodes cannot redirect to an unrelated record', () => {
