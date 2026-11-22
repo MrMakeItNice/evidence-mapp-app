@@ -10,6 +10,8 @@
   const status = document.getElementById('globe-explore-status');
   const close = document.getElementById('globe-explore-close');
   if (![form, input, panel, title, summary, links, status, close].every(Boolean)) return;
+  const globeArea = panel.closest('.globe-area');
+  if (!globeArea) return;
 
   const lenses = {
     rabbit: {
@@ -71,6 +73,7 @@
       links.append(link);
     }
     panel.hidden = false;
+    globeArea.classList.add('globe-lens-open');
     panel.focus();
     status.textContent = data.title + ' opened beside the globe. Choose a research destination.';
   });
@@ -87,6 +90,7 @@
   function closeLens() {
     if (panel.hidden) return;
     panel.hidden = true;
+    globeArea.classList.remove('globe-lens-open');
     input.focus();
     status.textContent = 'Research lens closed. Search another topic.';
   }
