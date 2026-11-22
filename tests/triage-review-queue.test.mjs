@@ -176,3 +176,23 @@ test('malformed inbox publication date rejected; reviewed undated entry is not t
   assert.equal(result.reason_counts.inbox_missing_date, 0);
   assert.ok(!result.review_queue.some(r => r.queue === 'research_inbox' && r.id === 12));
 });
+
+test('rejects impossible calendar dates rather than silently normalizing them', () => {
+  for (const invalid of [
+    '2026-02-30T12:00:00Z',
+    '2026-11-31T12:00:00Z',
+    '2025-02-29T12:00:00Z',
+    '2026-01-01T24:00:00Z',
+    '2026-01-01T10:00:00+14:30',
+    '2026-01-01T10:00:00+15:00'
+  ]) {
+    const data = snapshot();
+    data.news_items[0].discovered_at = invalid;
+    assert.throws(() => triageReviewQueue(data), /Invalid timestamp/, invalid);
+  }
+  const valid = snapshot();
+  valid.news_items[0].discovered_at = '2024-02-29T12:30:00+05:30';
+  assert.doesNotThrow(() => triageReviewQueue(valid));
+  valid.research_inbox[0].published_at = '2026-02-30T12:00:00Z';
+  assert.throws(() => triageReviewQueue(valid), /Invalid timestamp/);
+});
