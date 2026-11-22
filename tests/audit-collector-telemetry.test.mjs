@@ -46,7 +46,7 @@ test('single 429 is flagged without labeling the entire feed failed', () => {
   const s = snapshot();
   s.agent_control_activity[0].status = 'error';
   s.agent_control_activity[0].http_status = 429;
-  assert.deepEqual(check(s).flags, ['observed_http_429']);
+  assert.deepEqual(check(s).flags, ['observed_http_429', 'http_429_without_later_observed_success']);
 });
 test('a pending last run does not mean a failed completed run', () => {
   const s = snapshot();
@@ -125,4 +125,45 @@ test('completed activity marked pending is flagged for telemetry reconciliation'
   assert.equal(f.observed_completed_24h.successful, 0);
   assert.ok(f.flags.includes('completed_run_still_pending'));
   assert.ok(!f.flags.includes('last_run_error'));
+});
+
+test('429 followed by later successful completion is distinguished from an active access problem', () => {
+  const s = snapshot();
+  s.agent_control_activity.push({
+    ...s.agent_control_activity[0], run_id: 2, status: 'error', http_status: 429,
+    requested_at: '2026-11-22T12:10:00Z', finished_at: '2026-11-22T12:11:00Z'
+  });
+  s.expected_counts.agent_control_activity = 2;
+  const f = check(s);
+  assert.equal(f.observed_completed_24h.http_429, 1);
+  assert.equal(f.observed_completed_24h.successful, 1);
+  assert.ok(f.flags.includes('http_429_followed_by_observed_success'));
+  assert.ok(!f.flags.includes('http_429_without_later_observed_success'));
+});
+
+test('a healthy run before the latest 429 does not prove recovery', () => {
+  const s = snapshot();
+  s.agent_control_activity.push({
+    ...s.agent_control_activity[0], run_id: 2, status: 'error', http_status: 429,
+    requested_at: '2026-11-22T13:30:00Z', finished_at: '2026-11-22T13:31:00Z'
+  });
+  s.expected_counts.agent_control_activity = 2;
+  const f = check(s);
+  assert.ok(f.flags.includes('http_429_without_later_observed_success'));
+  assert.ok(!f.flags.includes('http_429_followed_by_observed_success'));
+});
+
+test('success after an earlier 429 but before a later 429 is not sufficient', () => {
+  const s = snapshot();
+  s.agent_control_activity.push({
+    ...s.agent_control_activity[0], run_id: 2, status: 'error', http_status: 429,
+    requested_at: '2026-11-22T12:00:00Z', finished_at: '2026-11-22T12:01:00Z'
+  }, {
+    ...s.agent_control_activity[0], run_id: 3, status: 'error', http_status: 429,
+    requested_at: '2026-11-22T13:30:00Z', finished_at: '2026-11-22T13:31:00Z'
+  });
+  s.expected_counts.agent_control_activity = 3;
+  const f = check(s);
+  assert.equal(f.observed_completed_24h.http_429, 2);
+  assert.ok(f.flags.includes('http_429_without_later_observed_success'));
 });
