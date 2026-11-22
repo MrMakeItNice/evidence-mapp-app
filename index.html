@@ -102,6 +102,10 @@
 .globe-explore-controls{display:flex;gap:8px}
 .globe-explore-controls input{flex:1;min-width:0;background:#09141f;border:1px solid #73949b;color:white;padding:12px;font:16px system-ui,sans-serif;border-radius:4px}
 .globe-explore-controls button{background:#a8e6cb;border:0;border-radius:4px;color:#102528;padding:10px 15px;font-weight:800}
+.globe-explore-shortcuts{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.globe-explore-shortcuts button{min-height:44px;padding:9px 12px;border:1px solid #597e80;background:#163643;color:#d5f6ea;border-radius:4px;font:700 12px system-ui,sans-serif;cursor:pointer}
+.globe-explore-shortcuts button:hover{border-color:#a8e6cb}
+.globe-explore-shortcuts button:focus-visible,.globe-explore-controls button:focus-visible{outline:3px solid #a8e6cb;outline-offset:2px}
 .globe-explore-form p{font-size:12px;color:#b4c8cc;margin:8px 0 0}
 .globe-explore-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .globe-explore-panel{position:absolute;top:210px;right:clamp(12px,3vw,45px);z-index:7;width:min(295px,42%);background:#0a1a27f5;border:1px solid #80aaab;border-radius:6px;padding:15px;box-shadow:0 12px 32px #000a}
@@ -142,6 +146,7 @@
 <form id="globe-explore-form" class="globe-explore-form" role="search" aria-label="Explore Evidence Atlas by globe topic">
   <label for="globe-explore-query">Explore the globe by topic or section</label>
   <div class="globe-explore-controls"><input id="globe-explore-query" type="search" maxlength="160" placeholder="Try Rabbit Holes, Case Files or MKULTRA" autocomplete="off" required><button type="submit">Explore on globe</button></div>
+  <div class="globe-explore-shortcuts" role="group" aria-label="Common research lenses"><button type="button" data-globe-topic="Rabbit Holes">Rabbit Holes</button><button type="button" data-globe-topic="Case Files">Case Files</button><button type="button" data-globe-topic="Declassified records">Declassified records</button><button type="button" data-globe-topic="Connections">Connections</button></div>
   <p>Choose a research lens or search any topic. Only reviewed, location-backed events appear as geographic markers.</p>
   <div id="globe-explore-status" class="globe-explore-status" role="status" aria-live="polite"></div>
 </form>
