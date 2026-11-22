@@ -144,10 +144,10 @@
 <main id="top"><div role="region" aria-label="Evidence Web feature" style="background:#132c37;border-bottom:1px solid #426b72;padding:14px 5%;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><strong style="color:#a8e6cb">NEW TO EXPLORE · THE EVIDENCE WEB</strong><div style="color:#d8e6e7;font-size:14px">Trace an investigation through cited records and shared documents. Links show citations—not proof of wrongdoing.</div></div><a href="./connection-explorer.html" style="background:#a8e6cb;color:#0b2430;padding:11px 17px;border-radius:4px;font-weight:800">Explore the interactive web ↗</a></div>
 <section class="hero" aria-label="Evidence Atlas introduction"><div class="hero-text"><div class="kicker">People · Power · Patterns · Solutions</div><h1><span>The world is connected.</span><span>Follow the evidence.</span></h1><p class="intro">Discover the people, institutions, financial trails, and events shaping our shared world.<br><strong>One Planet. One Humanity. One Future.</strong></p></div>
 <form id="globe-explore-form" class="globe-explore-form" role="search" aria-label="Explore Evidence Atlas by globe topic">
-  <label for="globe-explore-query">Explore the globe by topic or section</label>
-  <div class="globe-explore-controls"><input id="globe-explore-query" type="search" maxlength="160" placeholder="Try Rabbit Holes, Case Files or MKULTRA" autocomplete="off" required><button type="submit">Explore on globe</button></div>
+  <label for="globe-explore-query">Find a topic or research section</label>
+  <div class="globe-explore-controls"><input id="globe-explore-query" type="search" aria-describedby="globe-explore-help" maxlength="160" placeholder="Try Rabbit Holes, Case Files or MKULTRA" autocomplete="off" required><button type="submit">Explore research</button></div>
   <div class="globe-explore-shortcuts" role="group" aria-label="Common research lenses"><button type="button" data-globe-topic="Rabbit Holes">Rabbit Holes</button><button type="button" data-globe-topic="Case Files">Case Files</button><button type="button" data-globe-topic="Declassified records">Declassified records</button><button type="button" data-globe-topic="Connections">Connections</button></div>
-  <p>Choose a research lens or search any topic. Only reviewed, location-backed events appear as geographic markers.</p>
+  <p id="globe-explore-help">Choose a lens or enter a topic to open research links beside the globe. This search does not filter globe markers; pins require reviewed records with sourced locations.</p>
   <div id="globe-explore-status" class="globe-explore-status" role="status" aria-live="polite"></div>
 </form>
 
