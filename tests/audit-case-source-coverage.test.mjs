@@ -131,3 +131,41 @@ test('shared source among cases is one source, not independent corroboration',()
   assert.equal(x.summary.unique_case_source_pairs,4);
   assert.equal(x.summary.published_cases,2);
 });
+
+test('non-web source URLs cannot satisfy complete provenance',()=>{
+  const s=sample();
+  s.sources[0].url='javascript:alert(1)';
+  const x=audit(s);
+  assert.equal(x.summary.references_to_invalid_source_url,1);
+  assert.equal(x.summary.published_cases_with_complete_marked_published_source,0);
+  assert.ok(x.flagged_cases.find(c=>c.case_id===1).reasons.includes('no_single_complete_marked_published_source'));
+});
+test('embedded URL credentials are flagged rather than exposed in output',()=>{
+  const s=sample();
+  s.sources[0].url='https://researcher:secret@agency.gov/report';
+  const x=audit(s);
+  assert.equal(x.summary.references_to_invalid_source_url,1);
+  assert.equal(JSON.stringify(x).includes('secret'),false);
+});
+test('whitespace in URL is flagged even if URL parser could encode it',()=>{
+  const s=sample();
+  s.sources[0].url='https://agency.gov/a b';
+  assert.equal(audit(s).summary.references_to_invalid_source_url,1);
+});
+test('missing and syntactically invalid URLs have separate review reasons',()=>{
+  const s=sample();
+  s.sources[0].url='mailto:records@agency.gov';
+  s.sources[1].url=null;
+  const x=audit(s);
+  assert.equal(x.summary.references_to_invalid_source_url,1);
+  assert.equal(x.summary.references_to_missing_source_url,2);
+  assert.equal(x.summary.published_cases_without_valid_source_url,2);
+  assert.ok(x.flagged_cases.find(c=>c.case_id===2).reasons.includes('no_valid_source_url'));
+});
+test('ordinary HTTPS query strings and fragments remain valid',()=>{
+  const s=sample();
+  s.sources[0].url='https://agency.gov:443/report?item=1#section';
+  const x=audit(s);
+  assert.equal(x.summary.references_to_invalid_source_url,0);
+  assert.equal(x.summary.published_cases_with_complete_marked_published_source,1);
+});
