@@ -38,10 +38,34 @@ test('blocked sources render as escaped plain-text labels, not links', () => {
   assert.equal(link('javascript:alert(1)', '<unsafe>'), '&lt;unsafe&gt;');
 });
 
-test('allowed source labels and links are escaped and use safe anchor attributes', () => {
+test('allowed source labels and links are escaped, with an explicit destination', () => {
   const markup = link('https://archives.gov/?a=1&b=2', '<Archive & records>');
-  assert.match(markup, /^<a href="https:\/\/archives\.gov\/\?a=1&amp;b=2" target="_blank" rel="noopener noreferrer">&lt;Archive &amp; records&gt; ↗<\/a>$/);
+  assert.match(markup, /^<a href="https:\/\/archives\.gov\/\?a=1&amp;b=2" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" aria-label="&lt;Archive &amp; records&gt; \(opens archives\.gov in a new tab; destination not independently verified\)">/);
+  assert.match(markup, /&lt;Archive &amp; records&gt; ↗<\/a>/);
+  assert.match(markup, /Destination: archives\.gov · indexed URL only<\/small>$/);
   assert.match(js, /sources\.map\(s=>'<li>'\+link\(s\.url,s\.label\)/);
+});
+
+test('exposes the actual hostname and non-default port rather than an apparent publisher', () => {
+  const markup = link('https://agency.gov.attacker.example:8443/report?doc=9#page=2', 'Official agency report');
+  assert.match(markup, /href="https:\/\/agency\.gov\.attacker\.example:8443\/report\?doc=9#page=2"/);
+  assert.match(markup, /Destination: agency\.gov\.attacker\.example:8443/);
+  assert.match(markup, /destination not independently verified/);
+  assert.doesNotMatch(markup, /Destination: agency\.gov ·/);
+});
+
+test('refuses URLs the browser parser might silently rewrite', () => {
+  for (const url of [
+    'https://example.org\\@attacker.example/report',
+    'https://example.org\\path',
+    'https://example.org/report\n?doc=42',
+    'https://example.org/report\t?doc=42',
+    'https://example.org/report\r?doc=42',
+    42, {toString(){return 'https://example.org/report'}}
+  ]) {
+    assert.equal(safe(url), null, String(url));
+    assert.doesNotMatch(link(url, 'Untrusted source'), /<a\b/i);
+  }
 });
 
 test('news update JavaScript remains syntactically valid', () => {
