@@ -181,7 +181,8 @@ test('distinguishes bibliography-only cases from independently cataloged source 
   assert.equal(x.summary.references_to_master_index_bibliography,2);
   assert.equal(x.summary.published_cases_with_only_master_index_bibliography_sources,1);
   assert.ok(x.flagged_cases.find(c=>c.case_id===2).reasons.includes('only_master_index_bibliography_sources'));
-  assert.equal(x.flagged_cases.some(c=>c.case_id===1),false);
+  assert.ok(!x.flagged_cases.find(c=>c.case_id===1).reasons.includes('only_master_index_bibliography_sources'));
+  assert.ok(x.flagged_cases.find(c=>c.case_id===1).reasons.includes('only_master_index_citation_roles'));
 });
 
 test('a mix of bibliography and non-bibliography source is not bibliography-only',()=>{
@@ -214,4 +215,36 @@ test('a published bibliography record still needs its original document checked'
 test('non-string source type is rejected as an invalid snapshot',()=>{
   const s=sample();s.sources[0].source_type={unexpected:'value'};
   assert.throws(()=>audit(s),/Invalid source/);
+});
+
+
+test('all index citation roles flag a published case even if source type is official',()=>{
+  const s=sample();
+  s.sources[0].source_type='Congressional Hearing';
+  s.case_source_references.forEach(r=>r.source_role='cited_by_master_index');
+  const x=audit(s);
+  assert.equal(x.summary.published_cases_with_only_master_index_citation_roles,2);
+  assert.equal(x.summary.references_without_explicit_source_role,0);
+  assert.ok(x.flagged_cases.find(c=>c.case_id===1).reasons.includes('only_master_index_citation_roles'));
+});
+
+test('a non-index link role prevents index-only categorization without proving authenticity',()=>{
+  const s=sample();
+  s.case_source_references.forEach(r=>r.source_role='cited_by_master_index');
+  s.case_source_references[0].source_role='direct_document_link';
+  const x=audit(s);
+  assert.equal(x.summary.published_cases_with_only_master_index_citation_roles,1);
+  assert.ok(!x.flagged_cases.some(c=>c.case_id===1));
+  assert.ok(x.flagged_cases.find(c=>c.case_id===2).reasons.includes('only_master_index_citation_roles'));
+});
+
+test('missing citation roles are unknown, not assumed to be master-index roles',()=>{
+  const x=audit(sample());
+  assert.equal(x.summary.references_without_explicit_source_role,3);
+  assert.equal(x.summary.published_cases_with_only_master_index_citation_roles,0);
+});
+
+test('invalid non-string citation role is rejected',()=>{
+  const s=sample();s.case_source_references[0].source_role={untrusted:'value'};
+  assert.throws(()=>audit(s),/Invalid case source reference/);
 });
