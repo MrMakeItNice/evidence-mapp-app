@@ -74,22 +74,21 @@ test('source-library and dated-timeline links remain routed through the policy',
 });
 
 
-test('other workspace source previews reveal the actual destination instead of implying publisher authenticity', () => {
+test('other workspace previews disclose destination hosts and escape unsafe metadata', () => {
   const preview = sourceAnchor({
     title: 'Agency <record>',
     publisher: 'agency.gov',
     url: 'https://agency.gov.attacker.example:8443/report?document=A%2FB&lang=en#page=3'
   }, 'Open original source ↗');
-  assert.match(preview, /Destination: agency\\.gov\\.attacker\\.example:8443 · indexed URL only/);
-  assert.match(preview, /href="https:\\/\\/agency\\.gov\\.attacker\\.example:8443\\/report\\?document=A%2FB&amp;lang=en#page=3"/);
-  assert.match(preview, /aria-label="Open original source — indexed destination agency\\.gov\\.attacker\\.example:8443 \\(new tab; provenance not independently verified\\)"/);
-  assert.doesNotMatch(preview, /source ↗ ↗/);
+  assert.ok(preview.includes('Destination: agency.gov.attacker.example:8443 · indexed URL only'));
+  assert.ok(preview.includes('href="https://agency.gov.attacker.example:8443/report?document=A%2FB&amp;lang=en#page=3"'));
+  assert.ok(preview.includes('aria-label="Open original source — indexed destination agency.gov.attacker.example:8443 (new tab; provenance not independently verified)"'));
+  assert.ok(!preview.includes('source ↗ ↗'));
   const escaped = sourceAnchor({ title: '<script>alert(1)</script>', url: 'https://example.org/report' });
-  assert.match(escaped, /&lt;script&gt;alert\\(1\\)&lt;\\/script&gt;/);
-  assert.doesNotMatch(escaped, /<script>/);
+  assert.ok(escaped.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
+  assert.ok(!escaped.includes('<script>'));
   const blocked = sourceAnchor({ title: 'Untrusted record', url: 'https://agency.gov@attacker.example/report' });
   assert.equal(blocked, 'Untrusted record');
-  assert.doesNotMatch(blocked, /<a\\b/i);
 });
 
 test('Source Library discloses the actual indexed destination host and port', () => {
