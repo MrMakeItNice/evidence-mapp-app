@@ -33,3 +33,17 @@ Run `node --check scripts/triage-review-queue.mjs` and `node --test tests/triage
 - Triage undated primary/legal records and cross-queue matches first; preserve missing dates as unknown.
 - Investigate Positive News HTTP 403 via the provider's allowed RSS/API or access agreement, never bypass an access challenge.
 - Keep all evidence and link suggestions in draft PR review until a human verifies source identity, claim scope and duplicate lineage.
+
+## Follow-up read-only check — Nov 22, 2026, 09:36 UTC
+
+- Database now has **928 pending news items** (up from 926 at prior checkpoint), including 54 newly discovered during the preceding 24 hours. **441** still lack publication times (422 Google News proxies); **134** pending items have discovery timestamps older than 14 days.
+- The research inbox still has 40 pending entries. **Four inbox records (#26, #32, #37, #41) have no publication date.** The initial triage utility did not assign a specific missing-date reason to inbox records; follow-up code adds `inbox_missing_date`, validates supplied inbox timestamps and never substitutes discovery time for publication time. Tests include null dates, malformed date rejection and reviewed-record exclusion.
+- **25** exact news/inbox URL pairs remain review candidates. **11/11** active research-watch timestamps are stale; **7/7** active news-watch topics lack last collection timestamps. **11/36** active news topics have no items. **53/123** sources marked published lack a publication date. Zero exact repeated-URL groups were detected within news or sources. Source #285 still has incomplete publication metadata.
+- The Positive News collector still reports an error (latest success Nov 11); six other feeds have recent successful completions. A failed collector poll is not a claim about a news item.
+
+### Additional government-origin leads (editorial review only)
+
+1. **GAO-27-109349 (Nov 19)**: easy-read supplemental version of GAO's FEMA disability-disaster-assistance report, https://www.gao.gov/products/gao-27-109349 . GAO reports barriers in disaster-assistance applications and three recommendations. Treat this as an **accessible derivative of a parent report**, not an independent corroborating investigation or separate case. Review linked parent report GAO-27-108057 for substantive methods and agency responses.
+2. **DOJ Western District of Pennsylvania (Nov 20)**: https://www.justice.gov/usao-wdpa/pr/monaca-resident-charged-money-laundering-and-wire-fraud-relation-international-ghost . The release announces an indictment concerning alleged participation in an international federal-student-aid fraud scheme. DOJ's earlier Oct 29 nationwide Operation Ghostbusters release (https://www.justice.gov/opa/pr/justice-department-unveils-indictments-nationwide-ghost-student-fraud-scam-linked-kenyan) is a **potential parent investigation connection**, not independent evidence of the new charges. Indictments are allegations; defendants are presumed innocent.
+
+Targeted read-only checks of news, inbox, sources and case titles found no direct headline/title/URL matches for the two new leads. They are not published or linked. Preserve parent/derivative relationships during human review and obtain full underlying GAO report and filed charging documents before publication.
