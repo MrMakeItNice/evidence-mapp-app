@@ -384,3 +384,24 @@ test('credentialed approved records remain non-clickable in previews and timelin
   assert.match(timeline,/href="https:\/\/archives.gov\/report\?id=42#page=2"/);
  }
 });
+
+test('timeline links name their own document and replace that context when switching cases',async()=>{
+ const location={hash:'#case-42'},events={};
+ const get=await loadPage(publishedFixture([
+  {case_id:42,source_id:1,title:'Record "A" & testimony',publisher:'Archive & Library',publication_date:'2020-01-01',url:'https://archives.gov/a'},
+  {case_id:42,source_id:2,publication_date:'2020-01-02',url:'https://archives.gov/b'},
+  {case_id:42,source_id:3,title:'Blocked source',publication_date:'2020-01-03',url:'https://archives.gov@untrusted.example/c'},
+  {case_id:99,source_id:4,title:'Different case record',publisher:'Other archive',publication_date:'2021-02-03',url:'https://archives.gov/d'}
+ ]),false,{location,events,cases:[{id:42,title:'First case'},{id:99,title:'Second case'}]});
+ const first=get('documentTimeline').innerHTML;
+ assert.ok(first.includes('aria-label="Read record: Record &quot;A&quot; &amp; testimony · Archive &amp; Library · 2020-01-01 (opens in a new tab)"'));
+ assert.ok(first.includes('aria-label="Read record: Source document · 2020-01-02 (opens in a new tab)"'));
+ assert.equal((first.match(/aria-label="Read record:/g)||[]).length,2);
+ assert.ok(first.includes('>Read record <span aria-hidden="true">↗</span></a>'));
+ assert.ok(!first.includes('aria-label="Read record: Blocked source'));
+ location.hash='#case-99';events.hashchange();
+ const second=get('documentTimeline').innerHTML;
+ assert.ok(second.includes('aria-label="Read record: Different case record · Other archive · 2021-02-03 (opens in a new tab)"'));
+ assert.ok(!second.includes('Record &quot;A&quot;'));assert.ok(!second.includes('2020-01-02'));
+ assert.equal((second.match(/aria-label="Read record:/g)||[]).length,1);
+});
