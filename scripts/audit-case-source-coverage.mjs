@@ -11,6 +11,17 @@ const object = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const id = v => Number.isSafeInteger(v) && v > 0;
 const missing = v => v == null || (typeof v === 'string' && !v.trim());
 const key = (a,b) => a + ':' + b;
+// URL presence alone is not evidence of a usable citation. This is syntactic
+// validation only; no outbound requests and no assertion that content exists.
+function validSourceUrl(value) {
+  if (missing(value) || typeof value !== 'string' || /\s/.test(value) ||
+      !/^https?:\/\/[^/?#]+/i.test(value)) return false;
+  try {
+    const url = new URL(value);
+    return (url.protocol === 'http:' || url.protocol === 'https:') &&
+      !!url.hostname && !url.username && !url.password;
+  } catch { return false; }
+}
 
 function datePresent(v) {
   if (missing(v)) return false;
@@ -87,6 +98,8 @@ export function auditCaseSourceCoverage(snapshot) {
     references_to_undated_sources: 0,
     references_to_unattributed_sources: 0,
     references_to_missing_source_url: 0,
+    references_to_invalid_source_url: 0,
+    published_cases_without_valid_source_url: 0,
     unique_referenced_sources: 0,
     unique_referenced_sources_not_marked_published: 0
   };
@@ -108,6 +121,7 @@ export function auditCaseSourceCoverage(snapshot) {
       if (!datePresent(s.publication_date)) summary.references_to_undated_sources++;
       if (missing(s.publisher)) summary.references_to_unattributed_sources++;
       if (missing(s.url)) summary.references_to_missing_source_url++;
+      else if (!validSourceUrl(s.url)) summary.references_to_invalid_source_url++;
     }
     if (!c.published) continue;
     summary.published_cases++;
@@ -127,9 +141,13 @@ export function auditCaseSourceCoverage(snapshot) {
       summary.published_cases_without_attributed_publisher++;
       reasons.push('no_attributed_publisher');
     }
+    if (!refs.some(s => validSourceUrl(s.url))) {
+      summary.published_cases_without_valid_source_url++;
+      reasons.push('no_valid_source_url');
+    }
     // Metadata must coexist on ONE linked record, not across unrelated sources.
     if (refs.some(s => s.published === true && !missing(s.publisher) &&
-                       datePresent(s.publication_date) && !missing(s.url))) {
+                       datePresent(s.publication_date) && validSourceUrl(s.url))) {
       summary.published_cases_with_complete_marked_published_source++;
     } else {
       summary.published_cases_without_complete_marked_published_source++;
