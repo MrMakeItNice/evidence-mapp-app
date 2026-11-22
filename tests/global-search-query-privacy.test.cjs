@@ -107,7 +107,7 @@ test('scholarly previews do not make credential-bearing or non-web source URLs c
   }
 });
 
-function delayedArchivePage() {
+function delayedArchivePage(options = {}) {
   const nodes = new Map(), calls = [];
   const element = () => ({children: [], value: '', textContent: '', handlers: {},
     append(...children) { this.children.push(...children) },
@@ -116,16 +116,16 @@ function delayedArchivePage() {
   const get = id => { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id) };
   let resolveArchive;
   const archive = new Promise(resolve => { resolveArchive = resolve });
-  const fetch = async url => {
+  const fetch = options.fetch || (async url => {
     calls.push(String(url));
     if (String(url).includes('/api/cases')) return archive;
     return {ok: true, json: async () => String(url).includes('openalex') ? {results: []} : {message: {items: []}}};
-  };
+  });
   new Function('document','location','history','fetch','URL','URLSearchParams','AbortController','setTimeout','clearTimeout',
     html.match(/<script>([\s\S]*?)<\/script>/)[1])(
     {getElementById: get, createElement: element},
     {search: '?q=Original', href: 'https://atlas.example/global-search.html?q=Original'},
-    {replaceState() {}}, fetch, URL, URLSearchParams, AbortController, () => 1, () => {});
+    {replaceState() {}}, fetch, URL, URLSearchParams, AbortController, options.setTimeout || (() => 1), options.clearTimeout || (() => {}));
   const submit = term => { get('q').value = term; get('search').handlers.submit({preventDefault() {}}) };
   const complete = async (ok = true) => {
     resolveArchive({ok, json: async () => [
@@ -169,4 +169,51 @@ test('clearing a pending search stays empty after load and failures remain unava
   await failed.complete(false);failed.submit('Latest');
   assert.match(failed.get('archive-status').textContent, /unavailable/i);
   assert.doesNotMatch(failed.get('archive-status').textContent, /Loading/);
+});
+
+for (const phase of ['headers', 'body']) test('archive deadline covers stalled ' + phase, async () => {
+  let fire, signal, cleared = 0;
+  const page = delayedArchivePage({
+    setTimeout(fn, ms) { assert.equal(ms, 12000); fire = fn; return 77 },
+    clearTimeout(id) { assert.equal(id, 77); cleared++ },
+    fetch: async (_url, options) => {
+      signal = options.signal;
+      const stalled = () => new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(Error('aborted')), {once: true}));
+      if (phase === 'headers') return stalled();
+      return {ok: true, json: stalled};
+    }
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(cleared, 0, 'deadline remains active until the entire response is read');
+  fire();await new Promise(resolve => setImmediate(resolve));
+  assert.equal(signal.aborted, true);assert.equal(cleared, 1);
+  assert.match(page.get('archive-status').textContent, /timed out/);
+  assert.match(page.resultText(), /Try the public case library or Paper Trails/);
+  page.submit('');
+  assert.match(page.get('archive-status').textContent, /unavailable/);
+  assert.doesNotMatch(page.get('archive-status').textContent, /Loading/);
+});
+
+test('archive deadline clears on success, HTTP, network, JSON and response-shape errors', async () => {
+  for (const mode of ['success', 'http', 'network', 'json', 'shape']) {
+    let cleared = 0, signal;
+    const page = delayedArchivePage({
+      setTimeout(_fn, ms) { assert.equal(ms, 12000); return 88 },
+      clearTimeout(id) { assert.equal(id, 88); cleared++ },
+      fetch: async (_url, options) => {
+        signal = options.signal;
+        if (mode === 'network') throw Error('Network failure');
+        return {ok: mode !== 'http', json: async () => {
+          if (mode === 'json') throw Error('Invalid JSON');
+          return mode === 'shape' ? {} : [];
+        }};
+      }
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(cleared, 1, mode + ' cleans up its timer');
+    assert.equal(signal.aborted, mode !== 'success');
+    assert.doesNotMatch(page.get('archive-status').textContent, /timed out/);
+    if (mode === 'success') assert.match(page.get('archive-status').textContent, /matching cases/);
+    else assert.match(page.get('archive-status').textContent, /could not be loaded/);
+  }
 });
