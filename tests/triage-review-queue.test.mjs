@@ -39,7 +39,7 @@ function snapshot() {
     }
   ];
   const sources = [
-    { id: 21, url: 'https://agency.gov/report/1', title: 'PRIVATE SOURCE' },
+    { id: 21, url: 'https://agency.gov/report/1', published: true, title: 'PRIVATE SOURCE' },
     { id: 22, url: null, title: 'PLACEHOLDER' }
   ];
   return {
@@ -195,4 +195,38 @@ test('rejects impossible calendar dates rather than silently normalizing them', 
   assert.doesNotThrow(() => triageReviewQueue(valid));
   valid.research_inbox[0].published_at = '2026-02-30T12:00:00Z';
   assert.throws(() => triageReviewQueue(valid), /Invalid timestamp/);
+});
+
+
+test('unpublished source URL matches are leads, not published corroboration', () => {
+  const data = snapshot();
+  data.sources[0].published = false;
+  const result = triageReviewQueue(data);
+  const news = result.review_queue.find(r => r.queue === 'news_items' && r.id === 1);
+  assert.ok(news.reasons.includes('shared_unpublished_source_url'));
+  assert.ok(!news.reasons.includes('shared_source_record_url'));
+  assert.equal(result.reason_counts.shared_unpublished_source_url, 1);
+  assert.equal(result.reason_counts.shared_source_record_url, 0);
+});
+
+test('unknown source publication flag does not imply source is published', () => {
+  const data = snapshot();
+  delete data.sources[0].published;
+  const result = triageReviewQueue(data);
+  const news = result.review_queue.find(r => r.queue === 'news_items' && r.id === 1);
+  assert.ok(news.reasons.includes('shared_unpublished_source_url'));
+  assert.ok(!news.reasons.includes('shared_source_record_url'));
+  assert.equal(data.sources[0].published, undefined);
+});
+
+test('published and unpublished source records with the same URL stay separate flags', () => {
+  const data = snapshot();
+  data.sources.push({ id: 23, url: 'https://agency.gov/report/1', published: false });
+  data.expected_counts.sources = 3;
+  const result = triageReviewQueue(data);
+  const news = result.review_queue.find(r => r.queue === 'news_items' && r.id === 1);
+  assert.ok(news.reasons.includes('shared_source_record_url'));
+  assert.ok(news.reasons.includes('shared_unpublished_source_url'));
+  assert.equal(result.reason_counts.shared_source_record_url, 1);
+  assert.equal(result.reason_counts.shared_unpublished_source_url, 1);
 });
