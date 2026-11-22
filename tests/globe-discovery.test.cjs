@@ -229,7 +229,7 @@ test('mobile research lens reflows before the globe and restores the original la
 
 test('globe search preserves long topics rather than creating misleading truncated searches', () => {
   assert.doesNotMatch(html, /id="globe-explore-query"[^>]*maxlength=/);
-  assert.match(html, /id="globe-explore-help"[^>]*up to 160 characters/);
+  assert.match(html, /id="globe-explore-help"[^>]*>[^<]*up to 160 characters/);
 
   const { elements, submit, document, globeArea } = setup();
   submit('Rabbit Holes');
