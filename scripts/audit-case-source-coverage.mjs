@@ -57,7 +57,9 @@ export function auditCaseSourceCoverage(snapshot) {
   const sources = uniqueMap(snapshot.sources, 'id', 'source', s =>
     (s.published == null || typeof s.published === 'boolean') &&
     (missing(s.publisher) || typeof s.publisher === 'string') &&
-    (missing(s.url) || typeof s.url === 'string') && (datePresent(s.publication_date), true));
+    (missing(s.url) || typeof s.url === 'string') &&
+    (missing(s.source_type) || typeof s.source_type === 'string') &&
+    (datePresent(s.publication_date), true));
   const register = uniqueMap(snapshot.master_source_register, 'id', 'register', r =>
     id(r.source_id) && sources.has(r.source_id));
   const links = new Map([...cases.keys()].map(c => [c, []]));
@@ -88,6 +90,10 @@ export function auditCaseSourceCoverage(snapshot) {
     published_cases_without_dated_source: 0,
     published_cases_without_attributed_publisher: 0,
     references_total: pairs.size,
+    // An index citation is not independently verified evidence.
+    references_with_master_index_role: snapshot.case_source_references.filter(r => r.source_role === 'cited_by_master_index').length,
+    references_to_master_index_bibliography: 0,
+    published_cases_with_only_master_index_bibliography_sources: 0,
     unique_case_source_pairs: sourcePairs.size,
     repeated_case_source_pairs: 0,
     excess_register_references_to_same_source: 0,
@@ -118,6 +124,7 @@ export function auditCaseSourceCoverage(snapshot) {
     for (const s of refs) {
       used.add(s.id);
       if (s.published !== true) summary.references_to_not_marked_published++;
+      if (s.source_type === 'master_index_bibliography') summary.references_to_master_index_bibliography++;
       if (!datePresent(s.publication_date)) summary.references_to_undated_sources++;
       if (missing(s.publisher)) summary.references_to_unattributed_sources++;
       if (missing(s.url)) summary.references_to_missing_source_url++;
@@ -129,6 +136,12 @@ export function auditCaseSourceCoverage(snapshot) {
     else summary.published_cases_without_references++;
     const reasons = [];
     if (!refs.length) reasons.push('no_source_reference');
+    // Bibliography pointers can identify real primary sources, but do not
+    // establish that those original records have been individually reviewed.
+    if (refs.length && refs.every(s => s.source_type === 'master_index_bibliography')) {
+      summary.published_cases_with_only_master_index_bibliography_sources++;
+      reasons.push('only_master_index_bibliography_sources');
+    }
     if (!refs.some(s => s.published === true)) {
       summary.published_cases_without_marked_published_source++;
       reasons.push('no_source_marked_published');
