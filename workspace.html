@@ -81,7 +81,7 @@ const one = (t,id)=>rows(t).find(r=>String(r.id)===String(id));
 const nameOfCase = id => one('cases',id)?.title||'Unassigned';
 const sourceFor = id => one('sources',id);
 const matches = (...s)=>`${s.join(' ')}`.toLowerCase().includes(state.search.toLowerCase().trim());
-const targetUrl = u=>{try{const parsed=new URL(u);return ['https:','http:'].includes(parsed.protocol)?parsed.href:null}catch{return null}};
+const targetUrl = u=>{try{const raw=String(u??'').trim();if(!/^https?:\/\/[^\/\\?#\s]+/i.test(raw)||/[\u0000-\u001f\u007f\\]/.test(raw))return null;const parsed=new URL(raw);return ['https:','http:'].includes(parsed.protocol)&&parsed.hostname&&!parsed.username&&!parsed.password?parsed.href:null}catch{return null}};
 const sourceAnchor = (s,text)=>s?.url&&targetUrl(s.url)?`<a class="source-link" href="${esc(targetUrl(s.url))}" target="_blank" rel="noopener noreferrer">${esc(text||s.title)} ↗</a>`:esc(text||s?.title||'Unknown source');
 const label = (s,kind='')=>`<span class="badge ${kind}">${esc(s||'Not assessed')}</span>`;
 const action = (name,caption,variant='primary',attrs='')=>`<button class="${variant}" data-action="${name}" ${attrs}>${caption}</button>`;
