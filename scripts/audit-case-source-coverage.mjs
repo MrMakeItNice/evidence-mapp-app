@@ -63,6 +63,7 @@ export function auditCaseSourceCoverage(snapshot) {
   const register = uniqueMap(snapshot.master_source_register, 'id', 'register', r =>
     id(r.source_id) && sources.has(r.source_id));
   const links = new Map([...cases.keys()].map(c => [c, []]));
+  const citationRoles = new Map([...cases.keys()].map(c => [c, []]));
   const pairs = new Set();
   // Different master-register IDs may point to the same underlying source.
   // Count both catalog references and distinct case/source relationships.
@@ -71,7 +72,8 @@ export function auditCaseSourceCoverage(snapshot) {
   for (const r of snapshot.case_source_references) {
     if (!object(r) || !id(r.case_id) || !id(r.register_id) ||
         !cases.has(r.case_id) || !register.has(r.register_id) ||
-        pairs.has(key(r.case_id,r.register_id))) throw new Error('Invalid case source reference');
+        pairs.has(key(r.case_id,r.register_id)) ||
+        (!missing(r.source_role) && typeof r.source_role !== 'string')) throw new Error('Invalid case source reference');
     pairs.add(key(r.case_id,r.register_id));
     const sourceId = register.get(r.register_id).source_id;
     const sourcePair = key(r.case_id,sourceId);
@@ -80,6 +82,7 @@ export function auditCaseSourceCoverage(snapshot) {
     if (!sourceCases.has(sourceId)) sourceCases.set(sourceId,new Set());
     sourceCases.get(sourceId).add(r.case_id);
     links.get(r.case_id).push(sources.get(sourceId));
+    citationRoles.get(r.case_id).push(r.source_role);
   }
   const summary = {
     cases_total: cases.size,
@@ -92,6 +95,8 @@ export function auditCaseSourceCoverage(snapshot) {
     references_total: pairs.size,
     // An index citation is not independently verified evidence.
     references_with_master_index_role: snapshot.case_source_references.filter(r => r.source_role === 'cited_by_master_index').length,
+    references_without_explicit_source_role: snapshot.case_source_references.filter(r => missing(r.source_role)).length,
+    published_cases_with_only_master_index_citation_roles: 0,
     references_to_master_index_bibliography: 0,
     published_cases_with_only_master_index_bibliography_sources: 0,
     unique_case_source_pairs: sourcePairs.size,
@@ -136,6 +141,13 @@ export function auditCaseSourceCoverage(snapshot) {
     else summary.published_cases_without_references++;
     const reasons = [];
     if (!refs.length) reasons.push('no_source_reference');
+    // A master-index-only citation role records catalog coverage, not review
+    // of original documents. Missing roles remain unknown, not index roles.
+    const roles = citationRoles.get(c.id);
+    if (roles.length && roles.every(role => role === 'cited_by_master_index')) {
+      summary.published_cases_with_only_master_index_citation_roles++;
+      reasons.push('only_master_index_citation_roles');
+    }
     // Bibliography pointers can identify real primary sources, but do not
     // establish that those original records have been individually reviewed.
     if (refs.length && refs.every(s => s.source_type === 'master_index_bibliography')) {
