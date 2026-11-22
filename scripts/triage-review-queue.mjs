@@ -12,6 +12,7 @@ const REASONS = Object.freeze({
   shared_source_record_url: 90,
   shared_news_inbox_url: 80,
   inbox_unassigned_watch: 70,
+  inbox_missing_date: 65,
   google_proxy_missing_date: 60,
   aged_pending_14d: 50,
   other_missing_date: 40
@@ -75,6 +76,7 @@ export function triageReviewQueue(snapshot, { limit = 50 } = {}) {
         if (typeof row.content_kind !== 'string') throw new Error('Invalid content kind');
         if (row.published_at != null) validInstant(row.published_at);
       } else {
+        if (row.published_at != null) validInstant(row.published_at);
         if (row.watch_topic_id != null &&
             (!Number.isSafeInteger(row.watch_topic_id) || row.watch_topic_id <= 0)) {
           throw new Error('Invalid watch identifier');
@@ -112,6 +114,7 @@ export function triageReviewQueue(snapshot, { limit = 50 } = {}) {
     if (i.review_status !== 'pending') continue;
     const reasons = [];
     if (i.watch_topic_id == null) reasons.push('inbox_unassigned_watch');
+    if (i.published_at == null) reasons.push('inbox_missing_date');
     if (newsUrls.has(i.source_url)) reasons.push('shared_news_inbox_url');
     if (validInstant(i.discovered_at) < now - 14 * DAY) reasons.push('aged_pending_14d');
     if (reasons.length) candidates.push({
