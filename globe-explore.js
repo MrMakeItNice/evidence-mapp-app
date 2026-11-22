@@ -8,7 +8,8 @@
   const summary = document.getElementById('globe-explore-summary');
   const links = document.getElementById('globe-explore-links');
   const status = document.getElementById('globe-explore-status');
-  if (![form, input, panel, title, summary, links, status].every(Boolean)) return;
+  const close = document.getElementById('globe-explore-close');
+  if (![form, input, panel, title, summary, links, status, close].every(Boolean)) return;
 
   const lenses = {
     rabbit: {
@@ -66,11 +67,17 @@
     status.textContent = data.title + ' opened beside the globe. Choose a research destination.';
   });
 
-  panel.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || panel.hidden) return;
-    event.preventDefault();
+  function closeLens() {
+    if (panel.hidden) return;
     panel.hidden = true;
     input.focus();
     status.textContent = 'Research lens closed. Search another topic.';
+  }
+
+  close.addEventListener('click', closeLens);
+  panel.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || panel.hidden) return;
+    event.preventDefault();
+    closeLens();
   });
 })();

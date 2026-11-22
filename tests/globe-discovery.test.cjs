@@ -10,7 +10,7 @@ const js = fs.readFileSync(path.join(root, 'globe-explore.js'), 'utf8');
 
 function setup() {
   const ids = ['globe-explore-form', 'globe-explore-query', 'globe-explore-panel',
-    'globe-explore-title', 'globe-explore-summary', 'globe-explore-links', 'globe-explore-status'];
+    'globe-explore-title', 'globe-explore-summary', 'globe-explore-links', 'globe-explore-status', 'globe-explore-close'];
   const elements = Object.fromEntries(ids.map(id => [id, {
     textContent: '', value: '', hidden: id === 'globe-explore-panel', children: [],
     addEventListener(type, fn) { this[type] = fn; },
@@ -98,4 +98,28 @@ test('the focused research lens is named by its heading and has touch-sized link
   assert.match(html, /id="globe-explore-panel"[^>]*tabindex="-1"[^>]*aria-labelledby="globe-explore-title"/);
   assert.match(html, /\.globe-explore-panel a\{[^}]*min-height:44px/);
   assert.match(html, /\.globe-explore-panel:focus-visible/);
+});
+
+test('visible close action returns to search, preserves the topic and permits reopening', () => {
+  assert.match(html, /<button id="globe-explore-close"[^>]*type="button">Close research lens<\/button>/);
+  const { elements, submit, document } = setup();
+  submit('MKULTRA');
+  elements['globe-explore-close'].click();
+  assert.equal(elements['globe-explore-panel'].hidden, true);
+  assert.equal(document.activeElement, elements['globe-explore-query']);
+  assert.equal(elements['globe-explore-query'].value, 'MKULTRA');
+  assert.match(elements['globe-explore-status'].textContent, /closed/);
+  submit('Rabbit Holes');
+  assert.equal(elements['globe-explore-panel'].hidden, false);
+  assert.equal(document.activeElement, elements['globe-explore-panel']);
+  assert.equal(elements['globe-explore-links'].children[0].href, './rabbit-hole.html');
+});
+
+test('a closed lens ignores repeated dismissal without taking focus', () => {
+  const { elements, document } = setup();
+  const otherControl = {};
+  document.activeElement = otherControl;
+  elements['globe-explore-close'].click();
+  assert.equal(document.activeElement, otherControl);
+  assert.equal(elements['globe-explore-status'].textContent, '');
 });
