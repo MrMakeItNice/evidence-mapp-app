@@ -106,3 +106,67 @@ test('scholarly previews do not make credential-bearing or non-web source URLs c
     assert.equal(heading.children.length, 0, title + ' must not have a clickable link');
   }
 });
+
+function delayedArchivePage() {
+  const nodes = new Map(), calls = [];
+  const element = () => ({children: [], value: '', textContent: '', handlers: {},
+    append(...children) { this.children.push(...children) },
+    replaceChildren(...children) { this.children = children },
+    addEventListener(type, handler) { this.handlers[type] = handler }});
+  const get = id => { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id) };
+  let resolveArchive;
+  const archive = new Promise(resolve => { resolveArchive = resolve });
+  const fetch = async url => {
+    calls.push(String(url));
+    if (String(url).includes('/api/cases')) return archive;
+    return {ok: true, json: async () => String(url).includes('openalex') ? {results: []} : {message: {items: []}}};
+  };
+  new Function('document','location','history','fetch','URL','URLSearchParams','AbortController','setTimeout','clearTimeout',
+    html.match(/<script>([\s\S]*?)<\/script>/)[1])(
+    {getElementById: get, createElement: element},
+    {search: '?q=Original', href: 'https://atlas.example/global-search.html?q=Original'},
+    {replaceState() {}}, fetch, URL, URLSearchParams, AbortController, () => 1, () => {});
+  const submit = term => { get('q').value = term; get('search').handlers.submit({preventDefault() {}}) };
+  const complete = async (ok = true) => {
+    resolveArchive({ok, json: async () => [
+      {id: 1, title: 'Original investigation'}, {id: 2, title: 'Latest investigation'}, {id: 3, title: 'Unsent investigation'}
+    ]});
+    await new Promise(resolve => setImmediate(resolve));
+  };
+  const text = node => node.textContent + node.children.map(text).join(' ');
+  return {get, calls, submit, complete, resultText: () => text(get('results'))};
+}
+
+test('late archive results use the latest submission and preserve unsent input', async () => {
+  const page = delayedArchivePage();
+  page.submit('Original');page.submit('Latest');
+  assert.match(page.get('archive-status').textContent, /Loading/);
+  assert.doesNotMatch(page.get('archive-status').textContent, /unavailable/i);
+  page.get('q').value = 'Unsent';
+  await page.complete();
+  assert.match(page.resultText(), /Latest investigation/);
+  assert.doesNotMatch(page.resultText(), /Original investigation|Unsent investigation/);
+  assert.equal(page.get('q').value, 'Unsent');
+  assert.match(page.get('archive-status').textContent, /1 matching cases/);
+});
+
+test('unsent edits do not replace the prefilled archive query or contact providers', async () => {
+  const page = delayedArchivePage();
+  page.get('q').value = 'Unsent';
+  await page.complete();
+  assert.match(page.resultText(), /Original investigation/);
+  assert.doesNotMatch(page.resultText(), /Unsent investigation/);
+  assert.equal(page.get('q').value, 'Unsent');
+  assert.equal(page.calls.length, 1);
+});
+
+test('clearing a pending search stays empty after load and failures remain unavailable', async () => {
+  const cleared = delayedArchivePage();
+  cleared.submit('Latest');cleared.submit('');await cleared.complete();
+  assert.equal(cleared.resultText(), '');
+  assert.match(cleared.get('archive-status').textContent, /3 published cases loaded/);
+  const failed = delayedArchivePage();
+  await failed.complete(false);failed.submit('Latest');
+  assert.match(failed.get('archive-status').textContent, /unavailable/i);
+  assert.doesNotMatch(failed.get('archive-status').textContent, /Loading/);
+});
