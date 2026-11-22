@@ -20,8 +20,26 @@ const REASONS = Object.freeze({
 const PRIMARY_KINDS = new Set(['primary_document', 'legal_record', 'research_paper']);
 
 function validInstant(value) {
-  if (typeof value !== 'string' ||
-      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i.test(value)) {
+  // Date.parse normalizes impossible dates (for example, February 30) rather
+  // than rejecting them. Validate Gregorian calendar components first.
+  const match = typeof value === 'string' &&
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/i.exec(value);
+  if (!match) throw new Error('Invalid timestamp');
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, offset] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (month < 1 || month > 12 || day < 1 || day > daysInMonth[month - 1] ||
+      hour > 23 || minute > 59 || second > 59) {
+    throw new Error('Invalid timestamp');
+  }
+  if (offset.toUpperCase() !== 'Z' &&
+      (Number(offset.slice(1, 3)) > 23 || Number(offset.slice(4, 6)) > 59)) {
     throw new Error('Invalid timestamp');
   }
   const ms = Date.parse(value);
