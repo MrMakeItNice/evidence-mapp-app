@@ -30,12 +30,12 @@ function snapshot() {
     {
       id: 11, source_url: 'https://agency.gov/report/1',
       discovered_at: '2026-10-20T00:00:00Z',
-      review_status: 'pending', watch_topic_id: null
+      review_status: 'pending', watch_topic_id: null, published_at: '2026-10-19T00:00:00Z'
     },
     {
       id: 12, source_url: 'https://agency.gov/other',
       discovered_at: '2026-11-21T00:00:00Z',
-      review_status: 'reviewed', watch_topic_id: 5
+      review_status: 'reviewed', watch_topic_id: 5, published_at: '2026-11-20T00:00:00Z'
     }
   ];
   const sources = [
@@ -153,4 +153,26 @@ test('does not mutate snapshot records or statuses', () => {
 test('invalid display limit rejected rather than silently expanding output', () => {
   assert.throws(() => triageReviewQueue(snapshot(), { limit: 500 }), /Invalid audit parameters/);
   assert.throws(() => triageReviewQueue(snapshot(), { limit: 0 }), /Invalid audit parameters/);
+});
+
+
+test('pending inbox missing publication date is flagged without inferring a date', () => {
+  const data = snapshot();
+  data.research_inbox[0].published_at = null;
+  const result = triageReviewQueue(data);
+  assert.equal(result.reason_counts.inbox_missing_date, 1);
+  assert.ok(result.review_queue.find(r => r.queue === 'research_inbox' && r.id === 11)
+    .reasons.includes('inbox_missing_date'));
+  assert.equal(data.research_inbox[0].published_at, null);
+});
+
+test('malformed inbox publication date rejected; reviewed undated entry is not triaged', () => {
+  const data = snapshot();
+  data.research_inbox[0].published_at = '2026-11-20';
+  assert.throws(() => triageReviewQueue(data), /Invalid timestamp/);
+  data.research_inbox[0].published_at = '2026-10-19T00:00:00Z';
+  data.research_inbox[1].published_at = null;
+  const result = triageReviewQueue(data);
+  assert.equal(result.reason_counts.inbox_missing_date, 0);
+  assert.ok(!result.review_queue.some(r => r.queue === 'research_inbox' && r.id === 12));
 });
