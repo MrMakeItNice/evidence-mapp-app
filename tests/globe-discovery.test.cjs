@@ -286,6 +286,7 @@ test('editing a submitted globe topic hides stale research destinations until re
   assert.equal(elements['globe-explore-panel'].hidden, false);
   assert.equal(elements['globe-explore-links'].children[0].href, './global-search.html?q=MKULTRA');
   const input = elements['globe-explore-query'];
+  input.focus(); // simulate the visitor moving focus from the lens back to the search field
   input.value = 'Epstein files';
   input.input();
   assert.equal(elements['globe-explore-panel'].hidden, true);
