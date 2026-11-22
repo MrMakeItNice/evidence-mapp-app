@@ -217,3 +217,59 @@ test('archive deadline clears on success, HTTP, network, JSON and response-shape
     else assert.match(page.get('archive-status').textContent, /could not be loaded/);
   }
 });
+
+
+test('scholarly coverage distinguishes outage, partial response and truly empty results', async () => {
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  for (const mode of ['none', 'partial-empty', 'partial-record', 'all-empty']) {
+    const nodes = new Map();
+    const element = tag => ({
+      tag, children: [], textContent: '', value: '', href: '', handlers: {},
+      append(...children) { this.children.push(...children); },
+      replaceChildren(...children) { this.children = children; },
+      addEventListener(type, handler) { this.handlers[type] = handler; }
+    });
+    const get = id => {
+      if (!nodes.has(id)) nodes.set(id, element('div'));
+      return nodes.get(id);
+    };
+    const fetch = async url => {
+      const address = String(url);
+      if (address.includes('/api/cases')) return { ok: true, json: async () => [] };
+      if (address.includes('openalex') && mode !== 'all-empty') throw Error('index unavailable');
+      if (address.includes('crossref') && mode === 'none') throw Error('index unavailable');
+      return {
+        ok: true,
+        json: async () => address.includes('openalex') ? { results: [] } : { message: { items:
+          mode === 'partial-record'
+            ? [{ title: ['Test source'], URL: 'https://doi.org/10.1234/atlas-test', DOI: '10.1234/atlas-test' }]
+            : [] } }
+      };
+    };
+    new Function('document', 'location', 'history', 'fetch', 'URL', 'URLSearchParams',
+      'AbortController', 'setTimeout', 'clearTimeout', script)(
+      { getElementById: get, createElement: element },
+      { search: '', href: 'https://atlas.example/global-search.html' },
+      { replaceState() {} }, fetch, URL, URLSearchParams, AbortController, () => 1, () => {});
+    get('q').value = 'source provenance';
+    get('search').handlers.submit({ preventDefault() {} });
+    await new Promise(resolve => setImmediate(resolve));
+    const statusText = get('live-status').textContent;
+    const output = get('live-results').children;
+    if (mode === 'none') {
+      assert.match(statusText, /scholarly APIs unavailable/);
+      assert.match(output[0].textContent, /No scholarly indexes responded/);
+      assert.doesNotMatch(output[0].textContent, /No records returned/);
+    } else if (mode === 'partial-empty') {
+      assert.match(statusText, /0 scholarly records returned from 1 of 2 indexes · partial coverage/);
+      assert.match(output[0].textContent, /No records returned by the responding scholarly indexes/);
+    } else if (mode === 'partial-record') {
+      assert.match(statusText, /1 scholarly record returned from 1 of 2 indexes · partial coverage/);
+      assert.equal(output[0].children[1].children[0].href, 'https://doi.org/10.1234/atlas-test');
+    } else {
+      assert.match(statusText, /0 scholarly records returned from 2 of 2 indexes/);
+      assert.doesNotMatch(statusText, /partial coverage/);
+      assert.match(output[0].textContent, /No records returned by the responding scholarly indexes/);
+    }
+  }
+});
