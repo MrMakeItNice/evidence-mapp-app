@@ -28,6 +28,21 @@ test('does not treat misleading scheme prefixes as HTTP(S)', () => {
   }
 });
 
+
+test('rejects source URLs carrying embedded usernames or passwords', () => {
+  for (const address of [
+    'https://reader@archives.gov/record',
+    'https://reader:secret@archives.gov/record',
+    'https://:secret@archives.gov/record',
+    'http://reader@archives.gov/record',
+    'https://agency.gov@attacker.example/record',
+  ]) {
+    assert.equal(safeSourceUrl(address), null, address);
+  }
+  const publicRecord = 'https://archives.gov/report?id=42#page=2';
+  assert.equal(safeSourceUrl(publicRecord), publicRecord);
+});
+
 test('source indexing and external opening validate URLs', () => {
   assert.match(html, /function uniqueDocs\(id\)\{[^}]*safeSourceUrl\(r\.url\)/);
   assert.ok(html.includes("card.addEventListener('dblclick',()=>{if(!n.case){const url=safeSourceUrl(n.item.url);"));
