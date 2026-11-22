@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
+import vm from 'node:vm';
 import {spawnSync} from 'node:child_process';
 import {reviewedEventsFromFeed} from '../pulse-events.mjs';
 
@@ -44,4 +45,80 @@ test('bad calendar dates, coordinates and missing provenance fail closed',()=>{
 test('valid HTTPS source documents preserve query strings and fragments',()=>{
   const event={...original,source_url:'https://agency.gov/archive?doc=127#p7'};
   assert.equal(reviewedEventsFromFeed(feed([event]))[0].source_url,event.source_url);
+});
+
+function simulateTopPulse({data=feed([original]),networkError=false}={}){
+  const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.match(html,/data-pulse="positive" aria-pressed="true"/);
+  const start=html.indexOf('const pulseCriteria=');
+  const end=html.indexOf("const status=document.getElementById('globe-status')",start);
+  assert.ok(start>=0&&end>start,'find the actual globe pulse controller');
+  const script=html.slice(start,end);
+  const panel={textContent:'Select a category for criteria.'};
+  const buttons=Object.fromEntries(['negative','neutral','positive'].map(category=>{
+    const button={
+      dataset:{pulse:category},count:{textContent:'—'},
+      attributes:{'aria-pressed':category==='positive'?'true':'false'},
+      handlers:{},
+      querySelector(selector){assert.equal(selector,'strong');return this.count;},
+      getAttribute(name){return this.attributes[name];},
+      setAttribute(name,value){this.attributes[name]=value;},
+      addEventListener(name,callback){this.handlers[name]=callback;},
+      click(){this.handlers.click();}
+    };
+    return [category,button];
+  }));
+  const document={
+    querySelectorAll(selector){assert.equal(selector,'[data-pulse]');return Object.values(buttons);},
+    getElementById(id){assert.equal(id,'pulse-panel');return panel;}
+  };
+  const request=vm.runInNewContext('(async()=>{'+script+'})()',{
+    document,reviewedEventsFromFeed,
+    fetch:async()=>{
+      if(networkError)throw Error('mock feed offline');
+      return {ok:true,json:async()=>data};
+    }
+  },{timeout:2000});
+  return {request,panel,buttons};
+}
+
+test('category switches preserve reviewed counts and current category rationale',async()=>{
+  const {request,panel,buttons}=simulateTopPulse();
+  await request;
+  assert.equal(buttons.positive.count.textContent,'1');
+  assert.equal(buttons.negative.count.textContent,'0');
+  assert.equal(buttons.neutral.count.textContent,'0');
+  assert.match(panel.textContent,/1 reviewed event in this curated feed/);
+  buttons.negative.click();
+  assert.equal(buttons.negative.getAttribute('aria-pressed'),'true');
+  assert.equal(buttons.positive.getAttribute('aria-pressed'),'false');
+  assert.match(panel.textContent,/Documented harm/);
+  assert.match(panel.textContent,/0 reviewed events in this curated feed/);
+  buttons.positive.click();
+  assert.match(panel.textContent,/Documented improvements/);
+  assert.match(panel.textContent,/1 reviewed event in this curated feed/);
+  assert.doesNotMatch(panel.textContent,/No audited count available yet/);
+});
+
+test('empty reviewed feed retains unknown counts after category changes',async()=>{
+  const {request,panel,buttons}=simulateTopPulse({data:feed([])});
+  await request;
+  assert.ok(Object.values(buttons).every(button=>button.count.textContent==='—'));
+  buttons.neutral.click();
+  assert.match(panel.textContent,/Mixed, uncertain/);
+  assert.match(panel.textContent,/No reviewed events available yet; counts are not zero/);
+});
+
+test('feed errors and invalid verified records remain unavailable after switches',async()=>{
+  for(const opts of [
+    {networkError:true},
+    {data:feed([{...original,source_url:'https://agency.gov@untrusted.invalid/report'}])}
+  ]){
+    const {request,panel,buttons}=simulateTopPulse(opts);
+    await request;
+    buttons.negative.click();
+    assert.ok(Object.values(buttons).every(button=>button.count.textContent==='—'));
+    assert.match(panel.textContent,/Reviewed event feed unavailable; no global count can be calculated/);
+    assert.doesNotMatch(panel.textContent,/0 reviewed events/);
+  }
 });
