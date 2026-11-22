@@ -279,3 +279,44 @@ test('unlinked published-source list is capped, while counts remain complete',()
   assert.deepEqual(x.marked_published_source_ids_outside_case_register,[...Array(25)].map((_,i)=>100+i));
   assert.equal(x.omitted_outside_case_register_sources,3);
 });
+
+test('graph linkage is explicitly unassessed when no complete graph snapshot is provided',()=>{
+  const x=audit(sample());
+  assert.equal(x.relationship_graph,null);
+});
+test('incomplete optional relationship graph fails instead of reporting zero links',()=>{
+  const s=sample();s.relationships=[{id:1,source_type:'case',target_type:'source',source_id:2,target_id:10,source_id_reference:10}];
+  s.expected_counts.relationships=2;
+  assert.throws(()=>audit(s),/Incomplete relationship graph snapshot/);
+});
+test('complete graph reveals sourced cases missed by register-only assessment',()=>{
+  const s=sample();
+  s.relationships=[{id:1,source_type:'case',target_type:'source',source_id:2,target_id:10,source_id_reference:10}];
+  s.expected_counts.relationships=1;
+  const x=audit(s);
+  assert.equal(x.summary.published_cases_with_complete_marked_published_source,1);
+  assert.equal(x.relationship_graph.published_cases_with_graph_links,1);
+  assert.equal(x.relationship_graph.published_cases_with_complete_marked_published_graph_source,1);
+  assert.equal(x.relationship_graph.published_cases_with_complete_marked_published_source_either_path,2);
+  assert.equal(x.relationship_graph.register_graph_pair_overlaps,0);
+});
+test('graph/register overlap is counted without double counting source relationships',()=>{
+  const s=sample();
+  s.relationships=[{id:1,source_type:'case',target_type:'source',source_id:1,target_id:10,source_id_reference:10},
+    {id:2,source_type:'case',target_type:'source',source_id:1,target_id:10,source_id_reference:11}];
+  s.expected_counts.relationships=2;
+  const x=audit(s).relationship_graph;
+  assert.equal(x.case_to_source_edges,2);
+  assert.equal(x.unique_case_source_pairs,1);
+  assert.equal(x.repeated_case_source_graph_edges,1);
+  assert.equal(x.register_graph_pair_overlaps,1);
+  assert.equal(x.target_reference_disagreements,1);
+});
+test('graph output never exposes source text or URLs',()=>{
+  const s=sample();
+  s.relationships=[{id:1,source_type:'case',target_type:'source',source_id:2,target_id:10,source_id_reference:10,notes:'SECRET REVIEW NOTE'}];
+  s.expected_counts.relationships=1;
+  const output=JSON.stringify(audit(s));
+  assert.ok(!output.includes('SECRET REVIEW NOTE'));
+  assert.ok(!output.includes('https://'));
+});
