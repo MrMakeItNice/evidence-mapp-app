@@ -683,3 +683,35 @@ test('invalid search cannot unlock a pending archive retry or permit duplicate l
   assert.equal(page.document.activeElement, input, 'recovery preserves validation focus');
   assert.equal(retry.hidden, true);assert.equal(retry.attributes['aria-disabled'], 'false');
 });
+
+test('scholarly previews expose supplied DOI identifiers separately from link hosts and verification', async () => {
+  const page = await scholarlyResponsePage({results: [
+    {display_name: 'DOI resolver record', doi: 'https://doi.org/10.1234/OpenAlex.Test'},
+    {display_name: 'Legacy resolver record', doi: 'HTTP://dx.doi.org/10.56789/legacy'}
+  ]}, {message: {items: [
+    {title: ['Publisher citation'], DOI: '10.9876/Crossref.Test', URL: 'https://publisher.example/article'},
+    {title: ['Blocked landing page'], DOI: '10.4321/valid-id', URL: 'javascript:alert(1)'}
+  ]}});
+  for (const doi of ['10.1234/OpenAlex.Test', '10.56789/legacy', '10.9876/Crossref.Test', '10.4321/valid-id']) {
+    assert.ok(page.results.includes('DOI: ' + doi + ' (index metadata; not independently verified)'));
+  }
+  assert.match(page.results, /Link host: publisher.example/);
+  assert.match(page.results, /No valid web link recorded/);
+  assert.match(page.results, /Blocked landing page/);
+});
+
+test('malformed or missing DOI metadata is omitted without hiding the scholarly record', async () => {
+  const invalid = [undefined, null, 1234, 'https://openalex.org/W1234', '10.123/nope', '10.1234/',
+    '10.1234/white space', 'https://untrusted.example/10.1234/identifier', '10.1234/<markup>'];
+  for (const provider of ['OpenAlex', 'Crossref']) {
+    const page = await scholarlyResponsePage({results: provider === 'OpenAlex' ? invalid.map((doi, i) => ({
+      display_name: 'OpenAlex metadata ' + i, id: 'https://openalex.org/W' + i, doi
+    })) : []}, {message: {items: provider === 'Crossref' ? invalid.map((DOI, i) => ({
+      title: ['Crossref metadata ' + i], DOI, URL: 'https://publisher.example/' + i
+    })) : []}});
+    assert.doesNotMatch(page.results, /DOI:/);
+    for (let i = 0; i < invalid.length; i++) {
+      assert.ok(page.results.includes(provider + ' metadata ' + i), 'records remain visible without an identifier');
+    }
+  }
+});
