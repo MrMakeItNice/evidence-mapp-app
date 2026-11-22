@@ -283,8 +283,9 @@
 })();
 </script>
 <script type="module">
+import {reviewedEventsFromFeed} from "./pulse-events.mjs";
 const pulseCriteria={positive:"Documented improvements in health, rights, peace, environmental restoration, safety or well-being. Requires an identifiable event and source.",negative:"Documented harm, violence, rights violations, preventable damage or deterioration. Requires an identifiable event and source.",neutral:"Mixed, uncertain, procedural or not-yet-assessable developments. Uncertainty must not be forced into good or bad."};document.querySelectorAll("[data-pulse]").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll("[data-pulse]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));document.getElementById("pulse-panel").textContent=pulseCriteria[button.dataset.pulse]+" No audited count available yet."}));
-const pulsePanel=document.getElementById("pulse-panel");let reviewedEvents=[],pulseLoaded=false;const pulseButtons=[...document.querySelectorAll("[data-pulse]")];function pulseRender(){for(const b of pulseButtons){const category=b.dataset.pulse;b.querySelector("strong").textContent=pulseLoaded&&reviewedEvents.length?String(reviewedEvents.filter(e=>e.category===category).length):"—";}const active=pulseButtons.find(b=>b.getAttribute("aria-pressed")==="true");if(active)pulsePanel.textContent=pulseCriteria[active.dataset.pulse]+" "+(pulseLoaded&&reviewedEvents.length?reviewedEvents.filter(e=>e.category===active.dataset.pulse).length+" reviewed events in this curated feed.":"No reviewed events available yet; counts are not zero.");}try{const response=await fetch("./global-evidence-pulse.json",{cache:"no-store"});if(!response.ok)throw Error("feed unavailable");const feed=await response.json();if(feed.schema_version!==1||!Array.isArray(feed.events))throw Error("invalid feed");const seen=new Set();reviewedEvents=feed.events.filter(e=>{if(!e||typeof e.id!=="string"||seen.has(e.id)||!["positive","negative","neutral"].includes(e.category)||typeof e.title!=="string"||!e.title.trim()||typeof e.source_url!=="string"||!/^https:\/\//.test(e.source_url)||typeof e.event_date!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(e.event_date)||!Number.isFinite(e.lat)||!Number.isFinite(e.lon)||Math.abs(e.lat)>90||Math.abs(e.lon)>180||e.review_status!=="verified")return false;seen.add(e.id);return true});pulseLoaded=true;pulseRender();}catch(error){pulsePanel.textContent="Reviewed event feed unavailable; no global count can be calculated.";}
+const pulsePanel=document.getElementById("pulse-panel");let reviewedEvents=[],pulseLoaded=false;const pulseButtons=[...document.querySelectorAll("[data-pulse]")];function pulseRender(){for(const b of pulseButtons){const category=b.dataset.pulse;b.querySelector("strong").textContent=pulseLoaded&&reviewedEvents.length?String(reviewedEvents.filter(e=>e.category===category).length):"—";}const active=pulseButtons.find(b=>b.getAttribute("aria-pressed")==="true");if(active)pulsePanel.textContent=pulseCriteria[active.dataset.pulse]+" "+(pulseLoaded&&reviewedEvents.length?reviewedEvents.filter(e=>e.category===active.dataset.pulse).length+" reviewed events in this curated feed.":"No reviewed events available yet; counts are not zero.");}try{const response=await fetch("./global-evidence-pulse.json",{cache:"no-store"});if(!response.ok)throw Error("feed unavailable");const feed=await response.json();reviewedEvents=reviewedEventsFromFeed(feed);pulseLoaded=true;pulseRender();}catch(error){pulsePanel.textContent="Reviewed event feed unavailable; no global count can be calculated.";}
 const status=document.getElementById('globe-status'),fallback=document.getElementById('fallback');
 try{
  const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js');
@@ -417,7 +418,8 @@ try{
     });
   }
 </script>
-<script>
+<script type="module">
+import {reviewedEventsFromFeed} from "./pulse-events.mjs";
 /* Counts reflect the reviewed feed at fetch time; no synthetic scores or zero-for-empty. */
 (async function loadAtlasPulse(){
   const status=document.getElementById('atlas-pulse-status');
@@ -425,16 +427,7 @@ try{
     const response=await fetch('./global-evidence-pulse.json',{cache:'no-store'});
     if(!response.ok)throw new Error('Feed unavailable');
     const data=await response.json();
-    if(!Array.isArray(data.events))throw new Error('Invalid feed');
-    const reviewed=data.events.filter(e=>e&&e.review_status==='verified'&&['positive','negative','neutral'].includes(e.category)&&typeof e.source_url==='string'&&/^https:\/\//i.test(e.source_url)&&typeof e.event_date==='string'&&e.classification_rationale&&e.reviewer&&e.reviewed_at);
-    // Fail closed if event identity or dates are invalid: repeated articles must not inflate totals.
-    const ids=new Set();
-    for(const event of reviewed){
-      if(typeof event.id!=='string'||!event.id.trim()||ids.has(event.id)||!/^\d{4}-\d{2}-\d{2}$/.test(event.event_date)||Number.isNaN(Date.parse(event.event_date))){
-        throw new Error('Invalid or duplicate reviewed event');
-      }
-      ids.add(event.id);
-    }
+    const reviewed=reviewedEventsFromFeed(data);
     if(!reviewed.length){status.textContent='Awaiting verified data. No reviewed events are currently available; this does not mean zero news.';return;}
     for(const category of ['positive','negative','neutral'])document.getElementById('atlas-'+category).textContent=String(reviewed.filter(e=>e.category===category).length);
     const updated=data.updated_at?new Date(data.updated_at):null;
