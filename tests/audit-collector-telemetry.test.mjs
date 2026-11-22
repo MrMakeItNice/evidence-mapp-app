@@ -107,3 +107,22 @@ test('inactive feed does not generate remediation alerts', () => {
   s.agent_control_activity[0].http_status = 403;
   assert.deepEqual(check(s).flags, []);
 });
+
+test('HTTP 403 marked ok is not credited as successful collection', () => {
+  const s = snapshot();
+  s.agent_control_activity[0].status = 'ok';
+  s.agent_control_activity[0].http_status = 403;
+  const f = check(s);
+  assert.equal(f.observed_completed_24h.successful, 0);
+  assert.equal(f.observed_completed_24h.http_403, 1);
+  assert.ok(f.flags.includes('status_ok_with_http_error'));
+});
+
+test('completed activity marked pending is flagged for telemetry reconciliation', () => {
+  const s = snapshot();
+  s.agent_control_activity[0].status = 'pending';
+  const f = check(s);
+  assert.equal(f.observed_completed_24h.successful, 0);
+  assert.ok(f.flags.includes('completed_run_still_pending'));
+  assert.ok(!f.flags.includes('last_run_error'));
+});
