@@ -5,6 +5,7 @@ on:
     paths:
       - 'workspace.html'
       - 'tests/workspace-source-url.test.cjs'
+      - 'tests/workspace-source-ingestion.test.cjs'
       - '.github/workflows/workspace-source-url-regression.yml'
   workflow_dispatch:
 
@@ -18,4 +19,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check workspace source-link safety and script syntax
-        run: node --test tests/workspace-source-url.test.cjs
+        run: node --test tests/workspace-source-url.test.cjs tests/workspace-source-ingestion.test.cjs
