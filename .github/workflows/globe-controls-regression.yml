@@ -1,0 +1,21 @@
+name: Globe touch and keyboard regression
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/globe-controls.mjs'
+      - '.github/workflows/globe-controls-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  globe-controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test globe touch, keyboard and responsive controls
+        run: node tests/globe-controls.mjs
