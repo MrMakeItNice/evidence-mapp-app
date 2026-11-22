@@ -5,6 +5,8 @@ on:
     paths:
       - 'evidence-board.html'
       - 'tests/evidence-board-source-url.test.cjs'
+      - 'tests/evidence-board-citation-language.test.cjs'
+      - 'tests/evidence-board-move-controls.test.cjs'
       - '.github/workflows/evidence-board-source-url-regression.yml'
   workflow_dispatch:
 
@@ -18,4 +20,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run source URL regression tests
-        run: node --test tests/evidence-board-source-url.test.cjs
+        run: node --test tests/evidence-board-source-url.test.cjs tests/evidence-board-citation-language.test.cjs tests/evidence-board-move-controls.test.cjs
