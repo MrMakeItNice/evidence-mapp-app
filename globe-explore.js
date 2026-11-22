@@ -67,6 +67,14 @@
     status.textContent = data.title + ' opened beside the globe. Choose a research destination.';
   });
 
+  // Shortcut buttons use the same validated submit path as typed queries.
+  for (const button of form.querySelectorAll('[data-globe-topic]')) {
+    button.addEventListener('click', () => {
+      input.value = button.dataset.globeTopic;
+      form.requestSubmit();
+    });
+  }
+
   function closeLens() {
     if (panel.hidden) return;
     panel.hidden = true;
