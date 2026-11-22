@@ -20,10 +20,19 @@ async function owner(req:Request){
   return (await r.json()).id===OWNER;
 }
 function urlSafe(v:unknown){
-  try{const u=new URL(String(v));if(!["https:","http:"].includes(u.protocol))return null;
+  if(typeof v!=="string"||!v.trim())return null;
+  try{
+    const u=new URL(v);
+    // A userinfo section can make a deceptive hostname look like the publisher.
+    if(!["https:","http:"].includes(u.protocol)||u.username||u.password)return null;
     u.hash="";
-    for(const p of [...u.searchParams.keys()])if(p.startsWith("utm_")||["fbclid","gclid"].includes(p))u.searchParams.delete(p);
-    return u.toString().slice(0,2048);}catch{return null;}
+    for(const p of [...u.searchParams.keys()]){
+      if(p.startsWith("utm_")||["fbclid","gclid"].includes(p))u.searchParams.delete(p);
+    }
+    // Reject overlong values rather than silently truncating document identifiers.
+    const canonical=u.toString();
+    return canonical.length<=2048?canonical:null;
+  }catch{return null;}
 }
 function frame(title:string){
  const t=" "+title.toLowerCase().replace(/[^a-z0-9 ]/g," ")+" ";
