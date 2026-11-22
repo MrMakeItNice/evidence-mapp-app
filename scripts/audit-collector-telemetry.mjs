@@ -90,7 +90,18 @@ export function auditCollectorTelemetry(snapshot) {
       else if (lastSuccess < asOf - DAY) flags.push('last_success_over_24h_ago');
       if (counts.http_403 >= 3) flags.push('repeated_observed_http_403');
       else if (counts.http_403 > 0) flags.push('observed_http_403');
-      if (counts.http_429 > 0) flags.push('observed_http_429');
+      if (counts.http_429 > 0) {
+        flags.push('observed_http_429');
+        const lastRateLimit = Math.max(...recent.filter(a => a.http_status === 429)
+          .map(a => instant(a.finished_at)));
+        // Later successful completion is evidence of recovery after that incident,
+        // not a guarantee that the provider will remain accessible.
+        const laterSuccess = recent.some(a => a.status === 'ok' &&
+          !(a.http_status >= 400) && instant(a.finished_at) > lastRateLimit);
+        flags.push(laterSuccess
+          ? 'http_429_followed_by_observed_success'
+          : 'http_429_without_later_observed_success');
+      }
       // Conflicting telemetry is a data-quality lead, not proof of collection success.
       if (recent.some(a => a.status === 'ok' && a.http_status >= 400)) {
         flags.push('status_ok_with_http_error');
