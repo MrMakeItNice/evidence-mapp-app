@@ -273,3 +273,58 @@ test('scholarly coverage distinguishes outage, partial response and truly empty 
     }
   }
 });
+
+
+test('oversized scholarly searches preserve complete Unicode terms and cannot transmit a partial query', async () => {
+  const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  const nodes = new Map(), calls = [];
+  let currentUrl = 'https://atlas.example/global-search.html';
+  const element = () => ({
+    value: '', textContent: '', children: [], handlers: {}, validationMessage: '', reports: 0, focused: false,
+    append(...children) { this.children.push(...children); },
+    replaceChildren(...children) { this.children = children; },
+    addEventListener(type, handler) { this.handlers[type] = handler; },
+    setCustomValidity(message) { this.validationMessage = message; },
+    reportValidity() { this.reports++; return !this.validationMessage; },
+    focus() { this.focused = true; }
+  });
+  const get = id => { if (!nodes.has(id)) nodes.set(id, element()); return nodes.get(id); };
+  const fetch = async url => {
+    const address = String(url);
+    calls.push(address);
+    return { ok: true, json: async () => address.includes('/api/cases') ? []
+      : address.includes('openalex') ? { results: [] } : { message: { items: [] } } };
+  };
+  new Function('document','location','history','fetch','URL','URLSearchParams','AbortController','setTimeout','clearTimeout',script)(
+    { getElementById: get, createElement: element },
+    { search: '', href: currentUrl },
+    { replaceState(_state, _title, url) { currentUrl = String(url); } },
+    fetch, URL, URLSearchParams, AbortController, () => 1, () => {});
+  await new Promise(resolve => setImmediate(resolve));
+  const submit = value => {
+    get('q').value = value;
+    get('search').handlers.submit({ preventDefault() {} });
+  };
+  submit('previous');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls.filter(x => /api\.(openalex|crossref)\.org/.test(x)).length, 2);
+  const oversized = '🔎'.repeat(301);
+  submit(oversized);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(get('q').value, oversized, 'the original search stays intact');
+  assert.match(get('q').validationMessage, /300 characters or fewer/);
+  assert.equal(get('q').reports, 1);
+  assert.equal(get('q').focused, true);
+  assert.match(get('archive-status').textContent, /Search not submitted/);
+  assert.equal(get('live-results').children.length, 0, 'old scholarly previews are cleared');
+  assert.match(get('live-status').textContent, /Enter a search/);
+  assert.equal(calls.filter(x => /api\.(openalex|crossref)\.org/.test(x)).length, 2,
+    'no partial search reaches external providers');
+  assert.equal(new URL(currentUrl).searchParams.has('q'), false, 'stale query links are removed');
+  get('q').handlers.input();
+  assert.equal(get('q').validationMessage, '');
+  submit('📜'.repeat(300));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(new URL(currentUrl).searchParams.get('q'), '📜'.repeat(300));
+  assert.equal(calls.filter(x => /api\.(openalex|crossref)\.org/.test(x)).length, 4);
+});
