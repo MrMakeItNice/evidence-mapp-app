@@ -45,7 +45,16 @@
     return 'topic';
   }
 
-  input.addEventListener('input', () => input.setCustomValidity(''));
+  input.addEventListener('input', () => {
+    input.setCustomValidity('');
+    // The open lens describes the last submitted topic, not unsent edits.
+    // Hide stale destinations until the visitor submits the revised query.
+    if (panel.hidden) return;
+    panel.hidden = true;
+    globeArea.classList.remove('globe-lens-open');
+    links.replaceChildren();
+    status.textContent = 'Research lens cleared after editing the topic. Select Explore research to see updated destinations.';
+  });
 
   form.addEventListener('submit', event => {
     event.preventDefault();
