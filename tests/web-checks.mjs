@@ -55,3 +55,18 @@ assert.match(rabbitHole,/Board lines represent indexed citations, not proof/);
 assert.match(rabbitHole,/private draft tool does not publish, review, or add proposed links/);
 assert.match(fs.readFileSync('connection-explorer.html','utf8'),/id="contribute"/);
 console.log('PASS: Rabbit Hole links to published cases, source-backed Evidence Board and private draft explorer without implying unverified causal links.');
+
+// Identity/provenance guard: canonical historical program and unverified theory stay distinct.
+const bluebirdPage = fs.readFileSync('rabbit-hole.html','utf8');
+assert.equal((bluebirdPage.match(/id="bluebird-bluebeam"/g)||[]).length,1);
+assert.match(bluebirdPage,/Project BLUEBIRD is not Project Blue Beam/);
+assert.match(bluebirdPage,/DOCUMENTED · CIA PROGRAM/);
+assert.match(bluebirdPage,/UNVERIFIED · RESEARCH HYPOTHESIS/);
+assert.match(bluebirdPage,/href="\.\/paper-trails\.html#case-3"/);
+assert.doesNotMatch(bluebirdPage,/href="\.\/paper-trails\.html#case-32"/);
+assert.match(bluebirdPage,/Case #31 \(record ID 32\).*index cross-reference/);
+assert.match(bluebirdPage,/nsarchive\.gwu\.edu\/document\/32717-document-02/);
+assert.match(bluebirdPage,/No public relationship edge is created here/);
+assert.match(bluebirdPage,/not a documented link or evidence of coordination/);
+assert.match(bluebirdPage,/target="_blank" rel="noopener noreferrer"/);
+console.log('PASS: BLUEBIRD canonical case and Blue Beam hypothesis remain distinct; archival link and non-causal guard present.');
