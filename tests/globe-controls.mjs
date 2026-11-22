@@ -29,14 +29,28 @@ function setup({width=358,height=351,compact=true,reduced=false}={}){
   frame:animate,resize
  })`,context);
  const emit=(type,id,x,y,extra={})=>{
-  const event={type,pointerId:id,clientX:x,clientY:y,pointerType:'touch',button:0,cancelable:true,preventDefault(){},...extra};
+  const event={type,pointerId:id,clientX:x,clientY:y,pointerType:'touch',button:0,cancelable:true,preventDefault(){this.defaultPrevented=true},...extra};
   for(const fn of handlers.get(type)||[])fn(event);
+  return event;
  };
  const release=(id,x,y)=>{emit('pointerup',id,x,y);emit('lostpointercapture',id,x,y)};
  return {...api,canvas,camera,globe,emit,release,click:id=>buttons.get(id).click(),
   blur:()=>windowHandlers.get('blur')(),inspections:()=>inspections,renders:()=>rendered};
 }
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-9,`${a} should equal ${b}`);
+
+// A single intentional canvas touch policy lets vertical gestures scroll the page.
+const canvasRules=[...html.matchAll(/\.globe-canvas\s*\{([^}]*)\}/g)];
+const touchPolicies=canvasRules.flatMap(rule=>[...rule[1].matchAll(/touch-action\s*:\s*([^;}]+)/g)].map(match=>match[1].trim()));
+assert.deepEqual(touchPolicies,['pan-y'],'Canvas must allow native vertical scrolling without later CSS overrides');
+let scrolling=setup();
+assert.equal(scrolling.emit('pointerdown',81,100,100).defaultPrevented,undefined,'Touch down must not cancel scrolling');
+assert.equal(scrolling.emit('pointermove',81,140,101).defaultPrevented,undefined,'Touch movement must not cancel scrolling');
+scrolling.emit('pointercancel',81,140,101);
+assert.equal(scrolling.read().active,false,'Browser scroll cancellation must clear active globe gestures');
+assert.equal(scrolling.emit('pointerdown',82,100,100,{pointerType:'mouse'}).defaultPrevented,true,'Mouse drag can still cancel text selection');
+assert.equal(scrolling.emit('pointermove',82,140,101,{pointerType:'mouse'}).defaultPrevented,true);
+scrolling.release(82,140,101);
 
 // A tap tolerates finger jitter and inspects exactly once; a drag never inspects.
 let app=setup(),before=app.read();
@@ -106,4 +120,4 @@ for(const [width,height] of [[288,288],[358,351],[736,480]]){
 }
 app=setup({compact:false,width:1440,height:690});close(app.read().zoom,8.5);
 app=setup({reduced:true});before=app.read();app.frame();close(app.read().targetY,before.targetY);
-console.log('PASS: taps, responsive dragging, pinch-to-drag for either finger, extra fingers, lost capture, cancellation, blur, zoom bounds, keyboard, reset, responsive fit and reduced motion.');
+console.log('PASS: native vertical scroll policy, touch cancellation, taps, responsive dragging, pinch-to-drag for either finger, extra fingers, lost capture, cancellation, blur, zoom bounds, keyboard, reset, responsive fit and reduced motion.');
