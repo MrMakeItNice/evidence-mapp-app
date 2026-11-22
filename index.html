@@ -118,7 +118,19 @@
 .globe-explore-panel a:hover{border-color:#a8e6cb}
 .globe-explore-close{width:100%;min-height:44px;margin-top:12px;padding:8px 10px;border:1px solid #557f80;border-radius:3px;background:transparent;color:#d8f5ea;font-size:12px}
 .globe-explore-panel .location-caveat{font-size:11px;color:#adbec5;margin:12px 0 0}
-@media(max-width:800px){.globe-explore-panel{position:static;grid-row:8;justify-self:center;width:100%;max-width:520px;box-shadow:none}.globe-explore-form{margin-top:20px}}
+@media(max-width:800px){
+  .globe-explore-panel{position:static;grid-row:8;justify-self:center;width:100%;max-width:520px;box-shadow:none}
+  .globe-explore-form{margin-top:20px}
+  /* An open lens belongs immediately above the globe. Preserve the original
+     grid order when the panel is hidden; avoid an empty row on narrow screens. */
+  .globe-area.globe-lens-open .globe-explore-panel{grid-row:2}
+  .globe-area.globe-lens-open .globe-viewport{grid-row:3}
+  .globe-area.globe-lens-open .globe-tools{grid-row:4}
+  .globe-area.globe-lens-open .globe-hint{grid-row:5}
+  .globe-area.globe-lens-open .globe-status{grid-row:6}
+  .globe-area.globe-lens-open .geo-panel{grid-row:7}
+  .globe-area.globe-lens-open .globe-cta{grid-row:8}
+}
 @media(max-width:470px){.globe-explore-controls{flex-direction:column}.globe-explore-controls button{min-height:44px}}
 </style></head><body>
 <dialog id="ea-opening" class="ea-opening" aria-label="Welcome to Evidence Atlas" aria-describedby="ea-opening-instructions">
