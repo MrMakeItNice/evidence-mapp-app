@@ -917,12 +917,13 @@ document.addEventListener("change",e=>{if(e.target&&e.target.id==="networkCaseSe
  function addSource(slug){if(!currentGroup(slug))return;
   const fields=field("title","Original document title","text",true)+field("url","Original source URL","url",true)+field("publisher","Publisher or archive","text",true)+field("topic_id","Research section","select",false,topicOpts(slug))+field("relevance_notes","What the document supports and its limits","textarea",true);
   groupModal("Add document to group",fields,async d=>{
-   const url=new URL(String(d.url).trim());if(!["https:","http:"].includes(url.protocol))throw Error("Use an HTTP or HTTPS source URL.");
-   let {data:existing,error:err}=await client.from("sources").select("id").eq("url",url.href).limit(1);
+   const safeUrl=targetUrl(d.url);
+   if(!safeUrl)throw Error("Use an absolute HTTP or HTTPS source URL without embedded credentials.");
+   let {data:existing,error:err}=await client.from("sources").select("id").eq("url",safeUrl).limit(1);
    if(err)throw err;
    let sourceId=existing?.[0]?.id;
    if(!sourceId){
-    const saved=await client.from("sources").insert({title:d.title.trim(),url:url.href,publisher:d.publisher.trim(),source_type:"investigation_group_reference",public_notes:"Group source awaiting independent review.",published:false}).select("id").single();
+    const saved=await client.from("sources").insert({title:d.title.trim(),url:safeUrl,publisher:d.publisher.trim(),source_type:"investigation_group_reference",public_notes:"Group source awaiting independent review.",published:false}).select("id").single();
     if(saved.error)throw saved.error;sourceId=saved.data.id;
    }
    const row={group_slug:slug,source_id:sourceId,evidence_role:"primary_reference",relevance_notes:d.relevance_notes.trim(),reviewed:false};
