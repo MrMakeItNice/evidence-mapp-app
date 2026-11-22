@@ -18,6 +18,16 @@ function setup() {
     append(node) { this.children.push(node); },
     focus() { document.activeElement = this; }
   }]));
+  const quickTopics = ['Rabbit Holes', 'Case Files', 'Declassified records', 'Connections'].map(label => ({
+    dataset: { globeTopic: label },
+    addEventListener(type, fn) { this[type] = fn; }
+  }));
+  const form = elements['globe-explore-form'];
+  form.querySelectorAll = selector => {
+    assert.equal(selector, '[data-globe-topic]');
+    return quickTopics;
+  };
+  form.requestSubmit = () => form.submit({ preventDefault() {} });
   const document = {
     getElementById: id => elements[id] || null,
     createElement: tag => ({ tag, href: '', textContent: '' })
@@ -30,7 +40,7 @@ function setup() {
     assert.ok(prevented, 'form submits without a page reload');
     return elements;
   };
-  return { elements, submit, document };
+  return { elements, submit, document, quickTopics };
 }
 
 test('accessible search panel and deferred script exist on the globe homepage', () => {
@@ -122,4 +132,20 @@ test('a closed lens ignores repeated dismissal without taking focus', () => {
   elements['globe-explore-close'].click();
   assert.equal(document.activeElement, otherControl);
   assert.equal(elements['globe-explore-status'].textContent, '');
+});
+
+test('mobile-friendly research shortcuts follow the same accessible lens path', () => {
+  assert.match(html, /class="globe-explore-shortcuts" role="group" aria-label="Common research lenses"/);
+  assert.match(html, /\.globe-explore-shortcuts button\{[^}]*min-height:44px/);
+  assert.match(html, /\.globe-explore-shortcuts button:focus-visible/);
+  const { elements, document, quickTopics } = setup();
+  const paths = ['./rabbit-hole.html', './discover.html', './paper-trails.html', './connection-explorer.html'];
+  for (const [i, button] of quickTopics.entries()) {
+    assert.ok(html.includes('type="button" data-globe-topic="' + button.dataset.globeTopic + '"'));
+    button.click();
+    assert.equal(elements['globe-explore-query'].value, button.dataset.globeTopic);
+    assert.equal(elements['globe-explore-panel'].hidden, false);
+    assert.equal(elements['globe-explore-links'].children[0].href, paths[i]);
+    assert.equal(document.activeElement, elements['globe-explore-panel']);
+  }
 });
