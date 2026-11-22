@@ -197,15 +197,73 @@ export function auditCaseSourceCoverage(snapshot) {
   summary.library_sources_marked_published_outside_case_register = publishedOutsideCaseRegister.length;
   summary.outside_register_marked_published_sources_undated =
     publishedOutsideCaseRegister.filter(s=>!datePresent(s.publication_date)).length;
+
+  // The source register is NOT the only citation path. Optionally accept a
+  // complete relationships snapshot to measure case->source graph coverage.
+  // When absent, report null rather than implying an absence of graph links.
+  const graphProvided = Object.hasOwn(snapshot,'relationships') ||
+    Object.hasOwn(snapshot.expected_counts,'relationships');
+  if (graphProvided && (!Array.isArray(snapshot.relationships) ||
+      !Number.isSafeInteger(snapshot.expected_counts.relationships) ||
+      snapshot.expected_counts.relationships < 0 ||
+      snapshot.relationships.length !== snapshot.expected_counts.relationships)) {
+    throw new Error('Incomplete relationship graph snapshot');
+  }
+  const graphRows = graphProvided ? snapshot.relationships : [];
+  const graphRowIds = new Set(), graphPairs = new Set(), graphSourceIds = new Set();
+  const graphByCase = new Map([...cases.keys()].map(caseId=>[caseId,[]]));
+  let graphEdges = 0, targetReferenceDisagreements = 0;
+  for (const r of graphRows) {
+    if (!object(r) || !id(r.id) || graphRowIds.has(r.id)) {
+      throw new Error('Invalid relationship graph row');
+    }
+    graphRowIds.add(r.id);
+    if (r.source_type !== 'case' || r.target_type !== 'source') continue;
+    if (!id(r.source_id) || !id(r.target_id) ||
+        !cases.has(r.source_id) || !sources.has(r.target_id) ||
+        (r.source_id_reference != null &&
+         (!id(r.source_id_reference) || !sources.has(r.source_id_reference)))) {
+      throw new Error('Invalid graph case source link');
+    }
+    graphEdges++;
+    graphPairs.add(key(r.source_id,r.target_id));
+    graphSourceIds.add(r.target_id);
+    graphByCase.get(r.source_id).push(sources.get(r.target_id));
+    // A different evidence-reference ID needs inspection, not auto-relinking.
+    if (r.source_id_reference != null && r.source_id_reference !== r.target_id) {
+      targetReferenceDisagreements++;
+    }
+  }
+  const complete = s => s.published === true && !missing(s.publisher) &&
+    datePresent(s.publication_date) && validSourceUrl(s.url);
+  const publishedCases = [...cases.values()].filter(c=>c.published);
+  const relationshipGraph = graphProvided ? {
+    case_to_source_edges: graphEdges,
+    unique_case_source_pairs: graphPairs.size,
+    repeated_case_source_graph_edges: graphEdges - graphPairs.size,
+    register_graph_pair_overlaps: [...graphPairs].filter(p=>sourcePairs.has(p)).length,
+    distinct_graph_sources: graphSourceIds.size,
+    published_cases_with_graph_links: publishedCases.filter(c=>graphByCase.get(c.id).length>0).length,
+    published_cases_with_complete_marked_published_graph_source:
+      publishedCases.filter(c=>graphByCase.get(c.id).some(complete)).length,
+    published_cases_with_complete_marked_published_source_either_path:
+      publishedCases.filter(c=>[...links.get(c.id),...graphByCase.get(c.id)].some(complete)).length,
+    published_cases_without_complete_marked_published_source_either_path:
+      publishedCases.filter(c=>![...links.get(c.id),...graphByCase.get(c.id)].some(complete)).length,
+    published_sources_outside_register_but_linked_in_graph:
+      publishedOutsideCaseRegister.filter(s=>graphSourceIds.has(s.id)).length,
+    target_reference_disagreements:targetReferenceDisagreements
+  } : null;
+
   flagged.sort((a,b) => a.case_number-b.case_number || a.case_id-b.case_id);
   // Only numeric IDs and reason codes: no titles, URLs, descriptions or private notes.
-  return {summary,flagged_case_count:flagged.length,
+  return {summary,relationship_graph:relationshipGraph,flagged_case_count:flagged.length,
     flagged_cases:flagged.slice(0,50),omitted_flagged_cases:Math.max(0,flagged.length-50),
     repeated_underlying_source_pairs:repeated.slice(0,25),
     marked_published_source_ids_outside_case_register:publishedOutsideCaseRegister.slice(0,25).map(s=>s.id),
     omitted_outside_case_register_sources:Math.max(0,publishedOutsideCaseRegister.length-25),
     omitted_repeated_pairs:Math.max(0,repeated.length-25),
-    caveat:'Register references may repeat sources. Library sources outside the case-register join may be used elsewhere; no link, status or metadata metric proves validity or independent corroboration.'};
+    caveat:'Register references may repeat sources. Register-only metrics must not be interpreted as all source linkage. Relationship graph metrics require a complete optional snapshot. No link, source status or metadata metric proves authenticity or independent corroboration.'};
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
