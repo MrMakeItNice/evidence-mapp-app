@@ -124,3 +124,30 @@ The offline diagnostic in this draft PR now counts references of the `master_ind
 Targeted identifier/title/URL-phrase searches of `news_items`, `research_inbox` and `sources` yielded **zero direct matches** for either new lead. This does not rule out indirect mentions, related existing cases, variants or other editorial staging memos. Both leads remain in **this PR memo only** for editorial review; no database insertion, publication or automatic case creation.
 
 **Release boundary:** source-type classification is a catalog-triage measure, not a validity verdict. No production DB writes, schema changes, merges, deployments, web fetches against source URLs, collector changes or automatic publication. CI checks are focused only.
+
+
+## Follow-up: November 22, 2026, 21:09 UTC / 1:09 PM Pacific — citation *role* independence check
+
+### Read-only database audit
+- All **140 published cases** have case-register citations; all **219/219** links have `source_role=cited_by_master_index` (zero missing role values). Thus **140/140 published cases have exclusively master-index citation roles**. This is a catalog-linking convention, **not** evidence that the referenced documents are invalid or that each underlying primary document has/has not been reviewed independently.
+- **134/140** published cases additionally have only `source_type=master_index_bibliography` linked records. The remaining six do not automatically constitute verified investigations: a source type and a citation role answer *different* questions.
+- **219 register links / 218 distinct case-source relationships**, with one repeated pair requiring catalog-level review. No edits or deletions were made.
+- **940/940 news items pending**; 57 discovered in 24h; **447** without publication timestamps, including **428** Google News proxy records; **135** pending more than 14 days.
+- Research inbox: **40 pending**, four undated, four unassigned. Published-flagged library sources: **123**, of which **53** undated. URL joins: **25** news-inbox, **5** news-sources; no exact within-table URL duplicate groups. **11/36** active news topics have no news; **11/11** research and **7/7** news watch timestamps stale/empty. The latter do not by themselves prove stopped collection.
+- Seven enabled feed summaries: six report recent successful completions; Positive News last successful November 11 and most recent run shown as pending. Retained preceding-24-hour activity has **41 completed HTTP 403** observations for Positive News; COVID Google News has one 429 incident followed by successful completion. A pending observation is not itself a completed failure.
+
+### Two new official research leads (editorial only)
+
+**GAO-27-107934 — Federal Accessibility: Agencies Not Consistently Meeting the Information and Communication Technology Needs of People with Disabilities.** Official source: https://www.gao.gov/products/gao-27-107934 ; **published/released November 19, 2026**. GAO reports that **14 of 23** agencies fixed the website accessibility issues GAO covertly reported between September 2025 and February 2026, while **nine had not fixed them as of May 2026**. GAO found USDA and HUD had gaps in pre-deployment accessibility testing; two recommendations remain marked open. This is a documented sample and follow-up cutoff, **not proof that nine agencies deliberately discriminated or have not remediated since May**. Cross-link only after review to access to public information, web accessibility and oversight; cite GAO methodology, agency responses and status dates.
+
+**Department of Education OIG — Fiscal Year 2027 Annual Plan.** Official oversight catalog: https://www.oversight.gov/reports/other/fiscal-year-2027-annual-plan ; **issued November 20, 2026**. The OIG describes proposed priorities and resources for evaluating Department of Education program integrity in FY2027. This is a **work plan, not a completed investigation or finding of misconduct**; retrieve and review the complete plan and any final engagement reports separately. Cross-link to transparency/education oversight only if a specific initiative relates to existing research.
+
+Targeted source identifiers, exact URL fragments, and title-phrase searches in `news_items`, `research_inbox` and `sources` returned **zero direct matches** for either lead. This does not establish absence from related cases, unindexed records, alternate URL versions, prior memos or external collections. Both leads are staged in this review-only markdown; they have **not** been inserted into production or published.
+
+### Engineering change and verification
+
+The local offline provenance diagnostic now tracks **citation role** separately from source type: counts explicit role omissions, counts published cases whose *every* citation has the master-index role and flags their numeric IDs for review. Unknown/missing roles are **not** silently classified as index-only, and a different explicit role does **not** prove independent corroboration. Malformed non-string role fields cause snapshot rejection. Four regression tests cover index-only roles attached to official-type source records, mixed roles, unknown roles and malformed roles.
+
+The PR-specific **Offline Case Source Coverage** GitHub Actions run **#45070578792** passed after the code/test commit (30 focused Node tests and syntax checks expected from the existing 26 plus four new tests). The documentation update follows that run. Full application/browser checks remain outstanding.
+
+**Safety:** no production Supabase writes/schema changes, no collector configuration changes, no automatic source status changes, no publication, no merge and no deployment. No unpublished database snapshots or source excerpts were committed.
