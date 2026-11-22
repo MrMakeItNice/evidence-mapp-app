@@ -66,7 +66,7 @@ test('actual page sends no scholarly query on prefill or typing, then sends subm
 });
 
 
-test('scholarly previews do not make credential-bearing or non-web source URLs clickable', async () => {
+test('scholarly previews show parsed link hosts and keep unsafe destinations non-clickable', async () => {
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   const nodes = new Map();
   const element = tag => ({
@@ -83,9 +83,10 @@ test('scholarly previews do not make credential-bearing or non-web source URLs c
     if (address.includes('api.openalex.org')) return { ok: true, json: async () => ({ results: [
       { display_name: 'Safe DOI', doi: 'https://doi.org/10.1234/atlas-test', id: 'https://openalex.org/W1' },
       { display_name: 'Deceptive URL', doi: 'https://records.gov@attacker.example/record', id: 'https://openalex.org/W2' },
-      { display_name: 'Unsafe scheme', doi: 'javascript:alert(1)', id: 'https://openalex.org/W3' }
+      { display_name: 'Unsafe scheme', doi: 'javascript:alert(1)', id: 'https://openalex.org/W3' },
+      { display_name: 'Missing URL' }
     ] }) };
-    return { ok: true, json: async () => ({ message: { items: [] } }) };
+    return { ok: true, json: async () => ({ message: { items: [{title: ['Publisher record'], DOI: '10.1234/crossref-test', URL: 'https://journals.example.org/report?article=42#page=3'}] } }) };
   };
   new Function('document', 'location', 'history', 'fetch', 'URL', 'URLSearchParams',
     'AbortController', 'setTimeout', 'clearTimeout', script)(
@@ -102,10 +103,17 @@ test('scholarly previews do not make credential-bearing or non-web source URLs c
   const safe = findHeading('Safe DOI');
   assert.ok(safe?.children[0], 'safe DOI should have a clickable preview');
   assert.equal(safe.children[0].href, 'https://doi.org/10.1234/atlas-test');
-  for (const title of ['Deceptive URL', 'Unsafe scheme']) {
+  assert.equal(rows.find(row => row.children[1] === safe).children[3].textContent, 'Link host: doi.org');
+  const publisher = findHeading('Publisher record');
+  assert.equal(publisher.children[0].href, 'https://journals.example.org/report?article=42#page=3');
+  const publisherRow = rows.find(row => row.children[1] === publisher);
+  assert.match(publisherRow.children[0].textContent, /^Crossref/);
+  assert.equal(publisherRow.children[3].textContent, 'Link host: journals.example.org');
+  for (const title of ['Deceptive URL', 'Unsafe scheme', 'Missing URL']) {
     const heading = findHeading(title);
     assert.ok(heading, title + ' remains visible as unverified scholarly metadata');
     assert.equal(heading.children.length, 0, title + ' must not have a clickable link');
+    assert.equal(rows.find(row => row.children[1] === heading).children[3].textContent, 'No valid web link recorded');
   }
 });
 
