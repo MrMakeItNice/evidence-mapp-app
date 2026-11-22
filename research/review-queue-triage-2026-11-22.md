@@ -47,3 +47,26 @@ Run `node --check scripts/triage-review-queue.mjs` and `node --test tests/triage
 2. **DOJ Western District of Pennsylvania (Nov 20)**: https://www.justice.gov/usao-wdpa/pr/monaca-resident-charged-money-laundering-and-wire-fraud-relation-international-ghost . The release announces an indictment concerning alleged participation in an international federal-student-aid fraud scheme. DOJ's earlier Oct 29 nationwide Operation Ghostbusters release (https://www.justice.gov/opa/pr/justice-department-unveils-indictments-nationwide-ghost-student-fraud-scam-linked-kenyan) is a **potential parent investigation connection**, not independent evidence of the new charges. Indictments are allegations; defendants are presumed innocent.
 
 Targeted read-only checks of news, inbox, sources and case titles found no direct headline/title/URL matches for the two new leads. They are not published or linked. Preserve parent/derivative relationships during human review and obtain full underlying GAO report and filed charging documents before publication.
+
+
+## 10:33 UTC evidence-first checkpoint — 22 November 2026
+
+**Read-only aggregate query, not a publication or verified case finding.** Supabase project `nxlffnplqdobfqxogmxo` remains unchanged.
+
+- News: **930** records, all pending; **53** discovered in the prior 24 hours; **134** pending with discovery timestamps older than 14 days. **441** are missing publication timestamps, including **422** Google News proxy URLs.
+- Research inbox: **40** pending; **36** discovered more than 14 days ago, **4** without published dates and **4** without watch assignments. **3/11** active research watches have no assigned inbox items; **11/11** show stale check times.
+- Sources: **285**, of which **123** marked published; **53** of those lack dates, **1** lacks a URL. Source **#285** still lacks publisher, publication date and URL. Preserve unknowns.
+- Correlation: **25** exact news/inbox URL pairs and **5** news/source pairs; **zero** repeated exact-URL groups within news or sources. Matches are potential cross-links, *not* independent corroboration or permission to merge.
+- Coverage: **11/36** active news topics have zero news items; **7/7** active news watches have null collection timestamps, and **17/17** news articles have no structured news-article topic association.
+- Collector: **Positive News** last succeeded November 11 and has **41 observed HTTP 403 responses** among completed polls requested in the preceding 24-hour query. The activity retention window varies by feed; the number is not a complete historical failure count. Six other collector feeds have recently succeeded; the Epstein feed's latest dispatch was pending at inspection. Do not bypass publisher access restrictions.
+
+### Code review: invalid-date normalization blocked
+
+`Date.parse('2026-02-30T12:00:00Z')` normalizes the impossible February 30 date into March 2 in Node; this can mis-order reviews while appearing syntactically valid. Updated the offline triage utility to validate actual month/day/leap-year, hour and UTC offset bounds *before* Date.parse. Regression coverage includes leap day, Feb 30, Nov 31, invalid local hours and impossible timezone offsets. This only affects review ordering of **local snapshots**, not production record dates. Full app validation is not implied by focused regression checks.
+
+### Newly staged official-source leads — editor verification required
+
+1. **NARA Presidential Library Explorer (November 2026 snapshot; month, not a specific publication day).** https://www.archives.gov/findingaid/presidential-library-explorer and detailed list https://www.archives.gov/findingaid/presidential-library-explorer/list. The overview reports **3,035,617 online scans**, **609,626,325 estimated textual pages** and **5.228%** online. The direct ratio of those two headline counts is about **0.498%**, not 5.228%; the detailed per-library figures also do not obviously reconcile to the overview. **Do not repeat the advertised percentage as a verified global digitization share.** Check the underlying NARA Catalog API counts, the data definitions, and the date/version of both pages, and request NARA clarification if unresolved. This is a **data-methodology discrepancy**, *not* evidence of withheld or destroyed documents. Exact title/URL search in sources, news and inbox found no direct match.
+2. **DOJ indictment announcement, Nov 20, 2026:** https://www.justice.gov/opa/pr/law-firm-owner-indicted-willful-failure-file-tax-returns. The Justice Department says a Colorado law-firm owner was indicted for alleged willful failure to file individual and corporate tax returns for 2020–2025. **An indictment is an allegation; no conviction is established here.** Assess whether it adds value to Evidence Atlas before opening a case; the full indictment and any response/court docket should be examined. Targeted title/URL searches in news, inbox and sources found zero direct matches.
+
+Both leads remain in this **review memo only**. No source import, case creation, automatic linking, production schema/data modification, publication, merge or deployment.
