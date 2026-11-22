@@ -90,3 +90,29 @@ Targeted case-title, news-headline/URL, inbox-title/URL and source-title/URL sea
 **Engineering verification:** Run `node --test tests/triage-review-queue.test.mjs` and review focused GitHub Actions on the latest commit. Tests explicitly cover published, unpublished, unknown and mixed-status source URL matches. Source publication flags describe database editorial status, **not the factual accuracy or evidentiary weight** of a document.
 
 **Safety:** No Supabase writes/DDL, source metadata modifications, merges, deployments or automatic publication.
+
+## 12:52 UTC read-only checkpoint — 22 November 2026
+
+**Monitoring summary, production unchanged.** A fresh read-only audit of Supabase project `nxlffnplqdobfqxogmxo` found:
+
+- **932** news items (all pending), including **54** discovered in the preceding 24 hours, **134** pending with discovery timestamps older than 14 days, and **441** lacking publication timestamps. Of the undated items, **422** use `news.google.com` proxy URLs; do not infer the publication date from URL or discovery time.
+- **40** research-inbox items (all pending): **36** discovered more than 14 days ago, **4** without publication dates, **4** unassigned to a watch.
+- **285** sources, **123** flagged published, **53** of the published-flagged group without publication dates, and one published-flagged source missing a URL and publisher. Source #285 remains a manual provenance check, not an automatic deletion.
+- **11/36** active news topics have no news items; **11/11** active research watches have missing/stale checks over 24h, with **3** lacking inbox matches. **7/7** active news watches lack a collection timestamp.
+- **25** exact news/inbox URLs and **5** exact news/source URLs match; **no** repeated exact URL groups were found *within* news or sources. Cross-queue URL identity is a correlation lead, not independent corroboration. No news/inbox matched pairs with both dates present were more than 24 hours apart in the current snapshot.
+- **Six** news records tagged primary/legal/research-paper lack dates. These tags do not verify a record's truth or primary status.
+
+**New collector signal:** The COVID-19 Google News feed's most recent completed poll at 12:45 UTC returned **HTTP 429** (rate limited), after five preceding successful HTTP 200 polls. Do not bypass limits; investigate permitted RSS/API rate guidance, backoff and cache intervals. Positive News still reports **HTTP 403**; 41 observed completed failures were returned in the requested 24-hour period, and last recorded success was November 11. Retained history may be truncated. Four other feeds showed recent completed success, while Epstein was pending at inspection; do not classify the pending run as failed.
+
+### Incremental code change: publication-time variance as editorial review lead
+
+The offline `triage-review-queue.mjs` now detects when the *same exact source URL* appears in news and research inbox with known publication timestamps more than **24 hours apart**. It flags both pending records for editorial reconciliation, using numeric IDs and a reason code only. It does not select a correct date, canonicalize different URLs, deduplicate, merge, publish, call remote APIs or write to Supabase. Reviewed rows can provide comparison context without themselves being requeued. Synthetic tests cover a disagreement, the 24-hour boundary, missing dates and reviewed-item exclusion. Zero date-variance matches were observed in the current read-only aggregate audit; this is preventive data-quality instrumentation.
+
+### New National Archives primary-source leads — editorial stage only
+
+1. **NARA, General Records Schedules Transmittal 37 (November 2026).** Official index (last reviewed **November 18, 2026**): https://www.archives.gov/records-mgmt/grs.html ; original transmittal: https://www.archives.gov/files/records-mgmt/grs/grs-trs37.pdf . NARA announces one **new** schedule, **GRS 6.8 for temporary commissions, committees and boards**, and updates to five existing schedules, including **GRS 4.5 for digitizing records**. The transmittal describes federal records disposition rules, including item 011 for records digitized before the issuance of digitization regulations. These are official records-management policies, **not evidence of illegal destruction or concealment**. Editorial action: extract the exact provisions and exceptions from the original schedule and assess their relationship to preservation/FOIA research before drafting an explainer.
+2. **NARA, Researcher Updates — November 2026.** https://www.archives.gov/research/news . NARA gives advance notice that specified court and other records held in Chicago are **expected to become temporarily unavailable November 30, 2026** while moving to Kansas City, with access **estimated to resume February 2027**. The posted notice identifies record-group numbers, including RG 21, RG 326 and RG 338. The agency describes a planned relocation, not a destruction or declassification event; closure and reopening dates are estimates. Editorial action: catalog the affected record groups and check actual accessibility/status with NARA before describing restrictions.
+
+Targeted read-only title and exact-page URL searches of `news_items`, `research_inbox` and `sources` found **zero direct matches** to these NARA leads, as did a relevant case-title search. This limited search does not prove no topical coverage exists under other wording. Both are staged as **unpublished review candidates** in this memo, not ingested or linked.
+
+**Guardrails:** No changes to production schema/data, public case records, release branches, deployments or published research. The GitHub pull request remains draft pending full review; focused tests are not a substitute for end-to-end application verification.
