@@ -49,11 +49,22 @@
 
   form.addEventListener('submit', event => {
     event.preventDefault();
-    const query = input.value.trim().replace(/\s+/g, ' ').slice(0, 160);
-    if (!query) {
-      input.setCustomValidity('Enter a topic or choose a research shortcut.');
+    const query = input.value.trim().replace(/\s+/g, ' ');
+    const error = !query
+      ? 'Enter a topic or choose a research shortcut.'
+      : Array.from(query).length > 160
+        ? 'Enter a topic of 160 characters or fewer. Your search was not shortened.'
+        : '';
+    if (error) {
+      panel.hidden = true;
+      globeArea.classList.remove('globe-lens-open');
+      links.replaceChildren();
+      input.setCustomValidity(error);
       input.reportValidity();
       input.focus();
+      status.textContent = 'Research lens closed. ' + (query
+        ? 'The topic exceeds 160 characters and was not shortened.'
+        : 'Enter a topic to explore.');
       return;
     }
     input.setCustomValidity('');
