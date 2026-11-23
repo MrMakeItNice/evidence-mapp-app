@@ -178,6 +178,17 @@ assert.match(bluebirdPage,/Canonical Case IDs 3 and 4 cite this record through g
 assert.match(bluebirdPage,/printed pp\. 67–68; PDF viewer pp\. 70–71/);
 assert.match(bluebirdPage,/Some PDF viewers may ignore the page fragment/);
 assert.doesNotMatch(bluebirdPage,/href="https:\/\/www\.intelligence\.senate\.gov\/sites\/default\/files\/hearings\/95mkultra\.pdf"/);
+// The Senate hearing landing page and its PDF are one underlying hearing.
+const senateIdentity = bluebirdPage.match(/<p id="senate-hearing-record-identity">([\s\S]*?)<\/p>/);
+assert.ok(senateIdentity);
+assert.equal((bluebirdPage.match(/id="senate-hearing-record-identity"/g)||[]).length,1);
+assert.match(senateIdentity[1],/indexed sources #1 and #258/);
+assert.match(senateIdentity[1],/href="https:\/\/www\.intelligence\.senate\.gov\/1977\/08\/03\/hearings-joint-hearing-subcommittee-health-and-scientific-research-committee-human-resources-project\/" target="_blank" rel="noopener noreferrer"/);
+assert.match(senateIdentity[1],/same document indexed as source #258/);
+assert.match(senateIdentity[1],/one underlying hearing, not two independent confirmations/);
+assert.match(senateIdentity[1],/not a finding about Project Blue Beam/);
+assert.match(senateIdentity[1],/Both source IDs remain unchanged pending editorial review/);
+
 // Official GPO catalog is an alternate doorway to the same 1977 Senate hearing, not independent corroboration.
 assert.match(bluebirdPage,/href="https:\/\/www\.govinfo\.gov\/app\/details\/CHRG-95shrg96408O" target="_blank" rel="noopener noreferrer"/);
 assert.match(bluebirdPage,/another official access point for the August 3, 1977 Senate hearing, not a separate source or independent confirmation/);
