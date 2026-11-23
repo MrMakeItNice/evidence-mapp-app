@@ -187,9 +187,9 @@ console.log('PASS: reviewed 1977 Senate hearing section and existing source #258
 
 
 // Keep primary-source and uncertainty notes discoverable from the BLUEBIRD/Blue Beam comparison.
-const sourceJumpNav = bluebirdPage.match(/<nav class="source-jumps" aria-label="BLUEBIRD and ARTICHOKE evidence notes">([\\s\\S]*?)<\\/nav>/);
+const sourceJumpNav = bluebirdPage.match(/<nav class="source-jumps" aria-label="BLUEBIRD and ARTICHOKE evidence notes">([\s\S]*?)<\/nav>/);
 assert.ok(sourceJumpNav, 'Missing source-scope navigation landmark');
-const sourceJumpLinks = [...sourceJumpNav[1].matchAll(/<a href="#([^"]+)">([^<]+)<\\/a>/g)];
+const sourceJumpLinks = [...sourceJumpNav[1].matchAll(/<a href="#([^"]+)">([^<]+)<\/a>/g)];
 assert.deepEqual(sourceJumpLinks.map(link => link[1]), [
   'cia-1975-indexed-source-note',
   'senate-1977-source-note',
@@ -200,8 +200,8 @@ assert.ok(sourceJumpLinks.every(link => link[2].length >= 16), 'Source jumps nee
 for (const link of sourceJumpLinks) {
   assert.equal((bluebirdPage.match(new RegExp('id="'+link[1]+'"','g')) || []).length,1,'Every jump must have exactly one existing target');
 }
-assert.match(bluebirdPage,/\\.source-jumps a\\{[^}]*min-height:44px/);
-assert.match(bluebirdPage,/\\.source-jumps a:focus-visible\\{[^}]*outline:3px/);
+assert.match(bluebirdPage,/\.source-jumps a\{[^}]*min-height:44px/);
+assert.match(bluebirdPage,/\.source-jumps a:focus-visible\{[^}]*outline:3px/);
 console.log('PASS: source-scope notes and Blue Beam assessment have unique accessible 44px jump links.');
 
 // Investigation path cards use semantic, full-card links, not tiny heading-only tap targets.
