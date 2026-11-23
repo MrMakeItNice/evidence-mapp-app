@@ -220,10 +220,10 @@ test('keyboard-list buttons describe original and geographic source roles withou
   assert.notEqual(firstContext.id, secondContext.id, 'each button references its own provenance');
   assert.equal(firstButton.getAttribute('aria-describedby'), firstContext.id);
   assert.equal(secondButton.getAttribute('aria-describedby'), secondContext.id);
-  assert.match(firstContext.textContent, /Event source: archive\\.example\\.gov/);
-  assert.match(firstContext.textContent, /Location evidence: archive\\.example\\.gov/);
-  assert.match(secondContext.textContent, /Event source: archive\\.example\\.gov/);
-  assert.match(secondContext.textContent, /Location evidence: maps\\.example\\.org/);
+  assert.ok(firstContext.textContent.includes('Event source: archive.example.gov'));
+  assert.ok(firstContext.textContent.includes('Location evidence: archive.example.gov'));
+  assert.ok(secondContext.textContent.includes('Event source: archive.example.gov'));
+  assert.ok(secondContext.textContent.includes('Location evidence: maps.example.org'));
   assert.doesNotMatch(secondContext.textContent, /independently confirmed|corroborated/i);
 });
 
