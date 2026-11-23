@@ -255,3 +255,37 @@ Watch timestamp fields alone are not reliable proof of collection cessation. Of 
 A targeted database search for the above report ID, core title phrases and official URL fragments in `news_items`, `research_inbox` and `sources` returned **no direct matches**. This does not prove absence in other structures, alternative URLs, or earlier editorial notes. Both are staged in **this PR memo only**; nothing has been published or inserted into production.
 
 **Boundary:** no Supabase changes of any kind, merges, deploys, collector changes, publication-status updates or automated research publication. Run the new focused test workflow and independently review findings before marking the PR ready.
+
+## Follow-up: 2026-11-23 01:05–01:15 UTC / November 22, 17:05–17:15 Pacific — read-only
+
+### Updated collection and evidence-linkage inventory
+
+Read-only queries against `nxlffnplqdobfqxogmxo` found **959/959 news items pending**, **49 discovered during the preceding 24h**, **456 without publication dates**, including **437 undated Google News proxy links**, and **135 pending over 14 days**. The research inbox remains **40 pending**, **4 undated** and **4 without an assigned watch topic**. **53/123** source-library records marked published have no publication date.
+
+The check found **25 exact news/inbox URL overlaps**, **5 exact news/source overlaps**, no exact same-table URL duplicate groups, and one source URL-*path* group containing five ECHR PDF-conversion URLs. A URL path is **not** a document identifier: the five URLs point at different ECHR `id` values and must not be merged on path alone.
+
+All **36 active news topics** were checked; **11 have no direct `news_items.topic_id` records**, including Corrections & Follow-Ups, Legal Frameworks, and Primary Documents & Archives. All **11 active research watches** and **7 active news watches** have stale or null timestamps; this is a *metadata gap*, not by itself a failure of the polling jobs.
+
+The fresh three-path relationship check confirms **219 register rows, 218 register source pairs, 244 graph pairs, 387 direct distinct case/source pairs, and 388 distinct pairs after claim-mediated links**. There are **140 published cases**; **59** have a same-record complete published-flagged source in the two direct paths; **81** require provenance-metadata review. These figures measure metadata and join coverage, not original-document verification or truth.
+
+### Collector telemetry
+
+Six of seven active collectors have recent `ok` / HTTP 200 completions. The Positive News collector is still blocked by HTTP 403 and a challenge-page response; **41 completed 403 failures** were observed in the retained preceding-24-hour activity. Last successful Positive News collection: **November 11, 2026**. COVID-19 Google News has a subsequent successful completion after a single observed 429 in that window. No access challenges were bypassed, and no collector settings were changed.
+
+### New source-identity review candidate: HUDOC query-key integrity
+
+An exact *full-URL* dedupe yields no duplicates within `sources`, but more careful agency-specific review identified two source records referring to the **same ECHR document identifier**: **source IDs 119 and 196**, both bearing document ID `003-7701602-10631160`. One stored URL has query keys `id;` and `library;` while the other uses `id` and `library`. The malformed-looking semicolon keys are consistent with a transcription/escaping artifact, **not yet a demonstrated broken link**. Another source, **ID 138**, also has suspicious semicolon-suffixed HUDOC query keys, but its document identifier differs and is **not** grouped with 119/196.
+
+A review-only addition to the offline audit recognizes HUDOC PDF-conversion document IDs *without removing document-specific query parameters*, flags possible identity groups and suspect keys, and returns **numeric source IDs only**. This is conservative, domain-specific candidate detection, **not proof of duplicate documents**. Validate both records directly against HUDOC and editorial source metadata before any link repair, consolidation, or source status change. Do not deduplicate unrelated court judgments on the basis of the shared `/app/conversion/pdf/` endpoint.
+
+### Two government research leads staged; no publication
+
+**GAO-27-108661 — Cybersecurity: Agencies Need to Fully Address Federal Guidance as They Refine Zero Trust Architecture**. Official report: https://www.gao.gov/products/gao-27-108661 ; **published and released November 18, 2026**. GAO reviewed zero-trust implementation plans at 22 civilian agencies and reported that **five** had addressed selected OMB/NIST planning guidance while **17** had not fully done so (as of August 2026); it made **40 recommendations to 17 agencies**. This is a GAO assessment of *planning coverage*, not proof that agencies suffered breaches or intentionally bypassed cybersecurity. Proposed editorial placement: digital rights/AI and federal information-security oversight. Verify individual agency response and follow-up recommendation statuses before interpreting enforcement or actual outcomes.
+
+**GAO Office of Inspector General OIG-27-1SP — Fall 2026 Semiannual Report to Congress**. Official source: https://www.gao.gov/products/oig-27-1sp ; **published November 12, 2026**, covering the reporting period ending September 30, 2026. GAO OIG reports **nine GAO-related investigations closed**, **seven opened** and **76 substantive hotline complaints processed** during that period. These are activity counts, not a conclusion that those investigated were culpable or that hotline complaints were substantiated. Proposed placement: government oversight and source-provenance context; do not count this as separate confirmation of claims discussed in other GAO reports.
+
+Targeted SQL searches for both report identifiers, official title terms and the semiannual-report name returned **zero direct hits** in `news_items`, `research_inbox` and `sources`. This is **not an exhaustive search of all case text, indirect references or alternate URLs**. Both findings remain in this **review-only memo**.
+
+**Additional metadata caution, not a confirmed case:** The Nov 20 OPM OIG entry https://www.oversight.gov/reports/semiannual-report/semiannual-report-congress-april-1-2026-september-30-2026-4 displays a title for April–September 2026 but structured SARC fields for October 2025–March 2026. Verify the underlying original report and catalog metadata before assigning a reporting period or using this as evidence of anything beyond a possible indexing discrepancy.
+
+**Release boundaries:** No Supabase production writes, schema changes, deployment, merges, collector configuration changes or automatic publishing. Only the review branch and PR artifacts are eligible for changes.
