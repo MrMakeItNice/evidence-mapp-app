@@ -146,6 +146,19 @@ export function auditNewsIngestion(snapshot) {
     const date = timestamp(f.last_success_at, 'feed.last_success_at');
     return date === null || date < asOf - 86400000;
   }).length;
+  // A feed can have a recent successful poll yet still be failing on its latest attempt.
+  // Keep these states distinct: stale watches alone do not prove a collection outage.
+  const latestErrorRecentSuccessIds = [];
+  const latestErrorWithoutRecentSuccessIds = [];
+  for (const feed of activeFeeds) {
+    const status = String(feed.last_run_status ?? '').trim().toLowerCase();
+    if (!['error', 'failed', 'failure'].includes(status)) continue;
+    const success = timestamp(feed.last_success_at, 'feed.last_success_at');
+    const recent = success !== null && success >= asOf - 86400000 && success <= asOf;
+    (recent ? latestErrorRecentSuccessIds : latestErrorWithoutRecentSuccessIds).push(feed.feed_id);
+  }
+  latestErrorRecentSuccessIds.sort((a,b) => a-b);
+  latestErrorWithoutRecentSuccessIds.sort((a,b) => a-b);
   flaggedFutureNewsIds.sort((a,b) => a-b);
   undatedNonGoogleIds.sort((a,b) => a-b);
   const emptyActiveTopicIds = activeTopics.filter(t => !topicWithItem.has(t.id)).map(t => t.id).sort((a,b) => a-b);
@@ -200,7 +213,11 @@ export function auditNewsIngestion(snapshot) {
       active_news: newsWatches.filter(w=>w.active === true).length,
       stale_news_timestamp_fields: stale(newsWatches, 'last_collected_at'),
       active_collectors: activeFeeds.length,
-      collectors_without_success_in_24h: feedLastSuccessUnknownOrOld
+      collectors_without_success_in_24h: feedLastSuccessUnknownOrOld,
+      collectors_latest_error_with_recent_success: latestErrorRecentSuccessIds.length,
+      collectors_latest_error_without_recent_success: latestErrorWithoutRecentSuccessIds.length,
+      latest_error_recent_success_feed_ids: latestErrorRecentSuccessIds.slice(0,25),
+      latest_error_without_recent_success_feed_ids: latestErrorWithoutRecentSuccessIds.slice(0,25)
     }
   };
 }
