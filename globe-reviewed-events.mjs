@@ -15,8 +15,12 @@ function safeSourceUrl(value) {
   } catch { return null; }
 }
 
-export function reviewedMapEvents(events) {
+export function reviewedMapEvents(events, asOfMs = Date.now()) {
   if (!Array.isArray(events)) return [];
+  // A verified *occurrence* cannot be dated beyond the current calendar day
+  // anywhere on Earth. UTC+14 is the earliest civil timezone; using the UTC
+  // date alone would wrongly withhold events already occurring there.
+  const latestPossibleEventDate = new Date(asOfMs + 14 * 60 * 60 * 1000).toISOString().slice(0, 10);
   // A single canonical ID with inconsistent position, date, category, or location provenance
   // must not select an arbitrary first-seen map pin or marker color.
   const seen = new Map();
@@ -28,7 +32,7 @@ export function reviewedMapEvents(events) {
     if (!event || event.review_status !== 'verified' || !id ||
         typeof event.title !== 'string' ||
         !event.title.trim() || !CATEGORIES.has(event.category) ||
-        !calendarDate(event.event_date) || !Number.isFinite(event.lat) ||
+        (!calendarDate(event.event_date) || event.event_date > latestPossibleEventDate) || !Number.isFinite(event.lat) ||
         !Number.isFinite(event.lon) || Math.abs(event.lat) > 90 ||
         Math.abs(event.lon) > 180 || typeof event.location_note !== 'string' ||
         !event.location_note.trim()) continue;
