@@ -224,6 +224,20 @@ test('shows an accessible source preview with safe external-link attributes', ()
   assert.equal(locationLink.rel, 'noopener noreferrer');
 });
 
+test('source preview identifies the canonical event and actual displayed map coordinates', () => {
+  const [reviewed] = reviewedMapEvents([withChanges({
+    id: '  archive-location-07  ', lat: 37.700123, lon: -122.400987
+  })]);
+  const panel = element('div');
+  showReviewedMapSource(document, panel, reviewed);
+  assert.match(panel.children[1].textContent, /Event ID: archive-location-07/);
+  assert.match(panel.children[3].textContent,
+    /Displayed map point: 37\.700123° latitude, -122\.400987° longitude/);
+  assert.match(panel.children[3].textContent, /editorial placement, not independently verified GPS precision/);
+  assert.equal(panel.children[4].href, event.location_source_url,
+    'showing coordinates must never replace the inspectable geographic source');
+});
+
 test('map placement needs its own linked provenance and never invents a point', () => {
   const sourceOnly = withChanges({location_source_url: undefined, location_note: undefined});
   assert.equal(reviewedMapEvents([sourceOnly]).length, 0);
