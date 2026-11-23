@@ -349,7 +349,17 @@ try{
  function resetView(){delete canvas.dataset.userZoom;targetX=.13;targetY=.35;zoom=defaultZoom();userInteracted=false}
  function changeZoom(value){interact();canvas.dataset.userZoom='1';zoom=clampZoom(value)}
  function inspectLocation(e){
-  const rect=canvas.getBoundingClientRect();mouse.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(mouse,camera);const markerHits=raycaster.intersectObjects(markerMeshes);const hit=raycaster.intersectObject(earth)[0];const markerHit=markerHits.find(h=>!hit||h.distance<=hit.distance+.015);if(markerHit){showReviewedMapSource(document,geoPanel,markerHit.object.userData.event);return}if(!hit)return;const point=globe.worldToLocal(hit.point.clone()).normalize();const lat=Math.asin(Math.max(-1,Math.min(1,point.y)))*180/Math.PI;const rawLon=Math.atan2(point.z,-point.x)*180/Math.PI-180;const lon=((rawLon+180)%360+360)%360-180;geoPanel.textContent='Globe cursor: '+lat.toFixed(1)+'° latitude, '+lon.toFixed(1)+'° longitude. This is an approximate globe-surface selection, not a verified event location. '+(mapRecords.length?'No reviewed event marker was selected here; inspect the reviewed map event list below for source-backed locations.':'No reviewed geographic events are available in this feed; no claims are assigned to this point.');
+  const rect=canvas.getBoundingClientRect();mouse.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(mouse,camera);const markerHits=raycaster.intersectObjects(markerMeshes);const hit=raycaster.intersectObject(earth)[0];const markerHit=markerHits.find(h=>!hit||h.distance<=hit.distance+.015);if(markerHit){
+   const selectedMarker=markerHit.object.userData.event;
+   // Keep the existing compact globe readout, but route marker selection
+   // through the same accessible source button as the keyboard list.
+   // That preserves the full-width preview, focus, Back/Escape and aria-expanded state.
+   showReviewedMapSource(document,geoPanel,selectedMarker);
+   const listIndex=mapRecords.findIndex(record=>record.id===selectedMarker.id);
+   const sourceButton=mapList.children[listIndex]?.querySelector('button');
+   sourceButton?.click();
+   return;
+  }if(!hit)return;const point=globe.worldToLocal(hit.point.clone()).normalize();const lat=Math.asin(Math.max(-1,Math.min(1,point.y)))*180/Math.PI;const rawLon=Math.atan2(point.z,-point.x)*180/Math.PI-180;const lon=((rawLon+180)%360+360)%360-180;geoPanel.textContent='Globe cursor: '+lat.toFixed(1)+'° latitude, '+lon.toFixed(1)+'° longitude. This is an approximate globe-surface selection, not a verified event location. '+(mapRecords.length?'No reviewed event marker was selected here; inspect the reviewed map event list below for source-backed locations.':'No reviewed geographic events are available in this feed; no claims are assigned to this point.');
  }
  function bindGlobeGestures(canvas,{rotate,zoomBy,inspect,interact}){
   const pointers=new Map();let moved=false,startX=0,startY=0,lastX=0,lastY=0,pinchDistance=0;
