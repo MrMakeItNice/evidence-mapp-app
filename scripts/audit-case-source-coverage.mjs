@@ -32,7 +32,7 @@ function hudocPdfId(raw) {
   const u = new URL(raw);
   if (u.hostname !== 'hudoc.echr.coe.int' || u.pathname !== '/app/conversion/pdf/') return null;
   const ids = [...u.searchParams.getAll('id'), ...u.searchParams.getAll('id;')];
-  if (ids.length !== 1 || !/^\\d{3}-\\d{4,}-\\d{4,}$/.test(ids[0])) return null;
+  if (ids.length !== 1 || !/^\d{3}-\d{4,}-\d{4,}$/.test(ids[0])) return null;
   return ids[0];
 }
 function suspectHudocKeys(raw) {
