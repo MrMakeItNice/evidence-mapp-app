@@ -377,3 +377,38 @@ test('identical invalid URLs are counted as malformed, not exact duplicate group
   assert.equal(report.overlap.news_inbox_exact_url_rows,0);
   assert.ok(!JSON.stringify(report).includes('NOT_PUBLIC'));
 });
+
+test('ages pending inbox records using added_at only when discovery time is missing',()=> {
+  const s=sample();
+  s.research_inbox[0].discovered_at=null;
+  s.research_inbox[0].added_at='2026-10-01T00:00:00Z';
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.pending_over_14d,1);
+  assert.deepEqual(report.old_pending_item_ids,[10]);
+  assert.equal(report.pending_with_added_at_fallback,1);
+  assert.deepEqual(report.fallback_age_item_ids,[10]);
+  assert.equal(report.pending_without_any_discovery_or_added_date,0);
+});
+
+test('uses discovered_at precedence over added_at rather than inflating aged inbox backlog',()=> {
+  const s=sample();
+  s.research_inbox[0].discovered_at='2026-11-22T00:00:00Z';
+  s.research_inbox[0].added_at='2026-10-01T00:00:00Z';
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.pending_over_14d,0);
+  assert.equal(report.pending_with_added_at_fallback,0);
+  assert.equal(report.pending_without_any_discovery_or_added_date,0);
+});
+
+test('reports undatable pending inbox records with only numeric IDs and validates added_at',()=> {
+  const s=sample();
+  s.research_inbox[0].discovered_at=null;
+  s.research_inbox[0].added_at=null;
+  let report=auditNewsIngestion(s).inbox;
+  assert.equal(report.pending_over_14d,0);
+  assert.equal(report.pending_without_any_discovery_or_added_date,1);
+  assert.deepEqual(report.unknown_age_item_ids,[10]);
+  assert.ok(!JSON.stringify(report).includes('SECRET NOTE'));
+  s.research_inbox[0].added_at='2026-99-99';
+  assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp in inbox.added_at/);
+});
