@@ -70,6 +70,7 @@ export function auditNewsIngestion(snapshot) {
   const sourceUrls = collectUrls(sources, 'url');
   const newsTopicIds = new Set(topics.map(row => row.id));
   const flaggedFutureNewsIds = [];
+  const undatedNonGoogleIds = [];
   let discovered24h = 0, pending14d = 0, undatedGoogle = 0, undated = 0;
   for (const n of news) {
     if (n.topic_id != null && !newsTopicIds.has(n.topic_id)) throw new Error('Unknown news topic');
@@ -77,14 +78,22 @@ export function auditNewsIngestion(snapshot) {
     const discovered = timestamp(n.discovered_at, 'news.discovered_at');
     if (published === null) {
       undated++;
-      if (String(n.publisher || '').toLowerCase().includes('google') ||
-          String(n.source_url || '').includes('news.google.com')) undatedGoogle++;
+      const googleProxy = String(n.publisher || '').toLowerCase().includes('google') ||
+        String(n.source_url || '').toLowerCase().includes('news.google.com');
+      if (googleProxy) undatedGoogle++;
+      else undatedNonGoogleIds.push(n.id);
     }
     if (published !== null && published > asOf) flaggedFutureNewsIds.push(n.id);
     if (discovered !== null && discovered <= asOf && discovered >= asOf - 86400000) discovered24h++;
     if (n.review_status === 'pending' && discovered !== null && discovered < asOf - 14 * 86400000) pending14d++;
   }
   const activeTopics = topics.filter(t => t.active === true);
+  const researchWatchIds = new Set(researchWatches.map(w => w.id));
+  for (const item of inbox) {
+    if (item.watch_topic_id != null && !researchWatchIds.has(item.watch_topic_id)) {
+      throw new Error('Unknown inbox watch topic');
+    }
+  }
   const topicWithItem = new Set(news.map(n => n.topic_id).filter(x => x != null));
   function stale(watches, column) {
     return watches.filter(w => {
@@ -99,6 +108,8 @@ export function auditNewsIngestion(snapshot) {
     return date === null || date < asOf - 86400000;
   }).length;
   flaggedFutureNewsIds.sort((a,b) => a-b);
+  undatedNonGoogleIds.sort((a,b) => a-b);
+  const emptyActiveTopicIds = activeTopics.filter(t => !topicWithItem.has(t.id)).map(t => t.id).sort((a,b) => a-b);
   return {
     as_of: new Date(asOf).toISOString(),
     news: {
@@ -108,12 +119,16 @@ export function auditNewsIngestion(snapshot) {
       pending_over_14d: pending14d,
       missing_publication_timestamp: undated,
       missing_publication_timestamp_google_proxies: undatedGoogle,
+      missing_publication_timestamp_other: undatedNonGoogleIds.length,
+      undated_other_item_ids: undatedNonGoogleIds.slice(0,25),
+      omitted_undated_other_item_ids: Math.max(0, undatedNonGoogleIds.length - 25),
       publication_timestamps_after_snapshot_time: flaggedFutureNewsIds.length,
       future_published_item_ids: flaggedFutureNewsIds.slice(0,20),
       omitted_future_published_item_ids: Math.max(0, flaggedFutureNewsIds.length - 20),
       exact_url_duplicate_groups: repeatedGroups(newsUrls),
       active_topics: activeTopics.length,
-      active_topics_without_direct_items: activeTopics.filter(t=>!topicWithItem.has(t.id)).length
+      active_topics_without_direct_items: emptyActiveTopicIds.length,
+      empty_active_topic_ids: emptyActiveTopicIds.slice(0,25)
     },
     inbox: {
       total: inbox.length,
@@ -127,6 +142,7 @@ export function auditNewsIngestion(snapshot) {
       total: sources.length,
       published_marked: sources.filter(s => s.published === true).length,
       published_marked_missing_date: sources.filter(s => s.published === true && absent(s.publication_date)).length,
+      published_marked_missing_publisher: sources.filter(s => s.published === true && absent(s.publisher)).length,
       exact_url_duplicate_groups: repeatedGroups(sourceUrls)
     },
     overlap: {
