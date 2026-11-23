@@ -73,7 +73,7 @@ export function showReviewedMapSource(doc, panel, event) {
 export function inspectReviewedMapSource(doc, detail, event) {
   showReviewedMapSource(doc, detail, event);
   detail.hidden = false;
-  detail.focus({preventScroll: true});
+  detail.focus(); // Move keyboard focus into the visible, inline provenance panel.
 }
 
 export function renderReviewedMapList(doc, list, events, onInspect) {
