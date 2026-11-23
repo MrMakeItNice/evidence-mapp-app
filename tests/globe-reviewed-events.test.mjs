@@ -405,7 +405,7 @@ test('homepage places the keyboard preview beside the event list, not only in th
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /id="reviewed-globe-events"><\/ul>[\s\S]*?id="reviewed-globe-detail"/);
   assert.match(html, /id="reviewed-globe-detail"[^>]+role="region"[^>]+tabindex="-1" hidden/);
-  assert.match(html, /renderReviewedMapList\(document,mapList,reviewedEvents,\(event,button\)=>inspectReviewedMapSource\(document,document\.getElementById\('reviewed-globe-detail'\),event,button\)\)/);
+  assert.match(html, /renderReviewedMapList\(document,mapList,mapEventCandidates,\(event,button\)=>inspectReviewedMapSource\(document,document\.getElementById\('reviewed-globe-detail'\),event,button\)\)/);
   assert.match(html, /showReviewedMapSource\(document,geoPanel,markerHit\.object\.userData\.event\)/, 'globe marker click preview preserved');
   assert.match(html, /\.reviewed-globe-detail button\{display:block;[^}]*min-height:44px/);
   assert.match(html, /\.reviewed-globe-detail:focus\{outline:/);
@@ -471,4 +471,27 @@ test('different location URLs remain distinct without claiming source independen
       /Distinct citation URL; independence not established/);
     assert.equal(panel.children[4].href, candidate.location_source_url);
   }
+});
+
+
+test('globe checks all feed records before Pulse deduplication can hide a disputed location', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /let reviewedEvents=\[\],mapEventCandidates=\[\],pulseLoaded=false/);
+  assert.match(html, /if\(feed\.schema_version!==1\|\|!Array\.isArray\(feed\.events\)\)throw Error\("invalid feed"\);mapEventCandidates=feed\.events/,
+    'only a schema-valid original feed supplies map candidates');
+  assert.match(html, /renderReviewedMapList\(document,mapList,mapEventCandidates,/,
+    'map provenance gate must inspect the complete feed, not the already-deduplicated Pulse count');
+  assert.doesNotMatch(html, /renderReviewedMapList\(document,mapList,reviewedEvents,/);
+
+  // The count filter's first-seen ID is intentionally not enough to pick a map position.
+  const conflicting = [event, withChanges({lon: -121.1})];
+  assert.deepEqual(reviewedMapEvents(conflicting), [], 'conflicting reviewed longitudes suppress the pin');
+  const firstSeen = new Set();
+  const countDeduplicated = conflicting.filter(item => {
+    if (firstSeen.has(item.id)) return false;
+    firstSeen.add(item.id);
+    return true;
+  });
+  assert.equal(reviewedMapEvents(countDeduplicated).length, 1,
+    'premature count deduplication would hide the geographic disagreement');
 });
