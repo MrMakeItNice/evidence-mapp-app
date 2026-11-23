@@ -205,6 +205,28 @@ test('renders keyboard-focusable inspection buttons with safe text, not HTML', (
   assert.equal(list.children.length, 0);
 });
 
+test('keyboard-list buttons describe original and geographic source roles without treating hosts as corroboration', () => {
+  const list = element('ul');
+  const alternateGeography = withChanges({
+    id: 'archive-02',
+    location_source_url: 'https://maps.example.org/location-proof#district'
+  });
+  const rendered = renderReviewedMapList(document, list, [event, alternateGeography], () => {});
+  assert.equal(rendered.length, 2);
+
+  const [firstButton, firstContext] = list.children[0].children;
+  const [secondButton, secondContext] = list.children[1].children;
+  assert.ok(firstContext.id);
+  assert.notEqual(firstContext.id, secondContext.id, 'each button references its own provenance');
+  assert.equal(firstButton.getAttribute('aria-describedby'), firstContext.id);
+  assert.equal(secondButton.getAttribute('aria-describedby'), secondContext.id);
+  assert.match(firstContext.textContent, /Event source: archive\\.example\\.gov/);
+  assert.match(firstContext.textContent, /Location evidence: archive\\.example\\.gov/);
+  assert.match(secondContext.textContent, /Event source: archive\\.example\\.gov/);
+  assert.match(secondContext.textContent, /Location evidence: maps\\.example\\.org/);
+  assert.doesNotMatch(secondContext.textContent, /independently confirmed|corroborated/i);
+});
+
 test('shows an accessible source preview with safe external-link attributes', () => {
   const panel = element('div');
   const [record] = reviewedMapEvents([event]);
