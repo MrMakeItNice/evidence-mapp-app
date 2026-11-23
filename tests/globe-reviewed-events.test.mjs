@@ -212,6 +212,44 @@ test('return-to-list closes source preview and restores focus to the selected ev
   assert.equal(firstButton.getAttribute('aria-expanded'), 'false');
 });
 
+test('Escape closes the current reviewed-source preview and returns focus to its originating event', () => {
+  const detail = element('div');
+  detail.hidden = true;
+  detail.focus = () => {};
+  const list = element('ul');
+  renderReviewedMapList(document, list, [event, withChanges({id: 'archive-02', title: 'Second event'})],
+    (record, button) => inspectReviewedMapSource(document, detail, record, button));
+  const first = list.children[0].children[0];
+  const second = list.children[1].children[0];
+  first.focus = () => { first.focused = true; };
+  second.focus = () => { second.focused = true; };
+
+  first.listeners.click();
+  const previousHandler = detail.onkeydown;
+  second.listeners.click();
+  assert.notEqual(detail.onkeydown, previousHandler, 'the current selection replaces the previous handler');
+  assert.equal(second.getAttribute('aria-expanded'), 'true');
+  let prevented = false;
+  detail.onkeydown({key: 'Tab', preventDefault() { prevented = true; }});
+  assert.equal(detail.hidden, false, 'ordinary keyboard navigation does not dismiss the panel');
+  assert.equal(prevented, false);
+
+  detail.onkeydown({key: 'Escape', preventDefault() { prevented = true; }});
+  assert.equal(prevented, true);
+  assert.equal(detail.hidden, true);
+  assert.equal(detail.children.length, 0);
+  assert.equal(detail.onkeydown, null, 'closed panel leaves no stale Escape handler');
+  assert.equal(second.focused, true, 'focus returns to the most recent event button');
+  assert.equal(first.focused, undefined, 'stale source does not receive focus');
+  assert.equal(second.getAttribute('aria-expanded'), 'false');
+
+  first.listeners.click();
+  detail.children[5].listeners.click();
+  assert.equal(detail.hidden, true, 'the existing return button still closes the panel');
+  assert.equal(detail.onkeydown, null, 'button closure also clears the handler');
+  assert.equal(first.focused, true);
+});
+
 test('homepage places the keyboard preview beside the event list, not only in the tiny globe overlay', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /id="reviewed-globe-events"><\/ul>[\s\S]*?id="reviewed-globe-detail"/);
