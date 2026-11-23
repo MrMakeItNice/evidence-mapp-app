@@ -65,7 +65,7 @@ export function showReviewedMapSource(doc, panel, event) {
   const heading = doc.createElement('strong');
   heading.textContent = event.title;
   const context = doc.createElement('p');
-  context.textContent = event.category + ' · Event: ' + event.event_date +
+  context.textContent = 'Event ID: ' + event.id + ' · ' + event.category + ' · Event: ' + event.event_date +
     ' · Source host: ' + event.source_host +
     '. This is an editorially reviewed event record; a link does not independently verify its claims.';
   const link = doc.createElement('a');
@@ -74,7 +74,8 @@ export function showReviewedMapSource(doc, panel, event) {
   link.rel = 'noopener noreferrer';
   link.textContent = 'Inspect original source';
   const mapNote = doc.createElement('p');
-  mapNote.textContent = 'Map placement: ' + event.location_note +
+  mapNote.textContent = 'Displayed map point: ' + event.lat + '° latitude, ' + event.lon + '° longitude. ' +
+    'Map placement: ' + event.location_note +
     ' · Location evidence host: ' + event.location_source_host +
     '. Coordinates reflect an editorial placement, not independently verified GPS precision.';
   const locationLink = doc.createElement('a');
