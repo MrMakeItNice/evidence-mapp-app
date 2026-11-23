@@ -95,7 +95,7 @@ async function createBoard() {
   const elements = new Map(), stored = new Map();
   const make = tag => ({
     tag, children: [], style: {}, attributes: {}, listeners: {}, textContent: '', className: '',
-    focus() { document.activeElement = this; }, setPointerCapture() {},
+    focus() { document.activeElement = this; }, blur() { if (document.activeElement === this) document.activeElement = undefined; }, setPointerCapture() {},
     append(...items) { this.children.push(...items); },
     replaceChildren(...items) { this.children = items; },
     setAttribute(name, value) { this.attributes[name] = value; },
@@ -234,4 +234,25 @@ test('card guidance remains associated across inspection and save-status updates
     assert.match(get('status').textContent, /Layout saved/);
   }
   assert.doesNotMatch(html, /(?:\$|getElementById)\(['"](?:board|card)-instructions['"]\)/, 'status actions do not rewrite the static instruction region');
+});
+
+
+test('focused cards retain focus on Escape and leave modified activation/browser keys untouched', async () => {
+  const { get, document } = await createBoard();
+  const card = get('cards').children[1]; card.focus();
+  const originalHeading = get('details').children[0];
+  const events = [{ key: 'Escape' }, { key: 'Tab' }, { key: 'ArrowDown' }];
+  for (const key of ['Enter', ' ']) {
+    for (const modifier of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey']) events.push({ key, [modifier]: true });
+  }
+  for (const event of events) {
+    card.listeners.keydown({ ...event, preventDefault() { assert.fail('card intercepted a non-activation key or modified shortcut'); } });
+    assert.equal(document.activeElement, card, 'focus stays at the card until native browser behavior runs');
+    assert.equal(get('details').children[0], originalHeading, 'shortcut must not replace the inspector');
+    assert.equal(card.attributes['aria-pressed'], 'false', 'shortcut must not select the card');
+  }
+  let prevented = 0;
+  card.listeners.keydown({ key: 'Enter', preventDefault() { prevented++; } });
+  assert.equal(prevented, 1); assert.equal(card.attributes['aria-pressed'], 'true');
+  assert.equal(document.activeElement, get('details').children[0]);
 });

@@ -29,6 +29,6 @@ test('source inspector describes validated indexed URL without authenticating it
 test('touch and keyboard readers can inspect a citation without double-clicking', () => {
   assert.match(html, /select to inspect indexed source link/);
   assert.match(html, /Select a card to inspect its indexed URL/);
-  assert.match(html, /card\.addEventListener\('keydown',e=>\{if\(e\.key==='Enter'\|\|e\.key===' '\)/);
+  assert.match(html, /card\.addEventListener\('keydown',e=>\{if\(\(?e\.key==='Enter'\|\|e\.key===' '\)/);
   assert.match(html, /card\.addEventListener\('pointerup'/);
 });
