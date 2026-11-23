@@ -850,3 +850,37 @@ test('rejects a 1000-row truncated snapshot when independent count is 1001',()=>
   s.news_items.push(last);
   assert.equal(auditNewsIngestion(s).news.total,1001);
 });
+
+
+test('rejects URL syntax that WHATWG parsing silently repairs and excludes false links',()=>{
+  const invalid=['https:agency.gov/doc','https:/agency.gov/doc','https:///agency.gov/doc',
+    'https://agency.gov\\doc','https://agency.gov/doc%zz','https://agency.gov/a\u0000b'];
+  for(const raw of invalid) {
+    const s=sample();
+    s.news_items[0].source_url=raw;
+    s.research_inbox[0].source_url=raw;
+    s.news_items[1].source_url=raw;
+    s.sources[0].url=raw;
+    const a=auditNewsIngestion(s);
+    assert.equal(a.news.malformed_url,2);
+    assert.equal(a.inbox.malformed_url,1);
+    assert.equal(a.sources.malformed_url,1);
+    assert.equal(a.news.exact_url_duplicate_groups,0);
+    assert.equal(a.overlap.news_inbox_exact_url_rows,0);
+    assert.equal(a.overlap.news_source_exact_url_rows,0);
+    assert.ok(!JSON.stringify(a).includes('agency.gov'));
+  }
+});
+
+test('retains valid escaped queries, Unicode hosts, IPv6, and case-insensitive HTTP scheme',()=>{
+  for(const raw of [' HTTPS://agency.gov/doc?id=1%20a#part ','https://例え.jp/a',
+    'https://[::1]:8080/a','http://agency.gov/doc?x=%25']) {
+    const s=sample();
+    s.news_items[0].source_url=raw;
+    s.research_inbox[0].source_url=raw.trim();
+    const a=auditNewsIngestion(s);
+    assert.equal(a.news.malformed_url,0);
+    assert.equal(a.inbox.malformed_url,0);
+    assert.equal(a.overlap.news_inbox_exact_url_rows,1);
+  }
+});
