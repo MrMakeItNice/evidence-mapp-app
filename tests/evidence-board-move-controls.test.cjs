@@ -91,7 +91,7 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
 
-async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references) {
+async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false) {
   const elements = new Map(), stored = new Map();
   const make = tag => ({
     tag, children: [], style: {}, attributes: {}, dataset: {}, listeners: {}, textContent: '', className: '',
@@ -118,7 +118,7 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
     document, URL, encodeURIComponent,
     localStorage: { getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value) },
     window: { open() { opened++; } },
-    fetch: async url => ({ ok: true, json: async () => url.includes('paper-trails-data')
+    fetch: async url => ({ ok: !failedRequest, json: async () => url.includes('paper-trails-data')
       ? { references: references ?? [citation] } : publishedCases })
   });
   await new Promise(resolve => setImmediate(resolve));
@@ -419,4 +419,41 @@ test('case identity stays aligned in the tab and named board group without follo
   get('cases').children[1].listeners.click();
   assert.equal(get('heading').textContent, 'Second investigation');
   assert.equal(document.title, 'Second investigation · Evidence Board | Evidence Atlas');
+});
+
+test('case search announces the display cap, whitespace-normalized matches and empty results without losing selection', async () => {
+  assert.match(html, /id="search"[^>]*aria-describedby="case-search-status" disabled/);
+  assert.match(html, /id="case-search-status"[^>]*role="status" aria-atomic="true"/);
+  const published = Array.from({ length: 25 }, (_, i) => ({ id: String(i + 1), title: 'Case ' + (i + 1) }));
+  const { get } = await createBoard(published, []);
+  const status = get('case-search-status'), search = get('search'), list = get('cases');
+  assert.equal(search.disabled, false);
+  assert.equal(list.children.length, 18);
+  assert.match(status.textContent, /18 of 25.*Refine your search/);
+  const query = value => { search.value = value; search.listeners.input({ target: search }); };
+  query('  cAsE 25  ');
+  assert.equal(list.children.length, 1);
+  assert.equal(list.children[0].textContent, 'Case 25');
+  assert.match(status.textContent, /1 of 1 matching/);
+  list.children[0].listeners.click();
+  assert.equal(list.children[0].attributes['aria-pressed'], 'true');
+  query('unmatched');
+  assert.equal(list.children.length, 0);
+  assert.match(status.textContent, /No published cases match.*Try another title/);
+  assert.equal(get('heading').textContent, 'Case 25');
+  query('   ');
+  assert.equal(list.children.length, 18);
+  assert.match(status.textContent, /18 of 25/);
+  assert.ok(list.children.every(button => button.attributes['aria-pressed'] === 'false'));
+  assert.equal(get('case-search-status'), status);
+});
+test('case search distinguishes a genuinely empty index from a failed public-record request', async () => {
+  const empty = await createBoard([], []);
+  assert.equal(empty.get('search').disabled, false);
+  assert.equal(empty.get('case-search-status').textContent, 'No published cases available.');
+  const failed = await createBoard([], [], true);
+  assert.equal(failed.get('search').disabled, true);
+  assert.match(failed.get('case-search-status').textContent, /unavailable.*could not be loaded/);
+  assert.equal(failed.get('heading').textContent, 'Evidence service unavailable');
+  assert.equal(failed.get('cards').children.length, 0);
 });
