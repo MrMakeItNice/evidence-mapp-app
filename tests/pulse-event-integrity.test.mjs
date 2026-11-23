@@ -36,6 +36,16 @@ test('invalid schema and duplicate verified IDs fail closed',()=>{
   assert.throws(()=>reviewedEventsFromFeed(feed([original,{...original,title:'Duplicate'}])),/Invalid or duplicate/);
 });
 
+test('canonical IDs reject whitespace-variant duplicate verified events',()=>{
+  const variant={...original,id:' report-1 '};
+  assert.throws(()=>reviewedEventsFromFeed(feed([original,variant])),/Invalid or duplicate/);
+  assert.throws(()=>reviewedEventsFromFeed(feed([variant,original])),/Invalid or duplicate/);
+  const normalized=reviewedEventsFromFeed(feed([variant]));
+  assert.equal(normalized.length,1);
+  assert.equal(normalized[0].id,'report-1');
+  assert.equal(original.id,'report-1'); // source fixture remains unchanged
+});
+
 test('bad calendar dates, coordinates and missing provenance fail closed',()=>{
   for(const changes of [{event_date:'2026-02-30'},{event_date:'2026-15-12'},{lat:91},{lon:-181},{lat:'37'},{title:'  '},{source_url:'javascript:alert(1)'},{source_url:'https://government.gov@untrusted.example/document'},{source_url:'http://agency.gov/report'}]){
     assert.throws(()=>reviewedEventsFromFeed(feed([{...original,...changes}])),/Invalid or duplicate/,JSON.stringify(changes));
@@ -98,6 +108,13 @@ test('category switches preserve reviewed counts and current category rationale'
   assert.match(panel.textContent,/Documented improvements/);
   assert.match(panel.textContent,/1 reviewed event in this curated feed/);
   assert.doesNotMatch(panel.textContent,/No audited count available yet/);
+});
+
+test('duplicate canonical IDs with whitespace fail closed in the actual top Pulse',async()=>{
+  const {request,panel,buttons}=simulateTopPulse({data:feed([original,{...original,id:' report-1 '}])});
+  await request;
+  assert.ok(Object.values(buttons).every(button=>button.count.textContent==='—'));
+  assert.match(panel.textContent,/Reviewed event feed unavailable/);
 });
 
 test('empty reviewed feed retains unknown counts after category changes',async()=>{
