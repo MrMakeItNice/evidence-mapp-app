@@ -85,6 +85,49 @@ function overlapCandidatePairs(left, right, limit = 25) {
   };
 }
 
+// Review-only metadata differences for exact, syntactically valid news/inbox URLs.
+// Publisher label differences may be aliases; timestamps >24h apart warrant source review,
+// not an automatic claim that either date is wrong. Never emit URLs or publisher text.
+function exactNewsInboxMetadataReview(news, inbox, limit = 25) {
+  const indexed = new Map();
+  for (const i of inbox) {
+    const url = cleanUrl(i.source_url);
+    if (urlProblem(url) !== null) continue;
+    if (!indexed.has(url)) indexed.set(url, []);
+    indexed.get(url).push(i);
+  }
+  const publisherPairs = [], timestampPairs = [];
+  const label = value => typeof value === 'string' ?
+    value.trim().replace(/\s+/g, ' ').toLowerCase() : '';
+  for (const n of news) {
+    const url = cleanUrl(n.source_url);
+    if (urlProblem(url) !== null || !indexed.has(url)) continue;
+    for (const i of indexed.get(url)) {
+      const publisherA = label(n.publisher), publisherB = label(i.publisher);
+      if (publisherA && publisherB && publisherA !== publisherB) publisherPairs.push([n.id, i.id]);
+      const dateA = timestamp(n.published_at, 'news.published_at');
+      const dateB = timestamp(i.published_at, 'inbox.published_at');
+      if (dateA !== null && dateB !== null && Math.abs(dateA - dateB) > 86400000)
+        timestampPairs.push([n.id, i.id]);
+    }
+  }
+  const summarize = pairs => {
+    pairs.sort((a,b) => a[0] - b[0] || a[1] - b[1]);
+    return {count: pairs.length, id_pairs: pairs.slice(0, limit),
+      omitted_id_pairs: Math.max(0, pairs.length - limit)};
+  };
+  const publishers = summarize(publisherPairs);
+  const dates = summarize(timestampPairs);
+  return {
+    publisher_label_difference_pairs: publishers.count,
+    publisher_label_difference_id_pairs: publishers.id_pairs,
+    omitted_publisher_label_difference_id_pairs: publishers.omitted_id_pairs,
+    publication_times_over_24h_apart_pairs: dates.count,
+    publication_times_over_24h_apart_id_pairs: dates.id_pairs,
+    omitted_publication_time_difference_id_pairs: dates.omitted_id_pairs
+  };
+}
+
 function checkCollection(snapshot, name, idField = 'id') {
   const rows = snapshot[name];
   if (!Array.isArray(rows) || !Number.isSafeInteger(snapshot.expected_counts[name]) ||
@@ -179,6 +222,8 @@ export function auditNewsIngestion(snapshot) {
   const emptyActiveTopicIds = activeTopics.filter(t => !topicWithItem.has(t.id)).map(t => t.id).sort((a,b) => a-b);
   const newsInboxCandidates = overlapCandidatePairs(newsUrls, inboxUrls);
   const newsSourceCandidates = overlapCandidatePairs(newsUrls, sourceUrls);
+  const inboxSourceCandidates = overlapCandidatePairs(inboxUrls, sourceUrls);
+  const metadataReview = exactNewsInboxMetadataReview(news, inbox);
   return {
     as_of: new Date(asOf).toISOString(),
     news: {
@@ -226,7 +271,11 @@ export function auditNewsIngestion(snapshot) {
       news_inbox_exact_url_id_pairs: newsInboxCandidates.id_pairs,
       news_inbox_omitted_id_pairs: newsInboxCandidates.omitted_id_pairs,
       news_source_exact_url_id_pairs: newsSourceCandidates.id_pairs,
-      news_source_omitted_id_pairs: newsSourceCandidates.omitted_id_pairs
+      news_source_omitted_id_pairs: newsSourceCandidates.omitted_id_pairs,
+      inbox_source_exact_url_rows: overlapCount(inboxUrls, sourceUrls),
+      inbox_source_exact_url_id_pairs: inboxSourceCandidates.id_pairs,
+      inbox_source_omitted_id_pairs: inboxSourceCandidates.omitted_id_pairs,
+      news_inbox_metadata_review: metadataReview
     },
     watches: {
       active_research: researchWatches.filter(w=>w.active === true).length,
