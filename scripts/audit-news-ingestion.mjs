@@ -10,6 +10,36 @@ const isObject = value => value !== null && typeof value === 'object' && !Array.
 const positiveId = value => Number.isSafeInteger(value) && value > 0;
 const absent = value => value == null || (typeof value === 'string' && !value.trim());
 const cleanUrl = value => typeof value === 'string' && value.trim() ? value.trim() : null;
+// Syntax-only checks: these do not establish reachability, authenticity or document identity.
+function urlProblem(value) {
+  const raw = cleanUrl(value);
+  if (raw === null) return 'missing';
+  if (/\s/.test(raw)) return 'malformed';
+  try {
+    const parsed = new URL(raw);
+    if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname ||
+        parsed.username || parsed.password) return 'malformed';
+    return null;
+  } catch {
+    return 'malformed';
+  }
+}
+function urlQuality(rows, field) {
+  let missing = 0;
+  const malformedIds = [];
+  for (const row of rows) {
+    const problem = urlProblem(row[field]);
+    if (problem === 'missing') missing++;
+    if (problem === 'malformed') malformedIds.push(row.id);
+  }
+  malformedIds.sort((a,b)=>a-b);
+  return {
+    missing_url: missing,
+    malformed_url: malformedIds.length,
+    malformed_url_item_ids: malformedIds.slice(0,25),
+    omitted_malformed_url_item_ids: Math.max(0, malformedIds.length - 25)
+  };
+}
 
 function timestamp(value, field) {
   if (absent(value)) return null;
@@ -68,6 +98,10 @@ export function auditNewsIngestion(snapshot) {
   const newsUrls = collectUrls(news, 'source_url');
   const inboxUrls = collectUrls(inbox, 'source_url');
   const sourceUrls = collectUrls(sources, 'url');
+  const newsUrlQuality = urlQuality(news, 'source_url');
+  const inboxUrlQuality = urlQuality(inbox, 'source_url');
+  const publishedSources = sources.filter(s=>s.published === true);
+  const sourceUrlQuality = urlQuality(publishedSources, 'url');
   const newsTopicIds = new Set(topics.map(row => row.id));
   const flaggedFutureNewsIds = [];
   const undatedNonGoogleIds = [];
@@ -87,6 +121,11 @@ export function auditNewsIngestion(snapshot) {
     if (discovered !== null && discovered <= asOf && discovered >= asOf - 86400000) discovered24h++;
     if (n.review_status === 'pending' && discovered !== null && discovered < asOf - 14 * 86400000) pending14d++;
   }
+  const oldPendingInboxIds = inbox.filter(item => {
+    const discovered = timestamp(item.discovered_at, 'inbox.discovered_at');
+    return item.review_status === 'pending' && discovered !== null &&
+      discovered < asOf - 14 * 86400000;
+  }).map(item => item.id).sort((a,b)=>a-b);
   const activeTopics = topics.filter(t => t.active === true);
   const researchWatchIds = new Set(researchWatches.map(w => w.id));
   for (const item of inbox) {
@@ -125,6 +164,7 @@ export function auditNewsIngestion(snapshot) {
       publication_timestamps_after_snapshot_time: flaggedFutureNewsIds.length,
       future_published_item_ids: flaggedFutureNewsIds.slice(0,20),
       omitted_future_published_item_ids: Math.max(0, flaggedFutureNewsIds.length - 20),
+      ...newsUrlQuality,
       exact_url_duplicate_groups: repeatedGroups(newsUrls),
       active_topics: activeTopics.length,
       active_topics_without_direct_items: emptyActiveTopicIds.length,
@@ -133,6 +173,10 @@ export function auditNewsIngestion(snapshot) {
     inbox: {
       total: inbox.length,
       pending: inbox.filter(i => i.review_status === 'pending').length,
+      pending_over_14d: oldPendingInboxIds.length,
+      old_pending_item_ids: oldPendingInboxIds.slice(0,25),
+      omitted_old_pending_item_ids: Math.max(0, oldPendingInboxIds.length - 25),
+      ...inboxUrlQuality,
       missing_publication_timestamp: inbox.filter(i => absent(i.published_at)).length,
       without_watch_topic: inbox.filter(i => i.watch_topic_id == null).length,
       without_related_case: inbox.filter(i => i.related_case_id == null).length,
@@ -141,6 +185,7 @@ export function auditNewsIngestion(snapshot) {
     sources: {
       total: sources.length,
       published_marked: sources.filter(s => s.published === true).length,
+      ...sourceUrlQuality,
       published_marked_missing_date: sources.filter(s => s.published === true && absent(s.publication_date)).length,
       published_marked_missing_publisher: sources.filter(s => s.published === true && absent(s.publisher)).length,
       exact_url_duplicate_groups: repeatedGroups(sourceUrls)
