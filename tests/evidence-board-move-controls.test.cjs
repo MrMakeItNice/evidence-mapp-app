@@ -91,7 +91,7 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
 
-async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }]) {
+async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references) {
   const elements = new Map(), stored = new Map();
   const make = tag => ({
     tag, children: [], style: {}, attributes: {}, dataset: {}, listeners: {}, textContent: '', className: '',
@@ -118,7 +118,7 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
     localStorage: { getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value) },
     window: { open() { opened++; } },
     fetch: async url => ({ ok: true, json: async () => url.includes('paper-trails-data')
-      ? { references: [citation] } : publishedCases })
+      ? { references: references ?? [citation] } : publishedCases })
   });
   await new Promise(resolve => setImmediate(resolve));
   return { get, stored, document, citation, getOpened: () => opened };
@@ -279,4 +279,37 @@ test('case navigation identifies the current case without replacing the focused 
   get('cases').children[0].listeners.click();
   assert.deepEqual(get('cases').children.map(b => b.attributes['aria-pressed']), ['true', 'false']);
   assert.equal(get('heading').textContent, 'Published case');
+});
+
+
+test('citation count discloses the display cap, excludes duplicates and unsafe URLs, and persists across layout actions', async () => {
+  const references = Array.from({ length: 14 }, (_, i) => ({
+    case_id: '1', title: 'Indexed citation ' + i, url: 'https://archive.example/doc?id=' + i
+  }));
+  references.push({ case_id: '1', url: references[0].url },
+    { case_id: '1', url: 'javascript:alert(1)' },
+    { case_id: '1', url: 'https://user@archive.example/doc' },
+    { case_id: '2', url: 'https://archive.example/other' });
+  const { get } = await createBoard([{ id: '1', title: 'Published case' },
+    { id: '2', title: 'Second investigation' }, { id: '3', title: 'No indexed links' }], references);
+  const count = get('citation-count');
+  assert.equal(get('cards').children.length, 13, 'case card plus at most 12 citations');
+  assert.equal(get('wires').children.length, 12);
+  assert.match(count.textContent, /Showing 12 of 14 unique indexed citation URLs \(12-card display limit\)/);
+  assert.match(count.textContent, /not counts of independently verified documents/);
+  assert.ok(get('status').textContent.includes(count.textContent));
+  const initial = count.textContent;
+  get('cards').children[1].listeners.keydown({ key: 'Enter', preventDefault() {} });
+  get('details').children.find(n => n.className === 'move-controls').children[0].listeners.click();
+  get('save').listeners.click();
+  assert.equal(count.textContent, initial, 'movement and saving must not erase the citation disclosure');
+  get('cases').children[1].listeners.click();
+  assert.equal(get('cards').children.length, 2);
+  assert.match(count.textContent, /Showing 1 of 1 unique indexed citation URLs/);
+  assert.doesNotMatch(count.textContent, /12-card display limit/);
+  get('cases').children[2].listeners.click();
+  assert.equal(get('cards').children.length, 1);
+  assert.equal(get('wires').children.length, 0);
+  assert.match(count.textContent, /No eligible indexed citation URLs/);
+  assert.match(count.textContent, /does not establish that no evidence exists/);
 });

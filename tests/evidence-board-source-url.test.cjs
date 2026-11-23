@@ -90,10 +90,10 @@ test('deduplicates only browser-equivalent citation URLs', () => {
   ]);
 });
 
-test('keeps the 12-citation board cap without collapsing unique document IDs', () => {
+test('counts all eligible unique indexed citation URLs before applying the board cap', () => {
   const records = Array.from({ length: 14 }, (_, index) => ({
     case_id: 1, url: 'https://archive.example/document?id=' + index,
   }));
   assert.deepEqual(indexedDocs(records, 1).map(record => record.url),
-    records.slice(0, 12).map(record => record.url));
+    records.map(record => record.url));
 });
