@@ -91,10 +91,10 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
 
-async function createBoard() {
+async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }]) {
   const elements = new Map(), stored = new Map();
   const make = tag => ({
-    tag, children: [], style: {}, attributes: {}, listeners: {}, textContent: '', className: '',
+    tag, children: [], style: {}, attributes: {}, dataset: {}, listeners: {}, textContent: '', className: '',
     focus() { document.activeElement = this; }, blur() { if (document.activeElement === this) document.activeElement = undefined; }, setPointerCapture() {},
     append(...items) { this.children.push(...items); },
     replaceChildren(...items) { this.children = items; },
@@ -118,7 +118,7 @@ async function createBoard() {
     localStorage: { getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value) },
     window: { open() { opened++; } },
     fetch: async url => ({ ok: true, json: async () => url.includes('paper-trails-data')
-      ? { references: [citation] } : [{ id: '1', title: 'Published case' }] })
+      ? { references: [citation] } : publishedCases })
   });
   await new Promise(resolve => setImmediate(resolve));
   return { get, stored, document, citation, getOpened: () => opened };
@@ -255,4 +255,28 @@ test('focused cards retain focus on Escape and leave modified activation/browser
   card.listeners.keydown({ key: 'Enter', preventDefault() { prevented++; } });
   assert.equal(prevented, 1); assert.equal(card.attributes['aria-pressed'], 'true');
   assert.equal(document.activeElement, get('details').children[0]);
+});
+
+
+test('case navigation identifies the current case without replacing the focused button or search', async () => {
+  const { get, document } = await createBoard([{ id: '1', title: 'Published case' }, { id: '2', title: 'Second investigation' }]);
+  assert.deepEqual(get('cases').children.map(b => b.attributes['aria-pressed']), ['true', 'false']);
+  get('search').value = 'i';
+  get('search').listeners.input({ target: { value: 'i' } });
+  const buttons = get('cases').children;
+  buttons[1].focus();
+  buttons[1].listeners.click();
+  assert.equal(get('cases').children[1], buttons[1], 'selection updates existing navigation buttons');
+  assert.equal(document.activeElement, buttons[1]);
+  assert.equal(get('search').value, 'i');
+  assert.deepEqual(buttons.map(b => b.attributes['aria-pressed']), ['false', 'true']);
+  assert.equal(get('heading').textContent, 'Second investigation');
+  get('search').listeners.input({ target: { value: 'Published' } });
+  assert.equal(get('cases').children.length, 1);
+  assert.equal(get('cases').children[0].attributes['aria-pressed'], 'false', 'a hidden current case must not mark a different match selected');
+  get('search').listeners.input({ target: { value: '' } });
+  assert.deepEqual(get('cases').children.map(b => b.attributes['aria-pressed']), ['false', 'true']);
+  get('cases').children[0].listeners.click();
+  assert.deepEqual(get('cases').children.map(b => b.attributes['aria-pressed']), ['true', 'false']);
+  assert.equal(get('heading').textContent, 'Published case');
 });
