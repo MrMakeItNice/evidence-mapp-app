@@ -180,3 +180,14 @@ test('case search reports displayed/total matches, limits, no matches, and selec
   vm.runInNewContext('search()', ctx);
   assert.equal(status.textContent, 'Search 18 published case titles.');
 });
+
+test('coarse-pointer Explorer links and case/source controls meet 44px touch targets', () => {
+  assert.ok(css, 'page stylesheet should exist');
+  const coarse = css.slice(css.indexOf('@media (any-pointer:coarse){'));
+  assert.match(coarse, /\.graph-tools button,\.results button,\.detail button,#contribute button\{min-width:44px;min-height:44px\}/,
+    'graph controls, searchable case buttons, source-related case buttons, and private-draft buttons share minimum targets');
+  assert.match(coarse, /\.results button\{font-size:14px\}/, 'search results should not stay at 12px on touch screens');
+  assert.match(coarse, /header nav a\{display:inline-flex;align-items:center;min-height:44px;padding:0 8px\}/,
+    'header navigation links need a touch-height and side padding');
+  assert.match(coarse, /\.graph\{touch-action:pan-y\}/, 'touch-target improvement must preserve native page scroll');
+});
