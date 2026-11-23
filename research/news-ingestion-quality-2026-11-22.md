@@ -157,3 +157,31 @@ Targeted SELECT-only identifier, official-URL and distinctive-title searches acr
 The offline news ingestion diagnostic now emits **capped, deterministically sorted numeric-only ID pairs** for exact URL matches between news/inbox and news/source catalogs. It also provides omitted-pair counts above the 25-pair limit. This makes 25 + 5 existing exact-match candidates actionable to reviewers without disclosing unpublished titles, sensitive text, raw URLs or credentials. Exact matching is conservative: distinct query-selected documents remain distinct, and the tool **never automatically connects or merges records**. Three new focused regression tests cover privacy, deterministic ordering, query identity and cap behavior (21 tests total, pending independent CI verification for this code revision).
 
 **Release boundary:** PR remains draft and unmerged. No database writes, schema/data changes, deployments, automatic content publication, collector configuration changes, or access-challenge bypasses.
+
+
+---
+
+## Follow-up checkpoint — November 23, 2026, 06:48 UTC (November 22, 22:48 Pacific)
+
+**Read-only audit of Supabase `nxlffnplqdobfqxogmxo`:** 983/983 news items pending review, 59 discovered in the preceding 24 hours, 135 pending more than 14 days, and 476 without publication timestamps (**457 Google-associated, 19 other**). The 40-item research inbox remains wholly pending: 36 over 14 days old, four undated, four without research-watch assignments. Among 123 marked-published sources, 53 lack dates and one lacks a URL. All 36 news topics are active; 11 lack direct news items, including corrections, legal frameworks and primary-document/editorial categories. All 11 research-watch timestamp fields are stale and all seven news-watch timestamps are blank. These timestamps do not prove collector inactivity.
+
+**Source identity and metadata review:** 25 exact news-to-inbox URL pairs, five news-to-source pairs, **zero inbox-to-source exact URL pairs**, and no exact URL duplicate groups within the three collections. Among the 25 news/inbox exact URL pairs, **five have differing nonempty publisher labels** (including potentially legitimate name variants) and **zero have both publication instants more than 24 hours apart**. Matching URLs are candidates for source linking, not independent corroboration or authority verification. There are 219 case-register rows representing 218 unique case/source pairs and 244 separate case-to-source relationship edges; three-path aggregate from the previously validated provenance review remains 388 distinct case/source catalog pairs. **81/140 published cases** still need complete marked-published metadata in the two direct citation paths; do not equate this with falsity or lack of any evidence.
+
+**Collector health:** Positive News has **35 completed HTTP 403 responses** in the retained 24-hour activity and no HTTP 200; its last recorded success remains November 11. The six other active feeds each have recent successful completions. COVID-19 and Epstein Files Google News each had one 429 in the window but also 34 completed HTTP 200 responses. The Palestine/Gaza feed's latest status was pending at the checkpoint, despite success earlier. No access controls bypassed.
+
+### Primary-source leads newly staged for editorial review (not published)
+
+**FEC OIG Fraud Alert 2027-01 — Impersonation of a Federal Election Commission Procurement Official.**
+Agency landing page: https://www.fec.gov/about/reports-about-fec/oig-reports/fec-oig-fraud-alert-impersonation-of-fec-procurement-official/ .
+FEC's November 16–20 weekly summary records issuance on **November 20, 2026**: https://www.fec.gov/updates/week-of-november-16-20-2026/ .
+The Inspector General warns vendors about a spoofed procurement-official solicitation intended to obtain computer equipment. **Boundaries:** this is an agency fraud alert describing reported attempts and indicators; it is not a judicial finding, a verified victim count or proof that a named individual committed a crime. Suggested queue: public procurement / fraud prevention / source-authenticity checks. Inspect the agency's original PDF before publication; distinguish the example lookalike domain in the alert from legitimate FEC domains.
+
+**DOJ — Senior Leader of Sinaloa Cartel Arrested in Mexico Following Task Force Investigation.**
+Original announcement: https://www.justice.gov/usao-sdca/pr/senior-leader-sinaloa-cartel-and-one-fbis-ten-most-wanted-fugitives-arrested-mexico .
+**Release dated November 21, 2026; operation described as taking place November 20, 2026.** DOJ states Mexican forces captured Fausto Isidro Meza Flores, a defendant charged in a U.S. superseding indictment, following international coordination. **Boundaries:** arrest and agency-reported operation must be independently corroborated where feasible; allegations in the indictment are not convictions, and the press release is an interested agency account. Do not turn quoted officials' rhetoric into established fact. Suggested queue: justice/accountability / government operations / international enforcement.
+
+Targeted `SELECT`-only searches of news, inbox and sources for each lead's official URL patterns and distinctive identifiers/titles found **zero direct matches**. Related reporting, aliases or mirrored URLs may already exist. Human reviewers should check original documents, case relevance and alternative reporting before creating references; nothing was ingested or published.
+
+### Review-only engineering update
+
+Extended `scripts/audit-news-ingestion.mjs` to emit **capped numeric-ID candidate pairs** for the previously unassessed inbox-to-source exact URL pathway and for news/inbox exact-link **publisher-label differences** and **publication timestamps more than 24 hours apart**. Missing publisher labels and harmless case/spacing variants are not mislabeled as conflicts; malformed URLs are excluded from metadata comparison, and original URLs and unpublished text are never printed. This is triage only: different labels can be legitimate aliases, and divergent timestamps require manual investigation. Four new regression tests added (25 total, awaiting independent CI confirmation at this checkpoint). No automatic linking, deduplication, updates to production records, deploy, or merge.
