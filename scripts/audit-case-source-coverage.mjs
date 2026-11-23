@@ -23,6 +23,26 @@ function validSourceUrl(value) {
   } catch { return false; }
 }
 
+// HUDOC PDF URLs use a document-specific id= query value. Some historical
+// bibliography records contain id;= (likely escaped-key damage); recognize
+// that key for REVIEW ONLY, without rewriting any citation URL. Never drop
+// the query string as it distinguishes unrelated judgments at the same path.
+function hudocPdfId(raw) {
+  if (!validSourceUrl(raw)) return null;
+  const u = new URL(raw);
+  if (u.hostname !== 'hudoc.echr.coe.int' || u.pathname !== '/app/conversion/pdf/') return null;
+  const ids = [...u.searchParams.getAll('id'), ...u.searchParams.getAll('id;')];
+  if (ids.length !== 1 || !/^\\d{3}-\\d{4,}-\\d{4,}$/.test(ids[0])) return null;
+  return ids[0];
+}
+function suspectHudocKeys(raw) {
+  if (!validSourceUrl(raw)) return false;
+  const u = new URL(raw);
+  return u.hostname === 'hudoc.echr.coe.int' &&
+    u.pathname === '/app/conversion/pdf/' &&
+    (u.searchParams.has('id;') || u.searchParams.has('library;'));
+}
+
 function datePresent(v) {
   if (missing(v)) return false;
   if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) throw new Error('Invalid source date');
@@ -198,6 +218,28 @@ export function auditCaseSourceCoverage(snapshot) {
   summary.outside_register_marked_published_sources_undated =
     publishedOutsideCaseRegister.filter(s=>!datePresent(s.publication_date)).length;
 
+  // Potentially equivalent HUDOC press-release URLs are candidate identities
+  // only, not authenticated duplicates. Record numeric source IDs, never URLs.
+  // This check is deliberately host/path/ID-specific: removing all query
+  // parameters would falsely group DIFFERENT ECHR judgments.
+  const hudocGroups = new Map(), suspectHudocSourceIds = [];
+  for (const s of sources.values()) {
+    if (suspectHudocKeys(s.url)) suspectHudocSourceIds.push(s.id);
+    const documentId = hudocPdfId(s.url);
+    if (!documentId) continue;
+    if (!hudocGroups.has(documentId)) hudocGroups.set(documentId,[]);
+    hudocGroups.get(documentId).push(s.id);
+  }
+  const potentialHudocDuplicates = [...hudocGroups.values()]
+    .filter(ids => ids.length > 1)
+    .map(ids => ids.sort((a,b)=>a-b))
+    .sort((a,b)=>a[0]-b[0]);
+  suspectHudocSourceIds.sort((a,b)=>a-b);
+  summary.hudoc_sources_with_suspect_query_keys = suspectHudocSourceIds.length;
+  summary.potential_same_hudoc_document_groups = potentialHudocDuplicates.length;
+  summary.potential_same_hudoc_document_source_records =
+    potentialHudocDuplicates.reduce((sum,ids)=>sum+ids.length,0);
+
   // The source register is NOT the only citation path. Optionally accept a
   // complete relationships snapshot to measure case->source graph coverage.
   // When absent, report null rather than implying an absence of graph links.
@@ -330,7 +372,12 @@ export function auditCaseSourceCoverage(snapshot) {
     marked_published_source_ids_outside_case_register:publishedOutsideCaseRegister.slice(0,25).map(s=>s.id),
     omitted_outside_case_register_sources:Math.max(0,publishedOutsideCaseRegister.length-25),
     omitted_repeated_pairs:Math.max(0,repeated.length-25),
-    caveat:'Register references may repeat sources. Register-only metrics must not be interpreted as all source linkage. Relationship graph and claim-mediated link metrics require separate complete optional snapshots. A claim link may support, refute, or contextualize; it is not a second independent corroboration. No link, source status or metadata metric proves authenticity or factual accuracy.'};
+    // Review-only possible duplicate document identities. Do not merge.
+    possible_duplicate_hudoc_source_id_groups:potentialHudocDuplicates.slice(0,25),
+    omitted_duplicate_hudoc_groups:Math.max(0,potentialHudocDuplicates.length-25),
+    suspect_hudoc_query_key_source_ids:suspectHudocSourceIds.slice(0,25),
+    omitted_suspect_hudoc_query_source_ids:Math.max(0,suspectHudocSourceIds.length-25),
+    caveat:'Register references may repeat sources. Register-only metrics must not be interpreted as all source linkage. Relationship graph and claim-mediated link metrics require separate complete optional snapshots. A claim link may support, refute, or contextualize; it is not a second independent corroboration. HUDOC identity matches and suspect query keys require human verification, not automatic URL repair or source deduplication. No link, source status or metadata metric proves authenticity or factual accuracy.'};
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
