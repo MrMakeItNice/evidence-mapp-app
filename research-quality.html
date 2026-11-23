@@ -47,7 +47,7 @@
   el('filter').addEventListener('change',()=>{count=18;render()});
   el('more').addEventListener('click',()=>{count+=18;render()});
   let loading=false;
-  async function loadCases(){
+  async function loadCases(fromRetry=false){
     if(loading)return;
     loading=true;
     el('retry').hidden=true;
@@ -66,6 +66,8 @@
       el('filter').disabled=false;
       chart();
       render();
+      // The retry button disappears on success; keep keyboard users in the case browser.
+      if(fromRetry)el('q').focus();
     }catch{
       el('status').textContent='Published cases cannot be loaded right now. No quality metrics are available.';
       el('q').disabled=true;
@@ -76,7 +78,7 @@
       el('retry').disabled=false;
     }
   }
-  el('retry').addEventListener('click',loadCases);
+  el('retry').addEventListener('click',()=>loadCases(true));
   loadCases();
 })();
 </script></body></html>
