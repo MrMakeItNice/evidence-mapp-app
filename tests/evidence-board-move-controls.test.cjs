@@ -91,10 +91,11 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
 
-test('rendered source inspector moves its selected card through native buttons and saves the resulting layout', async () => {
+async function createBoard() {
   const elements = new Map(), stored = new Map();
   const make = tag => ({
     tag, children: [], style: {}, attributes: {}, listeners: {}, textContent: '', className: '',
+    focus() { document.activeElement = this; }, setPointerCapture() {},
     append(...items) { this.children.push(...items); },
     replaceChildren(...items) { this.children = items; },
     setAttribute(name, value) { this.attributes[name] = value; },
@@ -120,6 +121,11 @@ test('rendered source inspector moves its selected card through native buttons a
       ? { references: [citation] } : [{ id: '1', title: 'Published case' }] })
   });
   await new Promise(resolve => setImmediate(resolve));
+  return { get, stored, document, citation, getOpened: () => opened };
+}
+
+test('rendered source inspector moves its selected card through native buttons and saves the resulting layout', async () => {
+  const { get, stored, citation, getOpened } = await createBoard();
   assert.equal(get('cards').children.length, 2);
   const tile = get('cards').children[1];
   let prevented = 0;
@@ -145,5 +151,39 @@ test('rendered source inspector moves its selected card through native buttons a
   get('save').listeners.click();
   const saved = JSON.parse(stored.get('atlas-evidence-board-layout-v2-1'));
   assert.deepEqual(saved['source-' + encodeURIComponent(citation.url)], start);
-  assert.equal(opened, 0, 'rearranging must not open a source');
+  assert.equal(getOpened(), 0, 'rearranging must not open a source');
+});
+
+
+test('Enter and Space focus the inspected heading; Escape returns to the current card', async () => {
+  const { get, document } = await createBoard();
+  const cards = get('cards').children;
+  assert.equal(document.activeElement, undefined, 'loading must not steal focus');
+  for (const [index, key] of [[1, 'Enter'], [0, ' ']]) {
+    const card = cards[index]; card.focus();
+    card.listeners.keydown({ key, preventDefault() {} });
+    const heading = get('details').children[0];
+    assert.equal(document.activeElement, heading);
+    assert.equal(heading.tag, 'h2'); assert.equal(heading.tabIndex, -1);
+    const controls = get('details').children.find(n => n.className === 'move-controls');
+    controls.children[0].focus();
+    let prevented = 0;
+    get('selected-record').listeners.keydown({ key: 'Escape', preventDefault() { prevented++; } });
+    assert.equal(prevented, 1); assert.equal(document.activeElement, card);
+  }
+});
+
+test('pointer inspection keeps focus; ordinary and modified inspector keys are untouched', async () => {
+  const { get, document } = await createBoard();
+  const card = get('cards').children[1], marker = {};
+  document.activeElement = marker;
+  card.listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, stopPropagation() {} });
+  card.listeners.pointerup();
+  assert.equal(document.activeElement, marker);
+  for (const event of [{ key: 'Tab' }, { key: 'ArrowDown' }, { key: 'Escape', ctrlKey: true }, { key: 'Escape', altKey: true }, { key: 'Escape', metaKey: true }, { key: 'Escape', shiftKey: true }]) {
+    get('selected-record').listeners.keydown({ ...event, preventDefault() { assert.fail('unhandled key was prevented'); } });
+    assert.equal(document.activeElement, marker);
+  }
+  get('selected-record').listeners.keydown({ key: 'Escape', preventDefault() {} });
+  assert.equal(document.activeElement, card, 'Escape returns to the pointer-inspected card too');
 });
