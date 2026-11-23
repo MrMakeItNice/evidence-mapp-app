@@ -134,11 +134,17 @@ assert.match(bluebirdPage,/href="https:\/\/www\.cia\.gov\/readingroom\/docs\/CIA
 assert.match(bluebirdPage,/PDF; may redirect/);
 // Avoid conflating the documented BLUEBIRD→ARTICHOKE rename with the Blue Beam hypothesis.
 assert.equal((bluebirdPage.match(/id="bluebird-bluebeam-assessment"/g)||[]).length,1);
-assert.match(bluebirdPage,/BLUEBIRD versus Blue Beam — thematic similarity only/);
-assert.match(bluebirdPage,/no reviewed source cited on this page establishes an operational connection or coordination/);
-assert.match(bluebirdPage,/Separate documented relationship/);
+assert.match(bluebirdPage,/BLUEBIRD versus Blue Beam — name resemblance, not a verified thematic link/);
+assert.match(bluebirdPage,/That alone does not demonstrate a shared operation, method, or subject-matter connection/);
+assert.match(bluebirdPage,/Documented relationship \(different pair\)/);
 assert.match(bluebirdPage,/href="#senate-1977-source-note">source-backed BLUEBIRD → ARTICHOKE rename<\/a>/);
-assert.match(bluebirdPage,/Any proposed BLUEBIRD–Blue Beam connection remains an investigator hypothesis/);
+assert.match(bluebirdPage,/a proposed BLUEBIRD–Blue Beam connection would require direct evidence, alternatives and counterevidence before review/);
+assert.match(bluebirdPage,/<strong>Thematic similarity:<\\/strong> no shared method or coordinated activity/);
+assert.match(bluebirdPage,/name resemblance alone is not a thematic evidence edge/);
+assert.match(bluebirdPage,/<strong>Investigator hypothesis:<\\/strong>/);
+assert.match(bluebirdPage,/<strong>Contradicted link:<\\/strong> none is affirmatively established by this review/);
+assert.match(bluebirdPage,/lack of supporting evidence alone does not prove a claim false/);
+assert.doesNotMatch(bluebirdPage,/BLUEBIRD versus Blue Beam — thematic similarity only/);
 assert.doesNotMatch(bluebirdPage,/These entries share suggestive wording and broad themes only/);
 console.log('PASS: BLUEBIRD/Blue Beam thematic comparison cannot be mistaken for documented BLUEBIRD-to-ARTICHOKE continuity.');
 
