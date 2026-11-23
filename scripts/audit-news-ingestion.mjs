@@ -128,6 +128,40 @@ function exactNewsInboxMetadataReview(news, inbox, limit = 25) {
   };
 }
 
+// One-sided date metadata on an exact, valid news/source link is a review lead,
+// never proof that either value is correct. Sources store a date (not an instant),
+// so deliberately avoid timestamp/date calendar comparisons across these tables.
+function exactNewsSourcePublicationDateReview(news, sources, limit = 25) {
+  const sourceIndex = new Map();
+  for (const source of sources) {
+    const url = cleanUrl(source.url);
+    if (urlProblem(url) !== null) continue;
+    if (!sourceIndex.has(url)) sourceIndex.set(url, []);
+    sourceIndex.get(url).push(source);
+  }
+  const newsMissing = [], sourceMissing = [];
+  for (const item of news) {
+    const url = cleanUrl(item.source_url);
+    if (urlProblem(url) !== null) continue;
+    for (const source of sourceIndex.get(url) ?? []) {
+      if (absent(item.published_at) && !absent(source.publication_date)) {
+        newsMissing.push([item.id, source.id]);
+      } else if (!absent(item.published_at) && absent(source.publication_date)) {
+        sourceMissing.push([item.id, source.id]);
+      }
+    }
+  }
+  const summarize = pairs => {
+    pairs.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    return { count: pairs.length, id_pairs: pairs.slice(0, limit),
+      omitted_id_pairs: Math.max(0, pairs.length - limit) };
+  };
+  return {
+    news_missing_source_dated: summarize(newsMissing),
+    source_missing_news_dated: summarize(sourceMissing)
+  };
+}
+
 function checkCollection(snapshot, name, idField = 'id') {
   const rows = snapshot[name];
   if (!Array.isArray(rows) || !Number.isSafeInteger(snapshot.expected_counts[name]) ||
@@ -275,7 +309,8 @@ export function auditNewsIngestion(snapshot) {
       inbox_source_exact_url_rows: overlapCount(inboxUrls, sourceUrls),
       inbox_source_exact_url_id_pairs: inboxSourceCandidates.id_pairs,
       inbox_source_omitted_id_pairs: inboxSourceCandidates.omitted_id_pairs,
-      news_inbox_metadata_review: metadataReview
+      news_inbox_metadata_review: metadataReview,
+      news_source_publication_date_review: exactNewsSourcePublicationDateReview(news, sources)
     },
     watches: {
       active_research: researchWatches.filter(w=>w.active === true).length,
