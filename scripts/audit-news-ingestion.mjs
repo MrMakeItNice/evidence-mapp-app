@@ -14,7 +14,11 @@ const cleanUrl = value => typeof value === 'string' && value.trim() ? value.trim
 function urlProblem(value) {
   const raw = cleanUrl(value);
   if (raw === null) return 'missing';
-  if (/\s/.test(raw)) return 'malformed';
+  // WHATWG URL parsing can silently repair missing slashes and backslashes.
+  // Require an explicit authority and reject malformed escapes before parsing.
+  if (/\s|[\x00-\x1f\x7f\\]/.test(raw) ||
+      !/^https?:\/\/[^/?#]+/i.test(raw) ||
+      /%(?![0-9a-f]{2})/i.test(raw)) return 'malformed';
   try {
     const parsed = new URL(raw);
     if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname ||
