@@ -413,5 +413,5 @@ test('previews expose exact original and geographic citation URLs without losing
   assert.notEqual(panel.children[2].textContent, panel.children[4].textContent,
     'same-host citations must retain their distinct document identities');
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /\\.reviewed-globe-detail a\\{[^}]*max-width:100%;[^}]*overflow-wrap:anywhere/);
+  assert.match(html, /\.reviewed-globe-detail a\{[^}]*max-width:100%;[^}]*overflow-wrap:anywhere/);
 });
