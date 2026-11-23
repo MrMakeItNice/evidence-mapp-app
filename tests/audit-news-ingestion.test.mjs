@@ -169,3 +169,43 @@ test('preserves document query strings and ignores unpublished source link probl
   assert.equal(report.sources.malformed_url,0);
   assert.equal(report.sources.missing_url,0);
 });
+
+
+test('rejects impossible calendar dates without normalization', () => {
+  const s = sample();
+  for (const invalid of [
+    '2026-02-30T12:30:00Z',
+    '2026-02-29T00:00:00Z',
+    '2026-11-31T00:00:00Z',
+    '2026-04-31T00:00:00+00:00'
+  ]) {
+    s.news_items[1].published_at = invalid;
+    assert.throws(() => auditNewsIngestion(s), /Invalid timestamp in news.published_at/);
+  }
+  s.news_items[1].published_at = '2026-11-22T00:00:00Z';
+  s.as_of = '2026-02-30T00:00:00Z';
+  assert.throws(() => auditNewsIngestion(s), /Invalid timestamp in as_of/);
+});
+
+test('accepts a real leap day and offset-aware valid dates', () => {
+  const s = sample();
+  s.news_items[1].published_at = '2024-02-29T23:59:59+05:30';
+  assert.equal(auditNewsIngestion(s).news.publication_timestamps_after_snapshot_time, 0);
+  s.news_items[1].published_at = '2000-02-29T00:00:00Z';
+  assert.equal(auditNewsIngestion(s).news.publication_timestamps_after_snapshot_time, 0);
+  s.news_items[1].published_at = '1900-02-29T00:00:00Z';
+  assert.throws(() => auditNewsIngestion(s), /Invalid timestamp/);
+});
+
+test('rejects invalid wall-clock and UTC offset components', () => {
+  const s = sample();
+  for (const invalid of [
+    '2026-11-22T24:01:00Z',
+    '2026-11-22T23:60:00Z',
+    '2026-11-22T23:59:60Z',
+    '2026-11-22T20:00:00+14:30'
+  ]) {
+    s.news_items[1].published_at = invalid;
+    assert.throws(() => auditNewsIngestion(s), /Invalid timestamp/);
+  }
+});
