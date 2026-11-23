@@ -457,3 +457,33 @@ test('case search distinguishes a genuinely empty index from a failed public-rec
   assert.equal(failed.get('heading').textContent, 'Evidence service unavailable');
   assert.equal(failed.get('cards').children.length, 0);
 });
+
+test('zoom readout follows buttons and responsive Reset without repeat announcements during pan or at limits', async () => {
+  assert.equal([...html.matchAll(/id="zoom-level"/g)].length, 1);
+  assert.match(html, /<output id="zoom-level" aria-live="polite" aria-atomic="true">/);
+  const { get } = await createBoard();
+  const readout = get('zoom-level'), view = get('viewport');
+  const status = get('status').textContent;
+  assert.equal(readout.textContent, 'Zoom 100%');
+  get('zin').listeners.click(); assert.equal(readout.textContent, 'Zoom 120%');
+  get('zout').listeners.click(); assert.equal(readout.textContent, 'Zoom 100%');
+  for (let i = 0; i < 12; i++) get('zin').listeners.click();
+  assert.equal(readout.textContent, 'Zoom 200%');
+  let value = readout.textContent, writes = 0;
+  Object.defineProperty(readout, 'textContent', { get: () => value, set: next => { value = next; writes++; } });
+  get('zin').listeners.click();
+  view.listeners.pointerdown(pointer(42));
+  view.listeners.pointermove(pointer(42, { clientX: 45, clientY: 15 }));
+  view.listeners.pointerup(pointer(42));
+  assert.equal(writes, 0, 'unchanged percentages must not retrigger the live region');
+  assert.equal(get('status').textContent, status, 'zoom feedback does not replace citation/load status');
+  view.clientWidth = 475;
+  get('reset').listeners.click();
+  assert.equal(readout.textContent, 'Zoom 50%'); assert.equal(writes, 1);
+  get('reset').listeners.click(); assert.equal(writes, 1);
+  for (let i = 0; i < 12; i++) get('zout').listeners.click();
+  assert.equal(readout.textContent, 'Zoom 35%');
+  const atMinimum = writes;
+  get('zout').listeners.click(); assert.equal(writes, atMinimum);
+  assert.equal(get('status').textContent, status);
+});
