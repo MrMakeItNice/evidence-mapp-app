@@ -79,6 +79,7 @@ export function inspectReviewedMapSource(doc, detail, event, returnFocusTo) {
     back.addEventListener('click', () => {
       detail.hidden = true;
       detail.replaceChildren();
+      returnFocusTo.setAttribute('aria-expanded', 'false');
       returnFocusTo.focus();
     });
     detail.append(back);
@@ -90,12 +91,21 @@ export function inspectReviewedMapSource(doc, detail, event, returnFocusTo) {
 export function renderReviewedMapList(doc, list, events, onInspect) {
   list.replaceChildren();
   const valid = reviewedMapEvents(events);
+  const buttons = [];
   for (const event of valid) {
     const item = doc.createElement('li');
     const button = doc.createElement('button');
     button.type = 'button';
     button.textContent = 'Inspect ' + event.title;
-    button.addEventListener('click', () => onInspect(event, button));
+    button.setAttribute('aria-controls', 'reviewed-globe-detail');
+    button.setAttribute('aria-expanded', 'false');
+    button.addEventListener('click', () => {
+      for (const candidate of buttons) {
+        candidate.setAttribute('aria-expanded', String(candidate === button));
+      }
+      onInspect(event, button);
+    });
+    buttons.push(button);
     const context = doc.createElement('small');
     context.textContent = event.event_date + ' · ' + event.source_host + ' · ' + event.category;
     item.append(button, context);
