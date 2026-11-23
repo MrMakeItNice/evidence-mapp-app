@@ -80,3 +80,14 @@ test('later explicit Case File selections still update the address fragment', ()
   );
   assert.deepEqual(writes, ['#case=7'], 'only user-driven selection updates #case');
 });
+
+test('both case and source nodes receive an obvious keyboard-focus outline', () => {
+  assert.ok(css && script);
+  // Each rendered card type shares the first child SVG rectangle; source cards
+  // have no SVG circle, so styling only .node:focus circle is insufficient.
+  assert.match(script, /const group=svg\('g',\{class:'node',tabindex:0,role:'button'/);
+  assert.match(script, /svg\('rect',\{x,y,width:w,height:h,rx:6/);
+  assert.match(css, /\.node:focus-visible>rect:first-of-type\{stroke:#fff;stroke-width:3\}/);
+  assert.doesNotMatch(css, /\.node:focus circle\{/);
+  assert.match(html, /Tab to a case or source card and press Enter or Space to inspect/);
+});
