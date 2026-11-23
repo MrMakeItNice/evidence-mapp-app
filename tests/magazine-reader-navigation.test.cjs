@@ -73,3 +73,30 @@ test('issue links preserve each story query and target its focusable article on 
   assert.match(html,/<article class="article" id="article" tabindex="-1"/);
   assert.match(html,/\.article:focus-visible\{outline:3px solid var\(--red\)/);
 });
+
+test('editorial source limitations are visible and described without relabeling navigation as evidence',()=>{
+  assert.match(html,/<article\b[^>]*aria-describedby="article-source-status"/);
+  assert.match(html,/research pathways in this edition link to related Evidence Atlas pages, not original source documents/i);
+  const routes=[
+    ['', ['./shared-future.html#history','./discover.html']],
+    ['?story=', ['./shared-future.html#history','./discover.html']],
+    ['?story=history', ['./shared-future.html#history','./discover.html']],
+    ['?story=money', ['./paper-trails.html','./connection-explorer.html']],
+    ['?story=mind', ['./shared-future.html#standards','./shared-future.html']],
+    ['?story=missing', ['./shared-future.html#history','./discover.html']],
+    ['?story=__proto__', ['./shared-future.html#history','./discover.html']]
+  ];
+  for(const [search,expected] of routes){
+    const page=render(search),children=page.article.children;
+    const notes=children.filter(n=>n.id==='article-source-status');
+    assert.equal(notes.length,1);assert.equal(notes[0].attributes.role,'note');
+    assert.match(notes[0].textContent,/Editorial overview.*No original documents are cited/);
+    assert.ok(!('tabindex' in notes[0].attributes));
+    assert.equal(children[children.findIndex(n=>n.className==='byline')+1],notes[0]);
+    const index=children.findIndex(n=>n.tag==='h3'&&n.textContent==='Research pathways (not source citations)');
+    assert.ok(index>=0);assert.equal(children[index+1].tag,'ul');
+    assert.deepEqual(children[index+1].children.map(n=>n.children[0].href),expected);
+    assert.equal(page.current.length,1);assert.match(page.current[0].href,/#article$/);
+    assert.equal(page.focusCalls,0);
+  }
+});
