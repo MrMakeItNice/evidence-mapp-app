@@ -214,3 +214,19 @@ assert.match(indexedSource212[1],/does not itself date the August 1951 rename/);
 assert.match(indexedSource212[1],/public-release date of this scan has not been independently verified/);
 assert.match(indexedSource212[1],/href="https:\/\/nsarchive2\.gwu\.edu\/NSAEBB\/NSAEBB438\/st02\.pdf#page=1" target="_blank" rel="noopener noreferrer"/);
 console.log('PASS: already indexed CIA source #212 links BLUEBIRD and ARTICHOKE without duplicate corroboration or Blue Beam promotion.');
+
+// Compare two indexed official records without promoting apparent differences to a verified contradiction.
+const sourceScopeComparison = bluebirdPage.match(/<details id="source-scope-comparison">([\s\S]*?)<\/details>/);
+assert.ok(sourceScopeComparison, 'Missing collapsible source-scope comparison');
+assert.equal((bluebirdPage.match(/id="source-scope-comparison"/g)||[]).length, 1);
+for (const id of ['cia-1975-indexed-source-note', 'senate-1977-source-note']) {
+  assert.match(sourceScopeComparison[1], new RegExp('href="#'+id+'"'));
+  assert.equal((bluebirdPage.match(new RegExp('id="'+id+'"','g'))||[]).length, 1);
+}
+assert.match(sourceScopeComparison[1], /January 31, 1975 CIA file-review memo \(source #212, scan p\. 2\)/);
+assert.match(sourceScopeComparison[1], /August 3, 1977 Senate hearing appendix \(source #258, printed p\. 68\)/);
+assert.match(sourceScopeComparison[1], /different scopes and may rely on overlapping underlying files/);
+assert.match(sourceScopeComparison[1], /not declaring a verified contradiction or independent corroboration/);
+assert.match(sourceScopeComparison[1], /Neither establishes any Project Blue Beam connection or justifies a new public relationship edge/);
+assert.match(bluebirdPage, /#source-scope-comparison summary:focus-visible\{outline:3px/);
+console.log('PASS: CIA #212 and Senate #258 are compared with page-level scope limits, accessible disclosure, and no false contradiction or Blue Beam edge.');
