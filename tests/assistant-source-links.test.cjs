@@ -37,6 +37,34 @@ function renderSources(sources, notice = '') {
   return { article, links: article.children.filter(child => child.tagName === 'a') };
 }
 
+test('homepage buttons and hash links still open the assistant', () => {
+  const buttonsLine = code.split(/\r?\n/).find(line => line.startsWith("for(const trigger of document.querySelectorAll('[data-ea-open]'))"));
+  assert.ok(buttonsLine, 'homepage button listener must be present');
+  const opens = [];
+  let handler;
+  const trigger = { addEventListener: (type, callback) => {
+    assert.equal(type, 'click');
+    handler = callback;
+  }};
+  vm.runInNewContext(buttonsLine, {
+    document: { querySelectorAll: () => [trigger] },
+    open: value => opens.push(value)
+  });
+  let prevented = false;
+  handler({ preventDefault: () => { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.deepEqual(opens, [true]);
+
+  const context = { location: { hash: '#ask-evidence' }, open: value => opens.push(value) };
+  vm.runInNewContext(functionLine('openFromLink'), context);
+  context.openFromLink();
+  context.location.hash = '#other';
+  context.openFromLink();
+  assert.deepEqual(opens, [true, true], 'unrelated hashes must not open the assistant');
+  assert.ok(code.includes("window.addEventListener('hashchange',openFromLink);openFromLink();"));
+  assert.ok(code.includes('What is documented about MKULTRA?'));
+});
+
 test('Ask Evidence script is syntactically valid', () => {
   assert.doesNotThrow(() => new vm.Script(code));
 });
