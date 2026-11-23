@@ -200,6 +200,7 @@ export function auditNewsIngestion(snapshot) {
   const flaggedFutureNewsIds = [];
   const undatedNonGoogleIds = [];
   let discovered24h = 0, pending14d = 0, undatedGoogle = 0, undated = 0;
+  const agedPendingNewsByTopic = new Map();
   for (const n of news) {
     if (n.topic_id != null && !newsTopicIds.has(n.topic_id)) throw new Error('Unknown news topic');
     const published = timestamp(n.published_at, 'news.published_at');
@@ -213,8 +214,17 @@ export function auditNewsIngestion(snapshot) {
     }
     if (published !== null && published > asOf) flaggedFutureNewsIds.push(n.id);
     if (discovered !== null && discovered <= asOf && discovered >= asOf - 86400000) discovered24h++;
-    if (n.review_status === 'pending' && discovered !== null && discovered < asOf - 14 * 86400000) pending14d++;
+    if (n.review_status === 'pending' && discovered !== null && discovered < asOf - 14 * 86400000) {
+      pending14d++;
+      // Rank review backlog by numeric topic ID only; never print unpublished titles.
+      if (positiveId(n.topic_id)) {
+        agedPendingNewsByTopic.set(n.topic_id, (agedPendingNewsByTopic.get(n.topic_id) ?? 0) + 1);
+      }
+    }
   }
+  const agedNewsTopicRank = [...agedPendingNewsByTopic]
+    .map(([topic_id, count]) => ({topic_id, count}))
+    .sort((a, b) => b.count - a.count || a.topic_id - b.topic_id);
   // Some imported inbox records may have an added_at but no discovered_at.
   // Use the explicit discovery timestamp when available, otherwise fall back to
   // the ingestion date. Report records with neither rather than silently treating
@@ -281,6 +291,9 @@ export function auditNewsIngestion(snapshot) {
       pending: news.filter(n => n.review_status === 'pending').length,
       discovered_last_24h: discovered24h,
       pending_over_14d: pending14d,
+      // Capped, deterministic topic-level triage; counts are not evidence quality scores.
+      aged_pending_topic_counts: agedNewsTopicRank.slice(0, 10),
+      omitted_aged_pending_topics: Math.max(0, agedNewsTopicRank.length - 10),
       missing_publication_timestamp: undated,
       missing_publication_timestamp_google_proxies: undatedGoogle,
       missing_publication_timestamp_other: undatedNonGoogleIds.length,
