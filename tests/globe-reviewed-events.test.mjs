@@ -12,7 +12,10 @@ const event = {id: 'archive-01', title: 'Reviewed documented event', category: '
 const withChanges = changes => ({...event, ...changes});
 
 function element(tag) {
-  return {tag, children: [], listeners: {}, replaceChildren(...children) {this.children = children;},
+  return {tag, children: [], listeners: {}, attributes: {},
+    setAttribute(name, value) {this.attributes[name] = String(value);},
+    getAttribute(name) {return this.attributes[name] ?? null;},
+    replaceChildren(...children) {this.children = children;},
     append(...children) {this.children.push(...children);},
     addEventListener(type, fn) {this.listeners[type] = fn;}};
 }
@@ -129,9 +132,19 @@ test('return-to-list closes source preview and restores focus to the selected ev
   const events = [event, withChanges({id: 'archive-02', title: 'Second reviewed event'})];
   renderReviewedMapList(document, list, events, (record, button) =>
     inspectReviewedMapSource(document, detail, record, button));
+  const firstButton = list.children[0].children[0];
   const selectedButton = list.children[1].children[0];
   selectedButton.focus = () => { selectedButton.focused = true; };
+  assert.equal(firstButton.getAttribute('aria-controls'), 'reviewed-globe-detail');
+  assert.equal(selectedButton.getAttribute('aria-controls'), 'reviewed-globe-detail');
+  assert.equal(firstButton.getAttribute('aria-expanded'), 'false');
+  assert.equal(selectedButton.getAttribute('aria-expanded'), 'false');
+  firstButton.listeners.click();
+  assert.equal(firstButton.getAttribute('aria-expanded'), 'true');
+  assert.equal(selectedButton.getAttribute('aria-expanded'), 'false');
   selectedButton.listeners.click();
+  assert.equal(firstButton.getAttribute('aria-expanded'), 'false');
+  assert.equal(selectedButton.getAttribute('aria-expanded'), 'true');
   assert.equal(detail.focused, true);
   assert.equal(detail.hidden, false);
   assert.equal(detail.children[0].textContent, 'Second reviewed event');
@@ -144,6 +157,9 @@ test('return-to-list closes source preview and restores focus to the selected ev
   assert.equal(detail.hidden, true);
   assert.equal(detail.children.length, 0, 'closed previews do not leave stale links');
   assert.equal(selectedButton.focused, true, 'keyboard focus returns to the originating event');
+  assert.equal(selectedButton.getAttribute('aria-expanded'), 'false',
+    'closed preview must not still announce expanded');
+  assert.equal(firstButton.getAttribute('aria-expanded'), 'false');
 });
 
 test('homepage places the keyboard preview beside the event list, not only in the tiny globe overlay', () => {
