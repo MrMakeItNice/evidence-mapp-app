@@ -172,6 +172,11 @@ assert.match(bluebirdPage,/Canonical Case IDs 3 and 4 cite this record through g
 assert.match(bluebirdPage,/printed pp\. 67–68; PDF viewer pp\. 70–71/);
 assert.match(bluebirdPage,/Some PDF viewers may ignore the page fragment/);
 assert.doesNotMatch(bluebirdPage,/href="https:\/\/www\.intelligence\.senate\.gov\/sites\/default\/files\/hearings\/95mkultra\.pdf"/);
+// Official GPO catalog is an alternate doorway to the same 1977 Senate hearing, not independent corroboration.
+assert.match(bluebirdPage,/href="https:\/\/www\.govinfo\.gov\/app\/details\/CHRG-95shrg96408O" target="_blank" rel="noopener noreferrer"/);
+assert.match(bluebirdPage,/another official access point for the August 3, 1977 Senate hearing, not a separate source or independent confirmation/);
+assert.match(bluebirdPage,/page offsets may differ between scans/);
+assert.equal((bluebirdPage.match(/CHRG-95shrg96408O/g)||[]).length,2,'Catalog identifier should appear only in URL and visible label');
 console.log('PASS: reviewed 1977 Senate hearing section and existing source #258 provide original-document navigation without a duplicate program or public edge.');
 
 
