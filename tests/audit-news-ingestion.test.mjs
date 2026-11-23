@@ -297,3 +297,51 @@ test('caps and sorts numeric-only metadata discrepancy pairs',()=> {
   assert.equal(review.omitted_publication_time_difference_id_pairs,5);
   assert.ok(!JSON.stringify(review).includes('Different organization'));
 });
+
+
+test('one-sided news/source publication date identifies the missing side for human review',()=> {
+  const s=sample();
+  let review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.equal(review.source_missing_news_dated.count,1);
+  assert.deepEqual(review.source_missing_news_dated.id_pairs,[[2,20]]);
+  assert.equal(review.news_missing_source_dated.count,0);
+  s.sources[0].publication_date='2026-11-22';
+  review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.equal(review.source_missing_news_dated.count,0);
+  s.news_items[1].published_at=null;
+  review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.deepEqual(review.news_missing_source_dated.id_pairs,[[2,20]]);
+  assert.equal(review.source_missing_news_dated.count,0);
+});
+
+test('one-sided news/source publication date respects document queries and malformed URLs',()=> {
+  const s=sample();
+  s.news_items[1].published_at=null;
+  s.sources[0].publication_date='2026-11-22';
+  s.news_items[1].source_url='https://agency.gov/document?id=3';
+  let review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.equal(review.news_missing_source_dated.count,0);
+  s.news_items[1].source_url='ftp://agency.gov/document?id=2';
+  s.sources[0].url='ftp://agency.gov/document?id=2';
+  review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.equal(review.news_missing_source_dated.count,0);
+});
+
+test('one-sided date review emits sorted capped numeric IDs, not unpublished content or URLs',()=> {
+  const s=sample();
+  s.sources[0].publication_date='2026-11-22';
+  for(let id=34;id>=3;id--) s.news_items.push({
+    id, topic_id:1, source_url:s.sources[0].url, published_at:null,
+    headline:'PRIVATE RESEARCH ITEM', review_status:'pending'
+  });
+  s.expected_counts.news_items=s.news_items.length;
+  const x=auditNewsIngestion(s);
+  const review=x.overlap.news_source_publication_date_review;
+  assert.equal(review.news_missing_source_dated.count,32);
+  assert.equal(review.news_missing_source_dated.id_pairs.length,25);
+  assert.deepEqual(review.news_missing_source_dated.id_pairs[0],[3,20]);
+  assert.deepEqual(review.news_missing_source_dated.id_pairs[24],[27,20]);
+  assert.equal(review.news_missing_source_dated.omitted_id_pairs,7);
+  assert.ok(!JSON.stringify(x).includes('PRIVATE RESEARCH ITEM'));
+  assert.ok(!JSON.stringify(x).includes('agency.gov'));
+});
