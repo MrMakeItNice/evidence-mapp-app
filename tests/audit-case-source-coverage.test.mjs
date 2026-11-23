@@ -320,3 +320,56 @@ test('graph output never exposes source text or URLs',()=>{
   assert.ok(!output.includes('SECRET REVIEW NOTE'));
   assert.ok(!output.includes('https://'));
 });
+
+test('claim-mediated source links remain unassessed without complete optional snapshots',()=>{
+  assert.equal(audit(sample()).claim_evidence,null);
+  const s=sample();s.claims=[{id:5,case_id:2}];s.expected_counts.claims=1;
+  assert.throws(()=>audit(s),/Incomplete claim evidence snapshot/);
+});
+test('claim-source links add a distinct pathway, not duplicated register corroboration',()=>{
+  const s=sample();
+  s.claims=[{id:5,case_id:1},{id:6,case_id:2}];
+  s.claim_sources=[{claim_id:5,source_id:10,supports_or_refutes:'Context'},
+    {claim_id:6,source_id:10,supports_or_refutes:'Refutes',relevant_pages:'PRIVATE PAGE'}];
+  s.expected_counts.claims=2;s.expected_counts.claim_sources=2;
+  const x=audit(s).claim_evidence;
+  assert.equal(x.claim_source_links,2);
+  assert.equal(x.unique_case_source_pairs,2);
+  assert.equal(x.claim_pairs_also_in_register,1);
+  assert.equal(x.claim_pairs_also_in_graph,null);
+  assert.equal(x.claim_pairs_new_to_assessed_direct_paths,1);
+  assert.equal(x.distinct_case_source_pairs_across_assessed_paths,4);
+  assert.equal(x.published_cases_with_complete_marked_published_claim_source,2);
+  assert.deepEqual(x.new_claim_mediated_pairs_for_review,[{case_id:2,source_id:10}]);
+  assert.ok(!JSON.stringify(x).includes('PRIVATE PAGE'));
+});
+test('complete graph overlap prevents double-counting claim-mediated links',()=>{
+  const s=sample();
+  s.relationships=[{id:7,source_type:'case',source_id:2,target_type:'source',
+    target_id:10,source_id_reference:10}];
+  s.expected_counts.relationships=1;
+  s.claims=[{id:5,case_id:2}];s.claim_sources=[{claim_id:5,source_id:10}];
+  s.expected_counts.claims=1;s.expected_counts.claim_sources=1;
+  const x=audit(s).claim_evidence;
+  assert.equal(x.claim_pairs_also_in_graph,1);
+  assert.equal(x.claim_pairs_new_to_assessed_direct_paths,0);
+  assert.equal(x.distinct_case_source_pairs_across_assessed_paths,4);
+  assert.equal(x.graph_path_assessed,true);
+});
+test('unassigned claims do not imply case-source evidence',()=>{
+  const s=sample();s.claims=[{id:5,case_id:null}];
+  s.claim_sources=[{claim_id:5,source_id:10}];
+  s.expected_counts.claims=1;s.expected_counts.claim_sources=1;
+  const x=audit(s).claim_evidence;
+  assert.equal(x.claim_source_links_without_case,1);
+  assert.equal(x.unique_case_source_pairs,0);
+  assert.equal(x.claim_pairs_new_to_assessed_direct_paths,0);
+});
+test('dangling or repeated claim-source links invalidate snapshots',()=>{
+  const s=sample();s.claims=[{id:5,case_id:2}];
+  s.claim_sources=[{claim_id:5,source_id:10},{claim_id:5,source_id:10}];
+  s.expected_counts.claims=1;s.expected_counts.claim_sources=2;
+  assert.throws(()=>audit(s),/Invalid claim source reference/);
+  s.claim_sources=[{claim_id:5,source_id:999}];s.expected_counts.claim_sources=1;
+  assert.throws(()=>audit(s),/Invalid claim source reference/);
+});
