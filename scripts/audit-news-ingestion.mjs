@@ -203,6 +203,14 @@ export function auditNewsIngestion(snapshot) {
   const sourceDateGapIds = missingPublishedSourceIds(s => absent(s.publication_date));
   const sourcePublisherGapIds = missingPublishedSourceIds(s => absent(s.publisher));
   const sourceUrlGapIds = missingPublishedSourceIds(s => absent(s.url));
+  // A valid archive-only locator is different from a source with no usable locator.
+  // These are syntax checks only: neither URL is assumed reachable or authentic.
+  const archiveOnlySourceIds = missingPublishedSourceIds(s =>
+    urlProblem(s.url) !== null && urlProblem(s.archive_url) === null);
+  const noValidLocatorSourceIds = missingPublishedSourceIds(s =>
+    urlProblem(s.url) !== null && urlProblem(s.archive_url) !== null);
+  const malformedArchiveSourceIds = missingPublishedSourceIds(s =>
+    urlProblem(s.archive_url) === 'malformed');
   const newsTopicIds = new Set(topics.map(row => row.id));
   const flaggedFutureNewsIds = [];
   const undatedNonGoogleIds = [];
@@ -359,6 +367,16 @@ export function auditNewsIngestion(snapshot) {
       omitted_published_missing_publisher_source_ids: Math.max(0, sourcePublisherGapIds.length - 25),
       published_missing_url_source_ids: sourceUrlGapIds.slice(0,25),
       omitted_published_missing_url_source_ids: Math.max(0, sourceUrlGapIds.length - 25),
+      // Do not report archive-only documents as having no syntactically valid locator.
+      published_marked_archive_only: archiveOnlySourceIds.length,
+      published_archive_only_source_ids: archiveOnlySourceIds.slice(0,25),
+      omitted_published_archive_only_source_ids: Math.max(0, archiveOnlySourceIds.length - 25),
+      published_marked_without_valid_url_or_archive: noValidLocatorSourceIds.length,
+      published_no_valid_locator_source_ids: noValidLocatorSourceIds.slice(0,25),
+      omitted_published_no_valid_locator_source_ids: Math.max(0, noValidLocatorSourceIds.length - 25),
+      published_marked_malformed_archive_url: malformedArchiveSourceIds.length,
+      published_malformed_archive_source_ids: malformedArchiveSourceIds.slice(0,25),
+      omitted_published_malformed_archive_source_ids: Math.max(0, malformedArchiveSourceIds.length - 25),
       exact_url_duplicate_groups: repeatedGroups(sourceUrls)
     },
     overlap: {
