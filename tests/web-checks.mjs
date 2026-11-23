@@ -56,6 +56,18 @@ assert.match(rabbitHole,/private draft tool does not publish, review, or add pro
 assert.match(fs.readFileSync('connection-explorer.html','utf8'),/id="contribute"/);
 console.log('PASS: Rabbit Hole links to published cases, source-backed Evidence Board and private draft explorer without implying unverified causal links.');
 
+// Proposed relationship semantics are a review guide, not declarations about existing edges.
+assert.equal((rabbitHole.match(/id="relationship-review-guide"/g)||[]).length,1);
+assert.match(rabbitHole,/<summary><strong>How to evaluate a proposed connection<\/strong>/);
+assert.match(rabbitHole,/review guide, not live graph labels/);
+for (const label of ['Documented relationship','Thematic similarity','Investigator hypothesis','Contradicted link']) {
+  assert.match(rabbitHole,new RegExp('<dt><strong>'+label+'<\\/strong><\\/dt>'));
+}
+assert.match(rabbitHole,/Existing citation edges are research references, not automatically verified connections/);
+assert.match(rabbitHole,/Missing evidence alone is not proof that a link is false/);
+assert.match(rabbitHole,/Do not present a citation as a documented relationship/);
+console.log('PASS: Rabbit Hole relationship legend names all four review categories and does not promote source citations to findings.');
+
 // Identity/provenance guard: canonical historical program and unverified theory stay distinct.
 const bluebirdPage = fs.readFileSync('rabbit-hole.html','utf8');
 assert.equal((bluebirdPage.match(/id="bluebird-bluebeam"/g)||[]).length,1);
