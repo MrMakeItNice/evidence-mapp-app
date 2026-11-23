@@ -419,9 +419,9 @@ test('previews expose exact original and geographic citation URLs without losing
   const [reviewed] = reviewedMapEvents([record]);
   const panel = element('div');
   showReviewedMapSource(document, panel, reviewed);
-  assert.equal(panel.children[2].textContent, 'Inspect original source: ' + record.source_url);
+  assert.equal(panel.children[2].textContent, 'Inspect original source (opens in new tab): ' + record.source_url);
   assert.equal(panel.children[4].textContent,
-    'Inspect map location evidence: ' + record.location_source_url);
+    'Inspect map location evidence (opens in new tab): ' + record.location_source_url);
   assert.equal(panel.children[2].href, record.source_url);
   assert.equal(panel.children[4].href, record.location_source_url);
   assert.notEqual(panel.children[2].textContent, panel.children[4].textContent,
