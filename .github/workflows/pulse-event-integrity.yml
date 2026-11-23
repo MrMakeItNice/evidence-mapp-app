@@ -1,0 +1,24 @@
+name: Homepage reviewed-event integrity
+on:
+  pull_request:
+    paths:
+      - index.html
+      - pulse-events.mjs
+      - tests/pulse-event-integrity.test.mjs
+      - .github/workflows/pulse-event-integrity.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pulse-reviewed-event-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check pulse-events.mjs
+      - run: node --test tests/pulse-event-integrity.test.mjs
+      - run: node tests/globe-controls.mjs

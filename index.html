@@ -118,7 +118,7 @@
 <header class="top"><a class="brand" href="#top">EVIDENCE <b>◇</b> ATLAS</a><nav class="nav" aria-label="Main navigation"><a href="./discover.html">Cases</a><a href="./paper-trails.html">Paper Trails</a><a href="./evidence-board.html">Evidence Board</a><a href="./connection-explorer.html">Connections</a><a href="./global-search.html">Global Search</a><a href="./discover.html#ask-evidence" data-ea-open>Ask Evidence</a><a href="./shared-future.html">Our Shared Future</a><a href="./religion-accountability.html">Religions &amp; Accountability</a><a href="#mystery-atlas">Mystery Atlas</a><a href="#explore">Explore</a><a class="workspace" href="./workspace.html?workspace=1">Agent Control Center</a></nav></header>
 <main id="top"><div role="region" aria-label="Evidence Web feature" style="background:#132c37;border-bottom:1px solid #426b72;padding:14px 5%;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><strong style="color:#a8e6cb">NEW TO EXPLORE · THE EVIDENCE WEB</strong><div style="color:#d8e6e7;font-size:14px">Trace an investigation through cited records and shared documents. Links show citations—not proof of wrongdoing.</div></div><a href="./connection-explorer.html" style="background:#a8e6cb;color:#0b2430;padding:11px 17px;border-radius:4px;font-weight:800">Explore the interactive web ↗</a></div>
 <section class="hero" aria-label="Evidence Atlas introduction"><div class="hero-text"><div class="kicker">People · Power · Patterns · Solutions</div><h1><span>The world is connected.</span><span>Follow the evidence.</span></h1><p class="intro">Discover the people, institutions, financial trails, and events shaping our shared world.<br><strong>One Planet. One Humanity. One Future.</strong></p></div>
-<div class="globe-area"><section class="pulse" aria-labelledby="pulse-title"><h2 id="pulse-title">Global Evidence Pulse</h2><p>Counts cover unique, verified events.</p><div class="pulse-grid"><button type="button" data-pulse="negative" aria-pressed="false">Negative<strong>—</strong></button><button type="button" data-pulse="neutral" aria-pressed="false">Neutral<strong>—</strong></button><button type="button" data-pulse="positive" aria-pressed="false">Positive<strong>—</strong></button></div><div id="pulse-panel" class="pulse-panel" role="status">Select a category for criteria.</div><p>Verified feed pending. Global coverage unmeasured.</p></section><div class="geo-panel" id="geo-panel" role="status">Tap to inspect. Drag to rotate. Pinch or scroll to zoom.</div><div class="globe-viewport"><div id="fallback" class="fallback" aria-hidden="true"></div><canvas id="earth" class="globe-canvas" tabindex="0" role="application" aria-label="Interactive Earth. Arrow keys rotate; plus and minus zoom; Home resets. Swipe sideways to rotate; vertical swipes scroll the page; pinch zooms."></canvas><div class="globe-overlay"></div></div><a class="globe-cta" href="#explore">Ready to explore? ◇</a><div class="globe-tools"><button type="button" id="globe-out" aria-label="Zoom out">−</button><button type="button" id="globe-reset">Reset view</button><button type="button" id="globe-in" aria-label="Zoom in">+</button></div><div class="globe-hint"><span class="globe-hint-mouse">Click to inspect · Drag to rotate · Scroll to zoom</span><span class="globe-hint-touch">Swipe sideways to rotate · Swipe vertically to scroll · Pinch to zoom · Tap to inspect</span></div><div id="globe-status" class="globe-status" role="status">Loading interactive Earth…</div></div></section>
+<div class="globe-area"><section class="pulse" aria-labelledby="pulse-title"><h2 id="pulse-title">Global Evidence Pulse</h2><p>Counts cover unique, verified events.</p><div class="pulse-grid"><button type="button" data-pulse="negative" aria-pressed="false">Negative<strong>—</strong></button><button type="button" data-pulse="neutral" aria-pressed="false">Neutral<strong>—</strong></button><button type="button" data-pulse="positive" aria-pressed="true">Positive<strong>—</strong></button></div><div id="pulse-panel" class="pulse-panel" role="status">Select a category for criteria.</div><p>Verified feed pending. Global coverage unmeasured.</p></section><div class="geo-panel" id="geo-panel" role="status">Tap to inspect. Drag to rotate. Pinch or scroll to zoom.</div><div class="globe-viewport"><div id="fallback" class="fallback" aria-hidden="true"></div><canvas id="earth" class="globe-canvas" tabindex="0" role="application" aria-label="Interactive Earth. Arrow keys rotate; plus and minus zoom; Home resets. Swipe sideways to rotate; vertical swipes scroll the page; pinch zooms."></canvas><div class="globe-overlay"></div></div><a class="globe-cta" href="#explore">Ready to explore? ◇</a><div class="globe-tools"><button type="button" id="globe-out" aria-label="Zoom out">−</button><button type="button" id="globe-reset">Reset view</button><button type="button" id="globe-in" aria-label="Zoom in">+</button></div><div class="globe-hint"><span class="globe-hint-mouse">Click to inspect · Drag to rotate · Scroll to zoom</span><span class="globe-hint-touch">Swipe sideways to rotate · Swipe vertically to scroll · Pinch to zoom · Tap to inspect</span></div><div id="globe-status" class="globe-status" role="status">Loading interactive Earth…</div></div></section>
 <div class="intro-footer"><figure class="quote"><blockquote>“The accumulation of all powers, legislative, executive, and judiciary, in the same hands … may justly be pronounced the very definition of tyranny.”</blockquote><figcaption>James Madison · <a href="https://avalon.law.yale.edu/18th_century/fed47.asp" target="_blank" rel="noopener noreferrer">The Federalist No. 47 (1788)</a> · Abridged excerpt</figcaption></figure></div>
 <section class="content" id="explore"><div class="section-kicker">Choose a path into the evidence</div><h2>Every connection has a story.<br>Every story needs a source.</h2><div class="pathways"><a class="path" href="./discover.html"><span class="number">01 / INVESTIGATE</span><h3>Case Files</h3><p>Explore documented events, competing explanations and original source records.</p><span class="go">Explore investigations ↗</span></a><a class="path" href="./paper-trails.html"><span class="number">02 / TRACE</span><h3>Paper Trails</h3><p>Follow the records behind claims, financial trails and institutional relationships.</p><span class="go">Follow the paper trail ↗</span></a><a class="path" href="./connection-explorer.html"><span class="number">03 / CONNECT</span><h3>Connection Explorer</h3><p>Navigate evidence-backed links across people, organizations and investigations.</p><span class="go">Explore connections ↗</span></a></div>
 <section id="mystery-atlas" aria-labelledby="mystery-atlas-title">
@@ -285,8 +285,46 @@
 })();
 </script>
 <script type="module">
-const pulseCriteria={positive:"Documented improvements in health, rights, peace, environmental restoration, safety or well-being. Requires an identifiable event and source.",negative:"Documented harm, violence, rights violations, preventable damage or deterioration. Requires an identifiable event and source.",neutral:"Mixed, uncertain, procedural or not-yet-assessable developments. Uncertainty must not be forced into good or bad."};document.querySelectorAll("[data-pulse]").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll("[data-pulse]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));document.getElementById("pulse-panel").textContent=pulseCriteria[button.dataset.pulse]+" No audited count available yet."}));
-const pulsePanel=document.getElementById("pulse-panel");let reviewedEvents=[],pulseLoaded=false;const pulseButtons=[...document.querySelectorAll("[data-pulse]")];function pulseRender(){for(const b of pulseButtons){const category=b.dataset.pulse;b.querySelector("strong").textContent=pulseLoaded&&reviewedEvents.length?String(reviewedEvents.filter(e=>e.category===category).length):"—";}const active=pulseButtons.find(b=>b.getAttribute("aria-pressed")==="true");if(active)pulsePanel.textContent=pulseCriteria[active.dataset.pulse]+" "+(pulseLoaded&&reviewedEvents.length?reviewedEvents.filter(e=>e.category===active.dataset.pulse).length+" reviewed events in this curated feed.":"No reviewed events available yet; counts are not zero.");}try{const response=await fetch("./global-evidence-pulse.json",{cache:"no-store"});if(!response.ok)throw Error("feed unavailable");const feed=await response.json();if(feed.schema_version!==1||!Array.isArray(feed.events))throw Error("invalid feed");const seen=new Set();reviewedEvents=feed.events.filter(e=>{if(!e||typeof e.id!=="string"||seen.has(e.id)||!["positive","negative","neutral"].includes(e.category)||typeof e.title!=="string"||!e.title.trim()||typeof e.source_url!=="string"||!/^https:\/\//.test(e.source_url)||typeof e.event_date!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(e.event_date)||!Number.isFinite(e.lat)||!Number.isFinite(e.lon)||Math.abs(e.lat)>90||Math.abs(e.lon)>180||e.review_status!=="verified")return false;seen.add(e.id);return true});pulseLoaded=true;pulseRender();}catch(error){pulsePanel.textContent="Reviewed event feed unavailable; no global count can be calculated.";}
+import {reviewedEventsFromFeed} from "./pulse-events.mjs";
+const pulseCriteria={positive:"Documented improvements in health, rights, peace, environmental restoration, safety or well-being. Requires an identifiable event and source.",negative:"Documented harm, violence, rights violations, preventable damage or deterioration. Requires an identifiable event and source.",neutral:"Mixed, uncertain, procedural or not-yet-assessable developments. Uncertainty must not be forced into good or bad."};
+const pulsePanel=document.getElementById("pulse-panel");
+const pulseButtons=[...document.querySelectorAll("[data-pulse]")];
+let reviewedEvents=[],pulseLoaded=false,pulseFailed=false;
+function pulseRender(){
+  for(const button of pulseButtons){
+    const category=button.dataset.pulse;
+    button.querySelector("strong").textContent=pulseLoaded&&reviewedEvents.length
+      ? String(reviewedEvents.filter(event=>event.category===category).length)
+      : "—";
+  }
+  const active=pulseButtons.find(button=>button.getAttribute("aria-pressed")==="true");
+  if(!active)return;
+  const category=active.dataset.pulse;
+  let summary;
+  if(pulseFailed)summary="Reviewed event feed unavailable; no global count can be calculated.";
+  else if(!pulseLoaded)summary="Loading reviewed event feed; counts pending validation.";
+  else if(!reviewedEvents.length)summary="No reviewed events available yet; counts are not zero.";
+  else {
+    const count=reviewedEvents.filter(event=>event.category===category).length;
+    summary=count+" reviewed "+(count===1?"event":"events")+" in this curated feed.";
+  }
+  pulsePanel.textContent=pulseCriteria[category]+" "+summary;
+}
+pulseButtons.forEach(button=>button.addEventListener("click",()=>{
+  pulseButtons.forEach(other=>other.setAttribute("aria-pressed",String(other===button)));
+  pulseRender();
+}));
+try{
+  const response=await fetch("./global-evidence-pulse.json",{cache:"no-store"});
+  if(!response.ok)throw Error("feed unavailable");
+  const feed=await response.json();
+  reviewedEvents=reviewedEventsFromFeed(feed);
+  pulseLoaded=true;
+  pulseRender();
+}catch(error){
+  pulseFailed=true;
+  pulseRender();
+}
 const status=document.getElementById('globe-status'),fallback=document.getElementById('fallback');
 try{
  const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js');
@@ -419,7 +457,8 @@ try{
     });
   }
 </script>
-<script>
+<script type="module">
+import {reviewedEventsFromFeed} from "./pulse-events.mjs";
 /* Counts reflect the reviewed feed at fetch time; no synthetic scores or zero-for-empty. */
 (async function loadAtlasPulse(){
   const status=document.getElementById('atlas-pulse-status');
@@ -427,16 +466,7 @@ try{
     const response=await fetch('./global-evidence-pulse.json',{cache:'no-store'});
     if(!response.ok)throw new Error('Feed unavailable');
     const data=await response.json();
-    if(!Array.isArray(data.events))throw new Error('Invalid feed');
-    const reviewed=data.events.filter(e=>e&&e.review_status==='verified'&&['positive','negative','neutral'].includes(e.category)&&typeof e.source_url==='string'&&/^https:\/\//i.test(e.source_url)&&typeof e.event_date==='string'&&e.classification_rationale&&e.reviewer&&e.reviewed_at);
-    // Fail closed if event identity or dates are invalid: repeated articles must not inflate totals.
-    const ids=new Set();
-    for(const event of reviewed){
-      if(typeof event.id!=='string'||!event.id.trim()||ids.has(event.id)||!/^\d{4}-\d{2}-\d{2}$/.test(event.event_date)||Number.isNaN(Date.parse(event.event_date))){
-        throw new Error('Invalid or duplicate reviewed event');
-      }
-      ids.add(event.id);
-    }
+    const reviewed=reviewedEventsFromFeed(data);
     if(!reviewed.length){status.textContent='Awaiting verified data. No reviewed events are currently available; this does not mean zero news.';return;}
     for(const category of ['positive','negative','neutral'])document.getElementById('atlas-'+category).textContent=String(reviewed.filter(e=>e.category===category).length);
     const updated=data.updated_at?new Date(data.updated_at):null;
