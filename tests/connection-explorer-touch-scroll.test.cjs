@@ -191,3 +191,39 @@ test('coarse-pointer Explorer links and case/source controls meet 44px touch tar
     'header navigation links need a touch-height and side padding');
   assert.match(coarse, /\.graph\{touch-action:pan-y\}/, 'touch-target improvement must preserve native page scroll');
 });
+
+
+test('keyboard source inspection focuses details without stealing pointer focus', () => {
+  const vm = require('node:vm');
+  const begin = script.indexOf("group.addEventListener('click',act);group.addEventListener('keydown'");
+  const end = script.indexOf('});', begin);
+  assert.ok(begin >= 0 && end > begin, 'the actual graph-node handlers should be testable');
+  assert.match(css, /\.detail h2:focus-visible\{outline:3px solid #64e3c4;outline-offset:3px\}/);
+  assert.match(html, /keyboard selection moves focus to the detail heading/);
+  const handlers = new Map();
+  const group = { addEventListener(name, handler) { handlers.set(name, handler); } };
+  let activations = 0, focusCalls = 0;
+  const heading = { tabIndex: 0, focus() { focusCalls++; } };
+  vm.runInNewContext(script.slice(begin, end), {
+    group, act() { activations++; },
+    $: id => {
+      assert.equal(id, 'detail');
+      return { querySelector: selector => selector === 'h2' ? heading : null };
+    }
+  });
+  const press = key => {
+    let prevented = 0;
+    handlers.get('keydown')({ key, preventDefault() { prevented++; } });
+    return prevented;
+  };
+  assert.equal(press('Enter'), 1);
+  assert.equal(press(' '), 1);
+  assert.equal(activations, 2);
+  assert.equal(focusCalls, 2);
+  assert.equal(heading.tabIndex, -1, 'heading is programmatically focusable but not added to Tab order');
+  assert.equal(press('ArrowRight'), 0, 'ordinary graph navigation remains untouched');
+  assert.equal(activations, 2);
+  handlers.get('click')();
+  assert.equal(activations, 3);
+  assert.equal(focusCalls, 2, 'pointer selection must not redirect keyboard focus');
+});
