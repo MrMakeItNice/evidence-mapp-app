@@ -103,6 +103,41 @@ test('withholds conflicting reviewed coordinates rather than arbitrarily pinning
   ]).length, 0);
 });
 
+test('withholds conflicted canonical event dates and categories without choosing feed order', () => {
+  const conflicts = [
+    withChanges({event_date: '2024-03-01'}),
+    withChanges({category: 'positive'})
+  ];
+  for (const other of conflicts) {
+    for (const candidates of [[event, other], [other, event]]) {
+      assert.deepEqual(reviewedMapEvents(candidates), [],
+        'a canonical event cannot get a first-seen date or category');
+      const list = element('ul');
+      assert.deepEqual(renderReviewedMapList(document, list, candidates, () => {}), []);
+      assert.equal(list.children.length, 0, 'conflicting event stays off the map and list');
+    }
+    const allowed = reviewedMapEvents([
+      event, other, withChanges({id: 'separate-reviewed-event'})
+    ]);
+    assert.deepEqual(allowed.map(item => item.id), ['separate-reviewed-event'],
+      'unrelated verified events remain available');
+  }
+
+  // Same event, same location/date/category may have alternate source titles
+  // without creating duplicate pins or silently making separate event IDs.
+  assert.equal(reviewedMapEvents([
+    event, withChanges({
+      title: 'Another description of the same occurrence',
+      source_url: 'https://other-archive.example.gov/alternate-document'
+    })
+  ]).length, 1);
+
+  // A pending or invalid duplicate is not evidence of editorial disagreement.
+  assert.equal(reviewedMapEvents([
+    event, withChanges({review_status: 'pending', category: 'positive'})
+  ]).length, 1);
+});
+
 test('renders keyboard-focusable inspection buttons with safe text, not HTML', () => {
   const list = element('ul');
   let selection;
