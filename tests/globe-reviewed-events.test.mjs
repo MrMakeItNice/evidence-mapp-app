@@ -47,6 +47,31 @@ test('rejects unpublished, unsourced and mislocated events, without inventing a 
     JSON.stringify(candidate));
 });
 
+test('future-dated occurrences cannot appear as verified geographic events', () => {
+  // At 17:00 UTC the next calendar day has begun in UTC+14 locations.
+  const lateUtc = Date.parse('2026-11-23T17:00:00Z');
+  const mapAsOf = date => reviewedMapEvents([withChanges({event_date: date})], lateUtc);
+  assert.equal(mapAsOf('2026-11-23').length, 1);
+  assert.equal(mapAsOf('2026-11-24').length, 1,
+    'do not reject a date that has begun in an eastern timezone');
+  assert.deepEqual(mapAsOf('2026-11-25'), [],
+    'dates beyond every inhabited timezone are not past events');
+  assert.deepEqual(mapAsOf('9999-12-31'), []);
+
+  // Before UTC+14 reaches the next day, even that date has not begun.
+  assert.deepEqual(reviewedMapEvents(
+    [withChanges({event_date: '2026-11-24'})],
+    Date.parse('2026-11-23T08:00:00Z')
+  ), []);
+
+  const farFuture = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const list = element('ul');
+  assert.deepEqual(renderReviewedMapList(document, list,
+    [withChanges({event_date: farFuture})], () => {}), [],
+  'the accessible list must not show impossible future occurrences either');
+  assert.equal(list.children.length, 0);
+});
+
 test('deduplicates identifiers; no feed produces an empty list', () => {
   assert.deepEqual(reviewedMapEvents(null), []);
   assert.deepEqual(reviewedMapEvents([]), []);
