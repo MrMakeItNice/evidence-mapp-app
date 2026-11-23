@@ -70,3 +70,34 @@ Targeted read-only database identifier/title/official-URL searches found **no di
 The offline audit now distinguishes undated **non-Google** news and outputs only a capped, sorted list of numeric IDs for human triage (no headline or URL content), exposes the IDs of uncovered active news topics, validates that inbox watch-topic references exist in the supplied complete snapshot, and counts published-marked source records missing publisher metadata. Four extra focused tests were added; the full suite now contains **11 tests**. CI verification must be checked at the current head before reporting a pass.
 
 **Release boundary unchanged:** no production database writes, schema migrations, collector reconfiguration, merges, deployments or publication.
+
+
+---
+
+## Follow-up checkpoint — November 23, 2026, 03:49 UTC (November 22, 19:49 Pacific)
+
+Read-only database inspection confirms **980 of 980 news items pending**, **58 discovered in the preceding 24 hours**, **474 news items with no publication timestamp** (455 Google-associated proxies and 19 other items), and **135 pending for more than 14 days**. The **40-item research inbox is entirely pending**: 36 entries have been pending longer than 14 days, with no records discovered in the preceding 24 hours; four lack a watch-topic assignment and four lack publication dates. All date-quality gaps remain review candidates: never infer a source publication date from a discovery timestamp.
+
+Among the **123 published-marked source records**, 53 lack a publication date, one lacks a publisher, and **one lacks any source URL**. The basic HTTP(S)-scheme and whitespace check found zero malformed nonblank URLs in news, inbox, or published-marked sources. This is **syntax screening only**, not a fetch, link-resolution or authenticity check. Exact URL overlaps remain 25 news/inbox and five news/source rows, with no within-collection exact-URL duplicate groups; query-dependent document identifiers must be preserved rather than discarded. All 36 news topics are active, 11 without direct news items; all seven news-watch timestamps are blank and all 11 research-watch timestamps are stale, though those fields alone do not prove collection stopped.
+
+**Collector telemetry:** Six of seven active feeds have successful recent runs as of the 03:49 UTC checkpoint. Positive News's most recent stored status is an error with an HTML access challenge; its last success was **November 11, 2026**. No access challenge was bypassed. The other six feeds report successful recent completions; their latest saved-item counts should not be equated with polling success or source verification.
+
+### Newly staged original government reports (review only)
+
+**GAO-27-108744 — Federal Prisons: Improved Reviews of Natural Deaths and Communications with Families Needed.**
+Official original report: https://www.gao.gov/products/gao-27-108744 .
+**Published and publicly released November 16, 2026.**
+GAO examined Bureau of Prisons natural-death records, found documented health-care deficiencies in **45% of fiscal-year 2024 cases reviewed**, and made 13 recommendations concerning investigations, family notifications, and tracking recommendations. GAO reports approximately 3,000 natural-cause deaths in federal custody in FY2016–FY2025. These are GAO findings based on the agency records and its selected reviews, **not evidence that every death was preventable, criminal or intentionally concealed**. Suggested review queues: custody oversight / justice / verified death investigations. Before linking to individual cases, obtain the relevant primary records and respect family privacy.
+
+**GAO-27-108683 — Space Supply Chains: Additional DOD Actions Could Strengthen Its Enterprise Approach for Managing Risks.**
+Official original report: https://www.gao.gov/products/gao-27-108683 .
+**Published and publicly released November 17, 2026.**
+GAO inspected three Space Force programs and found component-supply risks and coordination gaps, including missing clearly designated leadership for enterprise risk-management work. DOD concurred with three recommendations. This documents **supply-chain and coordination risks**, not deliberate satellite disruption or evidence of an undisclosed operation. Suggested queue: space systems / government oversight / satellites; avoid implying the report describes any specific commercial satellite company not named in the report.
+
+Targeted read-only checks for report identifiers, official URL patterns and distinctive title phrases returned **no direct matches** for either report in `news_items`, `research_inbox` or `sources`. Related reporting or alternate document URLs may exist. No records created, linked, rewritten, or published.
+
+### Review-only engineering change
+
+Added optional offline **citation URL syntax diagnostics** for news, inbox and published-marked sources. Diagnostic output exposes aggregate counts and capped numeric IDs only; it flags missing URL, unsupported scheme, whitespace, malformed URL and embedded credentials without making network calls. It preserves complete query strings for identity decisions. Added capped **older-than-14-days research-inbox numeric ID triage** to distinguish aged pending items from reviewed or recent ones. Four new focused tests cover this behavior (total **15**), with CI verification to be confirmed separately.
+
+**Safety boundary unchanged:** no production SQL mutations or migrations, no collector changes or bypass, no deployment, no merge, no automatic research publication.
