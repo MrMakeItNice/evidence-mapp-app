@@ -272,14 +272,18 @@ export function auditNewsIngestion(snapshot) {
   // numeric-only human review candidates, never automatically corrected dates.
   const futureInboxPublishedIds = [];
   const futureInboxDiscoveryIds = [];
+  const futureInboxAddedIds = [];
   for (const item of inbox) {
     const published = timestamp(item.published_at, 'inbox.published_at');
     const discovered = timestamp(item.discovered_at, 'inbox.discovered_at');
+    const added = timestamp(item.added_at, 'inbox.added_at');
     if (published !== null && published > asOf) futureInboxPublishedIds.push(item.id);
     if (discovered !== null && discovered > asOf) futureInboxDiscoveryIds.push(item.id);
+    if (added !== null && added > asOf) futureInboxAddedIds.push(item.id);
   }
   futureInboxPublishedIds.sort((a,b)=>a-b);
   futureInboxDiscoveryIds.sort((a,b)=>a-b);
+  futureInboxAddedIds.sort((a,b)=>a-b);
   for (const item of inbox) {
     if (item.review_status !== 'pending') continue;
     const discovered = timestamp(item.discovered_at, 'inbox.discovered_at');
@@ -393,6 +397,10 @@ export function auditNewsIngestion(snapshot) {
       discovered_after_snapshot_time: futureInboxDiscoveryIds.length,
       future_discovered_item_ids: futureInboxDiscoveryIds.slice(0,25),
       omitted_future_discovered_item_ids: Math.max(0, futureInboxDiscoveryIds.length-25),
+      // Intake timestamps are not publication dates; future intake requires manual reconciliation.
+      added_after_snapshot_time: futureInboxAddedIds.length,
+      future_added_item_ids: futureInboxAddedIds.slice(0,25),
+      omitted_future_added_item_ids: Math.max(0, futureInboxAddedIds.length-25),
       without_watch_topic: inbox.filter(i => i.watch_topic_id == null).length,
       without_related_case: inbox.filter(i => i.related_case_id == null).length,
       exact_url_duplicate_groups: repeatedGroups(inboxUrls)
