@@ -121,11 +121,37 @@ test('list selection opens full-detail source evidence, focuses the region, and 
   assert.equal(panel.children[4].href, replacement.location_source_url);
 });
 
+test('return-to-list closes source preview and restores focus to the selected event', () => {
+  const detail = element('div');
+  detail.hidden = true;
+  detail.focus = () => { detail.focused = true; };
+  const list = element('ul');
+  const events = [event, withChanges({id: 'archive-02', title: 'Second reviewed event'})];
+  renderReviewedMapList(document, list, events, (record, button) =>
+    inspectReviewedMapSource(document, detail, record, button));
+  const selectedButton = list.children[1].children[0];
+  selectedButton.focus = () => { selectedButton.focused = true; };
+  selectedButton.listeners.click();
+  assert.equal(detail.focused, true);
+  assert.equal(detail.hidden, false);
+  assert.equal(detail.children[0].textContent, 'Second reviewed event');
+  assert.equal(detail.children.length, 6, 'source links and return control are retained');
+  const returnButton = detail.children[5];
+  assert.equal(returnButton.tag, 'button');
+  assert.equal(returnButton.type, 'button');
+  assert.equal(returnButton.textContent, 'Back to map event list');
+  returnButton.listeners.click();
+  assert.equal(detail.hidden, true);
+  assert.equal(detail.children.length, 0, 'closed previews do not leave stale links');
+  assert.equal(selectedButton.focused, true, 'keyboard focus returns to the originating event');
+});
+
 test('homepage places the keyboard preview beside the event list, not only in the tiny globe overlay', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /id="reviewed-globe-events"><\/ul>[\s\S]*?id="reviewed-globe-detail"/);
   assert.match(html, /id="reviewed-globe-detail"[^>]+role="region"[^>]+tabindex="-1" hidden/);
-  assert.match(html, /renderReviewedMapList\(document,mapList,reviewedEvents,event=>inspectReviewedMapSource\(document,document\.getElementById\('reviewed-globe-detail'\),event\)\)/);
+  assert.match(html, /renderReviewedMapList\(document,mapList,reviewedEvents,\(event,button\)=>inspectReviewedMapSource\(document,document\.getElementById\('reviewed-globe-detail'\),event,button\)\)/);
   assert.match(html, /showReviewedMapSource\(document,geoPanel,markerHit\.object\.userData\.event\)/, 'globe marker click preview preserved');
+  assert.match(html, /\.reviewed-globe-detail button\{display:block;[^}]*min-height:44px/);
   assert.match(html, /\.reviewed-globe-detail:focus\{outline:/);
 });
