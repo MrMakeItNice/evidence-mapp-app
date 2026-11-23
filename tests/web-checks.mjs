@@ -114,3 +114,18 @@ assert.match(bluebirdPage,/href="https:\/\/www\.cia\.gov\/readingroom\/docs\/CIA
 assert.match(bluebirdPage,/PDF; may redirect/);
 console.log('PASS: CIA-documented BLUEBIRD to ARTICHOKE continuity is traceable; fallback transcript is explicitly secondary and no false link is promoted.');
 
+// Shared investigation navigation opens exact canonical records, not index cross-references.
+for (const [caseId, name] of [['3','BLUEBIRD'],['4','ARTICHOKE']]) {
+  assert.match(bluebirdPage,new RegExp('href="\\.\\/connection-explorer\\.html#case='+caseId+'"'));
+  assert.match(bluebirdPage,new RegExp('Inspect '+name+' source connections'));
+}
+for (const duplicateId of ['32','33']) {
+  assert.doesNotMatch(bluebirdPage,new RegExp('href="\\.\\/connection-explorer\\.html#case='+duplicateId+'"'));
+}
+const explorerDeepLink = fs.readFileSync('connection-explorer.html','utf8');
+assert.match(explorerDeepLink,/new URLSearchParams\(location\.hash\.slice\(1\)\)\.get\('case'\)/);
+assert.match(explorerDeepLink,/byId\.get\(String\(hash\)\)/);
+assert.match(bluebirdPage,/shared subject or source does not establish coordination or causation/i);
+console.log('PASS: Rabbit Hole offers exact BLUEBIRD/ARTICHOKE Explorer deep links without duplicate cases or causal inference.');
+
+
