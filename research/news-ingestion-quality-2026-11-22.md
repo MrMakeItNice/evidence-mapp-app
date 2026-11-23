@@ -132,3 +132,28 @@ The offline diagnostic now separately flags **latest feed error with a successfu
 **18 focused regression tests and Node syntax checks passed** on code/test commit 034aa271b1dd908e18535e24aacb52be5947788f in https://github.com/MrMakeItNice/evidence-mapp-app/actions/runs/45116252888 . Full application/browser testing remains outstanding.
 
 **Safety boundary:** No production database writes or schema changes, no collector configuration edits, no access bypass, no automatic ingestion/publication, no deployment and no merge.
+
+
+---
+
+## Follow-up checkpoint — November 23, 2026, 06:20 UTC (November 22, 22:20 Pacific)
+
+**Read-only production audit:** 982/982 news items remain pending, 60 discovered in the preceding 24h, 135 pending over 14 days. **476** lack a publication timestamp: **457** are Google-associated and **19** are not. None have a publication timestamp later than the exact audit instant. The research inbox is **40/40 pending**, with **36** aged over 14 days, **4** undated and **4** unassigned to a research watch topic. **53/123** published-marked source records lack publication dates and one lacks a URL. All **36** active news topics were checked, **11** have no directly linked news items (some are editorial/methodology categories). All **11** research watch and **7** news watch last-checked timestamp fields are stale/blank, but live feed telemetry proves recent polling.
+
+**Duplicate and provenance checks:** 25 exact news-to-inbox and five exact news-to-source URL-linked row pairs; **zero exact same-table URL duplicate groups**. Preserve query strings and never auto-merge records. The register and relationships graph contain 387 distinct direct case/source pairs, and the claim-linked path adds one novel pair for **388 distinct catalog pairs**, not independent corroboration. **81/140** published cases lack a complete marked-published source record with publisher, date and HTTP(S)-shaped URL in the two inspected direct linkage paths. This is a metadata review flag, not evidence that their claims are untrue.
+
+**Collector health (retained 24h activity):** Six of seven active feeds have recent successful completions. Positive News had **34 completed HTTP 403** requests and zero HTTP 200 responses; the most recent status is an HTML access challenge and its last recorded success remains **November 11, 2026**. COVID-19 Google News and Epstein Files Google News each had one HTTP 429, plus 34 and 33 HTTP 200 completions respectively. Epstein's most recent feed record was *pending* during this audit, not a confirmed outage. No attempt to bypass access controls or alter feed configuration.
+
+### Newly verified original-agency leads — editorial review only
+
+**GAO-27-108923 — Small Business Research Programs: Selected Agencies Address Foreign Risks and Take Various Approaches to Track Data.** Original publication: https://www.gao.gov/products/gao-27-108923 . **Published and publicly released November 19, 2026.** GAO examined five selected agencies' small-business research-grant due-diligence programs, reporting **over 28,000** proposals assessed and **over 1,700 possible foreign risks** identified in FY2024–2025. **Limitation:** a flagged potential risk does not establish espionage, technology theft, or wrongdoing by an applicant; the five selected agencies are not the complete federal universe. Suggested queue: research integrity / federal grants / national security oversight.
+
+**GAO-27-107854 — Military Education Benefits: DOD Should Take Steps to Ensure Service Members Receive Information About Tuition Assistance.** Original publication: https://www.gao.gov/products/gao-27-107854 . **Published and publicly released November 20, 2026.** GAO found Navy and Air Force orientation policies did not require providing tuition-assistance information at new bases as DOD policy directs, and made two recommendations, both open at publication. **Limitation:** its discussion groups are not a population-wide survey, and participation declines have multiple plausible causes; this finding does not show that every eligible service member was denied benefits. Suggested queue: public-service access / military education / policy accountability.
+
+Targeted SELECT-only identifier, official-URL and distinctive-title searches across `news_items`, `research_inbox`, and `sources` found **zero direct matches** for either GAO report. Related stories, alternate identifiers or URLs may still exist. Both leads are staged **in this PR memo only**, not inserted into the database and not published. Human editorial review must check the original reports and related case context before linking or representing findings as facts.
+
+### Review-only code enhancement
+
+The offline news ingestion diagnostic now emits **capped, deterministically sorted numeric-only ID pairs** for exact URL matches between news/inbox and news/source catalogs. It also provides omitted-pair counts above the 25-pair limit. This makes 25 + 5 existing exact-match candidates actionable to reviewers without disclosing unpublished titles, sensitive text, raw URLs or credentials. Exact matching is conservative: distinct query-selected documents remain distinct, and the tool **never automatically connects or merges records**. Three new focused regression tests cover privacy, deterministic ordering, query identity and cap behavior (21 tests total, pending independent CI verification for this code revision).
+
+**Release boundary:** PR remains draft and unmerged. No database writes, schema/data changes, deployments, automatic content publication, collector configuration changes, or access-challenge bypasses.
