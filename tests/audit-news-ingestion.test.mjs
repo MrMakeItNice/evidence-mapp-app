@@ -412,3 +412,42 @@ test('reports undatable pending inbox records with only numeric IDs and validate
   s.research_inbox[0].added_at='2026-99-99';
   assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp in inbox.added_at/);
 });
+
+
+test('ranks aged pending news by numeric topic ID without revealing unpublished titles',()=>{
+  const s=sample();
+  for (const n of s.news_items) n.discovered_at='2026-10-01T00:00:00Z';
+  for (const id of [3,4,5]) s.news_items.push({
+    id,topic_id:2,source_url:'https://agency.gov/PRIVATE-'+id,
+    discovered_at:'2026-10-01T00:00:00Z',published_at:null,
+    review_status:'pending',headline:'SECRET STORY'
+  });
+  s.expected_counts.news_items=5;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_over_14d,5);
+  assert.deepEqual(report.news.aged_pending_topic_counts,[
+    {topic_id:2,count:3},{topic_id:1,count:2}
+  ]);
+  assert.equal(report.news.omitted_aged_pending_topics,0);
+  assert.ok(!JSON.stringify(report).includes('SECRET STORY'));
+  assert.ok(!JSON.stringify(report).includes('PRIVATE-'));
+});
+
+test('caps tied aged-topic rankings deterministically and excludes nonpending news',()=>{
+  const s=sample();
+  s.news_items[0].review_status='reviewed';
+  s.news_items[0].discovered_at='2026-10-01T00:00:00Z';
+  for (let id=12;id>=1;id--) {
+    if (id>2) s.news_topics.push({id,active:true});
+    s.news_items.push({id:id+100,topic_id:id,
+      source_url:'https://agency.gov/item/'+id,
+      discovered_at:'2026-10-01T00:00:00Z',review_status:'pending',published_at:null});
+  }
+  s.expected_counts.news_items=14;
+  s.expected_counts.news_topics=12;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_over_14d,12);
+  assert.deepEqual(report.news.aged_pending_topic_counts.map(r=>r.topic_id),
+    [1,2,3,4,5,6,7,8,9,10]);
+  assert.equal(report.news.omitted_aged_pending_topics,2);
+});
