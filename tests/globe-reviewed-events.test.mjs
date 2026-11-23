@@ -159,6 +159,35 @@ test('withholds conflicting map-placement rationale for the same ID in either fe
   ]).length, 1, 'unreviewed copies do not override a reviewed location');
 });
 
+test('withholds conflicting geographic source citations for one event ID, regardless of feed order', () => {
+  const changedLocation = withChanges({
+    location_source_url: 'https://other-archive.example.gov/map#district'
+  });
+  for (const candidates of [[event, changedLocation], [changedLocation, event]]) {
+    assert.deepEqual(reviewedMapEvents(candidates), [],
+      'a pin cannot silently choose the first location citation for a canonical event');
+    const list = element('ul');
+    assert.deepEqual(renderReviewedMapList(document, list, candidates, () => {}), []);
+    assert.equal(list.children.length, 0, 'conflicted pins must not appear in accessible previews');
+  }
+
+  assert.deepEqual(reviewedMapEvents([
+    event, changedLocation, withChanges({id: 'unrelated-reviewed-event'})
+  ]).map(item => item.id), ['unrelated-reviewed-event'],
+  'unrelated reviewed locations must remain accessible');
+
+  assert.equal(reviewedMapEvents([
+    event, withChanges({location_source_url: 'https://archive.example.gov:443/report?id=12#location'})
+  ]).length, 1, 'semantically identical HTTPS citations normalize to one map placement');
+
+  assert.equal(reviewedMapEvents([
+    event, withChanges({source_url: 'https://other-archive.example.gov/second-report'})
+  ]).length, 1, 'alternate reporting does not invalidate the same location evidence');
+  assert.equal(reviewedMapEvents([
+    event, withChanges({review_status: 'pending', location_source_url: 'https://other.example.gov/lead'})
+  ]).length, 1, 'unreviewed location leads cannot invalidate a reviewed event');
+});
+
 test('renders keyboard-focusable inspection buttons with safe text, not HTML', () => {
   const list = element('ul');
   let selection;
