@@ -77,7 +77,7 @@ export function showReviewedMapSource(doc, panel, event) {
   link.href = event.source_url;
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
-  link.textContent = 'Inspect original source: ' + event.source_url;
+  link.textContent = 'Inspect original source (opens in new tab): ' + event.source_url;
   const mapNote = doc.createElement('p');
   mapNote.textContent = 'Displayed map point: ' + event.lat + '° latitude, ' + event.lon + '° longitude. ' +
     'Map placement: ' + event.location_note +
@@ -90,7 +90,7 @@ export function showReviewedMapSource(doc, panel, event) {
   locationLink.href = event.location_source_url;
   locationLink.target = '_blank';
   locationLink.rel = 'noopener noreferrer';
-  locationLink.textContent = 'Inspect map location evidence: ' + event.location_source_url;
+  locationLink.textContent = 'Inspect map location evidence (opens in new tab): ' + event.location_source_url;
   panel.append(heading, context, link, mapNote, locationLink);
 }
 
