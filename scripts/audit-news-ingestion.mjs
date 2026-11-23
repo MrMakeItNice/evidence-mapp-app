@@ -287,6 +287,15 @@ export function auditNewsIngestion(snapshot) {
       throw new Error('Unknown inbox watch topic');
     }
   }
+  // These measure only direct inbox assignments, NOT whether watch polling is working.
+  // Inactive topics can retain historical inbox records without indicating an error.
+  const assignedResearchWatchIds = new Set(inbox.map(i => i.watch_topic_id).filter(positiveId));
+  const activeWatchesWithoutInboxIds = researchWatches
+    .filter(w => w.active === true && !assignedResearchWatchIds.has(w.id))
+    .map(w => w.id).sort((a,b) => a-b);
+  const inactiveWatchesWithInboxIds = researchWatches
+    .filter(w => w.active !== true && assignedResearchWatchIds.has(w.id))
+    .map(w => w.id).sort((a,b) => a-b);
   const topicWithItem = new Set(news.map(n => n.topic_id).filter(x => x != null));
   function stale(watches, column) {
     return watches.filter(w => {
@@ -413,6 +422,13 @@ export function auditNewsIngestion(snapshot) {
     },
     watches: {
       active_research: researchWatches.filter(w=>w.active === true).length,
+      // Empty assignment != no research or collector outage; review scope manually.
+      active_research_without_direct_inbox: activeWatchesWithoutInboxIds.length,
+      active_research_without_direct_inbox_ids: activeWatchesWithoutInboxIds.slice(0,25),
+      omitted_active_research_without_inbox_ids: Math.max(0, activeWatchesWithoutInboxIds.length-25),
+      inactive_research_with_inbox_records: inactiveWatchesWithInboxIds.length,
+      inactive_research_with_inbox_ids: inactiveWatchesWithInboxIds.slice(0,25),
+      omitted_inactive_research_with_inbox_ids: Math.max(0, inactiveWatchesWithInboxIds.length-25),
       stale_research_timestamp_fields: stale(researchWatches, 'last_checked_at'),
       active_news: newsWatches.filter(w=>w.active === true).length,
       stale_news_timestamp_fields: stale(newsWatches, 'last_collected_at'),
