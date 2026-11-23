@@ -153,4 +153,15 @@ assert.doesNotMatch(bluebirdPage,/href="https:\/\/www\.intelligence\.senate\.gov
 console.log('PASS: reviewed 1977 Senate hearing section and existing source #258 provide original-document navigation without a duplicate program or public edge.');
 
 
-
+// Investigation path cards use semantic, full-card links, not tiny heading-only tap targets.
+const pathNav = rabbitHole.match(/<nav class="grid" aria-label="Research paths from theories to documented Case Files">([\s\S]*?)<\/nav>/);
+assert.ok(pathNav, 'Missing labeled investigation navigation landmark');
+const pathLinks = [...pathNav[1].matchAll(/<a class="tile research-path" href="([^"]+)"><h3>([^<]+)<\/h3><p>([^<]+)<\/p><\/a>/g)];
+assert.equal(pathLinks.length, 3, 'All three investigation tiles must be whole-card links');
+assert.deepEqual(pathLinks.map(item => item[1]), [
+  './paper-trails.html', './evidence-board.html', './connection-explorer.html#contribute'
+]);
+assert.ok(pathLinks.every(item => item[3].length > 35), 'Links must explain evidence limits and destination');
+assert.match(rabbitHole, /\.research-path\{[^}]*min-height:88px/);
+assert.match(rabbitHole, /\.research-path:focus-visible\{[^}]*outline:3px/);
+console.log('PASS: Rabbit Hole investigation paths offer full-tile touch/keyboard links with clear scope and provenance limits.');
