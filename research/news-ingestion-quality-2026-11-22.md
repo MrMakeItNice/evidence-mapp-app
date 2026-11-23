@@ -101,3 +101,34 @@ Targeted read-only checks for report identifiers, official URL patterns and dist
 Added optional offline **citation URL syntax diagnostics** for news, inbox and published-marked sources. Diagnostic output exposes aggregate counts and capped numeric IDs only; it flags missing URL, unsupported scheme, whitespace, malformed URL and embedded credentials without making network calls. It preserves complete query strings for identity decisions. Added capped **older-than-14-days research-inbox numeric ID triage** to distinguish aged pending items from reviewed or recent ones. Four new focused tests cover this behavior (total **15**), with CI verification to be confirmed separately.
 
 **Safety boundary unchanged:** no production SQL mutations or migrations, no collector changes or bypass, no deployment, no merge, no automatic research publication.
+
+
+---
+
+## Follow-up checkpoint — November 23, 2026, 05:11 UTC (November 22, 21:11 Pacific)
+
+All database reads were SELECT-only. **980/980** news items remain pending; **58** were discovered in the preceding 24h, **474** lack publication timestamps (**455** Google-associated proxies and **19** other records), and **135** are pending longer than 14 days. The research inbox has **40/40 pending**, including **36** older than 14 days, **4** undated and **4** without watch-topic assignment. **53/123** published-marked source records lack publication dates and **one** lacks a source URL. Eleven of 36 active news topics have no directly associated items. All 11 research-watch and seven news-watch metadata timestamps remain stale/blank; **do not equate these fields with collector inactivity**.
+
+A targeted, publisher-label-only breakdown of the **19 non-Google undated records** found **12 Associated Press**, **1 Reuters**, and **6 labeled as government, inspector-general or international-court sources**. These labels guide a manual first-pass source check; they **do not verify original publication dates**. No dates were inferred from discovery times or written to production.
+
+**Collector health, new distinction:** All seven feeds are active and six have a successful poll within 24h, yet **two have a latest stored error state**. Positive News has not successfully collected since **November 11**; **32** completed 403 access-challenge responses were recorded in the preceding 24h. Epstein Files — Google News recorded an HTTP 429 rate-limit response at **04:36 UTC**, despite an earlier successful HTTP 200 at **04:01 UTC**; a new attempt at 05:10 UTC was still pending during inspection. This is **intermittent rate limiting**, not evidence that the collector has been down all day. Other feeds have more recent successful completions. No access challenge was bypassed and no configuration changed.
+
+**Cross-source provenance review:** 25 exact news/inbox URL overlaps, five exact news/source URL overlaps and zero within-table exact URL duplicate groups. The case register, relationship graph and claim path contain **388 distinct case/source pairs**, but **81/140** published cases still lack complete marked-published direct-source metadata through the two assessed direct citation paths. These metrics do not assess document authenticity or validate a claim.
+
+### New agency primary-source candidates (review only; not published)
+
+**GAO-27-108971 — Federal Data Centers: Congress Has an Opportunity to Improve Agencies' Acquisition and Operations.**
+Official page: https://www.gao.gov/products/gao-27-108971 . **Published and publicly released November 18, 2026.** GAO reviewed data center practices at 21 agencies and found that **none had fully addressed all five** selected OMB requirements as of August 2026. GAO proposed that Congress consider reauthorizing or replacing an expired 2023 law. **Limits:** The fifth requirement concerned new data centers and was inapplicable at many agencies. This audit is not evidence of a particular breach or deliberate security weakness. Suggested queue: digital infrastructure / water-energy use / federal oversight.
+
+**GAO-27-109529 — VA Electronic Health Record Modernization: System Deployed to 13 Sites in 2026 and Work Planned to Continue at an Accelerated Pace.**
+Official page: https://www.gao.gov/products/gao-27-109529 . **Published and publicly released November 18, 2026.** This is GAO testimony describing **13 deployments in 2026** and **26 planned for 2027**; GAO says **11 of 18** recommendations from five earlier reports had not been fully implemented. **Limits:** Some findings rely on preliminary ongoing work and VA-reported performance observations; the testimony is not independent confirmation of service outcomes or a new finding for each previously identified concern. Suggested queue: veterans' services / healthcare IT accountability.
+
+Targeted read-only searches of news_items, research_inbox and sources returned **zero direct matches** for these two report identifiers, official URL fragments or selected title phrases. This is not proof that there is no alternate-format or related coverage. Human reviewers must inspect full original reports, check existing case relevance, and preserve source identity and evidence-type distinctions before publication or linking.
+
+### Review-only implementation and verification
+
+The offline diagnostic now separately flags **latest feed error with a successful collection in the preceding 24 hours** versus **latest feed error with no successful collection in that window**. It emits aggregate counts and capped numeric feed IDs, not feed names, error HTML, or private source text. This is a triage signal, not a substitute for checking complete activity logs. Three regression tests cover transient error, persistent error and recovered/healthy status.
+
+**18 focused regression tests and Node syntax checks passed** on code/test commit 034aa271b1dd908e18535e24aacb52be5947788f in https://github.com/MrMakeItNice/evidence-mapp-app/actions/runs/45116252888 . Full application/browser testing remains outstanding.
+
+**Safety boundary:** No production database writes or schema changes, no collector configuration edits, no access bypass, no automatic ingestion/publication, no deployment and no merge.
