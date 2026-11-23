@@ -201,3 +201,42 @@ test('latest successful collector state clears error triage even when watch time
   assert.equal(w.collectors_latest_error_without_recent_success,0);
   assert.equal(w.stale_news_timestamp_fields,1);
 });
+
+
+test('returns numeric-only cross-collection candidates without exposing research content',()=>{
+  const report=auditNewsIngestion(sample());
+  assert.deepEqual(report.overlap.news_inbox_exact_url_id_pairs,[[1,10]]);
+  assert.deepEqual(report.overlap.news_source_exact_url_id_pairs,[[2,20]]);
+  assert.equal(report.overlap.news_inbox_omitted_id_pairs,0);
+  assert.equal(report.overlap.news_source_omitted_id_pairs,0);
+  assert.ok(!JSON.stringify(report).includes('SECRET HEADLINE'));
+  assert.ok(!JSON.stringify(report).includes('news.google.com'));
+  assert.ok(!JSON.stringify(report).includes('agency.gov'));
+});
+
+test('sorts cross-collection candidate IDs and preserves query-specific document identities',()=>{
+  const s=sample();
+  s.news_items.push({id:40,topic_id:2,source_url:s.news_items[0].source_url});
+  s.news_items.push({id:3,topic_id:2,source_url:s.news_items[1].source_url});
+  s.research_inbox.push({id:11,source_url:s.news_items[1].source_url});
+  s.sources.push({id:21,url:'https://agency.gov/document?id=3',published:true});
+  s.expected_counts.news_items=4;
+  s.expected_counts.research_inbox=2;
+  s.expected_counts.sources=2;
+  const overlap=auditNewsIngestion(s).overlap;
+  assert.deepEqual(overlap.news_inbox_exact_url_id_pairs,[[1,10],[2,11],[3,11],[40,10]]);
+  assert.deepEqual(overlap.news_source_exact_url_id_pairs,[[2,20],[3,20]]);
+  assert.equal(overlap.news_source_exact_url_rows,2);
+});
+
+test('caps numeric-only cross-collection candidate IDs with omission counts',()=>{
+  const s=sample();
+  for(let id=129;id>=100;id--) s.news_items.push({id,topic_id:1,source_url:s.news_items[0].source_url});
+  s.expected_counts.news_items=32;
+  const overlap=auditNewsIngestion(s).overlap;
+  assert.equal(overlap.news_inbox_exact_url_rows,31);
+  assert.equal(overlap.news_inbox_exact_url_id_pairs.length,25);
+  assert.deepEqual(overlap.news_inbox_exact_url_id_pairs[0],[1,10]);
+  assert.deepEqual(overlap.news_inbox_exact_url_id_pairs[24],[123,10]);
+  assert.equal(overlap.news_inbox_omitted_id_pairs,6);
+});
