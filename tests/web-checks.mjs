@@ -185,6 +185,16 @@ assert.match(bluebirdPage,/page offsets may differ between scans/);
 assert.equal((bluebirdPage.match(/CHRG-95shrg96408O/g)||[]).length,2,'Catalog identifier should appear only in URL and visible label');
 console.log('PASS: reviewed 1977 Senate hearing section and existing source #258 provide original-document navigation without a duplicate program or public edge.');
 
+// A congressional appendix can depend on an earlier agency record.
+const senateDependency = bluebirdPage.match(/<p id="senate-1977-source-note" tabindex="-1">([\s\S]*?)<\/p>/);
+assert.ok(senateDependency, 'Missing Senate source note');
+assert.match(senateDependency[1], /Printed p\. 67, footnote 4/);
+assert.match(senateDependency[1], /<em>Behavioral Drugs and Testing<\/em>, dated February 11, 1975/);
+assert.match(senateDependency[1], /not necessarily independent corroboration/);
+assert.match(senateDependency[1], /has not been matched to the January 31 or February 5, 1975 records/);
+assert.match(senateDependency[1], /do not count it as a separate verified source/);
+
+
 // A third canonical case cites the same congressional record. Preserve source identity.
 const mkultraSharedHearing = bluebirdPage.match(/<p id="mkultra-shared-hearing-note">([\s\S]*?)<\/p>/);
 assert.ok(mkultraSharedHearing, 'Missing shared MKULTRA hearing note');
