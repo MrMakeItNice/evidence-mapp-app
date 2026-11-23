@@ -30,3 +30,11 @@ test('native scrolling cancels active graph pan without blocking it', () => {
 test('Connection Explorer inline JavaScript remains valid', () => {
   assert.doesNotThrow(() => new Function(script));
 });
+
+test('interactive case and source nodes are exposed as a labeled group, not a flattened image', () => {
+  assert.match(html, /<span class="muted" id="graph-help">Explore the public citation network/);
+  assert.match(html, /<svg id="graph" class="graph" role="group" aria-label="Interactive case and source connection diagram" aria-describedby="graph-help"/);
+  assert.doesNotMatch(html, /<svg id="graph"[^>]*role="img"/);
+  assert.match(script, /class:'node',tabindex:0,role:'button'/);
+  assert.match(script, /e\.key==='Enter'\|\|e\.key===' '/);
+});
