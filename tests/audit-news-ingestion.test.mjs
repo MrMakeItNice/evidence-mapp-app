@@ -123,3 +123,49 @@ test('counts missing published-source publisher independently of missing date',(
   s.sources[0].publisher='Agency';
   assert.equal(auditNewsIngestion(s).sources.published_marked_missing_publisher,0);
 });
+
+test('triages aged inbox items with numeric IDs only',()=>{
+  const s=sample();
+  s.research_inbox[0].discovered_at='2026-10-01T00:00:00Z';
+  const report=auditNewsIngestion(s);
+  assert.equal(report.inbox.pending_over_14d,1);
+  assert.deepEqual(report.inbox.old_pending_item_ids,[10]);
+  assert.equal(report.inbox.omitted_old_pending_item_ids,0);
+  assert.ok(!JSON.stringify(report).includes('SECRET NOTE'));
+});
+
+test('does not count recent or non-pending inbox items as aged',()=>{
+  const s=sample();
+  s.research_inbox[0].discovered_at='2026-11-22T12:00:00Z';
+  assert.equal(auditNewsIngestion(s).inbox.pending_over_14d,0);
+  s.research_inbox[0].discovered_at='2026-10-01T00:00:00Z';
+  s.research_inbox[0].review_status='reviewed';
+  assert.equal(auditNewsIngestion(s).inbox.pending_over_14d,0);
+});
+
+test('flags malformed links but never prints raw URLs or credentials',()=>{
+  const s=sample();
+  s.news_items[0].source_url='ftp://agency.gov/NOT_PUBLIC';
+  s.news_items[1].source_url='https://user:secret@agency.gov/doc';
+  s.research_inbox[0].source_url='https://bad url.example';
+  s.sources[0].url=null;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.malformed_url,2);
+  assert.deepEqual(report.news.malformed_url_item_ids,[1,2]);
+  assert.equal(report.inbox.malformed_url,1);
+  assert.equal(report.sources.missing_url,1);
+  assert.equal(report.sources.malformed_url,0);
+  assert.ok(!JSON.stringify(report).includes('secret'));
+  assert.ok(!JSON.stringify(report).includes('NOT_PUBLIC'));
+});
+
+test('preserves document query strings and ignores unpublished source link problems',()=>{
+  const s=sample();
+  s.news_items[1].source_url='https://agency.gov/document?id=A%20B';
+  s.sources.push({id:21, published:false, url:'javascript:doSomething()'});
+  s.expected_counts.sources=2;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.malformed_url,0);
+  assert.equal(report.sources.malformed_url,0);
+  assert.equal(report.sources.missing_url,0);
+});
