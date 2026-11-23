@@ -93,3 +93,30 @@ test('keeps answers visible when sources are missing or malformed', () => {
     assert.equal(article.children[1].textContent, 'Evidence summary');
   }
 });
+
+test('reports skipped citation links without exposing unsafe URLs or claiming authenticity', () => {
+  const { article, links } = renderSources([
+    { id: 'A', title: 'Archive scan', url: 'https://www.archives.gov/scan?doc=1#page=3' },
+    { id: 'B', title: 'Spoofed host', url: 'https://archives.gov@unsafe.example/scan' },
+    { id: 'C', title: 'URL missing' },
+    null
+  ]);
+  assert.equal(links.length, 1);
+  const warnings = article.children.filter(child => child.tagName === 'p' && /citation links were not shown/.test(child.textContent));
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0].textContent, /3 indexed citation links/);
+  assert.match(warnings[0].textContent, /do not verify document authenticity/);
+  assert.doesNotMatch(warnings[0].textContent, /unsafe\\.example/);
+  assert.equal(article.children[1].textContent, 'Evidence summary');
+
+  const clean = renderSources([{ title: 'Archive scan', url: 'https://www.archives.gov/scan' }]);
+  assert.equal(clean.article.children.filter(child => child.tagName === 'p').length, 1);
+  const absent = renderSources(undefined);
+  assert.equal(absent.article.children.filter(child => child.tagName === 'p').length, 1);
+});
+
+test('reports a single omitted link without adding a misleading zero-sources warning', () => {
+  const { article, links } = renderSources([{ url: 'javascript:alert(1)', title: 'Bad link' }]);
+  assert.equal(links.length, 0);
+  assert.match(article.children.at(-1).textContent, /1 indexed citation link was not shown/);
+});
