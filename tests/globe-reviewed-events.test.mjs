@@ -415,3 +415,46 @@ test('previews expose exact original and geographic citation URLs without losing
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /\.reviewed-globe-detail a\{[^}]*max-width:100%;[^}]*overflow-wrap:anywhere/);
 });
+
+test('same-document location citations disclose one source, including when page fragments differ', () => {
+  const locationPage = withChanges({
+    source_url: 'https://archive.example.gov/report?id=12#p3',
+    location_source_url: 'https://archive.example.gov/report?id=12#map-page'
+  });
+  const [reviewed] = reviewedMapEvents([locationPage]);
+  assert.equal(reviewed.location_cites_same_document, true,
+    'different anchors in the same document do not create independent evidence');
+  const panel = element('div');
+  showReviewedMapSource(document, panel, reviewed);
+  assert.match(panel.children[3].textContent, /reuses the same document/i);
+  assert.match(panel.children[3].textContent, /not independent corroboration/i);
+  assert.equal(panel.children[2].href, locationPage.source_url);
+  assert.equal(panel.children[4].href, locationPage.location_source_url,
+    'distinct section references remain inspectable');
+  const list = element('ul');
+  renderReviewedMapList(document, list, [locationPage], () => {});
+  assert.match(list.children[0].children[1].textContent,
+    /Same document used for both citations; not independent corroboration/);
+});
+
+test('different location URLs remain distinct without claiming source independence', () => {
+  const otherPath = withChanges({
+    location_source_url: 'https://archive.example.gov/maps?id=12#page=2'
+  });
+  const otherQuery = withChanges({
+    location_source_url: 'https://archive.example.gov/report?id=13#map'
+  });
+  for (const candidate of [otherPath, otherQuery]) {
+    const [reviewed] = reviewedMapEvents([candidate]);
+    assert.equal(reviewed.location_cites_same_document, false,
+      'path and query are part of document identity');
+    const panel = element('div');
+    showReviewedMapSource(document, panel, reviewed);
+    assert.match(panel.children[3].textContent, /does not by itself establish independent corroboration/);
+    const list = element('ul');
+    renderReviewedMapList(document, list, [candidate], () => {});
+    assert.match(list.children[0].children[1].textContent,
+      /Distinct citation URL; independence not established/);
+    assert.equal(panel.children[4].href, candidate.location_source_url);
+  }
+});
