@@ -431,7 +431,7 @@ test('homepage places the keyboard preview beside the event list, not only in th
   assert.match(html, /id="reviewed-globe-events"><\/ul>[\s\S]*?id="reviewed-globe-detail"/);
   assert.match(html, /id="reviewed-globe-detail"[^>]+role="region"[^>]+tabindex="-1" hidden/);
   assert.match(html, /renderReviewedMapList\(document,mapList,mapEventCandidates,\(event,button\)=>inspectReviewedMapSource\(document,document\.getElementById\('reviewed-globe-detail'\),event,button\)\)/);
-  assert.match(html, /showReviewedMapSource\(document,geoPanel,markerHit\.object\.userData\.event\)/, 'globe marker click preview preserved');
+  assert.match(html, /showReviewedMapSource\(document,geoPanel,selectedMarker\)/, 'globe marker click preview preserved');
   assert.match(html, /\.reviewed-globe-detail button\{display:block;[^}]*min-height:44px/);
   assert.match(html, /\.reviewed-globe-detail:focus\{outline:/);
 });
@@ -528,12 +528,12 @@ test('globe marker selection opens the same accessible full-width preview as a l
   const end = html.indexOf('function bindGlobeGestures(', start);
   assert.ok(start >= 0 && end > start);
   const inspection = html.slice(start, end);
-  assert.match(inspection, /showReviewedMapSource\\(document,geoPanel,selectedMarker\\)/,
+  assert.match(inspection, /showReviewedMapSource\(document,geoPanel,selectedMarker\)/,
     'the existing globe-surface source readout remains available');
-  assert.match(inspection, /mapRecords\\.findIndex\\(record=>record\\.id===selectedMarker\\.id\\)/,
+  assert.match(inspection, /mapRecords\.findIndex\(record=>record\.id===selectedMarker\.id\)/,
     'marker selection matches its reviewed canonical event, not a title or unreviewed ID');
-  assert.match(inspection, /mapList\\.children\\[listIndex\\]\\?\\.querySelector\\('button'\\)/);
-  assert.match(inspection, /sourceButton\\?\\.click\\(\\)/,
+  assert.match(inspection, /mapList\.children\[listIndex\]\?\.querySelector\('button'\)/);
+  assert.match(inspection, /sourceButton\?\.click\(\)/,
     'reusing the accessible button preserves focus, source provenance, Back and Escape');
 
   const detail = element('div');
