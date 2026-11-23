@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-11-11",
+  "updated_at": "2026-11-23",
   "status": "editorial_candidates_not_live",
   "notice": "Research leads, not reviewed live globe events. No counts or pins until editorial approval. Coordinates are approximate site or administrative locations, not precise occurrence coordinates.",
   "events": [
@@ -24,13 +24,20 @@
       "topic": "ancient-civilizations",
       "category": "positive",
       "event_date": "2026-07-28",
-      "date_basis": "UNESCO assistance approval date",
-      "lat": 13.78,
-      "lon": 104.54,
-      "location_basis": "Approximate Koh Ker archaeological site",
-      "source_url": "https://whc.unesco.org/en/statesparties/kh/assistance/",
+      "date_basis": "Committee approval date recorded in assistance request 3599; not implementation date",
+      "lat": 13.783056,
+      "lon": 104.537222,
+      "location_basis": "UNESCO World Heritage property 1667 reference point (beneficiary site, not decision venue)",
+      "source_url": "https://whc.unesco.org/en/intassistance/3599/",
       "review_status": "pending_editorial_review",
-      "classification_rationale": "Documented support for preserving ancient Khmer heritage; implementation is not yet established."
+      "classification_rationale": "Provisional positive classification for a documented conservation funding approval, not a measured conservation outcome.",
+      "source_record_id": "UNESCO international assistance 3599; World Heritage Committee decision 48COM 11, paragraph 2(2)",
+      "location_source_url": "https://whc.unesco.org/en/list/1667/maps/",
+      "location_note": "UNESCO lists property 1667 at N13 46 59, E104 32 14; converted to decimal degrees rounded to six places. This is the reference point of the heritage property receiving assistance, not where the Committee met, where training occurred, or an exact activity location.",
+      "location_role": "beneficiary_site",
+      "source_reviewed_on": "2026-11-23",
+      "source_limitation": "UNESCO records approval of USD 85,000 and a pending implementation step; expert CVs are required before implementation. Neither disbursement nor completed conservation work is established by this record.",
+      "map_review_requirement": "Do not promote into the public feed until editorial approval and map UI explicitly distinguishing a beneficiary-site reference from an occurrence location; no geographic relationship to other cases is established."
     },
     {
       "id": "who-covid-pheic-ended-2023",
