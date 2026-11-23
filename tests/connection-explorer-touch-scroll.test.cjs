@@ -23,7 +23,7 @@ test('touch gestures have accurate on-screen instructions', () => {
 
 test('native scrolling cancels active graph pan without blocking it', () => {
   assert.ok(script, 'page script should exist');
-  assert.match(script, /graph\.addEventListener\('pointercancel',\(\)=>pan=null\)/);
+  assert.match(script, /graph\.addEventListener\('pointercancel',endPan\)/);
   assert.doesNotMatch(script, /graph\.addEventListener\('pointermove',[^;]*preventDefault\(/);
 });
 
@@ -90,4 +90,54 @@ test('both case and source nodes receive an obvious keyboard-focus outline', () 
   assert.match(css, /\.node:focus-visible>rect:first-of-type\{stroke:#fff;stroke-width:3\}/);
   assert.doesNotMatch(css, /\.node:focus circle\{/);
   assert.match(html, /Tab to a case or source card and press Enter or Space to inspect/);
+});
+
+
+test('only the initiating primary pointer can move or finish a graph pan', () => {
+  const vm = require('node:vm');
+  const start = script.indexOf("let pan=null;const graph=$('graph');");
+  const end = script.indexOf("graph.addEventListener('wheel'", start);
+  assert.ok(start >= 0 && end > start, 'graph pan implementation must be present');
+
+  const listeners = new Map(), captures = [];
+  const graph = {
+    addEventListener(name, fn) { listeners.set(name, fn); },
+    setPointerCapture(id) { captures.push(id); },
+    getBoundingClientRect() { return { width: 760, height: 520 }; }
+  };
+  const view = { x: 0, y: 0, w: 760, h: 520 };
+  let redraws = 0;
+  vm.runInNewContext(script.slice(start, end), {
+    $: () => graph, view, applyView() { redraws++; }
+  });
+  const target = { closest() { return null; } };
+  const fire = (name, id, x = 10, y = 10, extras = {}) => {
+    const fn = listeners.get(name);
+    assert.ok(fn, name + ' handler must exist');
+    fn({ pointerId: id, clientX: x, clientY: y, isPrimary: true, button: 0, target, ...extras });
+  };
+
+  fire('pointerdown', 1);
+  fire('pointerdown', 2, 50, 50, { isPrimary: false });
+  assert.deepEqual(captures, [1], 'a second touch cannot take capture');
+  fire('pointermove', 2, 200, 10);
+  assert.equal(view.x, 0, 'a second pointer cannot pan the first pointer');
+  fire('pointermove', 1, 86, 10);
+  assert.equal(view.x, -76);
+  fire('pointerup', 2);
+  fire('pointermove', 1, 162, 10);
+  assert.equal(view.x, -152, 'another pointer releasing does not cancel the active pan');
+  fire('pointercancel', 1);
+  fire('pointermove', 1, 200, 10);
+  assert.equal(view.x, -152, 'cancel clears only its owning pan');
+
+  fire('pointerdown', 3, 10, 10, { button: 2 });
+  fire('pointerdown', 4, 10, 10, { isPrimary: false });
+  assert.deepEqual(captures, [1], 'right click and nonprimary touch do not initiate a pan');
+  fire('pointerdown', 5);
+  fire('lostpointercapture', 5);
+  fire('pointermove', 5, 100, 10);
+  assert.equal(view.x, -152, 'lost capture ends a pan without moving the view');
+  assert.deepEqual(captures, [1, 5]);
+  assert.equal(redraws, 2, 'only intentional moves redraw the graph');
 });
