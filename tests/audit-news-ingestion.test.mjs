@@ -169,3 +169,35 @@ test('preserves document query strings and ignores unpublished source link probl
   assert.equal(report.sources.malformed_url,0);
   assert.equal(report.sources.missing_url,0);
 });
+
+
+test('classifies latest collector error with a recent earlier success as intermittent',()=>{
+  const s=sample();
+  s.agent_control_feeds[0].last_run_status='error';
+  s.agent_control_feeds[0].name='PRIVATE FEED NAME';
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_latest_error_with_recent_success,1);
+  assert.deepEqual(w.latest_error_recent_success_feed_ids,[1]);
+  assert.equal(w.collectors_latest_error_without_recent_success,0);
+  assert.ok(!JSON.stringify(w).includes('PRIVATE FEED NAME'));
+});
+
+test('classifies latest collector error with stale success separately',()=>{
+  const s=sample();
+  s.agent_control_feeds[0].last_run_status='failed';
+  s.agent_control_feeds[0].last_success_at='2026-11-19T01:00:00Z';
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_latest_error_with_recent_success,0);
+  assert.equal(w.collectors_latest_error_without_recent_success,1);
+  assert.deepEqual(w.latest_error_without_recent_success_feed_ids,[1]);
+  assert.equal(w.collectors_without_success_in_24h,1);
+});
+
+test('latest successful collector state clears error triage even when watch timestamp is stale',()=>{
+  const s=sample();
+  s.agent_control_feeds[0].last_run_status='ok';
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_latest_error_with_recent_success,0);
+  assert.equal(w.collectors_latest_error_without_recent_success,0);
+  assert.equal(w.stale_news_timestamp_fields,1);
+});
