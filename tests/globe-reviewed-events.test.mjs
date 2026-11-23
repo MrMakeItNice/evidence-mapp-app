@@ -396,3 +396,22 @@ test('homepage places the keyboard preview beside the event list, not only in th
   assert.match(html, /\.reviewed-globe-detail button\{display:block;[^}]*min-height:44px/);
   assert.match(html, /\.reviewed-globe-detail:focus\{outline:/);
 });
+
+test('previews expose exact original and geographic citation URLs without losing query or fragment', () => {
+  const record = withChanges({
+    source_url: 'https://records.example.gov/archive/search?id=12#document-3',
+    location_source_url: 'https://records.example.gov/map/location?ref=23#coordinates'
+  });
+  const [reviewed] = reviewedMapEvents([record]);
+  const panel = element('div');
+  showReviewedMapSource(document, panel, reviewed);
+  assert.equal(panel.children[2].textContent, 'Inspect original source: ' + record.source_url);
+  assert.equal(panel.children[4].textContent,
+    'Inspect map location evidence: ' + record.location_source_url);
+  assert.equal(panel.children[2].href, record.source_url);
+  assert.equal(panel.children[4].href, record.location_source_url);
+  assert.notEqual(panel.children[2].textContent, panel.children[4].textContent,
+    'same-host citations must retain their distinct document identities');
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /\\.reviewed-globe-detail a\\{[^}]*max-width:100%;[^}]*overflow-wrap:anywhere/);
+});
