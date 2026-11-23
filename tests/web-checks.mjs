@@ -318,3 +318,14 @@ assert.match(sourceScopeComparison[1], /not declaring a verified contradiction o
 assert.match(sourceScopeComparison[1], /Neither establishes any Project Blue Beam connection or justifies a new public relationship edge/);
 assert.match(bluebirdPage, /#source-scope-comparison summary:focus-visible\{outline:3px/);
 console.log('PASS: CIA #212 and Senate #258 are compared with page-level scope limits, accessible disclosure, and no false contradiction or Blue Beam edge.');
+
+// Archival catalog fallback preserves identity and uncertainty across versions.
+const ciaArchiveFallback = bluebirdPage.match(/<p id="cia-1975-access-note">([\s\S]*?)<\/p>/);
+assert.ok(ciaArchiveFallback, 'Missing CIA archive access note');
+assert.match(ciaArchiveFallback[1], /href="https:\/\/archive\.org\/details\/cia-readingroom-document-01434878" target="_blank" rel="noopener noreferrer"/);
+assert.match(ciaArchiveFallback[1], /same release, not an independent source/);
+assert.match(ciaArchiveFallback[1], /PDF pages 2 and 4/);
+assert.match(ciaArchiveFallback[1], /Internet Archive PDF download could not be verified/);
+assert.match(ciaArchiveFallback[1], /exact identity of the February 11 version cited by the Senate remains a review question/);
+assert.match(ciaArchiveFallback[1], /Do not count versions as independent corroboration/);
+console.log('PASS: CIA archival catalog fallback is not independent corroboration and preserves version uncertainty.');
