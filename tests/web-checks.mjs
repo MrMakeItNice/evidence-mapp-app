@@ -202,8 +202,9 @@ assert.ok(senateDependency, 'Missing Senate source note');
 assert.match(senateDependency[1], /Printed p\. 67, footnote 4/);
 assert.match(senateDependency[1], /<em>Behavioral Drugs and Testing<\/em>, dated February 11, 1975/);
 assert.match(senateDependency[1], /not necessarily independent corroboration/);
-assert.match(senateDependency[1], /has not been matched to the January 31 or February 5, 1975 records/);
-assert.match(senateDependency[1], /do not count it as a separate verified source/);
+assert.match(senateDependency[1], /February 11, 1975 revision has now been located in CIA release C01434878/);
+assert.match(senateDependency[1], /exact copy delivered to the Senate remains unverified/);
+assert.match(senateDependency[1], /do not count the February 5 and 11 versions or the hearing excerpt as independent corroboration/);
 
 
 // A third canonical case cites the same congressional record. Preserve source identity.
@@ -337,6 +338,11 @@ assert.match(ciaArchiveFallback[1], /href="https:\/\/archive\.org\/details\/cia-
 assert.match(ciaArchiveFallback[1], /same release, not an independent source/);
 assert.match(ciaArchiveFallback[1], /PDF pages 2 and 4/);
 assert.match(ciaArchiveFallback[1], /Internet Archive PDF download could not be verified/);
-assert.match(ciaArchiveFallback[1], /exact identity of the February 11 version cited by the Senate remains a review question/);
+assert.match(ciaArchiveFallback[1], /href="https:\/\/organizedabuse\.support\/wp-content\/uploads\/2024\/10\/cia-rd-and-testing-of-behavioral-drugs\.pdf#page=3" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer"/);
+assert.match(ciaArchiveFallback[1], /viewer p\. 3 bears the date February 11, 1975 and is marked Revision/);
+assert.match(ciaArchiveFallback[1], /printed p\. 2 \(viewer p\. 4\), paragraph 4/);
+assert.match(ciaArchiveFallback[1], /Viewer pp\. 8–9 contain the February 5 version marked old/);
+assert.match(ciaArchiveFallback[1], /exact copy transmitted to Congress and a checksum match to the official PDF are not established/);
+assert.match(ciaArchiveFallback[1], /does not establish that all programs were one operation or that any connection to Blue Beam existed/);
 assert.match(ciaArchiveFallback[1], /Do not count versions as independent corroboration/);
 console.log('PASS: CIA archival catalog fallback is not independent corroboration and preserves version uncertainty.');
