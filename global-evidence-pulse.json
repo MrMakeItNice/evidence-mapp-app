@@ -21,7 +21,9 @@
       "counterevidence_urls",
       "confidence",
       "correction_note"
-    ]
+    ],
+    "location_source_url": "Inspectably linked HTTPS evidence for the geographic placement (required to show globe pins; may equal event source URL)",
+    "location_note": "Editorial explanation of how the linked evidence supports the coordinates and whether they are approximate (required for globe pins)"
   },
   "review_policy": [
     "Do not equate article sentiment with event impact.",
@@ -29,6 +31,7 @@
     "Require a specific occurrence, place, date, and source.",
     "Review contradictory evidence and mixed outcomes before classification.",
     "Disclose geographic, language, source-selection, and reporting-period limitations.",
-    "Do not present these counts as proof that the world is objectively improving or worsening."
+    "Do not present these counts as proof that the world is objectively improving or worsening.",
+    "Only map events with an explicitly sourced location basis; a reviewed event citation alone does not establish GPS precision."
   ]
 }
