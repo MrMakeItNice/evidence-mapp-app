@@ -90,3 +90,60 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.equal(sourceNodeId(first), 'source-' + encodeURIComponent(first), 'complete URL is represented in the ID');
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
+
+test('rendered source inspector moves its selected card through native buttons and saves the resulting layout', async () => {
+  const elements = new Map(), stored = new Map();
+  const make = tag => ({
+    tag, children: [], style: {}, attributes: {}, listeners: {}, textContent: '', className: '',
+    append(...items) { this.children.push(...items); },
+    replaceChildren(...items) { this.children = items; },
+    setAttribute(name, value) { this.attributes[name] = value; },
+    addEventListener(name, fn) { this.listeners[name] = fn; },
+    get classList() { const self = this; return {
+      add(name) { self.className += ' ' + name; },
+      remove(name) { self.className = self.className.split(' ').filter(v => v !== name).join(' '); }
+    }; }
+  });
+  const get = id => { if (!elements.has(id)) elements.set(id, make('div')); return elements.get(id); };
+  get('viewport').clientWidth = 1000;
+  const document = {
+    getElementById: get, createElement: make, createElementNS: (_, tag) => make(tag),
+    querySelectorAll: () => get('cards').children
+  };
+  const citation = { case_id: '1', title: 'Original document', url: 'https://records.example.org/archive?id=1' };
+  let opened = 0;
+  vm.runInNewContext(html.match(/<script>([\s\S]*?)<\/script>/)[1], {
+    document, URL, encodeURIComponent,
+    localStorage: { getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value) },
+    window: { open() { opened++; } },
+    fetch: async url => ({ ok: true, json: async () => url.includes('paper-trails-data')
+      ? { references: [citation] } : [{ id: '1', title: 'Published case' }] })
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(get('cards').children.length, 2);
+  const tile = get('cards').children[1];
+  let prevented = 0;
+  tile.listeners.keydown({ key: 'Enter', preventDefault() { prevented++; } });
+  assert.equal(prevented, 1);
+  const inspector = get('details');
+  assert.equal(inspector.children[0].textContent, citation.title);
+  const sourceLink = inspector.children.find(n => n.tag === 'a');
+  assert.equal(sourceLink.href, citation.url);
+  const controls = inspector.children.find(n => n.className === 'move-controls');
+  assert.deepEqual(controls.children.map(n => n.textContent), ['Up', 'Left', 'Right', 'Down']);
+  const start = { x: parseFloat(tile.style.left), y: parseFloat(tile.style.top) };
+  const expected = [[start.x, start.y - 20], [start.x - 20, start.y - 20], [start.x, start.y - 20], [start.x, start.y]];
+  controls.children.forEach((button, index) => {
+    assert.equal(button.type, 'button');
+    button.listeners.click();
+    assert.equal(parseFloat(tile.style.left), expected[index][0]);
+    assert.equal(parseFloat(tile.style.top), expected[index][1]);
+    assert.equal(get('details'), inspector);
+    assert.equal(inspector.children.find(n => n.className === 'move-controls'), controls, 'movement must preserve inspector buttons');
+    assert.match(get('status').textContent, /Moved Original document/);
+  });
+  get('save').listeners.click();
+  const saved = JSON.parse(stored.get('atlas-evidence-board-layout-v2-1'));
+  assert.deepEqual(saved['source-' + encodeURIComponent(citation.url)], start);
+  assert.equal(opened, 0, 'rearranging must not open a source');
+});
