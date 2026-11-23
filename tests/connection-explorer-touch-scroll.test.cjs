@@ -38,3 +38,45 @@ test('interactive case and source nodes are exposed as a labeled group, not a fl
   assert.match(script, /class:'node',tabindex:0,role:'button'/);
   assert.match(script, /e\.key==='Enter'\|\|e\.key===' '/);
 });
+
+
+test('initial Case File selection preserves incoming section anchors', () => {
+  const vm = require('node:vm');
+  const begin = script.indexOf("const hash=new URLSearchParams(location.hash.slice(1)).get('case');");
+  const end = script.indexOf("else $('status').textContent", begin);
+  assert.ok(begin >= 0 && end > begin, 'initial selection branch should be present');
+  const init = script.slice(begin, end);
+  const record = { id: 7, title: 'Test published case' };
+  const byId = new Map([['7', record]]);
+  for (const [hash, shouldUpdate] of [
+    ['#contribute', false],
+    ['#case=7', true],
+    ['', true],
+    ['#other-section', false]
+  ]) {
+    const calls = [];
+    vm.runInNewContext(init, {
+      URLSearchParams, location: { hash }, byId, cases: [record],
+      focus: (id, updateHash) => calls.push({ id, updateHash })
+    });
+    assert.equal(calls.length, 1, 'a default or requested case should still be displayed');
+    assert.equal(calls[0].id, 7);
+    assert.equal(calls[0].updateHash, shouldUpdate, hash || 'no fragment');
+  }
+});
+
+test('later explicit Case File selections still update the address fragment', () => {
+  const vm = require('node:vm');
+  const definition = script.match(/function focus\(id,updateHash=true\)\{[\s\S]*?\}(?=function render\()/);
+  assert.ok(definition, 'case selection must accept a hash-update flag');
+  const writes = [];
+  vm.runInNewContext(
+    'let selected=null;' + definition[0] + 'focus(7,false);focus(7);',
+    {
+      resetView() {}, byId: new Map([['7', { id: 7, title: 'Test published case' }]]),
+      history: { replaceState(_state, _title, hash) { writes.push(hash); } },
+      detail() {}, render() {}, encodeURIComponent
+    }
+  );
+  assert.deepEqual(writes, ['#case=7'], 'only user-driven selection updates #case');
+});
