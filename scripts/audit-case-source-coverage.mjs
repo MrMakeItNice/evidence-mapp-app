@@ -255,15 +255,82 @@ export function auditCaseSourceCoverage(snapshot) {
     target_reference_disagreements:targetReferenceDisagreements
   } : null;
 
+  // Claim->source links are a THIRD pathway, mediated by an individual claim.
+  // A claim source may SUPPORT, REFUTE, or merely contextualize a claim: never
+  // count it as independently verified evidence or an endorsed case-level fact.
+  // Require BOTH complete optional tables, or leave this path unassessed.
+  const claimProvided = ['claims','claim_sources'].some(t =>
+    Object.hasOwn(snapshot,t) || Object.hasOwn(snapshot.expected_counts,t));
+  if (claimProvided) {
+    for (const table of ['claims','claim_sources']) {
+      if (!Array.isArray(snapshot[table]) ||
+          !Number.isSafeInteger(snapshot.expected_counts[table]) ||
+          snapshot.expected_counts[table] < 0 ||
+          snapshot[table].length !== snapshot.expected_counts[table]) {
+        throw new Error('Incomplete claim evidence snapshot');
+      }
+    }
+  }
+  let claimEvidence = null;
+  const claimPairs = new Set();
+  if (claimProvided) {
+    const claims = uniqueMap(snapshot.claims,'id','claim',c =>
+      (c.case_id == null || (id(c.case_id) && cases.has(c.case_id))));
+    const seenClaimSource = new Set();
+    const claimLinkedCases = new Set();
+    const claimCompleteCases = new Set();
+    let unassignedClaimSources = 0;
+    for (const r of snapshot.claim_sources) {
+      if (!object(r) || !id(r.claim_id) || !id(r.source_id) ||
+          !claims.has(r.claim_id) || !sources.has(r.source_id) ||
+          seenClaimSource.has(key(r.claim_id,r.source_id))) {
+        throw new Error('Invalid claim source reference');
+      }
+      seenClaimSource.add(key(r.claim_id,r.source_id));
+      const caseId = claims.get(r.claim_id).case_id;
+      if (caseId == null) {
+        unassignedClaimSources++;
+        continue;
+      }
+      claimPairs.add(key(caseId,r.source_id));
+      if (cases.get(caseId).published) {
+        claimLinkedCases.add(caseId);
+        if (complete(sources.get(r.source_id))) claimCompleteCases.add(caseId);
+      }
+    }
+    const directPairs = new Set([...sourcePairs.keys(),...graphPairs]);
+    const newClaimPairs = [...claimPairs].filter(pair=>!directPairs.has(pair));
+    claimEvidence = {
+      claims_total:claims.size,
+      claim_source_links:seenClaimSource.size,
+      claim_source_links_without_case:unassignedClaimSources,
+      unique_case_source_pairs:claimPairs.size,
+      claim_pairs_also_in_register:[...claimPairs].filter(p=>sourcePairs.has(p)).length,
+      claim_pairs_also_in_graph:graphProvided ? [...claimPairs].filter(p=>graphPairs.has(p)).length : null,
+      claim_pairs_new_to_assessed_direct_paths:newClaimPairs.length,
+      distinct_case_source_pairs_across_assessed_paths:
+        new Set([...sourcePairs.keys(),...graphPairs,...claimPairs]).size,
+      graph_path_assessed:graphProvided,
+      published_cases_with_claim_source_links:claimLinkedCases.size,
+      published_cases_with_complete_marked_published_claim_source:claimCompleteCases.size,
+      // ID-only review candidates. Do not dump claim text, URLs or notes.
+      new_claim_mediated_pairs_for_review:newClaimPairs.slice(0,25).map(p=>{
+        const [caseId,sourceId]=p.split(':').map(Number);
+        return {case_id:caseId,source_id:sourceId};
+      }),
+      omitted_new_claim_mediated_pairs:Math.max(0,newClaimPairs.length-25)
+    };
+  }
+
   flagged.sort((a,b) => a.case_number-b.case_number || a.case_id-b.case_id);
   // Only numeric IDs and reason codes: no titles, URLs, descriptions or private notes.
-  return {summary,relationship_graph:relationshipGraph,flagged_case_count:flagged.length,
+  return {summary,relationship_graph:relationshipGraph,claim_evidence:claimEvidence,flagged_case_count:flagged.length,
     flagged_cases:flagged.slice(0,50),omitted_flagged_cases:Math.max(0,flagged.length-50),
     repeated_underlying_source_pairs:repeated.slice(0,25),
     marked_published_source_ids_outside_case_register:publishedOutsideCaseRegister.slice(0,25).map(s=>s.id),
     omitted_outside_case_register_sources:Math.max(0,publishedOutsideCaseRegister.length-25),
     omitted_repeated_pairs:Math.max(0,repeated.length-25),
-    caveat:'Register references may repeat sources. Register-only metrics must not be interpreted as all source linkage. Relationship graph metrics require a complete optional snapshot. No link, source status or metadata metric proves authenticity or independent corroboration.'};
+    caveat:'Register references may repeat sources. Register-only metrics must not be interpreted as all source linkage. Relationship graph and claim-mediated link metrics require separate complete optional snapshots. A claim link may support, refute, or contextualize; it is not a second independent corroboration. No link, source status or metadata metric proves authenticity or factual accuracy.'};
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
