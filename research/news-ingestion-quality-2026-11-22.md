@@ -1,6 +1,30 @@
 # Evidence Atlas — ingestion quality checkpoint (review only)
 
 
+## Read-only checkpoint — November 23, 2026, 14:52 UTC (06:52 Pacific)
+
+**Production guardrails:** Read-only SELECT statements only against Supabase project `nxlffnplqdobfqxogmxo`. The changes below affect only this draft GitHub PR's source/tests/memo. No production schema/data change, deployment, merge, publication, feed configuration or access-challenge bypass.
+
+**Fresh ingestion inventory:** 991/991 news items pending, 57 discovered in the prior 24 hours, 135 pending beyond 14 days; 477 without publication timestamps, including 19 non-Google-URL items. No news rows had missing discovery timestamps or future discovery timestamps. Inbox: 40 pending, 36 older than 14 days, four missing publication dates and four lacking a watch assignment. All 36 news topics are active, 11 without direct news items; all seven news-watch and 11 research-watch timestamps are blank/older than 24 hours. These stale timestamps do not override collector-completion telemetry.
+
+**Source provenance and identity:** 123/285 sources are marked published; 53 published-marked records lack publication dates, one lacks a primary URL and one lacks a publisher. Source **#285**, marked published, has neither primary nor archive URL and lacks both publisher and publication date; check for originals before editorial status changes. Twenty-five exact news/inbox URL row pairs and five news/source pairs; zero inbox/source pairs, and zero exact duplicate URL groups within any of these three collections. Five news/inbox publisher-label differences: numeric pairs (10,10), (17,13), (18,11), (71,28), (110,36). **Zero exact news/inbox URL pairs currently have a date on only one side.** URLs/aliases do not independently corroborate a claim.
+
+**Collector telemetry (retained preceding 24 hours):** Six of seven active feeds have a recent successful HTTP 200 response. Positive News: **41 HTTP 403, zero HTTP 200**, last recorded success November 11, 2026. Epstein and Palestine/Gaza Google News each logged 40 successful HTTP 200 and one HTTP 429; COVID-19 logged 41 successful HTTP 200 and zero HTTP 429. All three BBC feeds logged 41 successes each. No unauthorized bypass or reconfiguration.
+
+**Review-only engineering:** Added separate counts plus sorted, capped **numeric ID pairs** for exact news/inbox URL matches with (a) the news date absent but inbox date present or (b) inbox date absent but news date present. This complements existing publisher discrepancy and >24-hour timestamp difference diagnostics. It excludes invalid URL identities and makes **no automatic date copying**; two titles using a shared URL are not by themselves independently verified evidence. Three regression tests cover each direction, both-null/both-present values, deterministic 25-pair caps, and credential-bearing malformed links. On the live dataset, both new counts are **zero**; the feature is preventative. CI and full application/browser integration must be independently verified.
+
+### New official documents staged only for editorial review
+
+**GAO-27-109349 — Easy Read supplement on FEMA disaster assistance for people with disabilities.** Official accessible supplement: https://www.gao.gov/products/gao-27-109349 ; published **November 19, 2026**. It summarizes GAO's earlier original report **GAO-26-108057** (https://www.gao.gov/products/gao-26-108057), released **September 30, 2026**, which found training, coordination and disaster-assistance application accessibility gaps and made three recommendations. **Treat the Easy Read supplement and underlying report as the same investigation, not two independent corroborating studies.** The supplement page also refers to `GAO-27-108057` in one description, while the original official product is labeled `GAO-26-108057`; compare the official report cover before assigning a canonical document ID. The sample findings are scoped; they do not prove that every FEMA application failed. Candidate topics: accessible information, disaster assistance, positive accessible-source practices.
+
+**DOJ November 20 sentencing announcement — Nikhil Gupta.** Original announcement: https://www.justice.gov/opa/pr/indian-national-sentenced-over-19-years-prison-plotting-assassinate-us-citizen-new-york-city . Published **November 20, 2026**. DOJ reports a sentence of **235 months** after a **February 2026 guilty plea** to murder-for-hire, conspiracy to commit murder-for-hire, and conspiracy to commit money laundering. The sentencing and plea are distinct procedural developments; broader statements about another government's direction should be attributed to the DOJ narrative unless independently supported by court records and responses. Candidate topic: documented legal proceedings / cross-border security. Do not present government assertions beyond the plea and sentence as independently judicially established.
+
+**Duplicate screen:** Targeted read-only searches across news, inbox and sources found zero direct identifier/official-URL/title-phrase matches for `GAO-27-109349`, `GAO-26-108057`, and the DOJ sentencing lead. Equivalent syndicated reporting or related cases may still be present. These findings are **staged in this memo only**, not inserted into Supabase or published.
+
+**Next editorial priorities:** investigate source #285 missing locator/provenance, examine the five publisher-label pairs and 19 undated non-Google news records, and reduce the 36-item aged inbox/135-item aged news backlog. An authorized replacement for the inaccessible Positive News collector requires separate approval and should not use challenge bypasses.
+
+---
+
 ## Read-only checkpoint — November 23, 2026, 13:35 UTC (05:35 Pacific)
 
 **Production guardrails:** Queried Supabase project `nxlffnplqdobfqxogmxo` using SELECT only. All engineering and editorial changes are confined to draft PR #375's review branch. No schema/data modifications, publication, merging, deployment, collector reconfiguration or access-challenge bypass.
