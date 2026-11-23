@@ -20,8 +20,10 @@ export function reviewedMapEvents(events) {
   const seen = new Set();
   const result = [];
   for (const event of events) {
-    if (!event || event.review_status !== 'verified' || typeof event.id !== 'string' ||
-        !event.id.trim() || seen.has(event.id) || typeof event.title !== 'string' ||
+    // Normalize stable IDs before comparing: whitespace must not produce duplicate pins.
+    const id = typeof event?.id === 'string' ? event.id.trim() : '';
+    if (!event || event.review_status !== 'verified' || !id ||
+        seen.has(id) || typeof event.title !== 'string' ||
         !event.title.trim() || !CATEGORIES.has(event.category) ||
         !calendarDate(event.event_date) || !Number.isFinite(event.lat) ||
         !Number.isFinite(event.lon) || Math.abs(event.lat) > 90 ||
@@ -33,8 +35,8 @@ export function reviewedMapEvents(events) {
     const url = safeSourceUrl(event.source_url);
     const locationUrl = safeSourceUrl(event.location_source_url);
     if (!url || !locationUrl) continue;
-    seen.add(event.id);
-    result.push({id: event.id, title: event.title.trim(), category: event.category,
+    seen.add(id);
+    result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
