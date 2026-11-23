@@ -17,10 +17,10 @@ function safeSourceUrl(value) {
 
 export function reviewedMapEvents(events) {
   if (!Array.isArray(events)) return [];
-  // Conflicting reviewed coordinates for the same canonical event ID must not
-  // select an arbitrary first-seen pin location.
+  // A single canonical ID with inconsistent position, date, or editorial category
+  // must not select an arbitrary first-seen map pin or marker color.
   const seen = new Map();
-  const conflictingLocations = new Set();
+  const conflictingDetails = new Set();
   const result = [];
   for (const event of events) {
     // Normalize stable IDs before comparing: whitespace must not produce duplicate pins.
@@ -40,17 +40,20 @@ export function reviewedMapEvents(events) {
     if (!url || !locationUrl) continue;
     const previous = seen.get(id);
     if (previous) {
-      if (previous.lat !== event.lat || previous.lon !== event.lon) conflictingLocations.add(id);
+      if (previous.lat !== event.lat || previous.lon !== event.lon ||
+          previous.event_date !== event.event_date || previous.category !== event.category) {
+        conflictingDetails.add(id);
+      }
       continue;
     }
-    seen.set(id, {lat: event.lat, lon: event.lon});
+    seen.set(id, {lat: event.lat, lon: event.lon, event_date: event.event_date, category: event.category});
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
       location_note: event.location_note.trim()});
   }
-  return result.filter(event => !conflictingLocations.has(event.id));
+  return result.filter(event => !conflictingDetails.has(event.id));
 }
 
 export function showReviewedMapSource(doc, panel, event) {
