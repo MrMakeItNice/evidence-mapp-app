@@ -151,7 +151,8 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
     // Announce both provenance roles when a keyboard user focuses the event.
     // These hosts may coincide; they are not independent corroboration.
     context.id = 'reviewed-globe-event-context-' + buttons.length;
-    context.textContent = event.event_date + ' · Event source: ' + event.source_host +
+    context.textContent = 'Event ID: ' + event.id + ' · ' + event.event_date +
+      ' · Map placement: ' + event.location_note + ' · Event source: ' + event.source_host +
       ' · Location evidence: ' + event.location_source_host + ' · ' + event.category +
       (event.location_cites_same_document ?
         ' · Same document used for both citations; not independent corroboration' :
