@@ -185,6 +185,22 @@ assert.match(bluebirdPage,/page offsets may differ between scans/);
 assert.equal((bluebirdPage.match(/CHRG-95shrg96408O/g)||[]).length,2,'Catalog identifier should appear only in URL and visible label');
 console.log('PASS: reviewed 1977 Senate hearing section and existing source #258 provide original-document navigation without a duplicate program or public edge.');
 
+// A third canonical case cites the same congressional record. Preserve source identity.
+const mkultraSharedHearing = bluebirdPage.match(/<p id="mkultra-shared-hearing-note">([\s\S]*?)<\/p>/);
+assert.ok(mkultraSharedHearing, 'Missing shared MKULTRA hearing note');
+assert.equal((bluebirdPage.match(/id="mkultra-shared-hearing-note"/g)||[]).length,1);
+assert.match(mkultraSharedHearing[1], /Source #258 is also indexed under the published MKULTRA Case #1 \(record ID 1; research reference #1\)/);
+assert.match(mkultraSharedHearing[1], /href="\.\/paper-trails\.html#case-1"/);
+assert.match(mkultraSharedHearing[1], /href="\.\/connection-explorer\.html#case=1"/);
+assert.match(mkultraSharedHearing[1], /href="https:\/\/www\.intelligence\.senate\.gov\/wp-content\/uploads\/2024\/08\/sites-default-files-hearings-95mkultra\.pdf#page=7" target="_blank" rel="noopener noreferrer"/);
+assert.match(mkultraSharedHearing[1], /printed p\. 3; PDF viewer p\. 7/);
+assert.match(mkultraSharedHearing[1], /same hearing, not an additional independent source/);
+assert.match(mkultraSharedHearing[1], /do not prove that programs were identical or establish a Project Blue Beam connection/);
+const hearingRefsForMkultra = JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).references;
+assert.ok(hearingRefsForMkultra.some(r => String(r.case_id)==='1' && String(r.source_id)==='258' && r.url==='https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf'));
+console.log('PASS: MKULTRA canonical navigation shares existing hearing #258 without double-counting or inferring Blue Beam links.');
+
+
 
 // Keep primary-source and uncertainty notes discoverable from the BLUEBIRD/Blue Beam comparison.
 const sourceJumpNav = bluebirdPage.match(/<nav class="source-jumps" aria-label="BLUEBIRD and ARTICHOKE evidence notes">([\s\S]*?)<\/nav>/);
