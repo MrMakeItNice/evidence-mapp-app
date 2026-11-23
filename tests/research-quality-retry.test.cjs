@@ -17,7 +17,8 @@ function boot(fetchImpl){
     if(!elements.has(id))elements.set(id,{
       value:id==='filter'?'all':'',
       hidden:id==='retry',disabled:id==='q'||id==='filter',
-      textContent:'',innerHTML:'',events:{},
+      textContent:'',innerHTML:'',events:{},focused:false,
+      focus(){this.focused=true},
       addEventListener(name,fn){this.events[name]=fn}
     });
     return elements.get(id);
@@ -53,6 +54,7 @@ test('failed case-index request offers retry without fabricating quality metrics
   assert.equal(el('q').disabled,false);
   assert.equal(el('filter').disabled,false);
   assert.equal(el('casesN').textContent,2);
+  assert.equal(el('q').focused,true,'successful retry restores focus to case search');
   assert.equal(el('officialN').textContent,1);
   assert.match(el('status').textContent,/2 of 2 matching published cases/);
 });
@@ -63,6 +65,7 @@ test('normal success keeps retry hidden and allows filtering',async()=>{
   assert.equal(el('retry').hidden,true);
   assert.equal(el('casesN').textContent,1);
   assert.equal(el('q').disabled,false);
+  assert.equal(el('q').focused,false,'initial success must not unexpectedly move focus');
   el('filter').value='official_missing';
   el('filter').events.change();
   assert.match(el('status').textContent,/1 of 1 matching published cases/);
@@ -75,4 +78,23 @@ test('invalid response never activates a misleading empty case browser',async()=
   assert.equal(el('q').disabled,true);
   assert.equal(el('filter').disabled,true);
   assert.equal(el('casesN').textContent,'');
+});
+
+
+test('failed retry leaves focus on visible retry control until a successful reload',async()=>{
+  let attempts=0;
+  const el=boot(async()=>{
+    attempts++;
+    if(attempts<3)throw Error('temporary outage');
+    return {ok:true,json:async()=>[{id:21,title:'Recovered case',case_number:21}]};
+  });
+  await flush();
+  assert.equal(el('retry').hidden,false);
+  await el('retry').events.click();
+  assert.equal(el('retry').hidden,false);
+  assert.equal(el('q').focused,false,'failed retry should not jump to unavailable search');
+  await el('retry').events.click();
+  assert.equal(el('retry').hidden,true);
+  assert.equal(el('q').focused,true);
+  assert.equal(attempts,3);
 });
