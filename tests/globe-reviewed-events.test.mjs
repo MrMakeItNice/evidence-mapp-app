@@ -335,6 +335,22 @@ test('Escape closes the current reviewed-source preview and returns focus to its
   assert.equal(first.focused, true);
 });
 
+test('unmarked globe surface selections do not imply verified event locations', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const start = html.indexOf('function inspectLocation(e){');
+  const end = html.indexOf('function bindGlobeGestures(', start);
+  assert.ok(start >= 0 && end > start, 'source-preview globe inspection handler exists');
+  const inspection = html.slice(start, end);
+  assert.match(inspection, /Globe cursor:/);
+  assert.match(inspection, /approximate globe-surface selection, not a verified event location/);
+  assert.match(inspection, /mapRecords\.length\s*\?/,
+    'the message must depend on whether reviewed event pins exist');
+  assert.match(inspection, /No reviewed event marker was selected here/);
+  assert.match(inspection, /No reviewed geographic events are available in this feed/);
+  assert.doesNotMatch(inspection, /Verified local news events are not yet connected/,
+    'reviewed pins must not trigger a false empty-feed notice');
+});
+
 test('homepage places the keyboard preview beside the event list, not only in the tiny globe overlay', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /id="reviewed-globe-events"><\/ul>[\s\S]*?id="reviewed-globe-detail"/);
