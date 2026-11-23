@@ -139,10 +139,10 @@ assert.match(bluebirdPage,/That alone does not demonstrate a shared operation, m
 assert.match(bluebirdPage,/Documented relationship \(different pair\)/);
 assert.match(bluebirdPage,/href="#senate-1977-source-note">source-backed BLUEBIRD → ARTICHOKE rename<\/a>/);
 assert.match(bluebirdPage,/a proposed BLUEBIRD–Blue Beam connection would require direct evidence, alternatives and counterevidence before review/);
-assert.match(bluebirdPage,/<strong>Thematic similarity:<\\/strong> no shared method or coordinated activity/);
+assert.match(bluebirdPage,/<strong>Thematic similarity:<\/strong> no shared method or coordinated activity/);
 assert.match(bluebirdPage,/name resemblance alone is not a thematic evidence edge/);
-assert.match(bluebirdPage,/<strong>Investigator hypothesis:<\\/strong>/);
-assert.match(bluebirdPage,/<strong>Contradicted link:<\\/strong> none is affirmatively established by this review/);
+assert.match(bluebirdPage,/<strong>Investigator hypothesis:<\/strong>/);
+assert.match(bluebirdPage,/<strong>Contradicted link:<\/strong> none is affirmatively established by this review/);
 assert.match(bluebirdPage,/lack of supporting evidence alone does not prove a claim false/);
 assert.doesNotMatch(bluebirdPage,/BLUEBIRD versus Blue Beam — thematic similarity only/);
 assert.doesNotMatch(bluebirdPage,/These entries share suggestive wording and broad themes only/);
