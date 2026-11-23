@@ -1,0 +1,24 @@
+name: Classic Connection Explorer touch-scroll regression
+
+on:
+  pull_request:
+    paths:
+      - 'connection-explorer.html'
+      - 'tests/connection-explorer-touch-scroll.test.cjs'
+      - '.github/workflows/connection-explorer-touch-scroll.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  touch-scroll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify touch scrolling and page syntax
+        run: node --test tests/connection-explorer-touch-scroll.test.cjs
