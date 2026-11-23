@@ -13,18 +13,22 @@ assert.match(html,/<button id="retry" type="button" hidden>/);
 
 function boot(fetchImpl){
   const elements=new Map();
+  const document={activeElement:null};
   const el=id=>{
     if(!elements.has(id))elements.set(id,{
       value:id==='filter'?'all':'',
       hidden:id==='retry',disabled:id==='q'||id==='filter',
-      textContent:'',innerHTML:'',events:{},focused:false,
-      focus(){this.focused=true},
+      textContent:'',innerHTML:'',events:{},focused:false,attributes:{},
+      focus(){this.focused=true;document.activeElement=this},
+      setAttribute(name,value){this.attributes[name]=String(value)},
+      removeAttribute(name){delete this.attributes[name]},
       addEventListener(name,fn){this.events[name]=fn}
     });
     return elements.get(id);
   };
+  document.getElementById=el;
   vm.runInNewContext(script,{
-    document:{getElementById:el},
+    document,
     fetch:fetchImpl,AbortController,setTimeout,clearTimeout,encodeURIComponent
   },{timeout:1500});
   return el;
@@ -48,6 +52,7 @@ test('failed case-index request offers retry without fabricating quality metrics
   assert.equal(el('retry').hidden,false);
   assert.match(el('status').textContent,/cannot be loaded/);
   assert.equal(el('casesN').textContent,'');
+  el('retry').focus();
   await el('retry').events.click();
   assert.equal(requests,2);
   assert.equal(el('retry').hidden,true);
@@ -90,11 +95,38 @@ test('failed retry leaves focus on visible retry control until a successful relo
   });
   await flush();
   assert.equal(el('retry').hidden,false);
+  el('retry').focus();
   await el('retry').events.click();
   assert.equal(el('retry').hidden,false);
+  assert.equal(el('retry').focused,true,'failed retry leaves the keyboard target available');
+  assert.equal(el('retry').attributes['aria-disabled'],undefined);
   assert.equal(el('q').focused,false,'failed retry should not jump to unavailable search');
   await el('retry').events.click();
   assert.equal(el('retry').hidden,true);
   assert.equal(el('q').focused,true);
   assert.equal(attempts,3);
+});
+
+test('in-flight retry stays focusable without duplicate requests or focus theft',async()=>{
+  let attempts=0,resolveRetry;
+  const el=boot(async()=>{
+    attempts++;
+    if(attempts===1)throw Error('offline');
+    return new Promise(resolve=>{resolveRetry=resolve});
+  });
+  await flush();
+  el('retry').focus();
+  const pending=el('retry').events.click();
+  assert.equal(el('retry').hidden,false,'a retry must not remove the focused control while loading');
+  assert.equal(el('retry').attributes['aria-disabled'],'true');
+  assert.equal(el('retry').textContent,'Loading cases…');
+  await el('retry').events.click();
+  assert.equal(attempts,2,'a second click must not start another fetch');
+  el('other').focus();
+  resolveRetry({ok:true,json:async()=>[{id:9,title:'Reviewed case',case_number:9}]});
+  await pending;
+  assert.equal(el('retry').hidden,true);
+  assert.equal(el('retry').attributes['aria-disabled'],undefined);
+  assert.equal(el('q').disabled,false);
+  assert.equal(el('q').focused,false,'finishing a retry must not steal focus from a new target');
 });
