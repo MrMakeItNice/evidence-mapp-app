@@ -202,6 +202,18 @@ for (const link of sourceJumpLinks) {
 }
 assert.match(bluebirdPage,/\.source-jumps a\{[^}]*min-height:44px/);
 assert.match(bluebirdPage,/\.source-jumps a:focus-visible\{[^}]*outline:3px/);
+// In-page source-jump destinations are visually identifiable and focusable without
+// adding extra sequential tab stops. These static checks do not replace browser QA.
+assert.deepEqual(sourceJumpLinks.slice(0,2).map(link => link[2]), [
+  '1975 CIA file review · source #212',
+  '1977 Senate hearing · source #258'
+]);
+for (const id of sourceJumpLinks.map(link => link[1])) {
+  assert.match(bluebirdPage, new RegExp('id="'+id+'" tabindex="-1"'));
+  assert.match(bluebirdPage, new RegExp('#'+id+':target'));
+}
+assert.match(bluebirdPage, /:target\{outline:3px solid #0b8671;outline-offset:4px;background:#eefaf5\}/);
+
 console.log('PASS: source-scope notes and Blue Beam assessment have unique accessible 44px jump links.');
 
 // Investigation path cards use semantic, full-card links, not tiny heading-only tap targets.
@@ -220,7 +232,7 @@ console.log('PASS: Rabbit Hole investigation paths offer full-tile touch/keyboar
 
 // An already indexed CIA retrospective is visible as a single shared record, with a
 // document-specific negative finding and no accidental Blue Beam or rename inference.
-const indexedSource212 = bluebirdPage.match(/<p id="cia-1975-indexed-source-note">([\s\S]*?)<\/p>/);
+const indexedSource212 = bluebirdPage.match(/<p id="cia-1975-indexed-source-note" tabindex="-1">([\s\S]*?)<\/p>/);
 assert.ok(indexedSource212, 'Missing the indexed 1975 CIA memorandum citation');
 assert.match(indexedSource212[1],/Separate indexed CIA record — source #212/);
 assert.match(indexedSource212[1],/dated January 31, 1975/);
@@ -234,7 +246,7 @@ assert.match(indexedSource212[1],/href="https:\/\/nsarchive2\.gwu\.edu\/NSAEBB\/
 console.log('PASS: already indexed CIA source #212 links BLUEBIRD and ARTICHOKE without duplicate corroboration or Blue Beam promotion.');
 
 // Compare two indexed official records without promoting apparent differences to a verified contradiction.
-const sourceScopeComparison = bluebirdPage.match(/<details id="source-scope-comparison">([\s\S]*?)<\/details>/);
+const sourceScopeComparison = bluebirdPage.match(/<details id="source-scope-comparison" tabindex="-1">([\s\S]*?)<\/details>/);
 assert.ok(sourceScopeComparison, 'Missing collapsible source-scope comparison');
 assert.equal((bluebirdPage.match(/id="source-scope-comparison"/g)||[]).length, 1);
 for (const id of ['cia-1975-indexed-source-note', 'senate-1977-source-note']) {
