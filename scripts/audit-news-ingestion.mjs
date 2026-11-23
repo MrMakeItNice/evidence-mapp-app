@@ -215,11 +215,25 @@ export function auditNewsIngestion(snapshot) {
     if (discovered !== null && discovered <= asOf && discovered >= asOf - 86400000) discovered24h++;
     if (n.review_status === 'pending' && discovered !== null && discovered < asOf - 14 * 86400000) pending14d++;
   }
-  const oldPendingInboxIds = inbox.filter(item => {
+  // Some imported inbox records may have an added_at but no discovered_at.
+  // Use the explicit discovery timestamp when available, otherwise fall back to
+  // the ingestion date. Report records with neither rather than silently treating
+  // them as fresh; this is triage metadata, not proof of source publication age.
+  const oldPendingInboxIds = [];
+  const fallbackInboxAgeIds = [];
+  const unknownInboxAgeIds = [];
+  for (const item of inbox) {
+    if (item.review_status !== 'pending') continue;
     const discovered = timestamp(item.discovered_at, 'inbox.discovered_at');
-    return item.review_status === 'pending' && discovered !== null &&
-      discovered < asOf - 14 * 86400000;
-  }).map(item => item.id).sort((a,b)=>a-b);
+    const added = timestamp(item.added_at, 'inbox.added_at');
+    if (discovered === null && added !== null) fallbackInboxAgeIds.push(item.id);
+    const firstSeen = discovered ?? added;
+    if (firstSeen === null) unknownInboxAgeIds.push(item.id);
+    else if (firstSeen < asOf - 14 * 86400000) oldPendingInboxIds.push(item.id);
+  }
+  oldPendingInboxIds.sort((a,b)=>a-b);
+  fallbackInboxAgeIds.sort((a,b)=>a-b);
+  unknownInboxAgeIds.sort((a,b)=>a-b);
   const activeTopics = topics.filter(t => t.active === true);
   const researchWatchIds = new Set(researchWatches.map(w => w.id));
   for (const item of inbox) {
@@ -287,6 +301,12 @@ export function auditNewsIngestion(snapshot) {
       pending_over_14d: oldPendingInboxIds.length,
       old_pending_item_ids: oldPendingInboxIds.slice(0,25),
       omitted_old_pending_item_ids: Math.max(0, oldPendingInboxIds.length - 25),
+      pending_aged_by_added_at_fallback: fallbackInboxAgeIds.length,
+      fallback_age_item_ids: fallbackInboxAgeIds.slice(0,25),
+      omitted_fallback_age_item_ids: Math.max(0, fallbackInboxAgeIds.length - 25),
+      pending_without_any_discovery_or_added_date: unknownInboxAgeIds.length,
+      unknown_age_item_ids: unknownInboxAgeIds.slice(0,25),
+      omitted_unknown_age_item_ids: Math.max(0, unknownInboxAgeIds.length - 25),
       ...inboxUrlQuality,
       missing_publication_timestamp: inbox.filter(i => absent(i.published_at)).length,
       without_watch_topic: inbox.filter(i => i.watch_topic_id == null).length,
