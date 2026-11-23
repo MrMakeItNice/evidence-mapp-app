@@ -593,3 +593,52 @@ test('missing archive column is unknown, not evidence of a missing archival link
   assert.deepEqual(report.published_unknown_archive_field_source_ids,[20]);
 });
 
+
+
+test('flags one-sided dates for exact news/inbox URLs without copying metadata',()=>{
+  const s=sample();
+  s.news_items[0].published_at='2026-11-20T02:00:00Z';
+  let r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.inbox_missing_news_dated_pairs,1);
+  assert.deepEqual(r.inbox_missing_news_dated_id_pairs,[[1,10]]);
+  assert.equal(r.news_missing_inbox_dated_pairs,0);
+  s.news_items[0].published_at=null;
+  s.research_inbox[0].published_at='2026-11-20T02:00:00Z';
+  r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.news_missing_inbox_dated_pairs,1);
+  assert.deepEqual(r.news_missing_inbox_dated_id_pairs,[[1,10]]);
+  assert.equal(r.inbox_missing_news_dated_pairs,0);
+  assert.ok(!JSON.stringify(r).includes('https://'));
+});
+
+test('both missing or both present are not one-sided date reconciliation candidates',()=>{
+  const s=sample();
+  let r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.news_missing_inbox_dated_pairs,0);
+  assert.equal(r.inbox_missing_news_dated_pairs,0);
+  s.news_items[0].published_at='2026-11-22T03:00:00Z';
+  s.research_inbox[0].published_at='2026-11-22T03:00:00Z';
+  r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.news_missing_inbox_dated_pairs,0);
+  assert.equal(r.inbox_missing_news_dated_pairs,0);
+});
+
+test('one-sided date candidates are numeric, sorted, capped and exclude invalid links',()=>{
+  const s=sample();
+  s.research_inbox[0].published_at='2026-11-22T03:00:00Z';
+  for(let id=35;id>=3;id--) s.news_items.push({
+    id,topic_id:1,source_url:s.news_items[0].source_url,published_at:null
+  });
+  s.news_items.push({id:50,topic_id:1,source_url:'https://person:secret@agency.gov/doc',
+    published_at:null});
+  s.research_inbox.push({id:20,source_url:'https://person:secret@agency.gov/doc',
+    published_at:'2026-11-22T03:00:00Z'});
+  s.expected_counts.news_items=s.news_items.length;
+  s.expected_counts.research_inbox=s.research_inbox.length;
+  const r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.news_missing_inbox_dated_pairs,34);
+  assert.deepEqual(r.news_missing_inbox_dated_id_pairs[0],[1,10]);
+  assert.deepEqual(r.news_missing_inbox_dated_id_pairs[24],[27,10]);
+  assert.equal(r.omitted_news_missing_inbox_dated_id_pairs,9);
+  assert.ok(!JSON.stringify(r).includes('person:secret'));
+});
