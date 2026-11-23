@@ -70,3 +70,17 @@ assert.match(bluebirdPage,/No public relationship edge is created here/);
 assert.match(bluebirdPage,/not a documented link or evidence of coordination/);
 assert.match(bluebirdPage,/target="_blank" rel="noopener noreferrer"/);
 console.log('PASS: BLUEBIRD canonical case and Blue Beam hypothesis remain distinct; archival link and non-causal guard present.');
+
+// Documented BLUEBIRD→ARTICHOKE rename remains distinct from the Blue Beam theory.
+assert.equal((bluebirdPage.match(/id="bluebird-artichoke"/g)||[]).length,1);
+assert.match(bluebirdPage,/Documented historical link/);
+assert.match(bluebirdPage,/Project BLUEBIRD was renamed Project ARTICHOKE/);
+assert.match(bluebirdPage,/August 1951/);
+assert.match(bluebirdPage,/href="\.\/paper-trails\.html#case-4"/);
+assert.doesNotMatch(bluebirdPage,/href="\.\/paper-trails\.html#case-33"/);
+assert.match(bluebirdPage,/C0143487/);
+assert.match(bluebirdPage,/release marking 2017\/01\/18/);
+assert.match(bluebirdPage,/incomplete and fragmentary project records/);
+assert.match(bluebirdPage,/does not establish any connection with Project Blue Beam/);
+console.log('PASS: CIA-documented BLUEBIRD to ARTICHOKE continuity is traceable without promoting Blue Beam or duplicate case indexes.');
+
