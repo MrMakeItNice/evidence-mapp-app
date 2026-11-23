@@ -451,3 +451,43 @@ test('caps tied aged-topic rankings deterministically and excludes nonpending ne
     [1,2,3,4,5,6,7,8,9,10]);
   assert.equal(report.news.omitted_aged_pending_topics,2);
 });
+
+
+test('pending news with no discovered_at is explicitly tracked without assuming its age',()=>{
+  const s=sample();
+  s.news_items[0].discovered_at=null;
+  s.news_items[0].headline='SECRET UNPUBLISHED HEADLINE';
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_without_discovery_timestamp,1);
+  assert.deepEqual(report.news.unknown_discovery_pending_item_ids,[1]);
+  assert.equal(report.news.pending_over_14d,0);
+  assert.equal(report.news.discovered_last_24h,1);
+  assert.ok(!JSON.stringify(report).includes('SECRET UNPUBLISHED HEADLINE'));
+});
+
+test('future intake timestamps are review flags, not new discoveries in the past 24 hours',()=>{
+  const s=sample();
+  s.news_items[0].review_status='reviewed';
+  s.news_items[0].discovered_at=null;
+  s.news_items[1].discovered_at='2026-11-23T02:30:00Z';
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_without_discovery_timestamp,0);
+  assert.equal(report.news.discovered_after_snapshot_time,1);
+  assert.deepEqual(report.news.future_discovered_item_ids,[2]);
+  assert.equal(report.news.discovered_last_24h,0);
+});
+
+test('unknown news discovery IDs are sorted and capped with omitted count',()=>{
+  const s=sample();
+  s.news_items[0].discovered_at=null;
+  for (let id=126;id>=100;id--) s.news_items.push({
+    id,topic_id:1,source_url:'https://agency.gov/SECRET/'+id,
+    discovered_at:null,published_at:null,review_status:'pending'
+  });
+  s.expected_counts.news_items=s.news_items.length;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_without_discovery_timestamp,28);
+  assert.deepEqual(report.news.unknown_discovery_pending_item_ids,[1,...Array.from({length:24},(_,i)=>100+i)]);
+  assert.equal(report.news.omitted_unknown_discovery_pending_item_ids,3);
+  assert.ok(!JSON.stringify(report).includes('/SECRET/'));
+});
