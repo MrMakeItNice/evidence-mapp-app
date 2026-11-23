@@ -100,7 +100,7 @@ test('click and Enter/Space paths dispatch the same record ID to inspection', as
     MouseEvent: class { constructor(type, options) { this.type = type; this.bubbles = options.bubbles; } },
     closeModal() {}
   };
-  const clickLine = html.split('\n').find(line => line.startsWith("document.addEventListener('click',async e=>"));
+  const clickLine = html.split('\n').find(line => line.startsWith("document.addEventListener('click',async e=>") && line.includes("case 'open-case'"));
   const keyLine = html.split('\n').find(line => line.startsWith("document.addEventListener('keydown',e=>{const node="));
   assert.ok(clickLine && keyLine, 'workspace uses delegated graph handlers');
   vm.runInNewContext(clickLine + '\n' + keyLine, setup);
@@ -126,7 +126,7 @@ test('case-list navigation preserves exact IDs and rejects unavailable records',
     { id: '9007199254740993' }, { id: 42 }
   ];
   const state = { caseId: null };
-  const clickLine = html.split('\n').find(line => line.startsWith("document.addEventListener('click',async e=>"));
+  const clickLine = html.split('\n').find(line => line.startsWith("document.addEventListener('click',async e=>") && line.includes("case 'open-case'"));
   assert.ok(clickLine, 'delegated case-list handler exists');
   vm.runInNewContext(clickLine, {
     document: { addEventListener: (type, callback) => { registered[type] = callback; } },
