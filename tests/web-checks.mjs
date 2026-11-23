@@ -216,6 +216,38 @@ assert.match(bluebirdPage, /:target\{outline:3px solid #0b8671;outline-offset:4p
 
 console.log('PASS: source-scope notes and Blue Beam assessment have unique accessible 44px jump links.');
 
+// Direct links, browser history, and repeat in-page jumps must reveal a closed
+// comparison panel; other hashes must not override the visitor's chosen state.
+const comparisonScripts = [...bluebirdPage.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+assert.equal(comparisonScripts.length, 1, 'Expected one isolated Rabbit Hole navigation script');
+new vm.Script(comparisonScripts[0][1], {filename:'rabbit-hole.html:source-comparison'});
+const comparisonPanel = {open:false};
+const fakeHash = {hash:'#source-scope-comparison'};
+const handlers = {};
+vm.runInNewContext(comparisonScripts[0][1], {
+  document: {
+    getElementById: id => id === 'source-scope-comparison' ? comparisonPanel : null,
+    querySelectorAll: selector => selector === 'a[href="#source-scope-comparison"]'
+      ? [{addEventListener: (kind, fn) => { handlers[kind] = fn; }}] : []
+  },
+  window: {
+    location:fakeHash,
+    addEventListener:(kind, fn) => { handlers[kind] = fn; }
+  }
+});
+assert.equal(comparisonPanel.open,true,'Direct deep link must expand source comparison');
+comparisonPanel.open=false;
+fakeHash.hash='#bluebird-bluebeam-assessment';
+handlers.hashchange();
+assert.equal(comparisonPanel.open,false,'Unrelated anchors must not reopen comparison');
+fakeHash.hash='#source-scope-comparison';
+handlers.hashchange();
+assert.equal(comparisonPanel.open,true,'History navigation must expand comparison');
+comparisonPanel.open=false;
+handlers.click();
+assert.equal(comparisonPanel.open,true,'Clicking an unchanged hash must expand comparison');
+console.log('PASS: source-scope comparison opens for direct/history/repeat jumps without changing unrelated navigation.');
+
 // Investigation path cards use semantic, full-card links, not tiny heading-only tap targets.
 const pathNav = rabbitHole.match(/<nav class="grid" aria-label="Research paths from theories to documented Case Files">([\s\S]*?)<\/nav>/);
 assert.ok(pathNav, 'Missing labeled investigation navigation landmark');
