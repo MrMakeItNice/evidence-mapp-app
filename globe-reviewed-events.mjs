@@ -68,6 +68,14 @@ export function showReviewedMapSource(doc, panel, event) {
   panel.append(heading, context, link, mapNote, locationLink);
 }
 
+
+/** Present list selections in a readable, keyboard-reachable detail region. */
+export function inspectReviewedMapSource(doc, detail, event) {
+  showReviewedMapSource(doc, detail, event);
+  detail.hidden = false;
+  detail.focus({preventScroll: true});
+}
+
 export function renderReviewedMapList(doc, list, events, onInspect) {
   list.replaceChildren();
   const valid = reviewedMapEvents(events);
