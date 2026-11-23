@@ -345,3 +345,35 @@ test('one-sided date review emits sorted capped numeric IDs, not unpublished con
   assert.ok(!JSON.stringify(x).includes('PRIVATE RESEARCH ITEM'));
   assert.ok(!JSON.stringify(x).includes('agency.gov'));
 });
+
+
+test('identical malformed cross-collection URLs are not evidence of a shared source',()=> {
+  const s=sample();
+  s.news_items[0].source_url='ftp://not-a-source.example/PRIVATE';
+  s.research_inbox[0].source_url=s.news_items[0].source_url;
+  s.news_items[1].source_url='https://username:password@agency.gov/doc?item=2';
+  s.sources[0].url=s.news_items[1].source_url;
+  const result=auditNewsIngestion(s);
+  assert.equal(result.news.malformed_url,2);
+  assert.equal(result.inbox.malformed_url,1);
+  assert.equal(result.sources.malformed_url,1);
+  assert.equal(result.overlap.news_inbox_exact_url_rows,0);
+  assert.equal(result.overlap.news_source_exact_url_rows,0);
+  assert.deepEqual(result.overlap.news_inbox_exact_url_id_pairs,[]);
+  assert.deepEqual(result.overlap.news_source_exact_url_id_pairs,[]);
+  assert.equal(result.overlap.news_source_publication_date_review.source_missing_news_dated.count,0);
+  assert.ok(!JSON.stringify(result).includes('password'));
+  assert.ok(!JSON.stringify(result).includes('PRIVATE'));
+});
+
+test('identical invalid URLs are counted as malformed, not exact duplicate groups',()=> {
+  const s=sample();
+  s.news_items[0].source_url='javascript:NOT_PUBLIC';
+  s.news_items.push({id:3,topic_id:2,source_url:s.news_items[0].source_url,published_at:null});
+  s.expected_counts.news_items=3;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.malformed_url,2);
+  assert.equal(report.news.exact_url_duplicate_groups,0);
+  assert.equal(report.overlap.news_inbox_exact_url_rows,0);
+  assert.ok(!JSON.stringify(report).includes('NOT_PUBLIC'));
+});
