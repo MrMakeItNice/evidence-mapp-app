@@ -77,17 +77,29 @@
     },
     {
       "id": "epstein-files-doj-release-2026",
-      "title": "DOJ announces additional Epstein Files Transparency Act records release",
+      "title": "DOJ reports additional Epstein Files Transparency Act publication",
       "topic": "epstein-files",
       "category": "neutral",
       "event_date": "2026-01-30",
-      "date_basis": "DOJ publication date",
-      "lat": 38.8951,
-      "lon": -77.025,
-      "location_basis": "DOJ Washington DC administrative location; not location of alleged crimes",
+      "date_basis": "DOJ press release 26-84 and congressional letter dated January 30, 2026; press release updated February 1, 2026. This is the disclosure date, not any underlying incident date.",
+      "lat": null,
+      "lon": null,
+      "location_basis": "Washington, D.C. press-release dateline and issuing-office letterhead; no exact geographic occurrence or publication coordinates established.",
       "source_url": "https://www.justice.gov/opa/pr/department-justice-publishes-35-million-responsive-pages-compliance-epstein-files",
       "review_status": "pending_editorial_review",
-      "classification_rationale": "Document disclosure supports public scrutiny, but records can include unverified submissions and sensitive victim information."
+      "classification_rationale": "Provisional neutral classification of a documented disclosure announcement; no judgment about completeness, underlying allegations, or the impact of the release.",
+      "location_role": "issuing_office_city_only",
+      "location_name": "Washington, D.C., United States",
+      "location_source_url": "https://www.justice.gov/opa/pr/department-justice-publishes-35-million-responsive-pages-compliance-epstein-files",
+      "location_note": "Press release 26-84 has a Washington dateline; DOJ letter to Congress, page 1, identifies Washington, D.C. as the issuing office address. The letter (page 2) describes materials collected across multiple offices and jurisdictions and uploaded over the course of the day. Neither document supports the previously staged coordinate or a crime-location pin. Coordinates intentionally withheld.",
+      "additional_source_urls": [
+        "https://www.justice.gov/opa/media/1426091/dl"
+      ],
+      "source_record_id": "DOJ Office of Public Affairs press release 26-84 (2026-01-30); DOJ letter to Congress, media 1426091, pp. 1–2 (2026-01-30)",
+      "source_reviewed_on": "2026-11-23",
+      "source_limitation": "DOJ reports more than 3 million additional pages and nearly 3.5 million cumulatively, not 3.5 million newly released pages. The letter and announcement are from the same agency and do not independently establish completeness or authenticate all underlying submissions. DOJ cautions that false material may be included. Do not surface victim-identifying information or infer wrongdoing from names in records.",
+      "duplicate_review_note": "Read-only Supabase lookup found the exact press release URL already indexed as unpublished source ID 75. Existing case titles #99, #114 and #142 match broad topic screening; this does not establish a relationship to any of them. Reuse source 75 in editorial review; do not create a duplicate source or canonical case.",
+      "map_review_requirement": "Keep out of geographic feed and pins. After editorial approval, retain for non-geographic source discovery with existing source record 75. Any future pin must have traceable coordinates and explicitly distinguish an issuing-office reference from an incident location. Do not create links to alleged crime locations or individuals from this disclosure alone."
     },
     {
       "id": "us-covid-phe-ended-2023",
