@@ -77,6 +77,32 @@ test('normalizes whitespace in event IDs so one event cannot create multiple pin
   assert.equal(corrected[0].id, 'archived-record-1');
 });
 
+test('withholds conflicting reviewed coordinates rather than arbitrarily pinning the first duplicate ID', () => {
+  const candidates = [
+    withChanges({id: ' record-a ', lat: 15, lon: 20}),
+    withChanges({id: 'record-a', lat: 15, lon: 21}),
+    withChanges({id: 'record-b', lat: 16, lon: 22})
+  ];
+  const reviewed = reviewedMapEvents(candidates);
+  assert.deepEqual(reviewed.map(item => item.id), ['record-b']);
+  const list = element('ul');
+  const rendered = renderReviewedMapList(document, list, candidates, () => {});
+  assert.deepEqual(rendered.map(item => item.id), ['record-b']);
+  assert.equal(list.children.length, 1, 'conflicted event is excluded from accessible list and globe pins');
+
+  // Identical coordinates may be indexed twice, but still produce one point.
+  assert.equal(reviewedMapEvents([event, withChanges({title: 'Alternate indexed report'})]).length, 1);
+  // Unreviewed or malformed records must not disqualify a corrected valid item.
+  assert.equal(reviewedMapEvents([
+    withChanges({id: ' corrected ', location_source_url: ''}),
+    withChanges({id: 'corrected'})
+  ]).length, 1);
+  // Conflicts in either coordinate are material, independent of feed ordering.
+  assert.equal(reviewedMapEvents([
+    withChanges({id: 'reverse', lat: 15}), withChanges({id: ' reverse ', lat: 16})
+  ]).length, 0);
+});
+
 test('renders keyboard-focusable inspection buttons with safe text, not HTML', () => {
   const list = element('ul');
   let selection;
