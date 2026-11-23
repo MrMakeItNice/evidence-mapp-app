@@ -1,0 +1,19 @@
+name: News Desk source URL gate
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/evidence-news-desk/index.ts'
+      - 'tests/news-desk-url-gate.test.mjs'
+      - '.github/workflows/news-desk-url-gate.yml'
+permissions:
+  contents: read
+jobs:
+  source-link-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node --check tests/news-desk-url-gate.test.mjs
+      - run: node --test tests/news-desk-url-gate.test.mjs
