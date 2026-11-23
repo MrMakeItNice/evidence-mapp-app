@@ -14,7 +14,7 @@ test('coarse-pointer map allows native vertical page scroll', () => {
   const defaultIndex = css.indexOf('touch-action:none');
   const overrideIndex = css.indexOf('@media (any-pointer:coarse){.graph{touch-action:pan-y}');
   assert.ok(defaultIndex >= 0 && overrideIndex > defaultIndex, 'touch override must follow default map rule');
-  assert.match(css.slice(overrideIndex), /\.graph-tools button\{min-width:44px;min-height:44px\}/);
+  assert.match(css.slice(overrideIndex), /\.graph-tools button,[^{]*\{min-width:44px;min-height:44px\}/);
 });
 
 test('touch gestures have accurate on-screen instructions', () => {
