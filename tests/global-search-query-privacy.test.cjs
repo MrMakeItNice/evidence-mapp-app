@@ -742,3 +742,35 @@ test('matching titles with distinct DOI identifiers remain separate source previ
   assert.match(page.results, /DOI: 10.1234\/one/);assert.match(page.results, /DOI: 10.1234\/two/);
   assert.doesNotMatch(page.results, /OpenAlex, Crossref/);
 });
+
+test('matching titles without identifiers remain separate uncertain records across indexes', async () => {
+  const page = await scholarlyResponsePage({results: [
+    {display_name: 'Annual oversight review', authorships: [{author: {display_name: 'First author'}}]}
+  ]}, {message: {items: [
+    {title: ['Annual oversight review'], author: [{given: 'Second', family: 'author'}], URL: 'https://publisher.example/review'}
+  ]}});
+  assert.match(page.status, /2 scholarly records returned/);
+  assert.match(page.results, /First author/);assert.match(page.results, /Second author/);
+  assert.doesNotMatch(page.results, /OpenAlex, Crossref/);
+});
+
+test('a shared malformed DOI value cannot establish cross-index record identity', async () => {
+  const page = await scholarlyResponsePage({results: [
+    {display_name: 'OpenAlex record', doi: 'not-a-doi'}
+  ]}, {message: {items: [
+    {title: ['Crossref record'], DOI: 'not-a-doi', URL: 'https://publisher.example/review'}
+  ]}});
+  assert.match(page.status, /2 scholarly records returned/);
+  assert.match(page.results, /OpenAlex record/);assert.match(page.results, /Crossref record/);
+  assert.doesNotMatch(page.results, /OpenAlex, Crossref|DOI:/);
+});
+
+test('stable record IDs still deduplicate repeats within their own index', async () => {
+  const page = await scholarlyResponsePage({results: [
+    {display_name: 'First OpenAlex listing', id: 'https://openalex.org/W42'},
+    {display_name: 'Repeated OpenAlex listing', id: 'https://openalex.org/W42'}
+  ]}, {message: {items: [{title: ['Other index record']}]}});
+  assert.match(page.status, /2 scholarly records returned/);
+  assert.match(page.results, /First OpenAlex listing/);assert.match(page.results, /Other index record/);
+  assert.doesNotMatch(page.results, /Repeated OpenAlex listing/);
+});
