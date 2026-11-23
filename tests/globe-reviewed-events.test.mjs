@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {reviewedMapEvents, showReviewedMapSource, renderReviewedMapList} from '../globe-reviewed-events.mjs';
+import {reviewedMapEvents, showReviewedMapSource, renderReviewedMapList, inspectReviewedMapSource} from '../globe-reviewed-events.mjs';
+import {readFileSync} from 'node:fs';
 
 const event = {id: 'archive-01', title: 'Reviewed documented event', category: 'neutral',
   event_date: '2024-02-29', lat: 37.7, lon: -122.4,
@@ -97,4 +98,34 @@ test('map placement needs its own linked provenance and never invents a point', 
   const panel = element('div');
   showReviewedMapSource(document, panel, reviewed);
   assert.equal(panel.children[4].href, reviewed.location_source_url);
+});
+
+test('list selection opens full-detail source evidence, focuses without scrolling, and replaces stale data', () => {
+  const panel = element('div');
+  panel.hidden = true;
+  panel.focus = options => { panel.focusOptions = options; };
+  const [record] = reviewedMapEvents([event]);
+  inspectReviewedMapSource(document, panel, record);
+  assert.equal(panel.hidden, false);
+  assert.deepEqual(panel.focusOptions, {preventScroll: true});
+  assert.equal(panel.children[0].textContent, event.title);
+  assert.equal(panel.children[2].href, event.source_url);
+  assert.equal(panel.children[4].href, event.location_source_url);
+  const [replacement] = reviewedMapEvents([withChanges({
+    id: 'second-reviewed-event', title: '<script>not HTML</script>',
+    location_source_url: 'https://archive.example.gov/second-location'
+  })]);
+  inspectReviewedMapSource(document, panel, replacement);
+  assert.equal(panel.children.length, 5, 'prior detail must not remain');
+  assert.equal(panel.children[0].textContent, '<script>not HTML</script>');
+  assert.equal(panel.children[4].href, replacement.location_source_url);
+});
+
+test('homepage places the keyboard preview beside the event list, not only in the tiny globe overlay', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="reviewed-globe-events"<\/ul>[\s\S]*?id="reviewed-globe-detail"/);
+  assert.match(html, /id="reviewed-globe-detail"[^>]+role="region"[^>]+tabindex="-1" hidden/);
+  assert.match(html, /renderReviewedMapList\(document,mapList,reviewedEvents,event=>inspectReviewedMapSource\(document,document\.getElementById\('reviewed-globe-detail'\),event\)\)/);
+  assert.match(html, /showReviewedMapSource\(document,geoPanel,markerHit\.object\.userData\.event\)/, 'globe marker click preview preserved');
+  assert.match(html, /\.reviewed-globe-detail:focus\{outline:/);
 });
