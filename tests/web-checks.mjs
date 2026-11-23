@@ -137,9 +137,10 @@ assert.match(bluebirdPage,/printed pp\. 67–68/);
 assert.match(bluebirdPage,/source #258 cited by the canonical BLUEBIRD \(record ID 3\) and ARTICHOKE \(record ID 4\) Case Files/);
 assert.match(bluebirdPage,/not a newly discovered operation, a reviewed causal edge, or evidence for Project Blue Beam/);
 assert.match(bluebirdPage,/href="https:\/\/www\.intelligence\.senate\.gov\/wp-content\/uploads\/2024\/08\/sites-default-files-hearings-95mkultra\.pdf#page=70" target="_blank" rel="noopener noreferrer"/);
-assert.match(bluebirdPage,/official PDF URL, excluding the viewer-only page fragment, matches the source #258 URL/);
+assert.match(bluebirdPage,/PDF URL without the viewer-only page fragment matches existing source-library record #258/);
+assert.match(bluebirdPage,/Canonical Case IDs 3 and 4 cite this record through generic research references \(relationship IDs 3 and 6\), not reviewed causal edges/);
 assert.match(bluebirdPage,/printed pp\. 67–68; PDF viewer pp\. 70–71/);
-assert.match(bluebirdPage,/some PDF viewers may ignore the page fragment/);
+assert.match(bluebirdPage,/Some PDF viewers may ignore the page fragment/);
 assert.doesNotMatch(bluebirdPage,/href="https:\/\/www\.intelligence\.senate\.gov\/sites\/default\/files\/hearings\/95mkultra\.pdf"/);
 console.log('PASS: reviewed 1977 Senate hearing section and existing source #258 provide original-document navigation without a duplicate program or public edge.');
 
