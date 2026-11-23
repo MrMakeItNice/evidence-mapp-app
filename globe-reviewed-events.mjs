@@ -51,10 +51,15 @@ export function reviewedMapEvents(events) {
     seen.set(id, {lat: event.lat, lon: event.lon, event_date: event.event_date,
       category: event.category, location_note: event.location_note.trim(),
       location_source_url: locationUrl.href});
+    // URL fragments may point to different pages of the *same* document.
+    // Host matching alone is not sufficient to identify a reused citation.
+    const locationCitesSameDocument = url.origin === locationUrl.origin &&
+      url.pathname === locationUrl.pathname && url.search === locationUrl.search;
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
+      location_cites_same_document: locationCitesSameDocument,
       location_note: event.location_note.trim()});
   }
   return result.filter(event => !conflictingDetails.has(event.id));
@@ -77,7 +82,10 @@ export function showReviewedMapSource(doc, panel, event) {
   mapNote.textContent = 'Displayed map point: ' + event.lat + '° latitude, ' + event.lon + '° longitude. ' +
     'Map placement: ' + event.location_note +
     ' · Location evidence host: ' + event.location_source_host +
-    '. Coordinates reflect an editorial placement, not independently verified GPS precision.';
+    '. Coordinates reflect an editorial placement, not independently verified GPS precision. ' +
+    (event.location_cites_same_document ?
+      'The location citation reuses the same document as the event source (possibly a different page), not independent corroboration.' :
+      'A separate location-evidence URL does not by itself establish independent corroboration.');
   const locationLink = doc.createElement('a');
   locationLink.href = event.location_source_url;
   locationLink.target = '_blank';
@@ -140,7 +148,10 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
     // These hosts may coincide; they are not independent corroboration.
     context.id = 'reviewed-globe-event-context-' + buttons.length;
     context.textContent = event.event_date + ' · Event source: ' + event.source_host +
-      ' · Location evidence: ' + event.location_source_host + ' · ' + event.category;
+      ' · Location evidence: ' + event.location_source_host + ' · ' + event.category +
+      (event.location_cites_same_document ?
+        ' · Same document used for both citations; not independent corroboration' :
+        ' · Distinct citation URL; independence not established');
     button.setAttribute('aria-describedby', context.id);
     item.append(button, context);
     list.append(item);
