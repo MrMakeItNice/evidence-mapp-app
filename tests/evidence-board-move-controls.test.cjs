@@ -177,8 +177,8 @@ test('pointer inspection keeps focus; ordinary and modified inspector keys are u
   const { get, document } = await createBoard();
   const card = get('cards').children[1], marker = {};
   document.activeElement = marker;
-  card.listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, stopPropagation() {} });
-  card.listeners.pointerup();
+  card.listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, button: 0, isPrimary: true, stopPropagation() {} });
+  card.listeners.pointerup({ pointerId: 1 });
   assert.equal(document.activeElement, marker);
   for (const event of [{ key: 'Tab' }, { key: 'ArrowDown' }, { key: 'Escape', ctrlKey: true }, { key: 'Escape', altKey: true }, { key: 'Escape', metaKey: true }, { key: 'Escape', shiftKey: true }]) {
     get('selected-record').listeners.keydown({ ...event, preventDefault() { assert.fail('unhandled key was prevented'); } });
@@ -206,11 +206,11 @@ test('visual and accessible selection follow initial, keyboard and pointer inspe
   assert.equal(document.activeElement, get('details').children[0]);
   cards[0].listeners.keydown({ key: ' ', preventDefault() {} }); check(0);
   const marker = {}; document.activeElement = marker;
-  cards[1].listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, stopPropagation() {} });
-  cards[1].listeners.pointerup(); check(1);
+  cards[1].listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, button: 0, isPrimary: true, stopPropagation() {} });
+  cards[1].listeners.pointerup({ pointerId: 1 }); check(1);
   assert.equal(document.activeElement, marker, 'pointer selection must not move focus');
-  cards[1].listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, stopPropagation() {} });
-  cards[1].listeners.pointerup(); check(1);
+  cards[1].listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, button: 0, isPrimary: true, stopPropagation() {} });
+  cards[1].listeners.pointerup({ pointerId: 1 }); check(1);
   get('selected-record').listeners.keydown({ key: 'Escape', preventDefault() {} });
   assert.equal(document.activeElement, cards[1]);
 });
@@ -312,4 +312,90 @@ test('citation count discloses the display cap, excludes duplicates and unsafe U
   assert.equal(get('wires').children.length, 0);
   assert.match(count.textContent, /No eligible indexed citation URLs/);
   assert.match(count.textContent, /does not establish that no evidence exists/);
+});
+
+
+// Consolidate #313/#315 against the current accessible inspector.
+function pointer(pointerId = 1, overrides = {}) {
+  return { pointerId, button: 0, isPrimary: true, clientX: 0, clientY: 0,
+    target: { closest: () => null }, stopPropagation() {}, ...overrides };
+}
+test('secondary and non-main-button starts do not drag, select, or pan', async () => {
+  const { get } = await createBoard();
+  const card = get('cards').children[1], view = get('viewport'), world = get('world');
+  const left = card.style.left, transform = world.style.transform;
+  for (const bad of [pointer(1, { button: 2 }), pointer(2, { isPrimary: false })]) {
+    for (const target of [card, view]) {
+      target.listeners.pointerdown(bad);
+      target.listeners.pointermove({ ...bad, clientX: 50 });
+      target.listeners.pointerup(bad);
+    }
+  }
+  assert.equal(card.style.left, left);
+  assert.equal(world.style.transform, transform);
+  assert.equal(card.attributes['aria-pressed'], 'false');
+  card.listeners.pointerdown(pointer());
+  card.listeners.pointerup(pointer());
+  assert.equal(card.attributes['aria-pressed'], 'true');
+});
+test('card drag ignores other pointers and ends on cancellation or lost capture without selecting', async () => {
+  const { get } = await createBoard();
+  const [caseCard, card] = get('cards').children, view = get('viewport');
+  const left = parseFloat(card.style.left);
+  card.listeners.pointerdown(pointer(1));
+  card.listeners.pointermove(pointer(2, { clientX: 40 }));
+  caseCard.listeners.pointerup(pointer(1));
+  view.listeners.pointerdown(pointer(2));
+  view.listeners.pointercancel(pointer(2));
+  card.listeners.pointerup(pointer(2));
+  assert.equal(parseFloat(card.style.left), left);
+  card.listeners.pointermove(pointer(1, { clientX: 20 }));
+  assert.equal(parseFloat(card.style.left), left + 20);
+  card.listeners.pointercancel(pointer(1));
+  card.listeners.pointermove(pointer(1, { clientX: 70 }));
+  card.listeners.pointerup(pointer(1));
+  assert.equal(parseFloat(card.style.left), left + 20);
+  assert.equal(card.attributes['aria-pressed'], 'false');
+  card.listeners.pointerdown(pointer(3));
+  card.listeners.lostpointercapture(pointer(3));
+  card.listeners.pointerup(pointer(3));
+  assert.equal(card.attributes['aria-pressed'], 'false');
+  card.listeners.pointerdown(pointer(4));
+  card.listeners.pointerup(pointer(4));
+  assert.equal(card.attributes['aria-pressed'], 'true');
+});
+test('background pan owns one pointer and recovers after lost capture or cancellation', async () => {
+  const { get } = await createBoard();
+  const view = get('viewport'), world = get('world');
+  for (const end of ['lostpointercapture', 'pointercancel']) {
+    const before = world.style.transform;
+    view.listeners.pointerdown(pointer(1));
+    view.listeners.pointermove(pointer(2, { clientX: 50 }));
+    view.listeners.pointerup(pointer(2));
+    view.listeners[end](pointer(2));
+    assert.equal(world.style.transform, before);
+    view.listeners.pointermove(pointer(1, { clientX: 25 }));
+    const moved = world.style.transform;
+    assert.notEqual(moved, before);
+    view.listeners[end](pointer(1));
+    view.listeners.pointermove(pointer(1, { clientX: 90 }));
+    assert.equal(world.style.transform, moved);
+  }
+  const before = world.style.transform;
+  view.listeners.pointerdown(pointer(5));
+  view.listeners.pointermove(pointer(5, { clientX: 10 }));
+  view.listeners.pointerup(pointer(5));
+  assert.notEqual(world.style.transform, before);
+});
+test('case switches discard a stale active drag before rendering new cards', async () => {
+  const { get } = await createBoard([{ id: '1', title: 'Published case' }, { id: '2', title: 'Second case' }]);
+  const old = get('cards').children[1];
+  old.listeners.pointerdown(pointer(1));
+  get('cases').children[1].listeners.click();
+  old.listeners.pointerup(pointer(1));
+  assert.equal(get('details').children[0].textContent, 'Second case');
+  const view = get('viewport'), world = get('world'), before = world.style.transform;
+  view.listeners.pointerdown(pointer(2));
+  view.listeners.pointermove(pointer(2, { clientX: 30 }));
+  assert.notEqual(world.style.transform, before);
 });
