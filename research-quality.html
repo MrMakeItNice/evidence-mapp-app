@@ -49,9 +49,13 @@
   let loading=false;
   async function loadCases(fromRetry=false){
     if(loading)return;
+    const retry=el('retry');
     loading=true;
-    el('retry').hidden=true;
-    el('retry').disabled=true;
+    // Keep the retry control focusable while a retry is in flight; the loading guard
+    // prevents repeat requests without removing a keyboard user's focus target.
+    retry.hidden=!fromRetry;
+    retry.setAttribute('aria-disabled',fromRetry?'true':'false');
+    if(fromRetry)retry.textContent='Loading cases…';
     el('status').textContent='Loading published case index…';
     try{
       const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),12000);
@@ -66,16 +70,19 @@
       el('filter').disabled=false;
       chart();
       render();
-      // The retry button disappears on success; keep keyboard users in the case browser.
-      if(fromRetry)el('q').focus();
+      // Transfer focus only if the user is still on Retry, not if they moved elsewhere.
+      const wasOnRetry=fromRetry&&document.activeElement===retry;
+      retry.hidden=true;
+      if(wasOnRetry)el('q').focus();
     }catch{
       el('status').textContent='Published cases cannot be loaded right now. No quality metrics are available.';
       el('q').disabled=true;
       el('filter').disabled=true;
-      el('retry').hidden=false;
+      retry.hidden=false;
     }finally{
       loading=false;
-      el('retry').disabled=false;
+      retry.removeAttribute('aria-disabled');
+      retry.textContent='Retry loading cases';
     }
   }
   el('retry').addEventListener('click',()=>loadCases(true));
