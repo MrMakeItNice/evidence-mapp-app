@@ -1,0 +1,23 @@
+name: Ask Evidence citation-link regression
+
+on:
+  pull_request:
+    paths:
+      - 'assistant.js'
+      - 'tests/assistant-source-links.test.cjs'
+      - '.github/workflows/assistant-source-links.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check assistant syntax and source-link behavior
+        run: |
+          node --check assistant.js
+          node --test tests/assistant-source-links.test.cjs
