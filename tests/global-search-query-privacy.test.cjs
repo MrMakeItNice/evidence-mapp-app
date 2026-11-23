@@ -475,7 +475,7 @@ async function scholarlyResponsePage(openalex, crossref) {
   page.submit('oversight');
   await new Promise(resolve => setImmediate(resolve));
   const text = node => node.textContent + node.children.map(text).join(' ');
-  return {status: page.get('live-status').textContent, results: text(page.get('live-results'))};
+  return {status: page.get('live-status').textContent, results: text(page.get('live-results')), scholarlyLinks: page.get('live-results').children.flatMap(row => row.children[1]?.children || []), discoveryLinks: page.get('sources').children};
 }
 
 for (const provider of ['OpenAlex', 'Crossref']) test(provider + ' malformed envelopes do not count as a responding search index', async () => {
@@ -773,4 +773,26 @@ test('stable record IDs still deduplicate repeats within their own index', async
   assert.match(page.status, /2 scholarly records returned/);
   assert.match(page.results, /First OpenAlex listing/);assert.match(page.results, /Other index record/);
   assert.doesNotMatch(page.results, /Repeated OpenAlex listing/);
+});
+
+test('external research links identify their destination and new-tab behavior accessibly', async () => {
+  const title = 'Budget <review> & "hearing"';
+  const page = await scholarlyResponsePage({results: [
+    {display_name: title, doi: 'https://doi.org/10.1234/new-tab'},
+    {display_name: 'Blocked destination', doi: 'javascript:alert(1)'}
+  ]}, {message: {items: [{title: ['Crossref citation'], DOI: '10.1234/crossref-tab', URL: 'https://publisher.example/report'}]}});
+  assert.equal(page.scholarlyLinks.length, 2, 'blocked destination remains non-clickable');
+  assert.equal(page.scholarlyLinks[0].attributes['aria-label'], title + ' (opens in a new tab)');
+  assert.equal(page.scholarlyLinks[0].textContent, title + ' ↗');
+  assert.equal(page.scholarlyLinks[1].attributes['aria-label'], 'Crossref citation (opens in a new tab)');
+  assert.equal(page.discoveryLinks.length, 9);
+  for (const link of page.discoveryLinks) {
+    const name = link.children[0].textContent.replace(/ ↗$/, '');
+    const description = link.children[1].textContent;
+    assert.equal(link.attributes['aria-label'], name + ' — ' + description + ' (opens in a new tab)');
+  }
+  for (const link of [...page.scholarlyLinks, ...page.discoveryLinks]) {
+    assert.equal(link.target, '_blank');assert.equal(link.rel, 'noopener noreferrer');
+  }
+  assert.match(html, /Links marked ↗ open in a new tab\./);
 });
