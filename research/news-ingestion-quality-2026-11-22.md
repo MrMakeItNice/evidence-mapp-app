@@ -1,5 +1,31 @@
 # Evidence Atlas — ingestion quality checkpoint (review only)
 
+## Read-only checkpoint — November 23, 2026, 17:40 UTC (09:40 Pacific)
+
+**Controls:** SELECT-only Supabase inspection of `nxlffnplqdobfqxogmxo`. All code, regression tests and this memo remain on the existing draft research PR. No production writes/schema changes, deployment, collector configuration change, access bypass, automatic source link or publication.
+
+**News intake:** 995/995 news items pending, 58 discovered within the prior 24 hours and 138 pending beyond 14 days. 478 lack publication timestamps (459 Google-related URLs/publisher records; **19 others**). Zero pending news lack discovery timestamps and zero news discovery/publication times fall after the database clock.
+
+**Research/watch coverage:** 40/40 inbox entries pending, 36 older than 14 days, four missing publication dates and four without research-watch assignments. **Zero** inbox publication, discovery, or `added_at` timestamps lie in the future. Of 36 active news topics, 11 have no direct news items; three active research watches (**#1, #4, #8**) have no directly assigned inbox rows. All 11 active research-watch and seven active news-watch timestamp fields are blank or stale. Watch timestamps are not conclusive proof of feed outage.
+
+**Provenance and overlap:** 123 of 285 source rows marked published; 53/123 lack a publication date, one lacks publisher attribution, and one lacks a primary URL or archive URL (source **#285**). There are 25 exact news/inbox URL row pairs, five news/source pairs and no inbox/source pairs; five publisher-label mismatches and **zero** within-collection exact URL duplicate groups. Syntactically matching URLs are catalog review candidates, not independent corroboration or automatic proof.
+
+**Collector telemetry, retained preceding 24 hours:** Six of seven active feeds recorded successful HTTP 200 completions. **Positive News**: 41 HTTP 403 and no 200; most recent recorded success **November 11, 2026**. Three BBC collectors had 42, 41 and 41 HTTP 200 completions. Palestine/Gaza and Epstein Google News each had 40 HTTP 200 and one 429; COVID-19 Google News had 41 HTTP 200 and no 429. Latest World News BBC status was pending at the instant of read despite 41 preceding successes. Do not attempt to circumvent the Positive News access restriction.
+
+**New review-only code safeguard:** The offline ingestion diagnostic separately checks inbox `added_at` for future time even when a record is already reviewed. It emits deterministic capped numeric-only IDs and omitted counts, without leaking titles or rewriting any timestamp. Three new regression tests cover reviewed records, deterministic truncation and malformed historical `added_at` values. The current database has **zero** future-`added_at` inbox rows. CI verification to be recorded separately after the code/test commit completes.
+
+### Two official research leads staged for human review only
+
+**GAO-27-107854 — Military Education Benefits: DOD Should Take Steps to Ensure Service Members Receive Information About Tuition Assistance.** Official report: https://www.gao.gov/products/gao-27-107854 . **Published November 20, 2026.** GAO found that the Navy and Air Force do not require tuition-assistance information at newly assigned service members' base orientations, despite an existing DOD policy. GAO made two recommendations; DOD agreed and described actions taken. The work includes ten discussion groups with 112 service members at selected locations and historical participation statistics. **Boundary:** discussion groups are not population-wide surveys; changes in program participation cannot be attributed solely to orientation policy. Suggested placement: documented access-to-benefits issue and a possible constructive solutions lead, subject to editorial review.
+
+**GAO-27-108923 — Small Business Research Programs: Selected Agencies Address Foreign Risks and Take Various Approaches to Track Data.** Official report: https://www.gao.gov/products/gao-27-108923 . **Published November 19, 2026.** GAO examined five selected federal agencies' SBIR/STTR due-diligence programs, reporting over 28,000 reviewed proposals and over 1,700 *possible* foreign risks during FY2024–25, with differing data tracking practices. **Boundary:** possible risk flags are **not** verified espionage, theft or wrongdoing; findings are scoped to selected agencies and their reported data. Candidate topic: research-security screening, data stewardship and transparency.
+
+**Duplicate screen:** Targeted official URL, GAO identifier, and distinctive-title searches across `news_items`, `research_inbox` and `sources` returned **zero direct matches** for the two reports. Alternate titles, broader coverage or equivalent official versions could exist. Both reports remain **memo-only**, not inserted or published.
+
+**Next review:** inspect source #285's missing provenance; investigate 19 non-Google undated news, five publisher-label conflicts, three watch-topic assignment gaps and 36 aged inbox leads. Avoid treating missing metadata as disproven evidence.
+
+---
+
 
 ## Read-only checkpoint — November 23, 2026, 16:46 UTC (08:46 Pacific)
 
