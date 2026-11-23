@@ -82,3 +82,44 @@ test('invalid dates fail rather than silently misclassifying the source',()=>{
   const s=sample();s.news_items[1].published_at='not a date';
   assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp/);
 });
+
+
+test('separates non-Google undated records for targeted review without leaking titles',()=>{
+  const s=sample();
+  s.news_items.push({id:3,topic_id:2,source_url:'https://agency.gov/article?id=3',publisher:'Agency',
+    published_at:null,headline:'SECRET PRIVATE STORY',review_status:'pending'});
+  s.expected_counts.news_items=3;
+  const a=auditNewsIngestion(s);
+  assert.equal(a.news.missing_publication_timestamp_other,1);
+  assert.deepEqual(a.news.undated_other_item_ids,[3]);
+  assert.deepEqual(a.news.empty_active_topic_ids,[]);
+  assert.ok(!JSON.stringify(a).includes('SECRET PRIVATE STORY'));
+  assert.ok(!JSON.stringify(a).includes('agency.gov'));
+});
+
+test('caps non-Google undated IDs and keeps deterministic ascending order',()=>{
+  const s=sample();
+  for(let id=32;id>=3;id--) s.news_items.push({id,topic_id:1,source_url:'https://agency.gov/item?id='+id,
+    publisher:'Agency',published_at:null});
+  s.expected_counts.news_items=32;
+  const a=auditNewsIngestion(s);
+  assert.equal(a.news.missing_publication_timestamp_other,30);
+  assert.equal(a.news.undated_other_item_ids.length,25);
+  assert.equal(a.news.undated_other_item_ids[0],3);
+  assert.equal(a.news.omitted_undated_other_item_ids,5);
+  assert.deepEqual(a.news.empty_active_topic_ids,[2]);
+});
+
+test('refuses an unknown research inbox watch-topic reference',()=>{
+  const s=sample();s.research_inbox[0].watch_topic_id=999;
+  assert.throws(()=>auditNewsIngestion(s),/Unknown inbox watch topic/);
+  s.research_inbox[0].watch_topic_id=1;
+  assert.equal(auditNewsIngestion(s).inbox.without_watch_topic,0);
+});
+
+test('counts missing published-source publisher independently of missing date',()=>{
+  const s=sample();
+  assert.equal(auditNewsIngestion(s).sources.published_marked_missing_publisher,1);
+  s.sources[0].publisher='Agency';
+  assert.equal(auditNewsIngestion(s).sources.published_marked_missing_publisher,0);
+});
