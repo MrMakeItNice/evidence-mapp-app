@@ -250,3 +250,72 @@ test('private draft previews block unsafe, relative, and credential-bearing sour
     'saving new drafts must reject unsafe optional or required source URLs');
   assert.match(html, /Original source URL \(HTTP\/HTTPS; required for paper trails\)/);
 });
+
+
+test('public data failure exposes a retry without substituting sample evidence', async () => {
+  const vm = require('node:vm');
+  assert.match(html, /<button id="retryPublicData" type="button" hidden>Retry loading public cases<\/button>/);
+  const start = script.indexOf("(async()=>{try{const api=");
+  const end = script.lastIndexOf('\n})();');
+  assert.ok(start >= 0 && end > start, 'public data loader should be independently executable');
+  const elements = {
+    status: { textContent: '' },
+    'case-search-status': { textContent: '' },
+    retryPublicData: { hidden: true }
+  };
+  const shown = [];
+  await vm.runInNewContext(script.slice(start, end), {
+    fetch: async () => { throw Error('Public data service offline'); },
+    $: id => elements[id],
+    detail: (...args) => shown.push(args),
+    Promise
+  });
+  assert.equal(elements.retryPublicData.hidden, false);
+  assert.match(elements.status.textContent, /Could not load the public investigation data: Public data service offline/);
+  assert.match(elements['case-search-status'].textContent, /Case search unavailable/);
+  assert.deepEqual(shown, [['Connection unavailable', 'Please retry later. No sample links are presented as real evidence.']]);
+});
+
+test('successful public data load leaves retry hidden and preserves case selection', async () => {
+  const vm = require('node:vm');
+  const start = script.indexOf("(async()=>{try{const api=");
+  const end = script.lastIndexOf('\n})();');
+  const button = { hidden: true };
+  const items = { status: { textContent: '' }, 'case-search-status': { textContent: '' }, retryPublicData: button };
+  const selected = [];
+  const ctx = {
+    Promise, URLSearchParams, location: { hash: '' },
+    cases: [], refs: [], byId: new Map(), byUrl: new Map(),
+    $: id => items[id],
+    fetch: async url => ({
+      ok: true,
+      json: async () => url.includes('/api/cases')
+        ? [{ id: 5, title: 'Documented sample title' }]
+        : { references: [] }
+    }),
+    search() {},
+    focus: (...args) => selected.push(args),
+    detail() { throw Error('No error detail should be presented on success'); }
+  };
+  await vm.runInNewContext(script.slice(start, end), ctx);
+  assert.equal(button.hidden, true);
+  assert.equal(ctx.cases.length, 1);
+  assert.deepEqual(selected, [[5, true]]);
+});
+
+test('retry control reloads only when selected by the user', () => {
+  const vm = require('node:vm');
+  const line = script.split('\n').find(x => x.startsWith("$('retryPublicData').addEventListener"));
+  assert.ok(line, 'retry action should be registered directly on the control');
+  const events = {};
+  const button = { addEventListener(name, fn) { events[name] = fn; } };
+  let reloads = 0;
+  vm.runInNewContext(line, {
+    $: id => { assert.equal(id, 'retryPublicData'); return button; },
+    location: { reload() { reloads++; } }
+  });
+  assert.equal(reloads, 0, 'no automatic reload loop after a data failure');
+  assert.equal(typeof events.click, 'function');
+  events.click();
+  assert.equal(reloads, 1);
+});
