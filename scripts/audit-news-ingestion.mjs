@@ -208,7 +208,11 @@ export function auditNewsIngestion(snapshot) {
   const archiveOnlySourceIds = missingPublishedSourceIds(s =>
     urlProblem(s.url) !== null && urlProblem(s.archive_url) === null);
   const noValidLocatorSourceIds = missingPublishedSourceIds(s =>
-    urlProblem(s.url) !== null && urlProblem(s.archive_url) !== null);
+    urlProblem(s.url) !== null && Object.hasOwn(s, 'archive_url') &&
+    urlProblem(s.archive_url) !== null);
+  // Missing column in a projected snapshot is *unknown*, not a missing archive.
+  const unknownArchiveFieldSourceIds = missingPublishedSourceIds(s =>
+    urlProblem(s.url) !== null && !Object.hasOwn(s, 'archive_url'));
   const malformedArchiveSourceIds = missingPublishedSourceIds(s =>
     urlProblem(s.archive_url) === 'malformed');
   const newsTopicIds = new Set(topics.map(row => row.id));
@@ -374,6 +378,9 @@ export function auditNewsIngestion(snapshot) {
       published_marked_without_valid_url_or_archive: noValidLocatorSourceIds.length,
       published_no_valid_locator_source_ids: noValidLocatorSourceIds.slice(0,25),
       omitted_published_no_valid_locator_source_ids: Math.max(0, noValidLocatorSourceIds.length - 25),
+      published_marked_unknown_archive_field: unknownArchiveFieldSourceIds.length,
+      published_unknown_archive_field_source_ids: unknownArchiveFieldSourceIds.slice(0,25),
+      omitted_published_unknown_archive_field_source_ids: Math.max(0, unknownArchiveFieldSourceIds.length - 25),
       published_marked_malformed_archive_url: malformedArchiveSourceIds.length,
       published_malformed_archive_source_ids: malformedArchiveSourceIds.slice(0,25),
       omitted_published_malformed_archive_source_ids: Math.max(0, malformedArchiveSourceIds.length - 25),
