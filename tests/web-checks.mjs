@@ -192,3 +192,19 @@ assert.ok(pathLinks.every(item => item[3].length > 35), 'Links must explain evid
 assert.match(rabbitHole, /\.research-path\{[^}]*min-height:88px/);
 assert.match(rabbitHole, /\.research-path:focus-visible\{[^}]*outline:3px/);
 console.log('PASS: Rabbit Hole investigation paths offer full-tile touch/keyboard links with clear scope and provenance limits.');
+
+
+// An already indexed CIA retrospective is visible as a single shared record, with a
+// document-specific negative finding and no accidental Blue Beam or rename inference.
+const indexedSource212 = bluebirdPage.match(/<p id="cia-1975-indexed-source-note">([\s\S]*?)<\/p>/);
+assert.ok(indexedSource212, 'Missing the indexed 1975 CIA memorandum citation');
+assert.match(indexedSource212[1],/Separate indexed CIA record — source #212/);
+assert.match(indexedSource212[1],/dated January 31, 1975/);
+assert.match(indexedSource212[1],/record ID 3; research reference #4/);
+assert.match(indexedSource212[1],/record ID 4; research reference #5/);
+assert.match(indexedSource212[1],/found no record of hypnosis used as an operational tool in the field among the files examined/);
+assert.match(indexedSource212[1],/not two independent confirmations, proof of operational success, or evidence for Project Blue Beam/);
+assert.match(indexedSource212[1],/does not itself date the August 1951 rename/);
+assert.match(indexedSource212[1],/public-release date of this scan has not been independently verified/);
+assert.match(indexedSource212[1],/href="https:\/\/nsarchive2\.gwu\.edu\/NSAEBB\/NSAEBB438\/st02\.pdf#page=1" target="_blank" rel="noopener noreferrer"/);
+console.log('PASS: already indexed CIA source #212 links BLUEBIRD and ARTICHOKE without duplicate corroboration or Blue Beam promotion.');
