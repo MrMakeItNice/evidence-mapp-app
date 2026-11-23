@@ -55,7 +55,9 @@ function collectUrls(rows, field) {
   const found = new Map();
   for (const row of rows) {
     const url = cleanUrl(row[field]);
-    if (!url) continue;
+    // An identical but invalid URL is not evidence of a shared source.
+    // Report malformed links separately; do not use them for duplicate/linkage counts.
+    if (urlProblem(url) !== null) continue;
     // Conservative identity: never strip query strings, which may select distinct documents.
     if (!found.has(url)) found.set(url, []);
     found.get(url).push(row.id);
