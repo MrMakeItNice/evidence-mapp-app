@@ -12,7 +12,7 @@ const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 test('coarse-pointer map allows native vertical page scroll', () => {
   assert.ok(css, 'page stylesheet should exist');
   const defaultIndex = css.indexOf('touch-action:none');
-  const overrideIndex = css.indexOf('@media (pointer:coarse){.graph{touch-action:pan-y}');
+  const overrideIndex = css.indexOf('@media (any-pointer:coarse){.graph{touch-action:pan-y}');
   assert.ok(defaultIndex >= 0 && overrideIndex > defaultIndex, 'touch override must follow default map rule');
   assert.match(css.slice(overrideIndex), /\.graph-tools button\{min-width:44px;min-height:44px\}/);
 });
