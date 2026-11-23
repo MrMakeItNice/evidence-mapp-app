@@ -196,6 +196,13 @@ export function auditNewsIngestion(snapshot) {
   const inboxUrlQuality = urlQuality(inbox, 'source_url');
   const publishedSources = sources.filter(s=>s.published === true);
   const sourceUrlQuality = urlQuality(publishedSources, 'url');
+  // Review-only provenance triage: expose numeric source IDs, never titles/URLs.
+  // A missing field is not proof the underlying document is inauthentic.
+  const missingPublishedSourceIds = predicate => publishedSources
+    .filter(predicate).map(s => s.id).sort((a,b) => a-b);
+  const sourceDateGapIds = missingPublishedSourceIds(s => absent(s.publication_date));
+  const sourcePublisherGapIds = missingPublishedSourceIds(s => absent(s.publisher));
+  const sourceUrlGapIds = missingPublishedSourceIds(s => absent(s.url));
   const newsTopicIds = new Set(topics.map(row => row.id));
   const flaggedFutureNewsIds = [];
   const undatedNonGoogleIds = [];
@@ -345,6 +352,13 @@ export function auditNewsIngestion(snapshot) {
       ...sourceUrlQuality,
       published_marked_missing_date: sources.filter(s => s.published === true && absent(s.publication_date)).length,
       published_marked_missing_publisher: sources.filter(s => s.published === true && absent(s.publisher)).length,
+      // Sorted and capped IDs allow direct editorial assignment without leaking research content.
+      published_missing_date_source_ids: sourceDateGapIds.slice(0,25),
+      omitted_published_missing_date_source_ids: Math.max(0, sourceDateGapIds.length - 25),
+      published_missing_publisher_source_ids: sourcePublisherGapIds.slice(0,25),
+      omitted_published_missing_publisher_source_ids: Math.max(0, sourcePublisherGapIds.length - 25),
+      published_missing_url_source_ids: sourceUrlGapIds.slice(0,25),
+      omitted_published_missing_url_source_ids: Math.max(0, sourceUrlGapIds.length - 25),
       exact_url_duplicate_groups: repeatedGroups(sourceUrls)
     },
     overlap: {
