@@ -100,14 +100,14 @@ test('map placement needs its own linked provenance and never invents a point', 
   assert.equal(panel.children[4].href, reviewed.location_source_url);
 });
 
-test('list selection opens full-detail source evidence, focuses without scrolling, and replaces stale data', () => {
+test('list selection opens full-detail source evidence, focuses the region, and replaces stale data', () => {
   const panel = element('div');
   panel.hidden = true;
-  panel.focus = options => { panel.focusOptions = options; };
+  panel.focus = () => { panel.focused = true; };
   const [record] = reviewedMapEvents([event]);
   inspectReviewedMapSource(document, panel, record);
   assert.equal(panel.hidden, false);
-  assert.deepEqual(panel.focusOptions, {preventScroll: true});
+  assert.equal(panel.focused, true);
   assert.equal(panel.children[0].textContent, event.title);
   assert.equal(panel.children[2].href, event.source_url);
   assert.equal(panel.children[4].href, event.location_source_url);
