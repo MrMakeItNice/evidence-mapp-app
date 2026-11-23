@@ -106,7 +106,7 @@ test('reports skipped citation links without exposing unsafe URLs or claiming au
   assert.equal(warnings.length, 1);
   assert.match(warnings[0].textContent, /3 indexed citation links/);
   assert.match(warnings[0].textContent, /do not verify document authenticity/);
-  assert.doesNotMatch(warnings[0].textContent, /unsafe\\.example/);
+  assert.doesNotMatch(warnings[0].textContent, /unsafe\.example/);
   assert.equal(article.children[1].textContent, 'Evidence summary');
 
   const clean = renderSources([{ title: 'Archive scan', url: 'https://www.archives.gov/scan' }]);
