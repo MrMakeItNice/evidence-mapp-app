@@ -642,3 +642,43 @@ test('one-sided date candidates are numeric, sorted, capped and exclude invalid 
   assert.equal(r.omitted_news_missing_inbox_dated_id_pairs,9);
   assert.ok(!JSON.stringify(r).includes('person:secret'));
 });
+
+
+test('identifies active research watches without direct inbox records without inferring stalled polling',()=>{
+  const s=sample();
+  let w=auditNewsIngestion(s).watches;
+  assert.equal(w.active_research_without_direct_inbox,1);
+  assert.deepEqual(w.active_research_without_direct_inbox_ids,[1]);
+  s.research_inbox[0].watch_topic_id=1;
+  w=auditNewsIngestion(s).watches;
+  assert.equal(w.active_research_without_direct_inbox,0);
+  assert.deepEqual(w.active_research_without_direct_inbox_ids,[]);
+  assert.equal(w.stale_research_timestamp_fields,1);
+});
+
+test('keeps historical inbox assignments under inactive research watches separate',()=>{
+  const s=sample();
+  s.research_watch_topics[0].active=false;
+  s.research_inbox[0].watch_topic_id=1;
+  let w=auditNewsIngestion(s).watches;
+  assert.equal(w.active_research_without_direct_inbox,0);
+  assert.equal(w.inactive_research_with_inbox_records,1);
+  assert.deepEqual(w.inactive_research_with_inbox_ids,[1]);
+  s.research_inbox[0].watch_topic_id=null;
+  w=auditNewsIngestion(s).watches;
+  assert.equal(w.inactive_research_with_inbox_records,0);
+});
+
+test('caps and sorts watch assignment triage IDs without exposing private watch queries',()=>{
+  const s=sample();
+  s.research_watch_topics=[];
+  for(let id=30;id>=1;id--) s.research_watch_topics.push({
+    id,active:true,search_query:'PRIVATE WATCH QUERY '+id,last_checked_at:null
+  });
+  s.expected_counts.research_watch_topics=s.research_watch_topics.length;
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.active_research_without_direct_inbox,30);
+  assert.deepEqual(w.active_research_without_direct_inbox_ids,Array.from({length:25},(_,i)=>i+1));
+  assert.equal(w.omitted_active_research_without_inbox_ids,5);
+  assert.ok(!JSON.stringify(w).includes('PRIVATE WATCH QUERY'));
+});
