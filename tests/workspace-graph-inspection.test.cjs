@@ -117,3 +117,49 @@ test('click and Enter/Space paths dispatch the same record ID to inspection', as
   }
   assert.deepEqual(calls, ['source:source-b', 'source:source-b', 'source:source-b']);
 });
+
+test('case-list navigation preserves exact IDs and rejects unavailable records', async () => {
+  const registered = {};
+  const pages = [], notices = [];
+  const records = [
+    { id: 'case-alpha' }, { id: 'case-beta' },
+    { id: '9007199254740993' }, { id: 42 }
+  ];
+  const state = { caseId: null };
+  const clickLine = html.split('\n').find(line => line.startsWith("document.addEventListener('click',async e=>"));
+  assert.ok(clickLine, 'delegated case-list handler exists');
+  vm.runInNewContext(clickLine, {
+    document: { addEventListener: (type, callback) => { registered[type] = callback; } },
+    one: (table, id) => table === 'cases'
+      ? records.find(record => String(record.id) === String(id))
+      : undefined,
+    state,
+    nav: page => pages.push(page),
+    toast: msg => notices.push(msg)
+  });
+  const activate = id => registered.click({
+    target: {
+      dataset: { action: 'open-case', id },
+      closest: selector => selector === '[data-action]' ? {
+        dataset: { action: 'open-case', id }
+      } : null
+    }
+  });
+
+  await activate('case-alpha');
+  await activate('case-beta');
+  assert.equal(state.caseId, 'case-beta');
+  assert.deepEqual(pages, ['cases', 'cases']);
+
+  await activate('9007199254740993');
+  assert.equal(state.caseId, '9007199254740993', 'large IDs are not rounded by Number()');
+  await activate('42');
+  assert.equal(state.caseId, 42, 'persisted numeric ID retains its original type');
+
+  const navigations = pages.length;
+  await activate('missing-record');
+  assert.equal(state.caseId, 42, 'unknown ID does not select a different case');
+  assert.equal(pages.length, navigations, 'unknown ID cannot open a generic case index');
+  assert.equal(notices.length, 1, 'missing record receives an explanation');
+  assert.match(notices[0], /unavailable/i);
+});
