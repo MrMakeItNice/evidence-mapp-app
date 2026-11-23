@@ -83,16 +83,27 @@ export function showReviewedMapSource(doc, panel, event) {
 export function inspectReviewedMapSource(doc, detail, event, returnFocusTo) {
   showReviewedMapSource(doc, detail, event);
   if (returnFocusTo) {
+    const close = () => {
+      detail.hidden = true;
+      detail.replaceChildren();
+      detail.onkeydown = null;
+      returnFocusTo.setAttribute('aria-expanded', 'false');
+      returnFocusTo.focus();
+    };
     const back = doc.createElement('button');
     back.type = 'button';
     back.textContent = 'Back to map event list';
-    back.addEventListener('click', () => {
-      detail.hidden = true;
-      detail.replaceChildren();
-      returnFocusTo.setAttribute('aria-expanded', 'false');
-      returnFocusTo.focus();
-    });
+    back.addEventListener('click', close);
+    // A fresh handler follows the current selection; never retain an old
+    // event button when another source is inspected.
+    detail.onkeydown = event => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      close();
+    };
     detail.append(back);
+  } else {
+    detail.onkeydown = null;
   }
   detail.hidden = false;
   detail.focus(); // Move keyboard focus into the visible, inline provenance panel.
