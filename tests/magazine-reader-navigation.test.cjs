@@ -53,3 +53,23 @@ test('the recovery fragment resolves to a unique named, focusable issue menu',()
   assert.match(html,/<nav id="inside-this-issue" aria-labelledby="issue-heading" tabindex="-1">/);
   assert.match(html,/#inside-this-issue:focus-visible\{outline:3px solid var\(--red\)/);
 });
+
+test('issue links preserve each story query and target its focusable article on the destination page',()=>{
+  for(const search of ['', '?story=money', '?story=missing']){
+    const page=render(search);
+    const links=page.document.getElementById('issue-links').children;
+    assert.equal(links.length,3);
+    for(const [index,id] of ['history','money','mind'].entries()){
+      const link=links[index],url=new URL(link.href,'https://atlas.example/investigation-reader.html'+search);
+      assert.equal(url.pathname,'/investigation-reader.html');
+      assert.equal(url.searchParams.get('story'),id);assert.equal(url.hash,'#article');
+      const destination=render(url.search);
+      assert.equal(destination.heading.textContent,link.children[1].textContent);
+      assert.equal(destination.notice,undefined);assert.equal(destination.current.length,1);
+      assert.equal(destination.focusCalls,0,'native fragment navigation does not need scripted initial focus');
+    }
+  }
+  assert.equal([...html.matchAll(/id="article"/g)].length,1);
+  assert.match(html,/<article class="article" id="article" tabindex="-1"/);
+  assert.match(html,/\.article:focus-visible\{outline:3px solid var\(--red\)/);
+});
