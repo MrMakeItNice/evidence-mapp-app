@@ -51,6 +51,21 @@ function timestamp(value, field) {
   if (!Number.isFinite(date)) throw new Error('Invalid timestamp in ' + field);
   return date;
 }
+// Sources store a calendar date, unlike article/inbox timestamps (exact instants).
+// Compare to the UTC calendar day of the snapshot to avoid local-time ambiguity.
+// Future-dated records require editorial review, not automatic correction.
+function publicationDateOnly(value) {
+  if (absent(value)) return null;
+  if (typeof value !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) {
+    throw new Error('Invalid sources.publication_date');
+  }
+  const utcDate = new Date(value + 'T00:00:00Z');
+  if (!Number.isFinite(utcDate.getTime()) || utcDate.toISOString().slice(0,10) !== value) {
+    throw new Error('Invalid sources.publication_date');
+  }
+  return value;
+}
+
 function collectUrls(rows, field) {
   const found = new Map();
   for (const row of rows) {
@@ -215,6 +230,15 @@ export function auditNewsIngestion(snapshot) {
   const sourceDateGapIds = missingPublishedSourceIds(s => absent(s.publication_date));
   const sourcePublisherGapIds = missingPublishedSourceIds(s => absent(s.publisher));
   const sourceUrlGapIds = missingPublishedSourceIds(s => absent(s.url));
+  const futureSourcePublicationIds = [];
+  const asOfUtcDay = new Date(asOf).toISOString().slice(0,10);
+  for (const source of sources) {
+    const sourceDay = publicationDateOnly(source.publication_date);
+    if (sourceDay !== null && sourceDay > asOfUtcDay) {
+      futureSourcePublicationIds.push(source.id);
+    }
+  }
+  futureSourcePublicationIds.sort((a,b)=>a-b);
   // A valid archive-only locator is different from a source with no usable locator.
   // These are syntax checks only: neither URL is assumed reachable or authentic.
   const archiveOnlySourceIds = missingPublishedSourceIds(s =>
@@ -410,6 +434,11 @@ export function auditNewsIngestion(snapshot) {
       published_marked: sources.filter(s => s.published === true).length,
       ...sourceUrlQuality,
       published_marked_missing_date: sources.filter(s => s.published === true && absent(s.publication_date)).length,
+      // Calendar-day review signal, including sources not yet marked published.
+      // This is not proof that a planned release date is inaccurate.
+      publication_dates_after_snapshot_utc_day: futureSourcePublicationIds.length,
+      future_publication_date_source_ids: futureSourcePublicationIds.slice(0,25),
+      omitted_future_publication_date_source_ids: Math.max(0, futureSourcePublicationIds.length - 25),
       published_marked_missing_publisher: sources.filter(s => s.published === true && absent(s.publisher)).length,
       // Sorted and capped IDs allow direct editorial assignment without leaking research content.
       published_missing_date_source_ids: sourceDateGapIds.slice(0,25),
