@@ -214,3 +214,24 @@ test('visual and accessible selection follow initial, keyboard and pointer inspe
   get('selected-record').listeners.keydown({ key: 'Escape', preventDefault() {} });
   assert.equal(document.activeElement, cards[1]);
 });
+
+
+test('card guidance remains associated across inspection and save-status updates', async () => {
+  const instructions = html.match(/<div class="help" id="board-instructions">([\s\S]*?)<\/div>/);
+  assert.ok(instructions, 'persistent instructions are independent of the changing live status');
+  assert.match(instructions[1], /<span id="card-instructions">Enter or Space opens card details\. Escape from details returns to the card\./);
+  assert.match(instructions[1], /direction buttons to move a card without dragging/);
+  assert.match(instructions[1], /background to pan.*Zoom or Reset/);
+  assert.equal([...html.matchAll(/id="card-instructions"/g)].length, 1);
+  assert.equal([...html.matchAll(/id="board-instructions"/g)].length, 1);
+  assert.match(html, /id="viewport" role="group" aria-describedby="board-instructions"/);
+  const { get } = await createBoard();
+  for (const card of get('cards').children) {
+    assert.equal(card.attributes['aria-describedby'], 'card-instructions');
+    card.listeners.keydown({ key: 'Enter', preventDefault() {} });
+    get('save').listeners.click();
+    assert.equal(card.attributes['aria-describedby'], 'card-instructions');
+    assert.match(get('status').textContent, /Layout saved/);
+  }
+  assert.doesNotMatch(html, /(?:\$|getElementById)\(['"](?:board|card)-instructions['"]\)/, 'status actions do not rewrite the static instruction region');
+});
