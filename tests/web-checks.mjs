@@ -132,6 +132,16 @@ assert.match(bluebirdPage,/not a 1951 operational log/);
 assert.match(bluebirdPage,/establishes no Project Blue Beam link/);
 assert.match(bluebirdPage,/href="https:\/\/www\.cia\.gov\/readingroom\/docs\/CIA-RDP81-00261R000300050005-3\.pdf" target="_blank" rel="noopener noreferrer"/);
 assert.match(bluebirdPage,/PDF; may redirect/);
+// Avoid conflating the documented BLUEBIRD→ARTICHOKE rename with the Blue Beam hypothesis.
+assert.equal((bluebirdPage.match(/id="bluebird-bluebeam-assessment"/g)||[]).length,1);
+assert.match(bluebirdPage,/BLUEBIRD versus Blue Beam — thematic similarity only/);
+assert.match(bluebirdPage,/no reviewed source cited on this page establishes an operational connection or coordination/);
+assert.match(bluebirdPage,/Separate documented relationship/);
+assert.match(bluebirdPage,/href="#senate-1977-source-note">source-backed BLUEBIRD → ARTICHOKE rename<\/a>/);
+assert.match(bluebirdPage,/Any proposed BLUEBIRD–Blue Beam connection remains an investigator hypothesis/);
+assert.doesNotMatch(bluebirdPage,/These entries share suggestive wording and broad themes only/);
+console.log('PASS: BLUEBIRD/Blue Beam thematic comparison cannot be mistaken for documented BLUEBIRD-to-ARTICHOKE continuity.');
+
 console.log('PASS: CIA-documented BLUEBIRD to ARTICHOKE continuity is traceable; fallback transcript is explicitly secondary and no false link is promoted.');
 
 // Shared investigation navigation opens exact canonical records, not index cross-references.
