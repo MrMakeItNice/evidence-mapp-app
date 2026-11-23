@@ -806,3 +806,47 @@ test('sorts and caps future publication source IDs without revealing private tit
   assert.ok(!JSON.stringify(r).includes('SECRET UNPUBLISHED SOURCE'));
   assert.ok(!JSON.stringify(r).includes('private.example'));
 });
+
+
+test('future feed success cannot count as a recent completed poll',()=>{
+  const s=sample();
+  s.agent_control_feeds[0].last_success_at='2026-11-23T02:20:01Z';
+  s.agent_control_feeds[0].last_run_status='error';
+  let w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_without_success_in_24h,1);
+  assert.equal(w.collectors_latest_error_without_recent_success,1);
+  assert.deepEqual(w.future_success_feed_ids,[1]);
+  s.agent_control_feeds[0].last_success_at=s.as_of;
+  w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_without_success_in_24h,0);
+  assert.equal(w.collectors_latest_error_with_recent_success,1);
+  assert.deepEqual(w.future_success_feed_ids,[]);
+});
+
+test('future active collector IDs are sorted and capped; inactive feeds excluded',()=>{
+  const s=sample();
+  s.agent_control_feeds=Array.from({length:30},(_,i)=>({
+    feed_id:30-i,active:true,last_success_at:'2026-11-24T00:00:00Z',name:'PRIVATE FEED'
+  }));
+  s.agent_control_feeds.push({feed_id:99,active:false,last_success_at:'2026-11-24T00:00:00Z'});
+  s.expected_counts.agent_control_feeds=s.agent_control_feeds.length;
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_future_success_timestamp,30);
+  assert.equal(w.collectors_without_success_in_24h,30);
+  assert.deepEqual(w.future_success_feed_ids,Array.from({length:25},(_,i)=>i+1));
+  assert.equal(w.omitted_future_success_feed_ids,5);
+  assert.ok(!JSON.stringify(w).includes('PRIVATE FEED'));
+});
+
+test('rejects a 1000-row truncated snapshot when independent count is 1001',()=>{
+  const s=sample();
+  for(let id=3;id<=1001;id++) s.news_items.push({
+    id,topic_id:1,source_url:'https://agency.gov/item?id='+id,
+    review_status:'pending',published_at:null
+  });
+  s.expected_counts.news_items=1001;
+  const last=s.news_items.pop();
+  assert.throws(()=>auditNewsIngestion(s),/Incomplete news_items snapshot/);
+  s.news_items.push(last);
+  assert.equal(auditNewsIngestion(s).news.total,1001);
+});
