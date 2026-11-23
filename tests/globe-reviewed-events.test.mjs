@@ -138,6 +138,27 @@ test('withholds conflicted canonical event dates and categories without choosing
   ]).length, 1);
 });
 
+test('withholds conflicting map-placement rationale for the same ID in either feed order', () => {
+  const conflicting = withChanges({location_note: 'Exact address determined from independent records'});
+  for (const candidates of [[event, conflicting], [conflicting, event]]) {
+    assert.deepEqual(reviewedMapEvents(candidates), [],
+      'different location precision claims cannot silently inherit the first citation');
+    const list = element('ul');
+    assert.deepEqual(renderReviewedMapList(document, list, candidates, () => {}), []);
+    assert.equal(list.children.length, 0);
+  }
+  const unaffected = reviewedMapEvents([
+    event, conflicting, withChanges({id: 'different-event'})
+  ]);
+  assert.deepEqual(unaffected.map(item => item.id), ['different-event']);
+  assert.equal(reviewedMapEvents([
+    event, withChanges({location_note: '  ' + event.location_note + '  '})
+  ]).length, 1, 'insignificant surrounding whitespace is not a provenance conflict');
+  assert.equal(reviewedMapEvents([
+    event, withChanges({review_status: 'pending', location_note: 'Unreviewed rival placement'})
+  ]).length, 1, 'unreviewed copies do not override a reviewed location');
+});
+
 test('renders keyboard-focusable inspection buttons with safe text, not HTML', () => {
   const list = element('ul');
   let selection;
