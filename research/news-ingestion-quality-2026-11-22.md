@@ -1,6 +1,29 @@
 # Evidence Atlas — ingestion quality checkpoint (review only)
 
 
+## Read-only checkpoint — November 23, 2026, 16:46 UTC (08:46 Pacific)
+
+**Scope and controls.** All Supabase work was read-only SELECT against project `nxlffnplqdobfqxogmxo`. This checkpoint and its proposed code/tests are confined to the existing draft research branch. No database schema/data modification, collector changes, access-challenge workaround, deployment, merge, source linking or automatic publication.
+
+**Ingestion inventory:** 995/995 news items pending review, 58 discovered in the preceding 24 hours, **138** pending longer than 14 days (up from 135 at the previous checkpoint); 478 missing publication timestamps, including 19 non-Google-URL items. The research inbox remains 40 pending, 36 older than 14 days, four without publication dates and four without research-watch assignment. All 36 news topics are active, 11 without directly linked news records. Three active research watches (IDs 1, 4, 8) have no directly assigned inbox item, which does not establish collection failure.
+
+**Source provenance and overlap:** 123 sources marked published; 53 lack publication dates, one lacks publisher metadata and one lacks a primary URL. Source #285 remains missing publication date, publisher, primary URL **and archive URL** despite its published flag. There are 25 exact news/inbox and five exact news/source URL row-pairs, no inbox/source pairs, five news/inbox publisher-label differences, and zero exact URL duplicate groups within news, inbox or sources. No exact URL match is treated as independent corroboration. Search/database checks here are metadata checks, not source-authenticity or document-resolution tests.
+
+**Feed telemetry:** six of seven active feeds have a successful HTTP 200 in the preceding 24 hours. Positive News remains blocked: **41 completed HTTP 403**, zero 200, last success November 11. Palestine/Gaza and Epstein Google News each had one 429 and 40 HTTP 200 completions. All 11 research-watch and seven news-watch timestamps are stale/blank, despite collector successes. Authorized source alternatives and manual retrieval should be evaluated; never bypass a 403.
+
+**New chronology safeguard:** The offline audit now independently flags inbox publication and discovery timestamps later than the offset-aware `as_of` instant, with deterministic numeric-only IDs and omission counts. It rejects malformed publication timestamps even on already-reviewed inbox items. Three regression tests are added. Current read-only database inspection finds **zero** future publication, discovery or added timestamps across the 40 inbox records. No dates are inferred or rewritten.
+
+### Original primary-document leads for human editorial review only
+
+**GAO-27-108423 — Medicare: Out-of-Pocket Costs and Other Factors Can Affect Use of Services for Cardiovascular Disease Prevention.** Original: https://www.gao.gov/products/gao-27-108423 . **Published and publicly released November 23, 2026.** GAO analyzed Medicare claims from 2021–2025 and interviews with stakeholder organizations. About 90% of traditional Medicare beneficiaries in the selected claims analysis (16.2 million of 18.1 million) received at least one lipid test; some cardiovascular-prevention services showed much lower specific-code utilization. Interviewees and selected research identify out-of-pocket costs, provider access and knowledge of coverage as possible influences. **Boundary:** claims codes may undercount equivalent care delivered under different billing codes; interviews do not establish a population-level causal effect. Suggested review area: health policy / accessibility of preventive care. Check underlying methodology before converting into public conclusions.
+
+**DOJ Release 26-1396 — Florida clinical research trial data falsification verdict.** Official announcement: https://www.justice.gov/opa/pr/florida-doctor-and-medical-research-employees-convicted-falsifying-data-clinical-trials-new . **Published November 23, 2026.** DOJ reports a federal jury convicted four individuals in connection with fabricated participant and testing records at Pines Care Research Center; another staff member had previously pleaded guilty. Sentencing remains future, so do not report a sentence or describe unadjudicated factual claims as independent court findings. Seek court docket and defense submissions for record-level verification. Suggested review area: clinical research integrity / fraud adjudication.
+
+**Duplicate-screen limitation:** Direct identifier, distinctive-name and official-URL pattern checks across `news_items`, `research_inbox` and `sources` found **zero direct matches** for these two originals. Broader keywords matched **two existing news items about other clinical trials**, not confirmed duplicates. Equivalent reporting under other titles or URLs remains possible. **Both leads are memo-only; neither was ingested, linked or published.**
+
+---
+
+
 ## Read-only checkpoint — November 23, 2026, 14:52 UTC (06:52 Pacific)
 
 **Production guardrails:** Read-only SELECT statements only against Supabase project `nxlffnplqdobfqxogmxo`. The changes below affect only this draft GitHub PR's source/tests/memo. No production schema/data change, deployment, merge, publication, feed configuration or access-challenge bypass.
