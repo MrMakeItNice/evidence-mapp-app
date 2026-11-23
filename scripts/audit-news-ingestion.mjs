@@ -43,8 +43,18 @@ function urlQuality(rows, field) {
 
 function timestamp(value, field) {
   if (absent(value)) return null;
-  if (typeof value !== 'string' ||
-      !/^\d{4}-\d\d-\d\d[T ]\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d(?::?\d\d)?)$/.test(value)) {
+  // Date.parse() normalizes nonexistent days such as February 30. Check calendar fields first.
+  const parts = typeof value === 'string' &&
+    /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|([+-])(\d{2})(?::?(\d{2}))?)$/.exec(value);
+  if (!parts) throw new Error('Invalid timestamp in ' + field);
+  const year = Number(parts[1]), month = Number(parts[2]), day = Number(parts[3]);
+  const hour = Number(parts[4]), minute = Number(parts[5]), second = Number(parts[6]);
+  const tzHours = Number(parts[10] || 0), tzMinutes = Number(parts[11] || 0);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const monthDays = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (year < 1 || month < 1 || month > 12 || day < 1 || day > monthDays[month - 1] ||
+      hour > 23 || minute > 59 || second > 59 || tzHours > 14 || tzMinutes > 59 ||
+      (tzHours === 14 && tzMinutes !== 0)) {
     throw new Error('Invalid timestamp in ' + field);
   }
   const date = Date.parse(value);
