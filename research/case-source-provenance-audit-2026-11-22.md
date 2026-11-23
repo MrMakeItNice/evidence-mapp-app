@@ -210,3 +210,48 @@ Seven enabled collector summaries show six recent HTTP 200 completions (latest c
 Targeted ID/title/URL queries in `news_items`, `research_inbox`, and `sources` found **no direct matches** to these two identifiers/titles. This does not rule out variants, linked topics, previous memos or other sources. Both leads are **staged here in the review-only memo**, not inserted into production or published.
 
 **Safety:** no database writes/schema changes, credential exposure, source-status changes, PR merges, deployment or automatic publication. Focused tests and workflow status must be checked on the new head commit before calling the update verified.
+
+
+## Follow-up: November 23, 2026, 00:18 UTC / November 22, 4:18 PM Pacific — claim-mediated citation pathway
+
+### New cross-path finding: 388 distinct *catalog pairs*, not 388 verified citations
+
+Fresh **SELECT-only** joins found **seven `claim_sources` edges for five claim records**, representing only **two distinct case/source pairs**, both associated with the same published case. One pair is already present in the master register; **one** pair (`case_id=1, source_id=2`) is absent from both assessed case-register and case→source graph links. Thus **218 distinct register pairs + 244 graph pairs − 75 overlaps = 387; adding one previously unrepresented claim-mediated pair gives 388** distinct case/source *relationships* across three paths. These are **catalog relationships, not independently corroborated findings**. Claim evidence may support, refute or contextualize a proposition and cannot be promoted automatically to case-level proof.
+
+The count of published cases with at least one complete marked-published **direct register or graph** source remains **59/140**; the remaining **81/140** still require metadata review under that specific definition. Claim-mediated sources must be assessed in their claim context, not pooled with direct citations to inflate primary-document coverage.
+
+### Engineering change in this draft PR
+
+The offline diagnostic accepts `claims` and `claim_sources` together as an **optional third, complete-snapshot pathway**. If neither snapshot is supplied, `claim_evidence` is null; if either table or expected count is missing/truncated, the audit fails rather than inventing zero links. It verifies case/source references, rejects repeated claim/source composite keys, handles claims without an assigned case, counts overlaps with register and optional graph pathways, and emits only capped **numeric case/source IDs** for newly represented indirect pairs. It never exports claim text, page references, URL contents or unpublished notes. Five new focused regression tests cover completeness, overlap, privacy and bad links. This is an offline tool with **no network/database client, no production writes, and no automatic relationship creation**.
+
+### Current live ingestion and collector inventory (00:18 UTC)
+
+| Read-only check | Observed |
+|---|---:|
+| News items awaiting review | 952/952 |
+| News discovered in preceding 24 hours | 52 |
+| News without publication timestamps | 453 |
+| Google News proxy items among undated records | 434 |
+| Pending news older than 14 days | 135 |
+| Research inbox pending | 40/40 |
+| Inbox items undated / without watch assignment | 4 / 4 |
+| Source library marked published | 123 |
+| Published-marked library sources undated | 53 |
+| Exact news↔research-inbox URL overlaps | 25 |
+| Exact news↔source-library URL overlaps | 5 |
+| Exact URL duplicates within each of three collections | 0 groups |
+| Active news topics with zero news records | 11/36 |
+| Research watches with stale/blank `last_checked_at` | 11/11 |
+| News watches with stale/blank `last_collected_at` | 7/7 |
+
+Watch timestamp fields alone are not reliable proof of collection cessation. Of seven active feed summaries, six have recent successful completions. **Positive News** remains blocked by an HTTP 403 challenge, with **41 completed 403 observations in the retained preceding 24-hour activity** and no recorded success since November 11. **COVID-19 Google News** has a rate-limit 429 observation followed by successful polling. Public Health BBC had a pending run at the snapshot instant, not an established failure. Do not bypass source access restrictions.
+
+### Two original-agency documents for editor review — **not** publication
+
+**GAO-27-108656 — Critical Infrastructure Protection: Food and Agriculture Sector Cybersecurity**, **published and publicly released November 19, 2026**. Official full report (accessible HTML): https://files.gao.gov/reports/GAO-27-108656/index.html . GAO assessed USDA/FDA actions against 16 requirements across six statutory categories. Its audit says five requirements were partially met or unmet; resource and staffing constraints were reported. It made five recommendations overall (three to HHS and two to USDA); HHS concurred and USDA disagreed with its two. The report recounts voluntary industry incident data and interviews with a small nonrepresentative set of organizations; **incident tallies are not a complete census and do not establish intentional sabotage**. Editorial relevance: food-system resilience, cybersecurity, public-risk accountability. Independently verify any incident-level claim against the cited underlying records.
+
+**DOJ — Nikhil Gupta sentencing statement**, **November 20, 2026**. Official DOJ announcement: https://www.justice.gov/opa/pr/indian-national-sentenced-over-19-years-prison-plotting-assassinate-us-citizen-new-york-city . DOJ says Gupta was sentenced to **235 months** after a **February 2026 guilty plea** to murder-for-hire-related and money-laundering conspiracy charges. The sentencing/plea is materially different from allegations about additional individuals or an entire government: **attribute the claimed direction by an Indian government employee to DOJ/court filings, and do not treat unadjudicated co-defendant allegations as convictions**. Editorial relevance: transnational state-linked violence investigations and evidentiary distinctions between pleas, court findings, and allegations. Consult court docket and response from relevant parties before publishing a developed case.
+
+A targeted database search for the above report ID, core title phrases and official URL fragments in `news_items`, `research_inbox` and `sources` returned **no direct matches**. This does not prove absence in other structures, alternative URLs, or earlier editorial notes. Both are staged in **this PR memo only**; nothing has been published or inserted into production.
+
+**Boundary:** no Supabase changes of any kind, merges, deploys, collector changes, publication-status updates or automated research publication. Run the new focused test workflow and independently review findings before marking the PR ready.
