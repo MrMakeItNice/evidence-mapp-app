@@ -108,6 +108,7 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
   const get = id => { if (!elements.has(id)) elements.set(id, make('div')); return elements.get(id); };
   get('viewport').clientWidth = 1000;
   const document = {
+    title: html.match(/<title>(.*?)<\/title>/)[1],
     getElementById: get, createElement: make, createElementNS: (_, tag) => make(tag),
     querySelectorAll: () => get('cards').children
   };
@@ -398,4 +399,24 @@ test('case switches discard a stale active drag before rendering new cards', asy
   view.listeners.pointerdown(pointer(2));
   view.listeners.pointermove(pointer(2, { clientX: 30 }));
   assert.notEqual(world.style.transform, before);
+});
+
+
+test('case identity stays aligned in the tab and named board group without following inspected citation titles', async () => {
+  const title = 'Case <draft> & "notes"';
+  const { get, document } = await createBoard([{ id: '1', title }, { id: '2', title: 'Second investigation' }]);
+  assert.equal(document.title, title + ' · Evidence Board | Evidence Atlas');
+  assert.equal(get('heading').textContent, title);
+  assert.equal([...html.matchAll(/id="heading"/g)].length, 1);
+  assert.match(html, /<h1 id="heading">/);
+  const viewport = html.match(/<div class="viewport"[^>]+>/)[0];
+  assert.match(viewport, /role="group"/); assert.match(viewport, /aria-labelledby="heading"/);
+  assert.match(viewport, /aria-describedby="board-instructions"/);
+  assert.doesNotMatch(viewport, /aria-label=/);
+  get('cards').children[1].listeners.keydown({ key: 'Enter', preventDefault() {} });
+  assert.equal(get('details').children[0].textContent, 'Original document');
+  assert.equal(document.title, title + ' · Evidence Board | Evidence Atlas');
+  get('cases').children[1].listeners.click();
+  assert.equal(get('heading').textContent, 'Second investigation');
+  assert.equal(document.title, 'Second investigation · Evidence Board | Evidence Atlas');
 });
