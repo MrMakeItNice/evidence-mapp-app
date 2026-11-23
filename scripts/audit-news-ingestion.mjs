@@ -199,12 +199,17 @@ export function auditNewsIngestion(snapshot) {
   const newsTopicIds = new Set(topics.map(row => row.id));
   const flaggedFutureNewsIds = [];
   const undatedNonGoogleIds = [];
+  const unknownPendingNewsDiscoveryIds = [];
+  const futureNewsDiscoveryIds = [];
   let discovered24h = 0, pending14d = 0, undatedGoogle = 0, undated = 0;
   const agedPendingNewsByTopic = new Map();
   for (const n of news) {
     if (n.topic_id != null && !newsTopicIds.has(n.topic_id)) throw new Error('Unknown news topic');
     const published = timestamp(n.published_at, 'news.published_at');
     const discovered = timestamp(n.discovered_at, 'news.discovered_at');
+    // Do not silently classify missing intake timestamps as recent or old.
+    if (discovered === null && n.review_status === 'pending') unknownPendingNewsDiscoveryIds.push(n.id);
+    if (discovered !== null && discovered > asOf) futureNewsDiscoveryIds.push(n.id);
     if (published === null) {
       undated++;
       const googleProxy = String(n.publisher || '').toLowerCase().includes('google') ||
@@ -279,6 +284,8 @@ export function auditNewsIngestion(snapshot) {
   latestErrorWithoutRecentSuccessIds.sort((a,b) => a-b);
   flaggedFutureNewsIds.sort((a,b) => a-b);
   undatedNonGoogleIds.sort((a,b) => a-b);
+  unknownPendingNewsDiscoveryIds.sort((a,b) => a-b);
+  futureNewsDiscoveryIds.sort((a,b) => a-b);
   const emptyActiveTopicIds = activeTopics.filter(t => !topicWithItem.has(t.id)).map(t => t.id).sort((a,b) => a-b);
   const newsInboxCandidates = overlapCandidatePairs(newsUrls, inboxUrls);
   const newsSourceCandidates = overlapCandidatePairs(newsUrls, sourceUrls);
@@ -291,6 +298,12 @@ export function auditNewsIngestion(snapshot) {
       pending: news.filter(n => n.review_status === 'pending').length,
       discovered_last_24h: discovered24h,
       pending_over_14d: pending14d,
+      pending_without_discovery_timestamp: unknownPendingNewsDiscoveryIds.length,
+      unknown_discovery_pending_item_ids: unknownPendingNewsDiscoveryIds.slice(0,25),
+      omitted_unknown_discovery_pending_item_ids: Math.max(0, unknownPendingNewsDiscoveryIds.length - 25),
+      discovered_after_snapshot_time: futureNewsDiscoveryIds.length,
+      future_discovered_item_ids: futureNewsDiscoveryIds.slice(0,25),
+      omitted_future_discovered_item_ids: Math.max(0, futureNewsDiscoveryIds.length - 25),
       // Capped, deterministic topic-level triage; counts are not evidence quality scores.
       aged_pending_topic_counts: agedNewsTopicRank.slice(0, 10),
       omitted_aged_pending_topics: Math.max(0, agedNewsTopicRank.length - 10),
