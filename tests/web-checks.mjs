@@ -102,5 +102,15 @@ assert.match(bluebirdPage,/independent transcript of the 1975 CIA memorandum/);
 assert.match(bluebirdPage,/third-party transcription is not the original scanned record/);
 assert.match(bluebirdPage,/BLUEBIRD\/ARTICHOKE section, paragraph 4/);
 assert.match(bluebirdPage,/href="https:\/\/www\.psychedelicarchive\.com[^"]+" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer"/);
+// An additional CIA archival report corroborates the name change without adding an alleged operation or graph edge.
+assert.equal((bluebirdPage.match(/id="cia-1977-archive-note"/g)||[]).length,1);
+assert.match(bluebirdPage,/CIA-RDP81-00261R000300050005-3/);
+assert.match(bluebirdPage,/approved for release 2002\/05\/01/);
+assert.match(bluebirdPage,/section IV, also dates the BLUEBIRD-to-ARTICHOKE name change to August 1951/);
+assert.match(bluebirdPage,/later inventory-based summary/);
+assert.match(bluebirdPage,/not a 1951 operational log/);
+assert.match(bluebirdPage,/establishes no Project Blue Beam link/);
+assert.match(bluebirdPage,/href="https:\/\/www\.cia\.gov\/readingroom\/docs\/CIA-RDP81-00261R000300050005-3\.pdf" target="_blank" rel="noopener noreferrer"/);
+assert.match(bluebirdPage,/PDF; may redirect/);
 console.log('PASS: CIA-documented BLUEBIRD to ARTICHOKE continuity is traceable; fallback transcript is explicitly secondary and no false link is promoted.');
 
