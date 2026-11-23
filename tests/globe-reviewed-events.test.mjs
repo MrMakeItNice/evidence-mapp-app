@@ -4,7 +4,10 @@ import {reviewedMapEvents, showReviewedMapSource, renderReviewedMapList} from '.
 
 const event = {id: 'archive-01', title: 'Reviewed documented event', category: 'neutral',
   event_date: '2024-02-29', lat: 37.7, lon: -122.4,
-  source_url: 'https://archive.example.gov/report?id=12#p3', review_status: 'verified'};
+  source_url: 'https://archive.example.gov/report?id=12#p3',
+  location_source_url: 'https://archive.example.gov/report?id=12#location',
+  location_note: 'Reported city center; approximate map position, not a street address',
+  review_status: 'verified'};
 const withChanges = changes => ({...event, ...changes});
 
 function element(tag) {
@@ -19,6 +22,9 @@ test('accepts reviewed source-backed coordinates and keeps document identity', (
   assert.equal(record.source_url, event.source_url);
   assert.equal(record.source_host, 'archive.example.gov');
   assert.equal(record.lat, 37.7);
+  assert.equal(record.location_source_url, event.location_source_url);
+  assert.equal(record.location_source_host, 'archive.example.gov');
+  assert.equal(record.location_note, event.location_note);
 });
 
 test('rejects unpublished, unsourced and mislocated events, without inventing a pin', () => {
@@ -28,7 +34,11 @@ test('rejects unpublished, unsourced and mislocated events, without inventing a 
     withChanges({source_url: 'https://archive.example.gov@misleading.test/report'}),
     withChanges({lat: 91}), withChanges({lon: -181}),
     withChanges({lat: '37.7'}), withChanges({event_date: '2025-02-29'}),
-    withChanges({category: 'unverified'}), withChanges({id: '  '})];
+    withChanges({category: 'unverified'}), withChanges({id: '  '}),
+    withChanges({location_source_url: ''}), withChanges({location_source_url: 'http://archive.example.gov/'}),
+    withChanges({location_source_url: 'javascript:alert(1)'}),
+    withChanges({location_source_url: 'https://user:pass@archive.example.gov/location'}),
+    withChanges({location_note: null}), withChanges({location_note: '  '})];
   for (const candidate of invalid) assert.equal(reviewedMapEvents([candidate]).length, 0,
     JSON.stringify(candidate));
 });
@@ -67,4 +77,24 @@ test('shows an accessible source preview with safe external-link attributes', ()
   assert.equal(link.href, event.source_url);
   assert.equal(link.target, '_blank');
   assert.equal(link.rel, 'noopener noreferrer');
+  assert.match(panel.children[3].textContent, /approximate map position/);
+  assert.match(panel.children[3].textContent, /not independently verified GPS precision/);
+  const locationLink = panel.children[4];
+  assert.equal(locationLink.href, event.location_source_url);
+  assert.equal(locationLink.target, '_blank');
+  assert.equal(locationLink.rel, 'noopener noreferrer');
+});
+
+test('map placement needs its own linked provenance and never invents a point', () => {
+  const sourceOnly = withChanges({location_source_url: undefined, location_note: undefined});
+  assert.equal(reviewedMapEvents([sourceOnly]).length, 0);
+  const [reviewed] = reviewedMapEvents([withChanges({
+    location_source_url: 'https://locations.example.org/coordinates?record=1#place',
+    location_note: 'Approximate district center; source identifies the district, not the exact site'
+  })]);
+  assert.equal(reviewed.location_source_host, 'locations.example.org');
+  assert.equal(reviewed.location_source_url, 'https://locations.example.org/coordinates?record=1#place');
+  const panel = element('div');
+  showReviewedMapSource(document, panel, reviewed);
+  assert.equal(panel.children[4].href, reviewed.location_source_url);
 });
