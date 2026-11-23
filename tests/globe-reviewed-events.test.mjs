@@ -558,3 +558,22 @@ test('globe marker selection opens the same accessible full-width preview as a l
   assert.equal(button.focused, true, 'Back returns to the selected event');
   assert.equal(button.getAttribute('aria-expanded'), 'false');
 });
+
+
+test('same-title map events expose distinct canonical IDs and placement rationale before inspection', () => {
+  const list = element('ul');
+  const second = withChanges({id: ' archive-02 ',
+    location_note: 'Approximate regional center; original record identifies only the region'});
+  const records = renderReviewedMapList(document, list, [event, second], () => {});
+  assert.equal(records.length, 2);
+  const [firstButton, firstContext] = list.children[0].children;
+  const [secondButton, secondContext] = list.children[1].children;
+  assert.equal(firstButton.textContent, secondButton.textContent);
+  assert.equal(firstButton.getAttribute('aria-describedby'), firstContext.id);
+  assert.equal(secondButton.getAttribute('aria-describedby'), secondContext.id);
+  assert.ok(firstContext.textContent.includes('Event ID: archive-01 ·'));
+  assert.ok(secondContext.textContent.includes('Event ID: archive-02 ·'));
+  assert.ok(firstContext.textContent.includes('Map placement: ' + event.location_note));
+  assert.ok(secondContext.textContent.includes('Map placement: ' + second.location_note));
+  assert.ok(firstContext.textContent.includes('Same document used for both citations; not independent corroboration'));
+});
