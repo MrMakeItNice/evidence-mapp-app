@@ -128,4 +128,16 @@ assert.match(explorerDeepLink,/byId\.get\(String\(hash\)\)/);
 assert.match(bluebirdPage,/shared subject or source does not establish coordination or causation/i);
 console.log('PASS: Rabbit Hole offers exact BLUEBIRD/ARTICHOKE Explorer deep links without duplicate cases or causal inference.');
 
+// Reviewed-source fallback: cite an existing Senate source in both canonical cases, not a new graph edge.
+assert.equal((bluebirdPage.match(/id="senate-1977-source-note"/g)||[]).length,1);
+assert.match(bluebirdPage,/Congressional record already indexed as source #258/);
+assert.match(bluebirdPage,/August 3, 1977/);
+assert.match(bluebirdPage,/Appendix A, section 2/);
+assert.match(bluebirdPage,/printed pp\. 67–68/);
+assert.match(bluebirdPage,/source #258 cited by the canonical BLUEBIRD \(record ID 3\) and ARTICHOKE \(record ID 4\) Case Files/);
+assert.match(bluebirdPage,/not a newly discovered operation, a reviewed causal edge, or evidence for Project Blue Beam/);
+assert.match(bluebirdPage,/href="https:\/\/www\.intelligence\.senate\.gov\/sites\/default\/files\/hearings\/95mkultra\.pdf" target="_blank" rel="noopener noreferrer"/);
+console.log('PASS: reviewed 1977 Senate hearing section and existing source #258 provide original-document navigation without a duplicate program or public edge.');
+
+
 
