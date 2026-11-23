@@ -491,3 +491,53 @@ test('unknown news discovery IDs are sorted and capped with omitted count',()=>{
   assert.equal(report.news.omitted_unknown_discovery_pending_item_ids,3);
   assert.ok(!JSON.stringify(report).includes('/SECRET/'));
 });
+
+
+test('published-source provenance gap review returns numeric IDs for missing fields only',()=>{
+  const s=sample();
+  s.sources[0].title='UNPUBLISHED SENSITIVE SOURCE TITLE';
+  let report=auditNewsIngestion(s).sources;
+  assert.deepEqual(report.published_missing_date_source_ids,[20]);
+  assert.deepEqual(report.published_missing_publisher_source_ids,[20]);
+  assert.deepEqual(report.published_missing_url_source_ids,[]);
+  s.sources[0].url=null;
+  report=auditNewsIngestion(s).sources;
+  assert.deepEqual(report.published_missing_url_source_ids,[20]);
+  assert.equal(report.missing_url,1);
+  assert.ok(!JSON.stringify(report).includes('UNPUBLISHED'));
+  assert.ok(!JSON.stringify(report).includes('agency.gov'));
+});
+
+test('provenance gap IDs are sorted and capped without including unpublished sources',()=>{
+  const s=sample();
+  for (let id=60;id>=21;id--) {
+    s.sources.push({id,published:true,publication_date:null,publisher:null,url:null,
+      title:'PRIVATE SOURCE '+id});
+  }
+  s.sources.push({id:99,published:false,publication_date:null,publisher:null,url:null});
+  s.expected_counts.sources=s.sources.length;
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_missing_date,41);
+  assert.equal(report.published_marked_missing_publisher,41);
+  assert.deepEqual(report.published_missing_date_source_ids,
+    Array.from({length:25},(_,i)=>20+i));
+  assert.deepEqual(report.published_missing_publisher_source_ids,
+    Array.from({length:25},(_,i)=>20+i));
+  assert.deepEqual(report.published_missing_url_source_ids,
+    Array.from({length:25},(_,i)=>21+i));
+  assert.equal(report.omitted_published_missing_date_source_ids,16);
+  assert.equal(report.omitted_published_missing_publisher_source_ids,16);
+  assert.equal(report.omitted_published_missing_url_source_ids,15);
+  assert.ok(!JSON.stringify(report).includes('PRIVATE SOURCE'));
+});
+
+test('complete published-source metadata clears all review candidate IDs',()=>{
+  const s=sample();
+  s.sources[0].publication_date='2026-11-19';
+  s.sources[0].publisher='Official Publisher';
+  const report=auditNewsIngestion(s).sources;
+  assert.deepEqual(report.published_missing_date_source_ids,[]);
+  assert.deepEqual(report.published_missing_publisher_source_ids,[]);
+  assert.deepEqual(report.published_missing_url_source_ids,[]);
+  assert.equal(report.omitted_published_missing_date_source_ids,0);
+});
