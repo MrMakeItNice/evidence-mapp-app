@@ -541,3 +541,44 @@ test('complete published-source metadata clears all review candidate IDs',()=>{
   assert.deepEqual(report.published_missing_url_source_ids,[]);
   assert.equal(report.omitted_published_missing_date_source_ids,0);
 });
+
+test('archive-only published sources have a locator but no valid primary URL',()=>{
+  const s=sample();
+  s.sources[0].url=null;
+  s.sources[0].archive_url='https://archive.example.org/snapshot?doc=20';
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_archive_only,1);
+  assert.deepEqual(report.published_archive_only_source_ids,[20]);
+  assert.equal(report.published_marked_without_valid_url_or_archive,0);
+  assert.deepEqual(report.published_no_valid_locator_source_ids,[]);
+  assert.deepEqual(report.published_missing_url_source_ids,[20]);
+});
+
+test('malformed primary and archive URLs do not establish a verifiable locator',()=>{
+  const s=sample();
+  s.sources[0].url='ftp://agency.gov/20';
+  s.sources[0].archive_url='https://user:password@archive.example.org/20';
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_archive_only,0);
+  assert.equal(report.published_marked_without_valid_url_or_archive,1);
+  assert.deepEqual(report.published_no_valid_locator_source_ids,[20]);
+  assert.equal(report.published_marked_malformed_archive_url,1);
+  assert.deepEqual(report.published_malformed_archive_source_ids,[20]);
+  assert.ok(!JSON.stringify(report).includes('password'));
+  assert.ok(!JSON.stringify(report).includes('agency.gov'));
+});
+
+test('unlocatable published source IDs are sorted and capped, not leaked from unpublished records',()=>{
+  const s=sample();
+  for (let id=50; id>=21; id--) s.sources.push({
+    id, published:true, url:null, archive_url:null, title:'PRIVATE DOCUMENT '+id
+  });
+  s.sources.push({id:99,published:false,url:null,archive_url:null,title:'UNPUBLISHED PRIVATE'});
+  s.expected_counts.sources=s.sources.length;
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_without_valid_url_or_archive,30);
+  assert.deepEqual(report.published_no_valid_locator_source_ids,
+    Array.from({length:25},(_,i)=>21+i));
+  assert.equal(report.omitted_published_no_valid_locator_source_ids,5);
+  assert.ok(!JSON.stringify(report).includes('PRIVATE'));
+});
