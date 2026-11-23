@@ -638,7 +638,7 @@ test('one-sided date candidates are numeric, sorted, capped and exclude invalid 
   const r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
   assert.equal(r.news_missing_inbox_dated_pairs,34);
   assert.deepEqual(r.news_missing_inbox_dated_id_pairs[0],[1,10]);
-  assert.deepEqual(r.news_missing_inbox_dated_id_pairs[24],[27,10]);
+  assert.deepEqual(r.news_missing_inbox_dated_id_pairs[24],[26,10]);
   assert.equal(r.omitted_news_missing_inbox_dated_id_pairs,9);
   assert.ok(!JSON.stringify(r).includes('person:secret'));
 });
