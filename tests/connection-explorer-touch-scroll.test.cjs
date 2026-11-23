@@ -141,3 +141,42 @@ test('only the initiating primary pointer can move or finish a graph pan', () =>
   assert.deepEqual(captures, [1, 5]);
   assert.equal(redraws, 2, 'only intentional moves redraw the graph');
 });
+
+test('case search reports displayed/total matches, limits, no matches, and selected case', () => {
+  const vm = require('node:vm');
+  const begin = script.indexOf('function search(){');
+  const end = script.indexOf("\n$('search').addEventListener('input',search);", begin);
+  assert.ok(begin >= 0 && end > begin, 'case search function must be available');
+  assert.match(html, /id="search"[^>]*aria-describedby="case-search-status"/);
+  assert.match(html, /id="case-search-status" role="status" aria-atomic="true"/);
+  assert.match(script, /byUrl\.get\(k\)\.push\(r\)\}\);search\(\)/, 'loaded cases refresh pretyped search');
+  assert.match(script, /Case search unavailable because the public investigation data could not be loaded/);
+  const input = { value: 'Blue' }, results = { children: [] }, status = { textContent: '' };
+  const elements = { search: input, results, 'case-search-status': status };
+  const selected = [];
+  const ctx = {
+    $: id => elements[id],
+    cases: Array.from({ length: 18 }, (_, i) => ({ id: i + 1, title: 'Blue Case ' + i })),
+    clear: el => { el.children = []; },
+    el: (tag, text, parent) => {
+      const element = { tag, textContent: text, handlers: {},
+        addEventListener(event, callback) { this.handlers[event] = callback; } };
+      parent.children.push(element);
+      return element;
+    },
+    focus: id => selected.push(id)
+  };
+  vm.runInNewContext(script.slice(begin,end) + '\nsearch();', ctx);
+  assert.equal(results.children.length, 15);
+  assert.match(status.textContent, /15 of 18 matching published cases shown.*Refine your search/);
+  results.children[0].handlers.click();
+  assert.deepEqual(selected, [1]);
+  assert.equal(results.children.length, 0, 'selection closes the search list');
+  assert.match(status.textContent, /Selected Blue Case 0/);
+  input.value = 'unfindable';
+  vm.runInNewContext('search()', ctx);
+  assert.match(status.textContent, /No matching published cases/);
+  input.value = '';
+  vm.runInNewContext('search()', ctx);
+  assert.equal(status.textContent, 'Search 18 published case titles.');
+});
