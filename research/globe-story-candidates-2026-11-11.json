@@ -6,17 +6,27 @@
   "events": [
     {
       "id": "pompeii-unesco-discoveries-2025",
-      "title": "UNESCO reports newly uncovered Roman villa and bath complex at Pompeii",
+      "title": "Pompeii Archaeological Park publishes report on newly uncovered private baths and banquet hall",
       "topic": "ancient-civilizations",
       "category": "positive",
-      "event_date": "2025-02-04",
-      "date_basis": "UNESCO publication date; excavations occurred earlier",
-      "lat": 40.75,
-      "lon": 14.486,
-      "location_basis": "Approximate Pompeii archaeological site, not excavation coordinates",
-      "source_url": "https://whc.unesco.org/en/news/2741",
+      "event_date": "2025-01-17",
+      "date_basis": "Official excavation journal publication date (17 January 2025); actual excavation dates are not established. UNESCO follow-up published 4 February 2025.",
+      "lat": 40.751111,
+      "lon": 14.486111,
+      "location_basis": "UNESCO World Heritage component 829ter-001 (Pompeii), site reference point rather than precise excavation or publication location",
+      "source_url": "https://pompeiisites.org/e-journal-degli-scavi-di-pompei/la-casa-come-palcoscenico-il-complesso-termale-e-conviviale-recentemente-scoperto-nellinsula-ix-10-a-pompei/",
       "review_status": "pending_editorial_review",
-      "classification_rationale": "Archaeological research expands public understanding of Roman society."
+      "classification_rationale": "Provisional positive classification of a documented archaeological report that expands knowledge of Roman domestic architecture; not a measure of global conditions.",
+      "additional_source_urls": [
+        "https://whc.unesco.org/en/news/2741/"
+      ],
+      "source_record_id": "Pompeii Archaeological Park excavation journal, 17 January 2025, Regio IX insula 10; UNESCO news 2741 (follow-up); property component 829ter-001",
+      "location_source_url": "https://whc.unesco.org/en/list/829/maps/",
+      "location_note": "UNESCO's component table identifies Pompeii (829ter-001) at N40 45 4, E14 29 10; converted from degrees/minutes/seconds and rounded to six decimal places. The excavation journal identifies Regio IX, insula 10, within Pompeii. The pin would reference the whole archaeological site, not the precise room, excavation point or place of publication.",
+      "location_role": "archaeological_site_reference",
+      "source_reviewed_on": "2026-11-23",
+      "source_limitation": "UNESCO summarizes the earlier Italian announcement and is not independent confirmation of the excavation journal. The precise excavation dates, room coordinates and proposed ownership are not independently established by these sources.",
+      "map_review_requirement": "Do not promote into the public feed until editorial approval and map UI explicitly labels site-reference locations and publication dates. Do not count the UNESCO follow-up as a separate discovery, or infer relationships to other ancient sites."
     },
     {
       "id": "koh-ker-conservation-assistance-2026",
