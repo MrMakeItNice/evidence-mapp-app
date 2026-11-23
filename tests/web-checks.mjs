@@ -97,6 +97,9 @@ assert.match(bluebirdPage,/href="\.\/paper-trails\.html#case-4"/);
 assert.doesNotMatch(bluebirdPage,/href="\.\/paper-trails\.html#case-33"/);
 assert.match(bluebirdPage,/C01434878/);
 assert.match(bluebirdPage,/released 2017\/01\/18/);
+assert.match(bluebirdPage,/Attempt CIA PDF \(1975 memorandum; released 2017\/01\/18; C01434878; may redirect\)/);
+assert.match(bluebirdPage,/href="#senate-1977-source-note">View separate Senate evidence for the August 1951 rename \(not a copy of the 1975 CIA memo\)<\/a>/);
+assert.doesNotMatch(bluebirdPage,/Read the February 5, 1975 CIA retrospective/);
 assert.match(bluebirdPage,/incomplete and fragmentary project records/);
 assert.match(bluebirdPage,/does not establish any connection with Project Blue Beam/);
 // The 1975 CIA PDF may redirect; an independently transcribed reading aid must never masquerade as the scan.
