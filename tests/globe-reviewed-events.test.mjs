@@ -123,7 +123,7 @@ test('list selection opens full-detail source evidence, focuses without scrollin
 
 test('homepage places the keyboard preview beside the event list, not only in the tiny globe overlay', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /id="reviewed-globe-events"<\/ul>[\s\S]*?id="reviewed-globe-detail"/);
+  assert.match(html, /id="reviewed-globe-events"><\/ul>[\s\S]*?id="reviewed-globe-detail"/);
   assert.match(html, /id="reviewed-globe-detail"[^>]+role="region"[^>]+tabindex="-1" hidden/);
   assert.match(html, /renderReviewedMapList\(document,mapList,reviewedEvents,event=>inspectReviewedMapSource\(document,document\.getElementById\('reviewed-globe-detail'\),event\)\)/);
   assert.match(html, /showReviewedMapSource\(document,geoPanel,markerHit\.object\.userData\.event\)/, 'globe marker click preview preserved');
