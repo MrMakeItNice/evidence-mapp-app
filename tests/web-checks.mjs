@@ -218,7 +218,7 @@ console.log('PASS: source-scope notes and Blue Beam assessment have unique acces
 
 // Direct links, browser history, and repeat in-page jumps must reveal a closed
 // comparison panel; other hashes must not override the visitor's chosen state.
-const comparisonScripts = [...bluebirdPage.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+const comparisonScripts = [...bluebirdPage.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
 assert.equal(comparisonScripts.length, 1, 'Expected one isolated Rabbit Hole navigation script');
 new vm.Script(comparisonScripts[0][1], {filename:'rabbit-hole.html:source-comparison'});
 const comparisonPanel = {open:false};
