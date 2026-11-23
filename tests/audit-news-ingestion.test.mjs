@@ -240,3 +240,60 @@ test('caps numeric-only cross-collection candidate IDs with omission counts',()=
   assert.deepEqual(overlap.news_inbox_exact_url_id_pairs[24],[123,10]);
   assert.equal(overlap.news_inbox_omitted_id_pairs,6);
 });
+
+
+test('flags exact-link publisher labels and publication times only as review candidates',()=> {
+  const s=sample();
+  s.news_items[0].published_at='2026-11-22T01:00:00Z';
+  s.research_inbox[0].publisher='Different outlet';
+  s.research_inbox[0].published_at='2026-11-23T02:00:00Z';
+  const review=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(review.publisher_label_difference_pairs,1);
+  assert.deepEqual(review.publisher_label_difference_id_pairs,[[1,10]]);
+  assert.equal(review.publication_times_over_24h_apart_pairs,1);
+  assert.deepEqual(review.publication_times_over_24h_apart_id_pairs,[[1,10]]);
+  assert.equal(review.omitted_publication_time_difference_id_pairs,0);
+  assert.ok(!JSON.stringify(review).includes('Different outlet'));
+  assert.ok(!JSON.stringify(review).includes('news.google.com'));
+});
+
+test('normalizes harmless publisher capitalization and spacing, uses exact instants, and excludes malformed links',()=> {
+  const s=sample();
+  s.news_items[0].published_at='2026-11-22T03:00:00Z';
+  s.research_inbox[0].publisher='  GOOGLE   NEWS ';
+  s.research_inbox[0].published_at='2026-11-23T02:00:00Z';
+  let review=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(review.publisher_label_difference_pairs,0);
+  assert.equal(review.publication_times_over_24h_apart_pairs,0);
+  s.news_items[0].source_url='ftp://not-credible.example/doc';
+  s.research_inbox[0].source_url='ftp://not-credible.example/doc';
+  s.research_inbox[0].publisher='Unrelated';
+  review=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(review.publisher_label_difference_pairs,0);
+  assert.equal(review.publication_times_over_24h_apart_pairs,0);
+});
+
+test('audits inbox/source identity as a third cross-collection path without automatic linking',()=> {
+  const s=sample();
+  s.research_inbox[0].source_url=s.sources[0].url;
+  const overlap=auditNewsIngestion(s).overlap;
+  assert.equal(overlap.inbox_source_exact_url_rows,1);
+  assert.deepEqual(overlap.inbox_source_exact_url_id_pairs,[[10,20]]);
+  assert.equal(overlap.inbox_source_omitted_id_pairs,0);
+});
+
+test('caps and sorts numeric-only metadata discrepancy pairs',()=> {
+  const s=sample();
+  s.news_items[0].published_at='2026-11-21T00:00:00Z';
+  for(let id=50;id>=21;id--) s.research_inbox.push({id,source_url:s.news_items[0].source_url,
+    publisher:'Different organization',published_at:'2026-11-23T01:00:00Z'});
+  s.expected_counts.research_inbox=s.research_inbox.length;
+  const review=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(review.publisher_label_difference_pairs,30);
+  assert.equal(review.publication_times_over_24h_apart_pairs,30);
+  assert.deepEqual(review.publisher_label_difference_id_pairs[0],[1,21]);
+  assert.deepEqual(review.publication_times_over_24h_apart_id_pairs[24],[1,45]);
+  assert.equal(review.omitted_publisher_label_difference_id_pairs,5);
+  assert.equal(review.omitted_publication_time_difference_id_pairs,5);
+  assert.ok(!JSON.stringify(review).includes('Different organization'));
+});
