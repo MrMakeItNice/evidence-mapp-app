@@ -187,3 +187,30 @@ test('pointer inspection keeps focus; ordinary and modified inspector keys are u
   get('selected-record').listeners.keydown({ key: 'Escape', preventDefault() {} });
   assert.equal(document.activeElement, card, 'Escape returns to the pointer-inspected card too');
 });
+
+
+test('visual and accessible selection follow initial, keyboard and pointer inspection', async () => {
+  const { get, document } = await createBoard();
+  const cards = get('cards').children;
+  const check = selected => {
+    cards.forEach((card, index) => {
+      assert.equal(card.attributes['aria-pressed'], String(index === selected));
+      assert.equal(card.className.split(' ').includes('selected'), index === selected);
+      assert.equal(card.attributes['aria-controls'], 'selected-record');
+    });
+    assert.equal(get('details').children[0].textContent, selected === 0 ? 'Published case' : 'Original document');
+  };
+  check(0);
+  assert.equal(document.activeElement, undefined, 'initial selection must not move focus');
+  cards[1].listeners.keydown({ key: 'Enter', preventDefault() {} }); check(1);
+  assert.equal(document.activeElement, get('details').children[0]);
+  cards[0].listeners.keydown({ key: ' ', preventDefault() {} }); check(0);
+  const marker = {}; document.activeElement = marker;
+  cards[1].listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, stopPropagation() {} });
+  cards[1].listeners.pointerup(); check(1);
+  assert.equal(document.activeElement, marker, 'pointer selection must not move focus');
+  cards[1].listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, stopPropagation() {} });
+  cards[1].listeners.pointerup(); check(1);
+  get('selected-record').listeners.keydown({ key: 'Escape', preventDefault() {} });
+  assert.equal(document.activeElement, cards[1]);
+});
