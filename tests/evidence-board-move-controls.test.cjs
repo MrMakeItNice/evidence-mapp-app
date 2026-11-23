@@ -76,3 +76,17 @@ test('moving a stale or absent card is a no-op; existing save/pointer actions re
   assert.match(html, /localStorage\.setItem\(layoutKey\(\)/);
   assert.match(html, /card\.addEventListener\('keydown'/);
 });
+
+
+test('long citation URLs have distinct layout IDs, even with the same first 220 characters', () => {
+  const start = html.indexOf('function sourceNodeId(url){');
+  const end = html.indexOf('function nodePos(', start);
+  assert.ok(start >= 0 && end > start, 'stable source card ID helper exists');
+  const sourceNodeId = vm.runInNewContext(html.slice(start, end) + ';sourceNodeId', { encodeURIComponent });
+  const common = 'https://archives.example.gov/record?path=' + 'x'.repeat(240);
+  const first = common + '&id=alpha';
+  const second = common + '&id=beta';
+  assert.notEqual(sourceNodeId(first), sourceNodeId(second), 'different archival links must not share saved positions');
+  assert.equal(sourceNodeId(first), 'source-' + encodeURIComponent(first), 'complete URL is represented in the ID');
+  assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
+});
