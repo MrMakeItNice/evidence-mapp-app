@@ -53,6 +53,30 @@ test('deduplicates identifiers; no feed produces an empty list', () => {
   assert.equal(reviewedMapEvents([event, withChanges({title: 'Copy'})]).length, 1);
 });
 
+test('normalizes whitespace in event IDs so one event cannot create multiple pins or list entries', () => {
+  const candidates = [
+    withChanges({id: '  archived-record-1  '}),
+    withChanges({id: 'archived-record-1', title: 'Duplicate must not render'}),
+    withChanges({id: '\tarchived-record-1\n', title: 'Another duplicate must not render'})
+  ];
+  const reviewed = reviewedMapEvents(candidates);
+  assert.equal(reviewed.length, 1);
+  assert.equal(reviewed[0].id, 'archived-record-1');
+  const list = element('ul');
+  const rendered = renderReviewedMapList(document, list, candidates, () => {});
+  assert.equal(rendered.length, 1);
+  assert.equal(list.children.length, 1);
+  assert.equal(list.children[0].children[0].textContent, 'Inspect Reviewed documented event');
+
+  // A rejected record must not reserve its identifier and block a valid correction.
+  const corrected = reviewedMapEvents([
+    withChanges({id: ' archived-record-1 ', location_source_url: ''}),
+    withChanges({id: 'archived-record-1'})
+  ]);
+  assert.equal(corrected.length, 1);
+  assert.equal(corrected[0].id, 'archived-record-1');
+});
+
 test('renders keyboard-focusable inspection buttons with safe text, not HTML', () => {
   const list = element('ul');
   let selection;
