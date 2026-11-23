@@ -682,3 +682,45 @@ test('caps and sorts watch assignment triage IDs without exposing private watch 
   assert.equal(w.omitted_active_research_without_inbox_ids,5);
   assert.ok(!JSON.stringify(w).includes('PRIVATE WATCH QUERY'));
 });
+
+
+test('inbox dates compare exact instants and independently flag future publication/discovery',()=>{
+  const s=sample();
+  // UTC date can differ from Pacific date without being in the future.
+  s.research_inbox[0].published_at='2026-11-23T01:59:59Z';
+  s.research_inbox[0].discovered_at='2026-11-23T02:20:01Z';
+  let r=auditNewsIngestion(s).inbox;
+  assert.equal(r.publication_timestamps_after_snapshot_time,0);
+  assert.deepEqual(r.future_discovered_item_ids,[10]);
+  s.research_inbox[0].published_at='2026-11-23T02:20:01Z';
+  s.research_inbox[0].discovered_at='2026-11-23T02:19:59Z';
+  r=auditNewsIngestion(s).inbox;
+  assert.deepEqual(r.future_published_item_ids,[10]);
+  assert.equal(r.discovered_after_snapshot_time,0);
+});
+
+test('future inbox candidates are sorted, capped, numeric and protect unpublished content',()=>{
+  const s=sample();
+  for(let id=50;id>=11;id--) s.research_inbox.push({
+    id,source_url:'https://private.invalid/item?id='+id,title:'PRIVATE HEADLINE',
+    review_status:'pending', published_at:'2026-11-24T00:00:00Z',
+    discovered_at:'2026-11-24T00:00:00Z'
+  });
+  s.expected_counts.research_inbox=s.research_inbox.length;
+  const r=auditNewsIngestion(s).inbox;
+  assert.equal(r.publication_timestamps_after_snapshot_time,40);
+  assert.equal(r.discovered_after_snapshot_time,40);
+  assert.deepEqual(r.future_published_item_ids,Array.from({length:25},(_,i)=>i+11));
+  assert.deepEqual(r.future_discovered_item_ids,Array.from({length:25},(_,i)=>i+11));
+  assert.equal(r.omitted_future_published_item_ids,15);
+  assert.equal(r.omitted_future_discovered_item_ids,15);
+  assert.ok(!JSON.stringify(r).includes('PRIVATE'));
+  assert.ok(!JSON.stringify(r).includes('https://'));
+});
+
+test('invalid inbox publication date fails even on reviewed items',()=>{
+  const s=sample();
+  s.research_inbox[0].review_status='reviewed';
+  s.research_inbox[0].published_at='unclear date';
+  assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp in inbox.published_at/);
+});
