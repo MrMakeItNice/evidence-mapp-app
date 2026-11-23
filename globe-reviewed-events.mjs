@@ -17,13 +17,16 @@ function safeSourceUrl(value) {
 
 export function reviewedMapEvents(events) {
   if (!Array.isArray(events)) return [];
-  const seen = new Set();
+  // Conflicting reviewed coordinates for the same canonical event ID must not
+  // select an arbitrary first-seen pin location.
+  const seen = new Map();
+  const conflictingLocations = new Set();
   const result = [];
   for (const event of events) {
     // Normalize stable IDs before comparing: whitespace must not produce duplicate pins.
     const id = typeof event?.id === 'string' ? event.id.trim() : '';
     if (!event || event.review_status !== 'verified' || !id ||
-        seen.has(id) || typeof event.title !== 'string' ||
+        typeof event.title !== 'string' ||
         !event.title.trim() || !CATEGORIES.has(event.category) ||
         !calendarDate(event.event_date) || !Number.isFinite(event.lat) ||
         !Number.isFinite(event.lon) || Math.abs(event.lat) > 90 ||
@@ -35,14 +38,19 @@ export function reviewedMapEvents(events) {
     const url = safeSourceUrl(event.source_url);
     const locationUrl = safeSourceUrl(event.location_source_url);
     if (!url || !locationUrl) continue;
-    seen.add(id);
+    const previous = seen.get(id);
+    if (previous) {
+      if (previous.lat !== event.lat || previous.lon !== event.lon) conflictingLocations.add(id);
+      continue;
+    }
+    seen.set(id, {lat: event.lat, lon: event.lon});
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
       location_note: event.location_note.trim()});
   }
-  return result;
+  return result.filter(event => !conflictingLocations.has(event.id));
 }
 
 export function showReviewedMapSource(doc, panel, event) {
