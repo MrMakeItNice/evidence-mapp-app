@@ -301,7 +301,7 @@ export function auditNewsIngestion(snapshot) {
       pending_over_14d: oldPendingInboxIds.length,
       old_pending_item_ids: oldPendingInboxIds.slice(0,25),
       omitted_old_pending_item_ids: Math.max(0, oldPendingInboxIds.length - 25),
-      pending_aged_by_added_at_fallback: fallbackInboxAgeIds.length,
+      pending_with_added_at_fallback: fallbackInboxAgeIds.length,
       fallback_age_item_ids: fallbackInboxAgeIds.slice(0,25),
       omitted_fallback_age_item_ids: Math.max(0, fallbackInboxAgeIds.length - 25),
       pending_without_any_discovery_or_added_date: unknownInboxAgeIds.length,
