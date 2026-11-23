@@ -246,6 +246,20 @@ test('shows an accessible source preview with safe external-link attributes', ()
   assert.equal(locationLink.rel, 'noopener noreferrer');
 });
 
+test('original and location citations announce new-tab behavior while preserving the full URLs', () => {
+  const panel = element('div');
+  const [record] = reviewedMapEvents([event]);
+  showReviewedMapSource(document, panel, record);
+  const originalLink = panel.children[2];
+  const geographicLink = panel.children[4];
+  assert.equal(originalLink.textContent,
+    'Inspect original source (opens in new tab): ' + event.source_url);
+  assert.equal(geographicLink.textContent,
+    'Inspect map location evidence (opens in new tab): ' + event.location_source_url);
+  assert.equal(originalLink.href, event.source_url);
+  assert.equal(geographicLink.href, event.location_source_url);
+});
+
 test('source preview identifies the canonical event and actual displayed map coordinates', () => {
   const [reviewed] = reviewedMapEvents([withChanges({
     id: '  archive-location-07  ', lat: 37.700123, lon: -122.400987
