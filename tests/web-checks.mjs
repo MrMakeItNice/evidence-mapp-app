@@ -96,7 +96,7 @@ assert.doesNotMatch(bluebirdPage,/href="\.\/paper-trails\.html#case-32"/);
 assert.match(bluebirdPage,/Case #31 \(record ID 32\).*index cross-reference/);
 assert.match(bluebirdPage,/nsarchive\.gwu\.edu\/document\/32717-document-02/);
 assert.match(bluebirdPage,/No public relationship edge is created here/);
-assert.match(bluebirdPage,/not a documented link or evidence of coordination/);
+assert.match(bluebirdPage,/the separate Project Blue Beam hypothesis have similar names/);
 assert.match(bluebirdPage,/target="_blank" rel="noopener noreferrer"/);
 console.log('PASS: BLUEBIRD canonical case and Blue Beam hypothesis remain distinct; archival link and non-causal guard present.');
 
