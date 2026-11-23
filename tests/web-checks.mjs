@@ -54,6 +54,18 @@ for (const target of ['./paper-trails.html','./evidence-board.html','./connectio
 assert.match(rabbitHole,/Board lines represent indexed citations, not proof/);
 assert.match(rabbitHole,/private draft tool does not publish, review, or add proposed links/);
 assert.match(fs.readFileSync('connection-explorer.html','utf8'),/id="contribute"/);
+// Private drafting is local-browser persistence, not protected or anonymous storage.
+const draftPrivacy = rabbitHole.match(/<p class="note" id="local-draft-safety">([\s\S]*?)<\/p>/);
+assert.ok(draftPrivacy, 'Missing browser-local draft privacy warning');
+for (const phrase of ['browser profile', 'not encrypted', 'shared device', 'Delete drafts', 'exported copies']) {
+  assert.ok(draftPrivacy[1].includes(phrase), 'Draft privacy caveat missing: '+phrase);
+}
+const explorerDrafts = fs.readFileSync('connection-explorer.html','utf8');
+assert.match(explorerDrafts,/localStorage\.getItem\(draftKey/);
+assert.match(explorerDrafts,/localStorage\.setItem\(draftKey/);
+assert.match(draftPrivacy[1],/not submitted to the public evidence graph/);
+console.log('PASS: local draft disclosure matches Connection Explorer persistence and warns shared-device researchers.');
+
 console.log('PASS: Rabbit Hole links to published cases, source-backed Evidence Board and private draft explorer without implying unverified causal links.');
 
 // Proposed relationship semantics are a review guide, not declarations about existing edges.
