@@ -767,3 +767,42 @@ test('validates inbox added_at even on historical reviewed records',()=>{
   assert.equal(report.added_after_snapshot_time,0);
   assert.deepEqual(report.future_added_item_ids,[]);
 });
+
+
+test('flags future source publication dates using UTC calendar days, including unpublished records',()=>{
+  const s=sample();
+  s.as_of='2026-11-23T00:10:00Z';
+  s.sources[0].publication_date='2026-11-24';
+  s.sources[0].published=false;
+  const r=auditNewsIngestion(s).sources;
+  assert.equal(r.publication_dates_after_snapshot_utc_day,1);
+  assert.deepEqual(r.future_publication_date_source_ids,[20]);
+  s.sources[0].publication_date='2026-11-23';
+  assert.equal(auditNewsIngestion(s).sources.publication_dates_after_snapshot_utc_day,0);
+  s.sources[0].publication_date=null;
+  assert.equal(auditNewsIngestion(s).sources.publication_dates_after_snapshot_utc_day,0);
+});
+
+test('rejects malformed and impossible source publication calendar dates',()=>{
+  const s=sample();
+  for(const invalid of ['2026-02-30','2026-11-23T00:00:00Z','not a date']) {
+    s.sources[0].publication_date=invalid;
+    assert.throws(()=>auditNewsIngestion(s),/Invalid sources.publication_date/);
+  }
+});
+
+test('sorts and caps future publication source IDs without revealing private titles or URLs',()=>{
+  const s=sample();
+  s.sources[0].publication_date=null;
+  for(let id=60;id>=30;id--) {
+    s.sources.push({id,title:'SECRET UNPUBLISHED SOURCE',url:'https://private.example/doc?id='+id,
+      publication_date:'2026-11-24',published:false});
+  }
+  s.expected_counts.sources=s.sources.length;
+  const r=auditNewsIngestion(s).sources;
+  assert.equal(r.publication_dates_after_snapshot_utc_day,31);
+  assert.deepEqual(r.future_publication_date_source_ids,Array.from({length:25},(_,i)=>i+30));
+  assert.equal(r.omitted_future_publication_date_source_ids,6);
+  assert.ok(!JSON.stringify(r).includes('SECRET UNPUBLISHED SOURCE'));
+  assert.ok(!JSON.stringify(r).includes('private.example'));
+});
