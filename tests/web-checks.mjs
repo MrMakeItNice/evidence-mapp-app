@@ -94,5 +94,13 @@ assert.match(bluebirdPage,/C01434878/);
 assert.match(bluebirdPage,/released 2017\/01\/18/);
 assert.match(bluebirdPage,/incomplete and fragmentary project records/);
 assert.match(bluebirdPage,/does not establish any connection with Project Blue Beam/);
-console.log('PASS: CIA-documented BLUEBIRD to ARTICHOKE continuity is traceable without promoting Blue Beam or duplicate case indexes.');
+// The 1975 CIA PDF may redirect; an independently transcribed reading aid must never masquerade as the scan.
+assert.equal((bluebirdPage.match(/id="cia-1975-access-note"/g)||[]).length,1);
+assert.match(bluebirdPage,/CIA-hosted C01434878 PDF has redirected to the Reading Room homepage/);
+assert.match(bluebirdPage,/href="https:\/\/www\.psychedelicarchive\.com\/archive\/cia-rd-testing-behavioral-drugs-1975-memo"/);
+assert.match(bluebirdPage,/independent transcript of the 1975 CIA memorandum/);
+assert.match(bluebirdPage,/third-party transcription is not the original scanned record/);
+assert.match(bluebirdPage,/BLUEBIRD\/ARTICHOKE section, paragraph 4/);
+assert.match(bluebirdPage,/href="https:\/\/www\.psychedelicarchive\.com[^"]+" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer"/);
+console.log('PASS: CIA-documented BLUEBIRD to ARTICHOKE continuity is traceable; fallback transcript is explicitly secondary and no false link is promoted.');
 
