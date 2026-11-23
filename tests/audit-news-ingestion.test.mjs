@@ -724,3 +724,46 @@ test('invalid inbox publication date fails even on reviewed items',()=>{
   s.research_inbox[0].published_at='unclear date';
   assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp in inbox.published_at/);
 });
+
+
+
+test('future inbox added_at is a review flag even after a record leaves the pending queue',()=>{
+  const s=sample();
+  s.research_inbox[0].review_status='reviewed';
+  s.research_inbox[0].added_at='2026-11-23T02:20:01Z';
+  s.research_inbox[0].title='PRIVATE INBOX TITLE';
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.added_after_snapshot_time,1);
+  assert.deepEqual(report.future_added_item_ids,[10]);
+  assert.equal(report.omitted_future_added_item_ids,0);
+  assert.equal(report.pending_over_14d,0);
+  assert.ok(!JSON.stringify(report).includes('PRIVATE INBOX TITLE'));
+});
+
+test('future inbox intake times are capped, sorted and separated from publication times',()=>{
+  const s=sample();
+  for (let id=50;id>=20;id--) {
+    s.research_inbox.push({id,added_at:'2026-11-23T02:21:00Z',
+      published_at:null,discovered_at:null,review_status:'reviewed',
+      title:'UNPUBLISHED LEAD '+id});
+  }
+  s.expected_counts.research_inbox=s.research_inbox.length;
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.added_after_snapshot_time,31);
+  assert.deepEqual(report.future_added_item_ids,Array.from({length:25},(_,i)=>i+20));
+  assert.equal(report.omitted_future_added_item_ids,6);
+  assert.equal(report.publication_timestamps_after_snapshot_time,0);
+  assert.equal(report.discovered_after_snapshot_time,0);
+  assert.ok(!JSON.stringify(report).includes('UNPUBLISHED LEAD'));
+});
+
+test('validates inbox added_at even on historical reviewed records',()=>{
+  const s=sample();
+  s.research_inbox[0].review_status='reviewed';
+  s.research_inbox[0].added_at='not-a-timestamp';
+  assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp in inbox.added_at/);
+  s.research_inbox[0].added_at='2026-11-23T02:20:00Z';
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.added_after_snapshot_time,0);
+  assert.deepEqual(report.future_added_item_ids,[]);
+});
