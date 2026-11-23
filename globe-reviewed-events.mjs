@@ -17,7 +17,7 @@ function safeSourceUrl(value) {
 
 export function reviewedMapEvents(events) {
   if (!Array.isArray(events)) return [];
-  // A single canonical ID with inconsistent position, date, category, or location rationale
+  // A single canonical ID with inconsistent position, date, category, or location provenance
   // must not select an arbitrary first-seen map pin or marker color.
   const seen = new Map();
   const conflictingDetails = new Set();
@@ -42,13 +42,15 @@ export function reviewedMapEvents(events) {
     if (previous) {
       if (previous.lat !== event.lat || previous.lon !== event.lon ||
           previous.event_date !== event.event_date || previous.category !== event.category ||
-          previous.location_note !== event.location_note.trim()) {
+          previous.location_note !== event.location_note.trim() ||
+          previous.location_source_url !== locationUrl.href) {
         conflictingDetails.add(id);
       }
       continue;
     }
     seen.set(id, {lat: event.lat, lon: event.lon, event_date: event.event_date,
-      category: event.category, location_note: event.location_note.trim()});
+      category: event.category, location_note: event.location_note.trim(),
+      location_source_url: locationUrl.href});
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname,
