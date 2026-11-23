@@ -373,3 +373,25 @@ Direct identifier, selected title-phrase and official URL searches found **zero 
 **Related archival-access context:** [NARA researcher update](https://www.archives.gov/research/news) for November 2026 says specific Chicago court and large-format record groups are expected to become temporarily inaccessible **November 30, 2026**, with availability anticipated in Kansas City in **February 2027**. This is an agency operational forecast, not evidence that records are intentionally destroyed or withheld for improper reasons. Editorial researchers should verify status directly with NARA before relying on local physical access. Do not create a case without documented underlying evidence.
 
 **Release boundary:** all changes confined to the existing draft GitHub PR; no merge, deployment, database schema/data modification, collector reconfiguration, access-challenge bypass, or automatic public research publication. Verify CI on the new code/test commit separately from any later memo-only commit.
+
+---
+
+## Review-only checkpoint — November 23, 2026, 15:41 UTC (07:41 Pacific)
+
+**Fresh read-only Supabase (nxlffnplqdobfqxogmxo):** 992/992 news items pending; 58 discovered in 24h; 135 pending over 14d; 477 missing publication timestamps (458 Google-associated proxies, 19 others). Research inbox 40 pending, 36 aged over 14d, four without watch assignment and four missing publication dates. News topics 36 active; 11 without direct news. All 11 research-watch and seven news-watch timestamps stale/blank.
+
+**New research coverage distinction:** 11 active research watches; IDs **1, 4, 8** have **no directly assigned inbox records**. This is an assignment-coverage signal, not proof polling has stopped or that no research exists. The offline diagnostic flags this separately from historical inbox rows on inactive watches, exposing only deterministic sorted, capped numeric IDs. Three regression tests were added. [Actions #45207822244](https://github.com/MrMakeItNice/evidence-mapp-app/actions/runs/45207822244) passed **51/51 focused tests** and syntax checks on code/test commit 509e55e4dd169a35440ecb12cf3e0d4bcb6b0e18. Full application/browser tests are outstanding; the later memo-only commit was not separately tested.
+
+**Source provenance/duplicates:** 123 sources marked published; 53 missing publication dates. Source #285 remains marked published despite missing publisher, date, primary URL and archive URL. This is a metadata gap, not evidence of nonexistence. There are 25 news/inbox, five news/source, and zero inbox/source exact valid-looking URL matches, plus zero within-collection exact duplicate URL groups. Five news/inbox pairings differ in publisher labels; aliases or different attributions require source review. These matches are not independent corroboration.
+
+**Collector completions (retained 24h):** Positive News 41 HTTP 403, zero 200, last success Nov 11. Six other active feeds have recent successes. Government/World News/Public Health BBC and COVID-19 Google News recorded 41 HTTP 200 each. Palestine/Gaza and Epstein Google News recorded 40 HTTP 200 plus one HTTP 429 each. Stale watch metadata does not prove a collector outage.
+
+### Two new original oversight records — editorial review only
+
+1. **GAO B-338895 — Pharmacy Benefit Manager Fee Disclosure.** [Original GAO legal decision](https://www.gao.gov/products/b-338895), **November 19, 2026**. Evaluates DOL's final rule (Federal Register Nov 2, 2026, stated effective Jan 4, 2027). GAO concluded that the stated effective date does not meet the Congressional Review Act 60-day delay when congressional receipt dates are included. This is a procedural oversight finding, NOT a court judgment nullifying the rule, nor proof of concealed payments. DOL estimates future benefits, costs and transfers; they are projections, not outcomes. Investigate any corrected effective date or subsequent agency/court response before publication. Candidate: health finance, regulatory transparency and provenance timeline.
+
+2. **GAO B-338881 — OCC Payment Stablecoin Issuer Rule.** [Original GAO legal decision](https://www.gao.gov/products/b-338881), **November 18, 2026**; underlying OCC rule published Oct 23, 2026, stated effective Jan 18, 2027. Describes issuer registration, reserves, liquidity, supervision and transition requirements. OCC forecast net economic savings of $165.8 million; this is an agency estimate, not measured impact. Candidate: financial systems, digital payments, public governance. Do not imply regulatory reporting proves surveillance abuse.
+
+**Direct duplicate screen:** identifier, distinctive title, and official URL queries yielded zero matches for either GAO record in news_items, research_inbox and sources. This does not exclude differently worded coverage. Both leads are in this memo only. No database insertion, source linking, independent-verification claim or publication was performed.
+
+**Release boundary:** PR remains draft and unmerged; no production data/schema changes, deployment, collector reconfiguration or access-control bypass.
