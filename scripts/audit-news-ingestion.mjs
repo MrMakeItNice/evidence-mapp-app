@@ -347,8 +347,13 @@ export function auditNewsIngestion(snapshot) {
   const activeFeeds = feeds.filter(f => f.active === true);
   const feedLastSuccessUnknownOrOld = activeFeeds.filter(f => {
     const date = timestamp(f.last_success_at, 'feed.last_success_at');
-    return date === null || date < asOf - 86400000;
+    // A future-dated success cannot establish a successful poll in the past 24 hours.
+    return date === null || date < asOf - 86400000 || date > asOf;
   }).length;
+  const futureFeedSuccessIds = activeFeeds.filter(f => {
+    const date = timestamp(f.last_success_at, 'feed.last_success_at');
+    return date !== null && date > asOf;
+  }).map(f => f.feed_id).sort((a,b) => a-b);
   // A feed can have a recent successful poll yet still be failing on its latest attempt.
   // Keep these states distinct: stale watches alone do not prove a collection outage.
   const latestErrorRecentSuccessIds = [];
@@ -489,6 +494,9 @@ export function auditNewsIngestion(snapshot) {
       stale_news_timestamp_fields: stale(newsWatches, 'last_collected_at'),
       active_collectors: activeFeeds.length,
       collectors_without_success_in_24h: feedLastSuccessUnknownOrOld,
+      collectors_future_success_timestamp: futureFeedSuccessIds.length,
+      future_success_feed_ids: futureFeedSuccessIds.slice(0,25),
+      omitted_future_success_feed_ids: Math.max(0, futureFeedSuccessIds.length-25),
       collectors_latest_error_with_recent_success: latestErrorRecentSuccessIds.length,
       collectors_latest_error_without_recent_success: latestErrorWithoutRecentSuccessIds.length,
       latest_error_recent_success_feed_ids: latestErrorRecentSuccessIds.slice(0,25),
