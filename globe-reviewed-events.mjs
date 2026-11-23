@@ -70,8 +70,19 @@ export function showReviewedMapSource(doc, panel, event) {
 
 
 /** Present list selections in a readable, keyboard-reachable detail region. */
-export function inspectReviewedMapSource(doc, detail, event) {
+export function inspectReviewedMapSource(doc, detail, event, returnFocusTo) {
   showReviewedMapSource(doc, detail, event);
+  if (returnFocusTo) {
+    const back = doc.createElement('button');
+    back.type = 'button';
+    back.textContent = 'Back to map event list';
+    back.addEventListener('click', () => {
+      detail.hidden = true;
+      detail.replaceChildren();
+      returnFocusTo.focus();
+    });
+    detail.append(back);
+  }
   detail.hidden = false;
   detail.focus(); // Move keyboard focus into the visible, inline provenance panel.
 }
@@ -84,7 +95,7 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
     const button = doc.createElement('button');
     button.type = 'button';
     button.textContent = 'Inspect ' + event.title;
-    button.addEventListener('click', () => onInspect(event));
+    button.addEventListener('click', () => onInspect(event, button));
     const context = doc.createElement('small');
     context.textContent = event.event_date + ' · ' + event.source_host + ' · ' + event.category;
     item.append(button, context);
