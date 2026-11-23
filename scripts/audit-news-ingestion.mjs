@@ -99,6 +99,7 @@ function exactNewsInboxMetadataReview(news, inbox, limit = 25) {
     indexed.get(url).push(i);
   }
   const publisherPairs = [], timestampPairs = [];
+  const newsMissingDatePairs = [], inboxMissingDatePairs = [];
   const label = value => typeof value === 'string' ?
     value.trim().replace(/\s+/g, ' ').toLowerCase() : '';
   for (const n of news) {
@@ -109,6 +110,8 @@ function exactNewsInboxMetadataReview(news, inbox, limit = 25) {
       if (publisherA && publisherB && publisherA !== publisherB) publisherPairs.push([n.id, i.id]);
       const dateA = timestamp(n.published_at, 'news.published_at');
       const dateB = timestamp(i.published_at, 'inbox.published_at');
+      if (dateA === null && dateB !== null) newsMissingDatePairs.push([n.id, i.id]);
+      if (dateA !== null && dateB === null) inboxMissingDatePairs.push([n.id, i.id]);
       if (dateA !== null && dateB !== null && Math.abs(dateA - dateB) > 86400000)
         timestampPairs.push([n.id, i.id]);
     }
@@ -120,13 +123,22 @@ function exactNewsInboxMetadataReview(news, inbox, limit = 25) {
   };
   const publishers = summarize(publisherPairs);
   const dates = summarize(timestampPairs);
+  const missingNewsDates = summarize(newsMissingDatePairs);
+  const missingInboxDates = summarize(inboxMissingDatePairs);
   return {
     publisher_label_difference_pairs: publishers.count,
     publisher_label_difference_id_pairs: publishers.id_pairs,
     omitted_publisher_label_difference_id_pairs: publishers.omitted_id_pairs,
     publication_times_over_24h_apart_pairs: dates.count,
     publication_times_over_24h_apart_id_pairs: dates.id_pairs,
-    omitted_publication_time_difference_id_pairs: dates.omitted_id_pairs
+    omitted_publication_time_difference_id_pairs: dates.omitted_id_pairs,
+    // A date on only one side is a reconciliation lead, never permission to copy it.
+    news_missing_inbox_dated_pairs: missingNewsDates.count,
+    news_missing_inbox_dated_id_pairs: missingNewsDates.id_pairs,
+    omitted_news_missing_inbox_dated_id_pairs: missingNewsDates.omitted_id_pairs,
+    inbox_missing_news_dated_pairs: missingInboxDates.count,
+    inbox_missing_news_dated_id_pairs: missingInboxDates.id_pairs,
+    omitted_inbox_missing_news_dated_id_pairs: missingInboxDates.omitted_id_pairs
   };
 }
 
