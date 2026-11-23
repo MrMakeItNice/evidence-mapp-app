@@ -70,6 +70,21 @@ function overlapCount(a, b) {
   for (const [url, ids] of a) if (b.has(url)) total += ids.length * b.get(url).length;
   return total;
 }
+// Numeric-only exact-URL join candidates for manual source linking; never auto-link records.
+function overlapCandidatePairs(left, right, limit = 25) {
+  const pairs = [];
+  for (const [url, leftIds] of left) {
+    const rightIds = right.get(url);
+    if (!rightIds) continue;
+    for (const leftId of leftIds) for (const rightId of rightIds) pairs.push([leftId, rightId]);
+  }
+  pairs.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  return {
+    id_pairs: pairs.slice(0, limit),
+    omitted_id_pairs: Math.max(0, pairs.length - limit)
+  };
+}
+
 function checkCollection(snapshot, name, idField = 'id') {
   const rows = snapshot[name];
   if (!Array.isArray(rows) || !Number.isSafeInteger(snapshot.expected_counts[name]) ||
@@ -162,6 +177,8 @@ export function auditNewsIngestion(snapshot) {
   flaggedFutureNewsIds.sort((a,b) => a-b);
   undatedNonGoogleIds.sort((a,b) => a-b);
   const emptyActiveTopicIds = activeTopics.filter(t => !topicWithItem.has(t.id)).map(t => t.id).sort((a,b) => a-b);
+  const newsInboxCandidates = overlapCandidatePairs(newsUrls, inboxUrls);
+  const newsSourceCandidates = overlapCandidatePairs(newsUrls, sourceUrls);
   return {
     as_of: new Date(asOf).toISOString(),
     news: {
@@ -205,7 +222,11 @@ export function auditNewsIngestion(snapshot) {
     },
     overlap: {
       news_inbox_exact_url_rows: overlapCount(newsUrls, inboxUrls),
-      news_source_exact_url_rows: overlapCount(newsUrls, sourceUrls)
+      news_source_exact_url_rows: overlapCount(newsUrls, sourceUrls),
+      news_inbox_exact_url_id_pairs: newsInboxCandidates.id_pairs,
+      news_inbox_omitted_id_pairs: newsInboxCandidates.omitted_id_pairs,
+      news_source_exact_url_id_pairs: newsSourceCandidates.id_pairs,
+      news_source_omitted_id_pairs: newsSourceCandidates.omitted_id_pairs
     },
     watches: {
       active_research: researchWatches.filter(w=>w.active === true).length,
