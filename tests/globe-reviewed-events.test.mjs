@@ -520,3 +520,41 @@ test('globe checks all feed records before Pulse deduplication can hide a disput
   assert.equal(reviewedMapEvents(countDeduplicated).length, 1,
     'premature count deduplication would hide the geographic disagreement');
 });
+
+
+test('globe marker selection opens the same accessible full-width preview as a list button', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const start = html.indexOf('function inspectLocation(e){');
+  const end = html.indexOf('function bindGlobeGestures(', start);
+  assert.ok(start >= 0 && end > start);
+  const inspection = html.slice(start, end);
+  assert.match(inspection, /showReviewedMapSource\\(document,geoPanel,selectedMarker\\)/,
+    'the existing globe-surface source readout remains available');
+  assert.match(inspection, /mapRecords\\.findIndex\\(record=>record\\.id===selectedMarker\\.id\\)/,
+    'marker selection matches its reviewed canonical event, not a title or unreviewed ID');
+  assert.match(inspection, /mapList\\.children\\[listIndex\\]\\?\\.querySelector\\('button'\\)/);
+  assert.match(inspection, /sourceButton\\?\\.click\\(\\)/,
+    'reusing the accessible button preserves focus, source provenance, Back and Escape');
+
+  const detail = element('div');
+  detail.hidden = true;
+  detail.focus = () => {detail.focused = true;};
+  const list = element('ul');
+  const second = withChanges({id: 'archive-02', title: 'Second cited location',
+    location_source_url: 'https://locations.example.gov/map#p2'});
+  const records = renderReviewedMapList(document, list, [event, second], (record, button) =>
+    inspectReviewedMapSource(document, detail, record, button));
+  const selected = records.findIndex(record => record.id === second.id);
+  assert.equal(selected, 1);
+  const button = list.children[selected].children[0];
+  button.focus = () => {button.focused = true;};
+  button.listeners.click();
+  assert.equal(detail.hidden, false);
+  assert.equal(detail.focused, true);
+  assert.equal(detail.children[0].textContent, second.title);
+  assert.equal(detail.children[4].href, second.location_source_url);
+  assert.equal(button.getAttribute('aria-expanded'), 'true');
+  detail.children[5].listeners.click();
+  assert.equal(button.focused, true, 'Back returns to the selected event');
+  assert.equal(button.getAttribute('aria-expanded'), 'false');
+});
