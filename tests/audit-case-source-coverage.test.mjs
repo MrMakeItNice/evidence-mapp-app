@@ -373,3 +373,68 @@ test('dangling or repeated claim-source links invalidate snapshots',()=>{
   s.claim_sources=[{claim_id:5,source_id:999}];s.expected_counts.claim_sources=1;
   assert.throws(()=>audit(s),/Invalid claim source reference/);
 });
+
+test('HUDOC document identity flags a suspected escaped-parameter duplicate, without modifying URLs',()=>{
+  const s=sample();
+  const urlA='https://hudoc.echr.coe.int/app/conversion/pdf/?filename=Nemtsova.pdf&id;=003-7701602-10631160&library;=ECHR';
+  const urlB='https://hudoc.echr.coe.int/app/conversion/pdf/?filename=Nemtsova.pdf&id=003-7701602-10631160&library=ECHR';
+  s.sources.push({id:119,published:false,url:urlA,publication_date:null},
+    {id:196,published:true,url:urlB,publication_date:'2023-07-11'});
+  s.expected_counts.sources+=2;
+  const x=audit(s);
+  assert.equal(x.summary.hudoc_sources_with_suspect_query_keys,1);
+  assert.equal(x.summary.potential_same_hudoc_document_groups,1);
+  assert.equal(x.summary.potential_same_hudoc_document_source_records,2);
+  assert.deepEqual(x.possible_duplicate_hudoc_source_id_groups,[[119,196]]);
+  assert.deepEqual(x.suspect_hudoc_query_key_source_ids,[119]);
+  assert.equal(s.sources[2].url,urlA);
+  assert.ok(!JSON.stringify(x).includes('Nemtsova'));
+  assert.ok(!JSON.stringify(x).includes('https://'));
+});
+test('HUDOC judgments at the same PDF endpoint with distinct IDs are not duplicates',()=>{
+  const s=sample();
+  s.sources.push(
+    {id:119,url:'https://hudoc.echr.coe.int/app/conversion/pdf/?id=003-7701602-10631160'},
+    {id:138,url:'https://hudoc.echr.coe.int/app/conversion/pdf/?id;=003-8445601-11960514'});
+  s.expected_counts.sources+=2;
+  const x=audit(s);
+  assert.equal(x.summary.potential_same_hudoc_document_groups,0);
+  assert.equal(x.summary.hudoc_sources_with_suspect_query_keys,1);
+});
+test('URL identity never strips queries from other government domains',()=>{
+  const s=sample();
+  s.sources.push(
+    {id:119,url:'https://www.court.gov/app/conversion/pdf/?id=003-7701602-10631160'},
+    {id:196,url:'https://www.court.gov/app/conversion/pdf/?id;=003-7701602-10631160'});
+  s.expected_counts.sources+=2;
+  const x=audit(s);
+  assert.equal(x.summary.potential_same_hudoc_document_groups,0);
+  assert.equal(x.summary.hudoc_sources_with_suspect_query_keys,0);
+});
+test('ambiguous multiple document IDs are excluded from HUDOC identity matching',()=>{
+  const s=sample();
+  s.sources.push(
+    {id:119,url:'https://hudoc.echr.coe.int/app/conversion/pdf/?id=003-7701602-10631160&id;=003-9999999-88888888'},
+    {id:196,url:'https://hudoc.echr.coe.int/app/conversion/pdf/?id=003-7701602-10631160'},
+    {id:197,url:'https://hudoc.echr.coe.int/app/conversion/pdf/?id=not-a-document-id'});
+  s.expected_counts.sources+=3;
+  const x=audit(s);
+  assert.equal(x.summary.potential_same_hudoc_document_groups,0);
+  assert.deepEqual(x.suspect_hudoc_query_key_source_ids,[119]);
+});
+test('potential HUDOC collision output is capped but aggregate counts remain exact',()=>{
+  const s=sample();
+  for(let n=0;n<28;n++){
+    for(let j=0;j<2;j++){
+      const id=1000+n*2+j;
+      const code='003-'+String(7000000+n)+'-10631160';
+      s.sources.push({id,url:'https://hudoc.echr.coe.int/app/conversion/pdf/?id='+code});
+    }
+  }
+  s.expected_counts.sources=s.sources.length;
+  const x=audit(s);
+  assert.equal(x.summary.potential_same_hudoc_document_groups,28);
+  assert.equal(x.summary.potential_same_hudoc_document_source_records,56);
+  assert.equal(x.possible_duplicate_hudoc_source_id_groups.length,25);
+  assert.equal(x.omitted_duplicate_hudoc_groups,3);
+});
