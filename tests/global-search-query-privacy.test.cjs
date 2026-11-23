@@ -715,3 +715,30 @@ test('malformed or missing DOI metadata is omitted without hiding the scholarly 
     }
   }
 });
+
+test('one scholarly article retains both index names after DOI deduplication', async () => {
+  const page = await scholarlyResponsePage({results: [
+    {display_name: 'Shared article', doi: 'https://doi.org/10.1234/Shared', publication_date: '2026-11-20'},
+    {display_name: 'Repeated OpenAlex listing', doi: 'HTTPS://DX.DOI.ORG/10.1234/shared'}
+  ]}, {message: {items: [
+    {title: ['Crossref title variant'], DOI: ' 10.1234/SHARED ', URL: 'https://publisher.example/shared'}
+  ]}});
+  assert.match(page.status, /1 scholarly record returned from 2 of 2 indexes/);
+  assert.match(page.results, /OpenAlex, Crossref · 2026-11-20/);
+  assert.match(page.results, /Shared article/);
+  assert.doesNotMatch(page.results, /Repeated OpenAlex listing|Crossref title variant|OpenAlex, OpenAlex/);
+  assert.equal([...page.results.matchAll(/DOI:/g)].length, 1);
+  assert.match(html, /An article listed by both indexes is still one source\./);
+});
+
+test('matching titles with distinct DOI identifiers remain separate source previews', async () => {
+  const page = await scholarlyResponsePage({results: [
+    {display_name: 'Common article title', doi: 'https://doi.org/10.1234/one'}
+  ]}, {message: {items: [
+    {title: ['Common article title'], DOI: '10.1234/two', URL: 'https://publisher.example/two'}
+  ]}});
+  assert.match(page.status, /2 scholarly records returned from 2 of 2 indexes/);
+  assert.equal([...page.results.matchAll(/Common article title/g)].length, 2);
+  assert.match(page.results, /DOI: 10.1234\/one/);assert.match(page.results, /DOI: 10.1234\/two/);
+  assert.doesNotMatch(page.results, /OpenAlex, Crossref/);
+});
