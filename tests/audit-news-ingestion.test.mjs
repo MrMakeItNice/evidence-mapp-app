@@ -582,3 +582,14 @@ test('unlocatable published source IDs are sorted and capped, not leaked from un
   assert.equal(report.omitted_published_no_valid_locator_source_ids,5);
   assert.ok(!JSON.stringify(report).includes('PRIVATE'));
 });
+
+test('missing archive column is unknown, not evidence of a missing archival link',()=>{
+  const s=sample();
+  s.sources[0].url=null;
+  delete s.sources[0].archive_url;
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_without_valid_url_or_archive,0);
+  assert.equal(report.published_marked_unknown_archive_field,1);
+  assert.deepEqual(report.published_unknown_archive_field_source_ids,[20]);
+});
+
