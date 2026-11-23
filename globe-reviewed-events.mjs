@@ -136,7 +136,12 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
     });
     buttons.push(button);
     const context = doc.createElement('small');
-    context.textContent = event.event_date + ' · ' + event.source_host + ' · ' + event.category;
+    // Announce both provenance roles when a keyboard user focuses the event.
+    // These hosts may coincide; they are not independent corroboration.
+    context.id = 'reviewed-globe-event-context-' + buttons.length;
+    context.textContent = event.event_date + ' · Event source: ' + event.source_host +
+      ' · Location evidence: ' + event.location_source_host + ' · ' + event.category;
+    button.setAttribute('aria-describedby', context.id);
     item.append(button, context);
     list.append(item);
   }
