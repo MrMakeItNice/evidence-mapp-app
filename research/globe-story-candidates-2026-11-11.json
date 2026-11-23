@@ -51,17 +51,29 @@
     },
     {
       "id": "who-covid-pheic-ended-2023",
-      "title": "WHO ends COVID-19 international public-health emergency designation",
+      "title": "WHO Director-General announces end of COVID-19 public health emergency of international concern (PHEIC)",
       "topic": "covid-19",
       "category": "neutral",
       "event_date": "2023-05-05",
-      "date_basis": "WHO announcement date",
-      "lat": 46.2276,
-      "lon": 6.1406,
-      "location_basis": "WHO headquarters in Geneva; administrative decision, not disease epicenter",
-      "source_url": "https://www.who.int/news-room/speeches/item/who-director-general-s-opening-remarks-at-the-media-briefing---5-may-2023",
+      "date_basis": "5 May 2023 official WHO determination and announcement; Emergency Committee met by videoconference on 4 May 2023.",
+      "lat": null,
+      "lon": null,
+      "location_basis": "Global policy determination; the 5 May announcement is identified as Geneva, Switzerland, but no exact announcement coordinates are established in the reviewed sources.",
+      "source_url": "https://www.who.int/europe/news-room/05-05-2023-statement-on-the-fifteenth-meeting-of-the-international-health-regulations-%282005%29-emergency-committee-regarding-the-coronavirus-disease-%28covid-19%29-pandemic",
       "review_status": "pending_editorial_review",
-      "classification_rationale": "Policy milestone with mixed implications; WHO emphasized COVID-19 remained a health threat."
+      "classification_rationale": "Provisional neutral policy milestone; the international emergency designation ended, not COVID-19 as an ongoing health threat.",
+      "additional_source_urls": [
+        "https://www.who.int/news-room/speeches/item/who-director-general-s-opening-remarks-at-the-media-briefing---5-may-2023",
+        "https://www.who.int/publications/m/item/virtual-press-conference-on-covid-19-and-other-global-health-issues-transcript---5-may-2023"
+      ],
+      "source_record_id": "WHO IHR Emergency Committee fifteenth meeting statement, 5 May 2023; WHO Director-General briefing and transcript, 5 May 2023",
+      "location_role": "announcement_city_only",
+      "location_name": "Geneva, Switzerland",
+      "location_source_url": "https://www.who.int/news-room/speeches/item/who-director-general-s-opening-remarks-at-the-media-briefing---5-may-2023",
+      "location_note": "WHO dates its briefing to 5 May in Geneva; the transcript identifies WHO headquarters at 00:00:48. The committee met virtually on 4 May. These sources do not establish a precise point for the policy determination or any geographic distribution of its effects. Previously staged coordinates had no cited coordinate authority and have been removed.",
+      "source_reviewed_on": "2026-11-23",
+      "source_limitation": "All three citations originate from WHO; they document its own determination and announcement, not independent corroboration of epidemiological outcomes or a location for worldwide effects.",
+      "map_review_requirement": "Keep this lead out of the geographic feed and pins. Preserve it for editorial review and non-geographic topic search only after approval; a future map placement needs traceable coordinates and an explicit announcement-location label, not an inferred disease epicenter."
     },
     {
       "id": "epstein-files-doj-release-2026",
