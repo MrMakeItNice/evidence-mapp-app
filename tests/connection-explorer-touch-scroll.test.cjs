@@ -227,3 +227,26 @@ test('keyboard source inspection focuses details without stealing pointer focus'
   assert.equal(activations, 3);
   assert.equal(focusCalls, 2, 'pointer selection must not redirect keyboard focus');
 });
+
+
+test('private draft previews block unsafe, relative, and credential-bearing source URLs', () => {
+  const vm = require('node:vm');
+  const start = script.indexOf('function safeDraftUrl(value){');
+  const end = script.indexOf('function loadDrafts(){', start);
+  assert.ok(start >= 0 && end > start, 'draft URL validator should exist');
+  const safeDraftUrl = vm.runInNewContext(script.slice(start, end) + '\nsafeDraftUrl;', { URL });
+  assert.equal(safeDraftUrl('https://archives.example.org/file.pdf?page=2'), 'https://archives.example.org/file.pdf?page=2');
+  assert.equal(safeDraftUrl('http://archives.example.org/file.pdf'), 'http://archives.example.org/file.pdf');
+  for (const url of [
+    'javascript:alert(1)', 'data:text/html,hello', 'ftp://archives.example.org/file',
+    'https://user:secret@archives.example.org/file', 'https://user@archives.example.org/file',
+    '/relative/file', 'not a URL'
+  ]) {
+    assert.equal(safeDraftUrl(url), null, url + ' must not become an active link');
+  }
+  assert.match(script, /if\(d\.url\)\{const safe=safeDraftUrl\(d\.url\);if\(safe\)\{/,
+    'even previously saved browser drafts must be checked before showing a link');
+  assert.match(script, /if\(url&&!safeDraftUrl\(url\)\)\{/,
+    'saving new drafts must reject unsafe optional or required source URLs');
+  assert.match(html, /Original source URL \(HTTP\/HTTPS; required for paper trails\)/);
+});
