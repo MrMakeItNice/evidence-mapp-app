@@ -431,7 +431,7 @@ test('homepage places the keyboard preview beside the event list, not only in th
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /id="reviewed-globe-events"><\/ul>[\s\S]*?id="reviewed-globe-detail"/);
   assert.match(html, /id="reviewed-globe-detail"[^>]+role="region"[^>]+tabindex="-1" hidden/);
-  assert.match(html, /renderReviewedMapList\(document,mapList,mapEventCandidates,\(event,button\)=>inspectReviewedMapSource\(document,document\.getElementById\('reviewed-globe-detail'\),event,button\)\)/);
+  assert.match(html, /renderReviewedMapList\(document,mapList,mapEventCandidates,\(event,button\)=>inspectReviewedMapSource\(document,document\.getElementById\('reviewed-globe-detail'\),event,button,document\.getElementById\('geo-panel'\)\)\)/);
   assert.match(html, /showReviewedMapSource\(document,geoPanel,selectedMarker\)/, 'globe marker click preview preserved');
   assert.match(html, /\.reviewed-globe-detail button\{display:block;[^}]*min-height:44px/);
   assert.match(html, /\.reviewed-globe-detail:focus\{outline:/);
@@ -534,7 +534,7 @@ test('globe marker selection opens the same accessible full-width preview as a l
   assert.match(inspection, /mapRecords\.findIndex\(record=>record\.id===selectedMarker\.id\)/,
     'marker selection matches its reviewed canonical event, not a title or unreviewed ID');
   assert.match(inspection, /mapList\.children\[listIndex\]\?\.querySelector\('button'\)/);
-  assert.match(inspection, /sourceButton\?\.click\(\)/,
+  assert.match(inspection, /if\(sourceButton\)sourceButton\.click\(\)/,
     'reusing the accessible button preserves focus, source provenance, Back and Escape');
 
   const detail = element('div');
@@ -900,4 +900,36 @@ test('selecting an unmarked globe point clears stale event provenance and expand
   assert.ok(buttons.every(button => button.getAttribute('aria-expanded') === 'false'));
   assert.match(geoPanel.textContent, /not a verified event location/);
   assert.match(geoPanel.textContent, /No reviewed event marker was selected here/);
+});
+
+test('keyboard and marker selections share provenance and closing clears both readouts', () => {
+  const compact = element('div');
+  const detail = element('div');
+  detail.focus = () => {};
+  const list = element('ul');
+  const second = withChanges({id: 'archive-02', title: 'Different reviewed occurrence',
+    source_url: 'https://archive.example.gov/second#p2'});
+  renderReviewedMapList(document, list, [event, second],
+    (record, button) => inspectReviewedMapSource(document, detail, record, button, compact));
+  const firstButton = list.children[0].children[0];
+  const secondButton = list.children[1].children[0];
+  firstButton.focus = () => {firstButton.focused = true;};
+  secondButton.focus = () => {secondButton.focused = true;};
+  firstButton.listeners.click();
+  assert.equal(compact.children[2].href, event.source_url);
+  assert.equal(detail.children[2].href, event.source_url);
+  secondButton.listeners.click();
+  assert.equal(compact.children[0].textContent, second.title);
+  assert.equal(compact.children[2].href, second.source_url);
+  assert.equal(detail.children[2].href, second.source_url);
+  detail.onkeydown({key: 'Escape', preventDefault() {}});
+  assert.equal(compact.children.length, 0);
+  assert.match(compact.textContent, /No reviewed event selected/);
+  assert.equal(detail.children.length, 0);
+  assert.equal(secondButton.focused, true);
+  firstButton.listeners.click();
+  detail.children.at(-1).listeners.click();
+  assert.equal(compact.children.length, 0);
+  assert.equal(detail.hidden, true);
+  assert.equal(firstButton.focused, true);
 });
