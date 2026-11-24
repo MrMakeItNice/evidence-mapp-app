@@ -292,6 +292,7 @@ export function auditNewsIngestion(snapshot) {
   const undatedNonGoogleIds = [];
   const unknownPendingNewsDiscoveryIds = [];
   const futureNewsDiscoveryIds = [];
+  const newsPublicationAfterDiscoveryIds = [];
   let discovered24h = 0, pending14d = 0, undatedGoogle = 0, undated = 0;
   const agedPendingNewsByTopic = new Map();
   for (const n of news) {
@@ -301,6 +302,8 @@ export function auditNewsIngestion(snapshot) {
     // Do not silently classify missing intake timestamps as recent or old.
     if (discovered === null && n.review_status === 'pending') unknownPendingNewsDiscoveryIds.push(n.id);
     if (discovered !== null && discovered > asOf) futureNewsDiscoveryIds.push(n.id);
+    // Allow up to one day of metadata skew; this is a review signal, not an error verdict.
+    if (published !== null && discovered !== null && published - discovered > 86400000) newsPublicationAfterDiscoveryIds.push(n.id);
     if (published === null) {
       undated++;
       // A publisher label or URL substring is not proof of proxy provenance.
@@ -334,6 +337,7 @@ export function auditNewsIngestion(snapshot) {
   const futureInboxPublishedIds = [];
   const futureInboxDiscoveryIds = [];
   const futureInboxAddedIds = [];
+  const inboxPublicationAfterDiscoveryIds = [];
   for (const item of inbox) {
     const published = timestamp(item.published_at, 'inbox.published_at');
     const discovered = timestamp(item.discovered_at, 'inbox.discovered_at');
@@ -341,10 +345,13 @@ export function auditNewsIngestion(snapshot) {
     if (published !== null && published > asOf) futureInboxPublishedIds.push(item.id);
     if (discovered !== null && discovered > asOf) futureInboxDiscoveryIds.push(item.id);
     if (added !== null && added > asOf) futureInboxAddedIds.push(item.id);
+    // Do not substitute added_at for the actual discovery timestamp.
+    if (published !== null && discovered !== null && published - discovered > 86400000) inboxPublicationAfterDiscoveryIds.push(item.id);
   }
   futureInboxPublishedIds.sort((a,b)=>a-b);
   futureInboxDiscoveryIds.sort((a,b)=>a-b);
   futureInboxAddedIds.sort((a,b)=>a-b);
+  inboxPublicationAfterDiscoveryIds.sort((a,b)=>a-b);
   for (const item of inbox) {
     if (item.review_status !== 'pending') continue;
     const discovered = timestamp(item.discovered_at, 'inbox.discovered_at');
@@ -422,6 +429,7 @@ export function auditNewsIngestion(snapshot) {
   undatedNonGoogleIds.sort((a,b) => a-b);
   unknownPendingNewsDiscoveryIds.sort((a,b) => a-b);
   futureNewsDiscoveryIds.sort((a,b) => a-b);
+  newsPublicationAfterDiscoveryIds.sort((a,b)=>a-b);
   const emptyActiveTopicIds = activeTopics.filter(t => !topicWithItem.has(t.id)).map(t => t.id).sort((a,b) => a-b);
   const newsInboxCandidates = overlapCandidatePairs(newsUrls, inboxUrls);
   const newsSourceCandidates = overlapCandidatePairs(newsUrls, sourceUrls);
@@ -437,6 +445,9 @@ export function auditNewsIngestion(snapshot) {
       pending_without_discovery_timestamp: unknownPendingNewsDiscoveryIds.length,
       unknown_discovery_pending_item_ids: unknownPendingNewsDiscoveryIds.slice(0,25),
       omitted_unknown_discovery_pending_item_ids: Math.max(0, unknownPendingNewsDiscoveryIds.length - 25),
+      publication_more_than_24h_after_discovery: newsPublicationAfterDiscoveryIds.length,
+      publication_after_discovery_item_ids: newsPublicationAfterDiscoveryIds.slice(0,25),
+      omitted_publication_after_discovery_item_ids: Math.max(0, newsPublicationAfterDiscoveryIds.length - 25),
       discovered_after_snapshot_time: futureNewsDiscoveryIds.length,
       future_discovered_item_ids: futureNewsDiscoveryIds.slice(0,25),
       omitted_future_discovered_item_ids: Math.max(0, futureNewsDiscoveryIds.length - 25),
@@ -474,6 +485,9 @@ export function auditNewsIngestion(snapshot) {
       publication_timestamps_after_snapshot_time: futureInboxPublishedIds.length,
       future_published_item_ids: futureInboxPublishedIds.slice(0,25),
       omitted_future_published_item_ids: Math.max(0, futureInboxPublishedIds.length-25),
+      publication_more_than_24h_after_discovery: inboxPublicationAfterDiscoveryIds.length,
+      publication_after_discovery_item_ids: inboxPublicationAfterDiscoveryIds.slice(0,25),
+      omitted_publication_after_discovery_item_ids: Math.max(0, inboxPublicationAfterDiscoveryIds.length - 25),
       discovered_after_snapshot_time: futureInboxDiscoveryIds.length,
       future_discovered_item_ids: futureInboxDiscoveryIds.slice(0,25),
       omitted_future_discovered_item_ids: Math.max(0, futureInboxDiscoveryIds.length-25),
