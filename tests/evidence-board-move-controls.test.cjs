@@ -607,3 +607,30 @@ test('keyboard destination outlines are available outside narrow-screen media qu
   assert.match(rule[1], /outline:2px solid var\(--mint\)/);
   assert.match(rule[1], /outline-offset:-2px/);
 });
+
+test('non-pointer click activates the card inspector without rehandling ordinary pointer clicks', async () => {
+  const { get, document, getOpened } = await createBoard();
+  const [caseCard, card] = get('cards').children;
+  const initial = get('details').children[0];
+  card.listeners.click({ detail: 1 });
+  assert.equal(get('details').children[0], initial);
+  for (const modifier of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey']) {
+    card.listeners.click({ detail: 0, [modifier]: true });
+    assert.equal(get('details').children[0], initial);
+  }
+  card.listeners.pointerdown({ clientX: 0, clientY: 0, pointerId: 1, button: 0, isPrimary: true, stopPropagation() {} });
+  card.listeners.click({ detail: 0 });
+  assert.equal(get('details').children[0], initial, 'active pointer gesture must not be interrupted');
+  card.listeners.pointercancel({ pointerId: 1 });
+  card.listeners.click({ detail: 0 });
+  const heading = get('details').children[0];
+  assert.equal(heading.textContent, 'Original document');
+  assert.equal(document.activeElement, heading);
+  assert.equal(card.attributes['aria-pressed'], 'true');
+  assert.equal(caseCard.attributes['aria-pressed'], 'false');
+  card.listeners.click({ detail: 1 });
+  assert.equal(get('details').children[0], heading, 'ordinary click must not rebuild the inspector');
+  get('selected-record').listeners.keydown({ key: 'Escape', preventDefault() {} });
+  assert.equal(document.activeElement, card);
+  assert.equal(getOpened(), 0, 'activation must not open an external source');
+});
