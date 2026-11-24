@@ -21,12 +21,14 @@
       "counterevidence_urls",
       "confidence",
       "correction_note",
-      "date_basis"
+      "date_basis",
+      "source_limitation"
     ],
     "date_basis": "Optional editorial note explaining what the event date refers to (e.g. publication, approval or disclosure when that is the event itself); not proof of the underlying activity date",
     "location_source_url": "Inspectably linked HTTPS evidence for the geographic placement (required to show globe pins; may equal event source URL)",
     "location_note": "Editorial explanation of how the linked evidence supports the coordinates and whether they are approximate (required for globe pins)",
-    "location_role": "Required for globe pins only: occurrence_site | archaeological_site_reference | beneficiary_site. The latter two are sourced reference locations, not necessarily the occurrence venue. Non-geographic records must not be mapped."
+    "location_role": "Required for globe pins only: occurrence_site | archaeological_site_reference | beneficiary_site. The latter two are sourced reference locations, not necessarily the occurrence venue. Non-geographic records must not be mapped.",
+    "source_limitation": "Optional source-specific editorial note about uncertainty, incomplete coverage, dependence on another citation or what the source cannot establish; never a substitute for location evidence or editorial review."
   },
   "review_policy": [
     "Do not equate article sentiment with event impact.",
