@@ -1271,3 +1271,18 @@ test('globe canvas identifies the equivalent source inspection list without poin
   assert.match(html, /<p id="reviewed-globe-description">Use the reviewed map event list below to inspect source evidence without rotating or zooming the globe\./);
   assert.match(html, /id="reviewed-globe-events"/);
 });
+
+
+test('indexed date is labeled consistently in the list, compact preview and full evidence detail', () => {
+  const list = element('ul'), detail = element('div'), compact = element('div');
+  detail.focus = () => {};
+  const candidate = withChanges({date_basis: 'Official report publication date; physical activity date not established'});
+  renderReviewedMapList(document, list, [candidate], record =>
+    inspectReviewedMapSource(document, detail, record, undefined, compact));
+  assert.match(list.children[0].children[1].textContent, /Indexed date: 2024-02-29/);
+  list.children[0].children[0].listeners.click();
+  assert.match(compact.textContent, /Indexed date: 2024-02-29/);
+  assert.match(detail.children[1].textContent, /Indexed date: 2024-02-29/);
+  assert.match(detail.children[1].textContent, /physical activity date not established/);
+  assert.doesNotMatch(detail.children[1].textContent, /· Event: /);
+});
