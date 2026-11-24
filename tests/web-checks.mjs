@@ -282,6 +282,7 @@ assert.deepEqual(sourceJumpLinks.map(link => link[1]), [
   'senate-1977-source-note',
   'mkultra-mkdelta-scope',
   'chatter-thematic-comparison',
+  'mksearch-program-continuity',
   'source-scope-comparison',
   'artichoke-1952-counterevidence',
   'bluebird-bluebeam-assessment'
@@ -409,3 +410,19 @@ assert.match(ciaArchiveFallback[1], /exact copy transmitted to Congress and a ch
 assert.match(ciaArchiveFallback[1], /does not establish that all programs were one operation or that any connection to Blue Beam existed/);
 assert.match(ciaArchiveFallback[1], /Do not count versions as independent corroboration/);
 console.log('PASS: CIA archival catalog fallback is not independent corroboration and preserves version uncertainty.');
+
+// Existing source #258 establishes program continuity without creating a new edge.
+const mksearchContinuity = bluebirdPage.match(/<p id="mksearch-program-continuity" tabindex="-1">([\s\S]*?)<\/p>/);
+assert.ok(mksearchContinuity);
+assert.match(mksearchContinuity[1], /MKULTRA → MKSEARCH/);
+assert.match(mksearchContinuity[1], /fiscal year 1966 through fiscal year 1972/);
+assert.match(mksearchContinuity[1], /printed p\. 169; PDF viewer p\. 171/);
+assert.match(mksearchContinuity[1], /95mkultra\.pdf#page=171" target="_blank" rel="noopener noreferrer"/);
+assert.match(mksearchContinuity[1], /source #258\), not a new independent source/);
+assert.match(mksearchContinuity[1], /Case #33 \(record ID 34\).*reference #56/);
+assert.match(mksearchContinuity[1], /href="\.\/paper-trails\.html#case-34"/);
+assert.match(mksearchContinuity[1], /href="\.\/connection-explorer\.html#case=34"/);
+assert.match(mksearchContinuity[1], /not proof of any particular experiment's results, present-day continuation, or a Project Blue Beam connection/);
+assert.match(mksearchContinuity[1], /No new case, source record or public graph edge is created/);
+assert.ok(JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).references.some(r => String(r.case_id)==='34' && String(r.source_id)==='258' && r.url==='https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf'));
+console.log('PASS: MKSEARCH continuity links the existing case and hearing without double-counting evidence or inferring a current operation.');
