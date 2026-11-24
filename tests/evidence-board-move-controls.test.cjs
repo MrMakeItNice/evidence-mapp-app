@@ -916,3 +916,31 @@ test('case-only inspector explains that an indexed-citation gap is not corrobora
   assert.equal(get('cards').children.length, 2);
   assert.equal(getOpened(), 0);
 });
+
+
+test('keyboard-focused cards pan into view without moving cards, changing selection or opening sources', async () => {
+  const { get, stored, getOpened } = await createBoard();
+  const view = get('viewport'), world = get('world'), card = get('cards').children[1];
+  view.clientLeft = view.clientTop = 0; view.clientHeight = 480;
+  view.getBoundingClientRect = () => ({ left: 10, top: 20 });
+  let keyboard = false, bounds = { left: 1050, top: 430, right: 1224, bottom: 604, width: 174, height: 174 };
+  card.matches = selector => selector === ':focus-visible' && keyboard;
+  card.getBoundingClientRect = () => bounds;
+  const position = { ...card.style }, initial = world.style.transform;
+  card.listeners.focus();
+  assert.equal(world.style.transform, initial, 'pointer focus does not pan');
+  keyboard = true;
+  card.listeners.focus();
+  assert.equal(world.style.transform, 'translate(-222px,-97px) scale(1)');
+  bounds = { left: 828, top: 318, right: 1002, bottom: 492, width: 174, height: 174 };
+  card.listeners.focus();
+  assert.equal(world.style.transform, 'translate(-222px,-97px) scale(1)', 'already visible card does not pan again');
+  bounds = { left: -100, top: -30, right: 1100, bottom: 570, width: 1200, height: 600 };
+  card.listeners.focus();
+  assert.equal(world.style.transform, 'translate(-104px,-39px) scale(1)', 'oversized card aligns to leading edges');
+  assert.deepEqual(card.style, position);
+  assert.equal(card.attributes['aria-pressed'], 'false');
+  assert.equal(stored.size, 0);
+  assert.equal(getOpened(), 0);
+  assert.match(html, /overflow:hidden;overflow:clip;position:relative/, 'prevent native focus scrolling from fighting board panning');
+});
