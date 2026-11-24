@@ -225,6 +225,23 @@ console.log('PASS: MKULTRA canonical navigation shares existing hearing #258 wit
 
 
 
+// MKULTRA and MKDELTA describe different administrative functions in one primary record.
+const mkdeltaScope = bluebirdPage.match(/<p id="mkultra-mkdelta-scope">([\s\S]*?)<\/p>/);
+assert.ok(mkdeltaScope);
+assert.equal((bluebirdPage.match(/id="mkultra-mkdelta-scope"/g)||[]).length,1);
+assert.match(mkdeltaScope[1],/Documented administrative relationship/);
+assert.match(mkdeltaScope[1],/October 20, 1952.*April 3, 1953/);
+assert.match(mkdeltaScope[1],/2019\/04\/03, C06767515/);
+assert.match(mkdeltaScope[1],/MKUltra-IG_Report-ocr\.pdf#page=1" target="_blank" rel="noopener noreferrer"/);
+assert.match(mkdeltaScope[1],/MKUltra-IG_Report-ocr\.pdf#page=3" target="_blank" rel="noopener noreferrer"/);
+assert.match(mkdeltaScope[1],/not proof that any particular operation occurred or was effective/);
+assert.match(mkdeltaScope[1],/not evidence for a Project Blue Beam connection/);
+assert.match(mkdeltaScope[1],/The two pages are part of one record/);
+assert.match(mkdeltaScope[1],/href="\.\/paper-trails\.html#case-1"/);
+assert.match(mkdeltaScope[1],/href="\.\/connection-explorer\.html#case=1"/);
+assert.match(mkdeltaScope[1],/no new case, source-library record or public relationship edge is created/);
+console.log('PASS: MKULTRA/MKDELTA source scope uses one primary record and canonical navigation.');
+
 // CHATTER is a source-backed thematic comparison, not a causal edge.
 const chatterComparison = bluebirdPage.match(/<p id="chatter-thematic-comparison">([\s\S]*?)<\/p>/);
 assert.ok(chatterComparison);
