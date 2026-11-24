@@ -1015,3 +1015,37 @@ test('bounded news/source reconciliation counts both date directions and keeps d
   assert.deepEqual(auditNewsIngestion(s).overlap.news_source_publication_date_review,r);
   assert.ok(!JSON.stringify(r).includes(url));
 });
+
+
+test('bounded inbox metadata review preserves four exact counts and sorted prefixes', () => {
+  const s=sample();
+  const url='https://agency.gov/shared?doc=55';
+  s.news_items=Array.from({length:40},(_,i)=>({
+    id:100+i,topic_id:1,source_url:url,publisher:'Agency A',
+    published_at:i%2===0?null:'2026-11-22T00:00:00Z'
+  })).reverse();
+  s.research_inbox=Array.from({length:50},(_,i)=>({
+    id:200+i,source_url:url,publisher:i%2===0?' agency   a ':'Agency B',
+    published_at:i%2===0?null:'2026-11-20T00:00:00Z'
+  })).reverse();
+  s.expected_counts.news_items=40;
+  s.expected_counts.research_inbox=50;
+  const r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.publisher_label_difference_pairs,1000);
+  assert.equal(r.omitted_publisher_label_difference_id_pairs,975);
+  assert.deepEqual(r.publisher_label_difference_id_pairs,Array.from({length:25},(_,i)=>[100,201+2*i]));
+  assert.equal(r.publication_times_over_24h_apart_pairs,500);
+  assert.equal(r.omitted_publication_time_difference_id_pairs,475);
+  assert.deepEqual(r.publication_times_over_24h_apart_id_pairs,Array.from({length:25},(_,i)=>[101,201+2*i]));
+  assert.equal(r.news_missing_inbox_dated_pairs,500);
+  assert.equal(r.omitted_news_missing_inbox_dated_id_pairs,475);
+  assert.deepEqual(r.news_missing_inbox_dated_id_pairs,Array.from({length:25},(_,i)=>[100,201+2*i]));
+  assert.equal(r.inbox_missing_news_dated_pairs,500);
+  assert.equal(r.omitted_inbox_missing_news_dated_id_pairs,475);
+  assert.deepEqual(r.inbox_missing_news_dated_id_pairs,Array.from({length:25},(_,i)=>[101,200+2*i]));
+  s.news_items.reverse();
+  s.research_inbox.reverse();
+  assert.deepEqual(auditNewsIngestion(s).overlap.news_inbox_metadata_review,r);
+  assert.ok(!JSON.stringify(r).includes(url));
+  assert.ok(!JSON.stringify(r).includes('Agency'));
+});
