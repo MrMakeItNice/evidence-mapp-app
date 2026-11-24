@@ -110,6 +110,24 @@ try {
   console.log('PASS: native source inspector preserves distinct page URLs and rejects duplicate, credential-bearing, unsafe and unrelated citation fixtures.');
 
 
+  // Narrow the pane while native keyboard focus remains on the citation.
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.locator('#reset').click();
+  await page.keyboard.press('Tab');
+  await citation.focus();
+  const beforeResize = await citation.evaluate(el => ({ left: el.style.left, top: el.style.top,
+    selected: el.getAttribute('aria-pressed'), zoom: document.getElementById('zoom-level').textContent }));
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.waitForFunction(() => {
+    const card = document.activeElement, frame = document.getElementById('viewport');
+    if (!card.matches('.tile:focus-visible')) return false;
+    const bounds = card.getBoundingClientRect(), viewport = frame.getBoundingClientRect();
+    return bounds.left >= viewport.left - 1 && bounds.right <= viewport.right + 1;
+  });
+  assert.deepEqual(await citation.evaluate(el => ({ left: el.style.left, top: el.style.top,
+    selected: el.getAttribute('aria-pressed'), zoom: document.getElementById('zoom-level').textContent })), beforeResize);
+  console.log('PASS: keyboard-focused citation stays visible after narrowing without changing its layout, selection or zoom.');
+
   for (const [width, height] of [[320,700], [768,1024], [1280,800]]) {
     await page.setViewportSize({ width, height });
     const layout = await page.evaluate(() => ({ width: innerWidth, content: document.documentElement.scrollWidth,

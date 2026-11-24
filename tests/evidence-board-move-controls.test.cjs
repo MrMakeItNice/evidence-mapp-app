@@ -1341,3 +1341,35 @@ test('disabled JavaScript explains unavailable live citations and hides unusable
   assert.match(body, /<\/noscript><div class="shell">/);
   assert.match(body, /<script>[\s\S]*?<\/script>/);
 });
+
+test('resizing reveals a clipped keyboard-focused card without changing selection, zoom or layout', async () => {
+  const { get, document, stored, windowListeners } = await createBoard();
+  const view = get('viewport'), world = get('world'), card = get('cards').children[1];
+  view.clientLeft = view.clientTop = 0; view.clientHeight = 480; view.clientWidth = 320;
+  view.getBoundingClientRect = () => ({ left: 0, top: 0 });
+  let keyboard = true, bounds = { left: 430, top: 80, right: 604, bottom: 254, width: 174, height: 174 };
+  card.matches = selector => selector === '.tile:focus-visible' && keyboard;
+  card.getBoundingClientRect = () => bounds;
+  card.focus();
+  const position = { ...card.style }, before = world.style.transform, status = get('status').textContent;
+  windowListeners.resize();
+  assert.notEqual(world.style.transform, before);
+  assert.match(world.style.transform, /scale\(1\)$/);
+  assert.deepEqual(card.style, position);
+  assert.equal(card.attributes['aria-pressed'], 'false');
+  assert.equal(document.activeElement, card);
+  assert.equal(get('status').textContent, status);
+  assert.equal(stored.size, 0);
+  bounds = { left: 138, top: 80, right: 312, bottom: 254, width: 174, height: 174 };
+  const revealed = world.style.transform;
+  windowListeners.resize();
+  assert.equal(world.style.transform, revealed, 'an already visible card remains still');
+  keyboard = false;
+  bounds.left = 430; bounds.right = 604;
+  windowListeners.resize();
+  assert.equal(world.style.transform, revealed, 'pointer focus must not trigger resize panning');
+  keyboard = true;
+  card.listeners.pointerdown(pointer(95));
+  windowListeners.resize();
+  assert.equal(world.style.transform, revealed, 'resizing must not fight an active gesture');
+});
