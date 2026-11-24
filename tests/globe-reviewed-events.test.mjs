@@ -902,7 +902,7 @@ test('selecting an unmarked globe point clears stale event provenance and expand
   assert.match(geoPanel.textContent, /No reviewed event marker was selected here/);
 });
 
-test('keyboard and marker selections share provenance and closing clears both readouts', () => {
+test('keyboard and marker selections share identity without duplicating the full provenance in the live status', () => {
   const compact = element('div');
   const detail = element('div');
   detail.focus = () => {};
@@ -916,12 +916,18 @@ test('keyboard and marker selections share provenance and closing clears both re
   firstButton.focus = () => {firstButton.focused = true;};
   secondButton.focus = () => {secondButton.focused = true;};
   firstButton.listeners.click();
-  assert.equal(compact.children[2].href, event.source_url);
+  assert.equal(compact.children.length, 0, 'live status contains no duplicate interactive source links');
+  assert.ok(compact.textContent.includes(event.title + ' (' + event.id + ')'));
+  assert.match(compact.textContent, /Original sources and map placement evidence are in the selected event detail below/);
+  assert.equal(compact.textContent.includes(event.source_url), false);
   assert.equal(detail.children[2].href, event.source_url);
   secondButton.listeners.click();
-  assert.equal(compact.children[0].textContent, second.title);
-  assert.equal(compact.children[2].href, second.source_url);
+  assert.equal(compact.children.length, 0);
+  assert.ok(compact.textContent.includes(second.title + ' (' + second.id + ')'));
+  assert.equal(compact.textContent.includes(event.title), false);
+  assert.equal(compact.textContent.includes(second.source_url), false);
   assert.equal(detail.children[2].href, second.source_url);
+  assert.equal(detail.children[4].href, second.location_source_url);
   detail.onkeydown({key: 'Escape', preventDefault() {}});
   assert.equal(compact.children.length, 0);
   assert.match(compact.textContent, /No reviewed event selected/);
