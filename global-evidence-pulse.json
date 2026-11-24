@@ -8,8 +8,8 @@
     "title": "Specific verifiable description of what happened",
     "category": "positive | negative | neutral; label is a provisional editorial assessment",
     "event_date": "YYYY-MM-DD date of occurrence, not publication date",
-    "lat": "Verified event latitude, -90 to 90",
-    "lon": "Verified event longitude, -180 to 180",
+    "lat": "Source-backed map latitude, -90 to 90; interpret using location_role and location_note",
+    "lon": "Source-backed map longitude, -180 to 180; interpret using location_role and location_note",
     "source_url": "Original independently inspectable https source",
     "review_status": "verified only after editorial review",
     "optional_fields": [
@@ -23,7 +23,8 @@
       "correction_note"
     ],
     "location_source_url": "Inspectably linked HTTPS evidence for the geographic placement (required to show globe pins; may equal event source URL)",
-    "location_note": "Editorial explanation of how the linked evidence supports the coordinates and whether they are approximate (required for globe pins)"
+    "location_note": "Editorial explanation of how the linked evidence supports the coordinates and whether they are approximate (required for globe pins)",
+    "location_role": "Required for globe pins only: occurrence_site | archaeological_site_reference | beneficiary_site. The latter two are sourced reference locations, not necessarily the occurrence venue. Non-geographic records must not be mapped."
   },
   "review_policy": [
     "Do not equate article sentiment with event impact.",
