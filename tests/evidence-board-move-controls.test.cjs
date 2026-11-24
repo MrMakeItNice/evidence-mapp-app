@@ -91,7 +91,7 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
 
-async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout) {
+async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout, clipboard) {
   const elements = new Map(), stored = new Map();
   if (savedLayout !== undefined) stored.set('atlas-evidence-board-layout-v2-1', savedLayout);
   const make = tag => ({
@@ -116,7 +116,7 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
   const citation = { case_id: '1', title: 'Original document', url: 'https://records.example.org/archive?id=1' };
   let opened = 0;
   vm.runInNewContext(html.match(/<script>([\s\S]*?)<\/script>/)[1], {
-    document, URL, encodeURIComponent,
+    document, URL, encodeURIComponent, navigator: { clipboard },
     localStorage: { getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value) },
     window: { open() { opened++; } },
     fetch: async url => ({ ok: !failedRequest, json: async () => url.includes('paper-trails-data')
@@ -633,4 +633,51 @@ test('non-pointer click activates the card inspector without rehandling ordinary
   get('selected-record').listeners.keydown({ key: 'Escape', preventDefault() {} });
   assert.equal(document.activeElement, card);
   assert.equal(getOpened(), 0, 'activation must not open an external source');
+});
+
+
+test('copy citation preserves indexed provenance and full URL without opening a document', async () => {
+  const writes = [];
+  const record = { case_id: '1', title: 'Archive <scan>', publisher: 'Agency', publication_date: '1977-08-03',
+    reference_code: 'ABC-1', url: 'https://records.example.org/archive?id=1#page=4' };
+  const { get, getOpened } = await createBoard(undefined, [record], false, undefined, { writeText: async text => writes.push(text) });
+  assert.ok(!get('details').children.some(n => n.className === 'copy-citation'), 'case is not a citation');
+  get('cards').children[1].listeners.keydown({ key: 'Enter', preventDefault() {} });
+  const children = get('details').children, button = children.find(n => n.className === 'copy-citation');
+  const feedback = children.find(n => n.attributes.role === 'status');
+  assert.equal(button.type, 'button');
+  assert.equal(feedback.attributes['aria-atomic'], 'true');
+  await button.listeners.click();
+  assert.deepEqual(writes, [
+    ['Indexed source citation — not independently verified', 'Title: Archive <scan>', 'Publisher: Agency',
+      'Publication date: 1977-08-03', 'Reference: ABC-1', 'Indexed URL: ' + record.url].join('\n')
+  ]);
+  assert.match(feedback.textContent, /copied/);
+  assert.equal(getOpened(), 0);
+});
+
+test('copy citation reports unavailable or denied clipboard access without claiming success', async () => {
+  for (const clipboard of [undefined, { writeText: async () => { throw Error('denied'); } }]) {
+    const { get } = await createBoard(undefined, undefined, false, undefined, clipboard);
+    get('cards').children[1].listeners.keydown({ key: 'Enter', preventDefault() {} });
+    const children = get('details').children;
+    await children.find(n => n.className === 'copy-citation').listeners.click();
+    assert.match(children.find(n => n.attributes.role === 'status').textContent, /Could not copy citation/);
+  }
+});
+
+test('pending citation copy cannot replace newly selected record feedback or run twice', async () => {
+  let complete, writes = 0;
+  const { get } = await createBoard(undefined, undefined, false, undefined, {
+    writeText: () => { writes++; return new Promise(resolve => { complete = resolve; }); }
+  });
+  get('cards').children[1].listeners.keydown({ key: 'Enter', preventDefault() {} });
+  const button = get('details').children.find(n => n.className === 'copy-citation');
+  const pending = button.listeners.click();
+  await button.listeners.click();
+  assert.equal(writes, 1);
+  get('cards').children[0].listeners.keydown({ key: 'Enter', preventDefault() {} });
+  complete(); await pending;
+  assert.equal(get('details').children[0].textContent, 'Published case');
+  assert.ok(!get('details').children.some(n => n.className === 'copy-citation' || n.attributes.role === 'status'));
 });
