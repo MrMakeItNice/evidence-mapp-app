@@ -830,3 +830,26 @@ test('Reset view is labeled by scope and preserves moved cards and their saved l
   assert.equal(stored.get('atlas-evidence-board-layout-v2-1'), saved);
   assert.equal(tile.attributes['aria-pressed'], 'true');
 });
+
+
+test('source inspector shows the full validated indexed URL before copying or opening it', async () => {
+  const record = { case_id: '1', title: 'Archival reference', url: 'https://records.example.org:8443/archive?id=a%26b#page=4' };
+  const second = { case_id: '1', title: 'Another reference', url: 'https://records.example.org/other#page=2' };
+  const unsafe = { case_id: '1', title: 'Unsafe', url: 'https://user:pass@records.example.org/hidden' };
+  const { get, getOpened } = await createBoard(undefined, [record, second, unsafe]);
+  const cards = get('cards').children, details = get('details');
+  const urls = () => details.children.filter(n => n.className === 'muted indexed-url');
+  assert.equal(cards.length, 3, 'credential-bearing citation remains excluded');
+  assert.equal(urls().length, 0, 'case inspector does not show a source destination');
+  for (const [index, item] of [[1, record], [2, second]]) {
+    cards[index].listeners.keydown({ key: 'Enter', preventDefault() {} });
+    assert.equal(urls().length, 1);
+    assert.equal(urls()[0].tag, 'p', 'destination is selectable text, not another link');
+    assert.equal(urls()[0].textContent, 'Indexed URL: ' + item.url);
+    assert.equal(details.children.find(n => n.tag === 'a').href, item.url);
+    assert.match(details.children.find(n => n.className === 'badge').textContent, /not independently verified/);
+  }
+  cards[0].listeners.keydown({ key: 'Enter', preventDefault() {} });
+  assert.equal(urls().length, 0, 'switching back clears the previous destination');
+  assert.equal(getOpened(), 0, 'preview never opens a source automatically');
+});
