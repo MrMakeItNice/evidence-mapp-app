@@ -1086,8 +1086,8 @@ test('recent date-quality cohort uses inclusive window and separate unassigned c
   assert.equal(n.recent_without_topic,1);
   assert.equal(n.recent_undated_without_topic,1);
   assert.deepEqual(n.recent_publication_date_by_topic,[
-    {topic_id:1,recent_count:2,undated_count:1},
-    {topic_id:2,recent_count:1,undated_count:1}
+    {topic_id:1,recent_count:2,undated_count:1,recent_google_proxy_count:1,recent_google_proxy_undated_count:1},
+    {topic_id:2,recent_count:1,undated_count:1,recent_google_proxy_count:0,recent_google_proxy_undated_count:0}
   ]);
 });
 
@@ -1106,4 +1106,51 @@ test('recent topic cohort caps output deterministically without dropping global 
   s.news_items.reverse();
   assert.deepEqual(auditNewsIngestion(s).news.recent_publication_date_by_topic,n.recent_publication_date_by_topic);
   assert.ok(!JSON.stringify(n).includes('SECRET'));
+});
+
+
+test('recent proxy cohort classifies validated hostname only and retains unassigned totals',()=>{
+  const s=sample();
+  const add=(id,topic_id,source_url,published_at=null,discovered_at=s.as_of)=>({
+    id,topic_id,source_url,published_at,discovered_at,publisher:'Google News',headline:'SECRET'
+  });
+  s.news_items.push(
+    add(3,1,'https://NEWS.GOOGLE.COM/rss/a','2026-11-22T02:20:00Z','2026-11-22T02:20:00Z'),
+    add(4,1,'https://news.google.com.evil.example/rss/a'),
+    add(5,1,'https://user:pass@news.google.com/rss/a'),
+    add(6,1,'https://agency.gov/news.google.com'),
+    add(7,null,'https://news.google.com/rss/b'),
+    add(8,null,'https://news.google.com/rss/c','2026-11-22T03:00:00Z'),
+    add(9,2,'https://news.google.com/rss/d',null,'2026-11-22T02:19:59Z'),
+    add(10,2,'https://news.google.com/rss/e',null,'2026-11-23T02:20:01Z'),
+    add(11,1,'https://news.google.com/%zz')
+  );
+  s.expected_counts.news_items=s.news_items.length;
+  const n=auditNewsIngestion(s).news;
+  assert.equal(n.discovered_last_24h,9);
+  assert.equal(n.google_proxy_discovered_last_24h,4);
+  assert.equal(n.google_proxy_undated_discovered_last_24h,2);
+  assert.equal(n.recent_google_proxy_without_topic,2);
+  assert.equal(n.recent_google_proxy_undated_without_topic,1);
+  assert.deepEqual(n.recent_publication_date_by_topic,[
+    {topic_id:1,recent_count:7,undated_count:5,recent_google_proxy_count:2,recent_google_proxy_undated_count:1}
+  ]);
+  assert.ok(!JSON.stringify(n).includes('https://'));
+  assert.ok(!JSON.stringify(n).includes('SECRET'));
+});
+
+test('recent proxy totals include omitted topics without exposing source links',()=>{
+  const s=sample();
+  s.news_topics=Array.from({length:12},(_,i)=>({id:i+1,active:true}));
+  s.news_items=s.news_topics.map(({id})=>({
+    id,topic_id:id,source_url:'https://news.google.com/rss/'+id,published_at:null,discovered_at:s.as_of
+  })).reverse();
+  s.expected_counts.news_topics=12;
+  s.expected_counts.news_items=12;
+  const n=auditNewsIngestion(s).news;
+  assert.equal(n.google_proxy_discovered_last_24h,12);
+  assert.equal(n.google_proxy_undated_discovered_last_24h,12);
+  assert.equal(n.omitted_recent_publication_date_topics,2);
+  assert.equal(n.recent_publication_date_by_topic.reduce((sum,x)=>sum+x.recent_google_proxy_count,0),10);
+  assert.ok(!JSON.stringify(n).includes('https://'));
 });
