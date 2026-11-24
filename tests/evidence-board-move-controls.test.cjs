@@ -756,3 +756,57 @@ test('Save layout becomes available only with a rendered case and stays unavaila
     assert.equal(page.get('status').textContent, status);
   }
 });
+
+
+test('keyboard panning uses the focused viewport, preserves card positions, and resets normally', async () => {
+  assert.match(html, /id="viewport"[^>]*tabindex="0"/);
+  assert.match(html, /#viewport:focus-visible\{outline:3px solid var\(--mint\)/);
+  assert.match(html, /use arrow keys to pan \(Shift for larger steps\)/);
+  const { get, stored, document, getOpened } = await createBoard();
+  const viewport = get('viewport'), world = get('world'), cards = get('cards').children;
+  const inspector = get('details').children[0], initial = world.style.transform;
+  const positions = cards.map(card => [card.style.left, card.style.top]);
+  viewport.focus();
+  let prevented = 0;
+  const key = (name, extra = {}) => viewport.listeners.keydown({
+    key: name, target: viewport, preventDefault() { prevented++; }, ...extra
+  });
+  key('ArrowRight');
+  assert.equal(world.style.transform, 'translate(40px,15px) scale(1)');
+  key('ArrowDown', { shiftKey: true });
+  assert.equal(world.style.transform, 'translate(40px,115px) scale(1)');
+  key('ArrowLeft'); key('ArrowUp', { shiftKey: true });
+  assert.equal(world.style.transform, initial);
+  assert.equal(prevented, 4);
+  key('Tab'); key('Escape'); key('ArrowLeft', { ctrlKey: true });
+  key('ArrowRight', { altKey: true }); key('ArrowUp', { metaKey: true });
+  key('ArrowDown', { target: cards[1] });
+  cards[1].focus(); key('ArrowDown');
+  assert.equal(prevented, 4, 'other targets and shortcuts retain native behavior');
+  assert.equal(document.activeElement, cards[1]);
+  assert.equal(world.style.transform, initial);
+  viewport.focus();
+  viewport.listeners.pointerdown(pointer(1));
+  key('ArrowRight');
+  assert.equal(prevented, 4, 'do not pan during an active pointer gesture');
+  viewport.listeners.pointercancel({ pointerId: 1 });
+  key('ArrowLeft');
+  assert.equal(world.style.transform, 'translate(-40px,15px) scale(1)');
+  get('reset').listeners.click();
+  assert.equal(world.style.transform, initial);
+  assert.deepEqual(cards.map(card => [card.style.left, card.style.top]), positions);
+  assert.equal(get('details').children[0], inspector);
+  assert.equal(stored.size, 0);
+  assert.equal(getOpened(), 0);
+});
+
+test('keyboard panning does not intercept navigation before a case is available', async () => {
+  for (const page of [await createBoard([], []), await createBoard(undefined, undefined, true)]) {
+    const viewport = page.get('viewport');
+    viewport.focus();
+    const original = page.get('world').style.transform;
+    viewport.listeners.keydown({ key: 'ArrowRight', target: viewport,
+      preventDefault() { assert.fail('empty board must not intercept navigation'); } });
+    assert.equal(page.get('world').style.transform, original);
+  }
+});
