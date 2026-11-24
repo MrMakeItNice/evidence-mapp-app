@@ -13,7 +13,12 @@ function calendarDate(value) {
 }
 
 function safeSourceUrl(value) {
-  if (typeof value !== 'string') return null;
+  // Do not let browser URL repair turn malformed provenance into a new link.
+  // Require an explicit authority, no raw whitespace/control characters or
+  // backslashes, and no userinfo (including an empty @ prefix).
+  if (typeof value !== 'string' || /[\s\u0000-\u001f\u007f\\]/.test(value)) return null;
+  const authority = /^https:\/\/([^/?#]+)/i.exec(value);
+  if (!authority || authority[1].includes('@')) return null;
   try {
     const url = new URL(value);
     return url.protocol === 'https:' && url.hostname && !url.username && !url.password ? url : null;
