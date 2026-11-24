@@ -126,35 +126,46 @@ function overlapCandidatePairs(left, right, limit = 25) {
 // not an automatic claim that either date is wrong. Never emit URLs or publisher text.
 function exactNewsInboxMetadataReview(news, inbox, limit = 25) {
   const indexed = new Map();
+  const label = value => typeof value === 'string' ?
+    value.trim().replace(/\s+/g, ' ').toLowerCase() : '';
   for (const i of inbox) {
     const url = cleanUrl(i.source_url);
     if (urlProblem(url) !== null) continue;
     if (!indexed.has(url)) indexed.set(url, []);
     indexed.get(url).push(i);
   }
-  const publisherPairs = [], timestampPairs = [];
-  const newsMissingDatePairs = [], inboxMissingDatePairs = [];
-  const label = value => typeof value === 'string' ?
-    value.trim().replace(/\s+/g, ' ').toLowerCase() : '';
-  for (const n of news) {
+  for (const [url, rows] of indexed) {
+    indexed.set(url, rows.sort((a,b) => a.id-b.id).map(i => ({
+      id: i.id, publisher: label(i.publisher),
+      date: timestamp(i.published_at, 'inbox.published_at')
+    })));
+  }
+  const bucket = () => ({count: 0, id_pairs: []});
+  const publisherPairs = bucket(), timestampPairs = bucket();
+  const newsMissingDatePairs = bucket(), inboxMissingDatePairs = bucket();
+  const record = (target, a, b) => {
+    target.count++;
+    if (!Number.isSafeInteger(target.count)) throw new Error('Unsafe metadata pair count');
+    if (target.id_pairs.length < limit) target.id_pairs.push([a,b]);
+  };
+  // Sorted input gives a deterministic review prefix without materializing
+  // all discrepancy pairs. Exact counts still inspect each matching pair.
+  for (const n of [...news].sort((a,b) => a.id-b.id)) {
     const url = cleanUrl(n.source_url);
     if (urlProblem(url) !== null || !indexed.has(url)) continue;
+    const publisherA = label(n.publisher);
+    const dateA = timestamp(n.published_at, 'news.published_at');
     for (const i of indexed.get(url)) {
-      const publisherA = label(n.publisher), publisherB = label(i.publisher);
-      if (publisherA && publisherB && publisherA !== publisherB) publisherPairs.push([n.id, i.id]);
-      const dateA = timestamp(n.published_at, 'news.published_at');
-      const dateB = timestamp(i.published_at, 'inbox.published_at');
-      if (dateA === null && dateB !== null) newsMissingDatePairs.push([n.id, i.id]);
-      if (dateA !== null && dateB === null) inboxMissingDatePairs.push([n.id, i.id]);
+      if (publisherA && i.publisher && publisherA !== i.publisher) record(publisherPairs,n.id,i.id);
+      const dateB = i.date;
+      if (dateA === null && dateB !== null) record(newsMissingDatePairs,n.id,i.id);
+      if (dateA !== null && dateB === null) record(inboxMissingDatePairs,n.id,i.id);
       if (dateA !== null && dateB !== null && Math.abs(dateA - dateB) > 86400000)
-        timestampPairs.push([n.id, i.id]);
+        record(timestampPairs,n.id,i.id);
     }
   }
-  const summarize = pairs => {
-    pairs.sort((a,b) => a[0] - b[0] || a[1] - b[1]);
-    return {count: pairs.length, id_pairs: pairs.slice(0, limit),
-      omitted_id_pairs: Math.max(0, pairs.length - limit)};
-  };
+  const summarize = target => ({...target,
+    omitted_id_pairs: target.count - target.id_pairs.length});
   const publishers = summarize(publisherPairs);
   const dates = summarize(timestampPairs);
   const missingNewsDates = summarize(newsMissingDatePairs);
