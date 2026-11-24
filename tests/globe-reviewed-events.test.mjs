@@ -7,6 +7,7 @@ const event = {id: 'archive-01', title: 'Reviewed documented event', category: '
   event_date: '2024-02-29', lat: 37.7, lon: -122.4,
   source_url: 'https://archive.example.gov/report?id=12#p3',
   location_source_url: 'https://archive.example.gov/report?id=12#location',
+  location_role: 'occurrence_site',
   location_note: 'Reported city center; approximate map position, not a street address',
   review_status: 'verified'};
 const withChanges = changes => ({...event, ...changes});
@@ -576,4 +577,46 @@ test('same-title map events expose distinct canonical IDs and placement rational
   assert.ok(firstContext.textContent.includes('Map placement: ' + event.location_note));
   assert.ok(secondContext.textContent.includes('Map placement: ' + second.location_note));
   assert.ok(firstContext.textContent.includes('Same document used for both citations; not independent corroboration'));
+});
+
+test('requires an explicit supported location role and withholds non-geographic policy and office references', () => {
+  for (const role of [undefined, null, '', 'announcement_city_only', 'issuing_office_city_only',
+    'national_policy_scope_only', 'invented_role']) {
+    const candidate = withChanges({location_role: role});
+    assert.deepEqual(reviewedMapEvents([candidate]), []);
+    const list = element('ul');
+    assert.deepEqual(renderReviewedMapList(document, list, [candidate], () => {}), []);
+    assert.equal(list.children.length, 0);
+  }
+});
+
+test('reference and beneficiary points disclose their distinct roles in both source inspection paths', () => {
+  for (const [role, label] of [
+    ['occurrence_site', 'Occurrence site'],
+    ['archaeological_site_reference', 'Archaeological site reference (not an exact excavation or publication point)'],
+    ['beneficiary_site', 'Beneficiary site (not necessarily the decision or activity venue)']
+  ]) {
+    const candidate = withChanges({location_role: role});
+    const [record] = reviewedMapEvents([candidate]);
+    assert.equal(record.location_role, role);
+    assert.equal(record.location_role_label, label);
+    const panel = element('div');
+    showReviewedMapSource(document, panel, record);
+    assert.ok(panel.children[3].textContent.includes('Location role: ' + label));
+    assert.equal(panel.children[4].href, event.location_source_url);
+    const list = element('ul');
+    renderReviewedMapList(document, list, [candidate], () => {});
+    assert.ok(list.children[0].children[1].textContent.includes('Location role: ' + label));
+  }
+});
+
+test('conflicting geographic roles for one event ID suppress the point in either order', () => {
+  const reference = withChanges({location_role: 'beneficiary_site'});
+  for (const candidates of [[event, reference], [reference, event]]) {
+    assert.deepEqual(reviewedMapEvents(candidates), []);
+    const list = element('ul');
+    assert.deepEqual(renderReviewedMapList(document, list, candidates, () => {}), []);
+    assert.equal(list.children.length, 0);
+  }
+  assert.equal(reviewedMapEvents([event, withChanges({location_role: 'beneficiary_site', review_status: 'pending'})]).length, 1);
 });
