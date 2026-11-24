@@ -1021,3 +1021,48 @@ test('source limitations cannot establish map eligibility or override conflictin
     assert.deepEqual(reviewedMapEvents([withChanges({source_limitation: malformed})])[0].source_limitations, []);
   }
 });
+
+
+test('editorial classification rationale retains its own citation in map and accessible previews', () => {
+  const note = '<b>Provisional assessment, not a measured outcome</b>';
+  const other = 'https://archive.example.gov/other#p4';
+  const rows = [
+    withChanges({classification_rationale: '  ' + note + '  '}),
+    withChanges({classification_rationale: note}),
+    withChanges({source_url: other, classification_rationale: 'Different editorial rationale'}),
+    withChanges({review_status: 'pending', classification_rationale: 'Unreviewed note'}),
+    withChanges({source_url: 'javascript:alert(1)', classification_rationale: 'Unsafe note'})
+  ];
+  const list = element('ul');
+  let selected;
+  const mapped = renderReviewedMapList(document, list, rows, record => {selected = record;});
+  assert.equal(mapped.length, 1);
+  assert.deepEqual(mapped[0].classification_rationales, [
+    {note, source_url: event.source_url},
+    {note: 'Different editorial rationale', source_url: other}
+  ]);
+  assert.match(list.children[0].children[1].textContent, /2 indexed editorial classification rationale/);
+  list.children[0].children[0].listeners.click();
+  for (const record of [mapped[0], selected]) {
+    const panel = element('div');
+    showReviewedMapSource(document, panel, record);
+    assert.match(panel.children.at(-2).textContent, /not independent findings or measures of global conditions/);
+    assert.match(panel.children.at(-2).textContent, /do not establish map placement/);
+    const items = panel.children.at(-1).children;
+    assert.equal(items[0].textContent, note + ' — Indexed under event citation: ' + event.source_url);
+    assert.equal(items[1].textContent, 'Different editorial rationale — Indexed under event citation: ' + other);
+    assert.equal(items[0].children.length, 0, 'markup is not parsed');
+  }
+});
+
+test('classification rationale cannot substitute for location evidence or resolve conflicting categories', () => {
+  const classification_rationale = 'Editorial context only';
+  assert.deepEqual(reviewedMapEvents([withChanges({location_source_url: '', classification_rationale})]), []);
+  assert.deepEqual(reviewedMapEvents([event, withChanges({category: 'positive', classification_rationale})]), []);
+  for (const malformed of [null, {}, 42, '  ']) {
+    assert.deepEqual(reviewedMapEvents([withChanges({classification_rationale: malformed})])[0].classification_rationales, []);
+  }
+  const list = element('ul');
+  renderReviewedMapList(document, list, [event], () => {});
+  assert.match(list.children[0].children[1].textContent, /No separate editorial classification rationale is indexed/);
+});
