@@ -556,3 +556,13 @@ for (const phrase of ["CIA-RDP83-01042R000800010003-1","approved for release 200
 for (const href of ["https://nsarchive.gwu.edu/sites/default/files/documents/1950-04-05%20JM%20Box%209%20F5%20Replacement%20CIA%20FOIA-ocr.pdf#page=1","https://nsarchive.gwu.edu/sites/default/files/documents/1950-04-05%20JM%20Box%209%20F5%20Replacement%20CIA%20FOIA-ocr.pdf#page=3","#senate-1977-source-note"]) assert.ok(bluebird1950Approval[1].includes('href="'+href+'"'));
 assert.equal((bluebird1950Approval[1].match(/target="_blank" rel="noopener noreferrer"/g)||[]).length,2);
 console.log('PASS: original BLUEBIRD approval record retains scope, provenance and no inferred Blue Beam edge.');
+
+// Time-scope comparison: April field-test delay does not conflict with the later July report.
+const artichokeAprilLimits = bluebirdPage.match(/<p id="artichoke-april-1952-limits">([\s\S]*?)<\/p>/);
+assert.ok(artichokeAprilLimits);
+assert.equal((bluebirdPage.match(/id="artichoke-april-1952-limits"/g)||[]).length,1);
+for (const phrase of ["April 26, 1952","March 13, 1951","not an approved change","one memorandum, not independent confirmations","not proof that no tests ever occurred","July 14, 1952 report","do not establish a contradiction or validate effectiveness","PDF pp. 1–2 were visually reviewed","attachment and original declassification date remain unverified","canonical ARTICHOKE Case #3 (record ID 4)","No Project Blue Beam connection is demonstrated","no new case, source record or public graph edge is created"]) assert.ok(artichokeAprilLimits[1].includes(phrase), 'Missing April scope: '+phrase);
+for (const href of ["https://nsarchive.gwu.edu/sites/default/files/documents/1952-04-26%20JM%20Box%206%20F5-ocr.pdf#page=1","https://nsarchive.gwu.edu/sites/default/files/documents/1952-04-26%20JM%20Box%206%20F5-ocr.pdf#page=2","https://nsarchive.gwu.edu/document/32719-document-04-artichoke-project-coordinator-assistant-director-scientific-intelligence","#artichoke-1952-counterevidence","./paper-trails.html#case-4","./connection-explorer.html#case=4"]) assert.ok(artichokeAprilLimits[1].includes('href="'+href+'"'));
+assert.equal((artichokeAprilLimits[1].match(/target="_blank" rel="noopener noreferrer"/g)||[]).length,3);
+assert.doesNotMatch(artichokeAprilLimits[1],/case-33|case=33/);
+console.log('PASS: April ARTICHOKE field-test delay is date-scoped, uses canonical navigation, and does not promote a Blue Beam link.');
