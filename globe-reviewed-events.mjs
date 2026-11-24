@@ -309,8 +309,15 @@ export function showReviewedMapSource(doc, panel, event) {
 
 /** Present list selections in a readable, keyboard-reachable detail region. */
 export function inspectReviewedMapSource(doc, detail, event, returnFocusTo, compactPanel) {
-  // Both readouts must describe the same selected event, regardless of input method.
-  if (compactPanel) showReviewedMapSource(doc, compactPanel, event);
+  // The compact globe readout is a live status region, not a second evidence panel.
+  // Keep its announcement brief and leave all inspectable citations in the focused
+  // full-width detail, so long source notes cannot cover the globe or be read twice.
+  if (compactPanel) {
+    compactPanel.replaceChildren();
+    compactPanel.textContent = 'Selected reviewed map event: ' + event.title + ' (' + event.id + ') · ' +
+      event.event_date + ' · ' + event.category + '. Location role: ' + event.location_role_label +
+      '. Original sources and map placement evidence are in the selected event detail below.';
+  }
   showReviewedMapSource(doc, detail, event);
   if (returnFocusTo) {
     const close = () => {
