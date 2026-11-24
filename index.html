@@ -350,8 +350,21 @@ try{
  function resetView(){delete canvas.dataset.userZoom;targetX=.13;targetY=.35;zoom=defaultZoom();userInteracted=false}
  function changeZoom(value){interact();canvas.dataset.userZoom='1';zoom=clampZoom(value)}
  function inspectLocation(e){
-  const rect=canvas.getBoundingClientRect();mouse.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(mouse,camera);const markerHits=raycaster.intersectObjects(markerMeshes);const hit=raycaster.intersectObject(earth)[0];const markerHit=markerHits.find(h=>!hit||h.distance<=hit.distance+.015);if(markerHit){
-   const selectedMarker=markerHit.object.userData.event;
+  const rect=canvas.getBoundingClientRect();mouse.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(mouse,camera);const markerHits=raycaster.intersectObjects(markerMeshes);const hit=raycaster.intersectObject(earth)[0];const visibleMarkerEvents=[...new Map(markerHits.filter(h=>!hit||h.distance<=hit.distance+.015).map(h=>[h.object.userData.event.id,h.object.userData.event])).values()];
+  if(visibleMarkerEvents.length>1){
+   // Several distinct reviewed events may share a map point or overlap at this zoom.
+   // Do not silently select whichever ray intersection happens to be first.
+   const ids=new Set(visibleMarkerEvents.map(record=>record.id));
+   geoPanel.textContent='Multiple reviewed event markers overlap here ('+visibleMarkerEvents.length+'). Choose a source in the event list: '+visibleMarkerEvents.map(record=>record.title+' ('+record.id+')').join('; ')+'. Nearby points do not establish a relationship.';
+   const detail=document.getElementById('reviewed-globe-detail');
+   detail.hidden=true;detail.replaceChildren();detail.onkeydown=null;
+   for(const item of mapList.children){item.querySelector('button')?.setAttribute('aria-expanded','false');}
+   const firstIndex=mapRecords.findIndex(record=>ids.has(record.id));
+   mapList.children[firstIndex]?.querySelector('button')?.focus();
+   return;
+  }
+  if(visibleMarkerEvents.length===1){
+   const selectedMarker=visibleMarkerEvents[0];
    // Keep the existing compact globe readout, but route marker selection
    // through the same accessible source button as the keyboard list.
    // That preserves the full-width preview, focus, Back/Escape and aria-expanded state.
