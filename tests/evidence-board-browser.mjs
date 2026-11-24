@@ -52,6 +52,35 @@ try {
   assert.equal(await citation.evaluate(el => getComputedStyle(el).borderTopStyle), 'solid');
   console.log('PASS: forced-colors selection borders and separate focus outline; normal border restored.');
 
+  // Returning from the inspector must reveal the selected card without moving evidence.
+  for (const [width, height] of [[1280,800], [320,700]]) {
+    await page.setViewportSize({ width, height });
+    await page.locator('#reset').click();
+    const position = await citation.evaluate(el => [el.style.left, el.style.top]);
+    const saved = await page.evaluate(() => localStorage.getItem('atlas-evidence-board-layout-v2-1'));
+    const zoom = await page.locator('#zoom-level').textContent();
+    const board = page.locator('#viewport');
+    await board.focus();
+    for (let i = 0; i < 16; i++) await page.keyboard.press('Shift+ArrowRight');
+    assert.ok(await citation.evaluate(el => el.getBoundingClientRect().left > document.getElementById('viewport').getBoundingClientRect().right),
+      'fixture card must be outside the board before locating');
+    const locate = page.getByRole('button', { name: 'Find selected card on board' });
+    if (width === 320) assert.ok(await locate.evaluate(el => el.getBoundingClientRect().height >= 44), 'locate touch target');
+    await locate.click();
+    assert.ok(await citation.evaluate(el => {
+      const card = el.getBoundingClientRect(), frame = document.getElementById('viewport').getBoundingClientRect();
+      return document.activeElement === el && card.left >= frame.left - 1 && card.right <= frame.right + 1 &&
+        card.top >= frame.top - 1 && card.bottom <= frame.bottom + 1 &&
+        card.bottom > 0 && card.top < innerHeight;
+    }), 'locate must reveal and focus the citation in the visible board');
+    assert.deepEqual(await citation.evaluate(el => [el.style.left, el.style.top]), position);
+    assert.equal(await citation.getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('#details h2').textContent(), references[0].title);
+    assert.equal(await page.locator('#zoom-level').textContent(), zoom);
+    assert.equal(await page.evaluate(() => localStorage.getItem('atlas-evidence-board-layout-v2-1')), saved);
+  }
+  console.log('PASS: locate selected citation at desktop and phone widths without altering card coordinates, zoom, or saved layout.');
+
   for (const [width, height] of [[320,700], [768,1024], [1280,800]]) {
     await page.setViewportSize({ width, height });
     const layout = await page.evaluate(() => ({ width: innerWidth, content: document.documentElement.scrollWidth,
