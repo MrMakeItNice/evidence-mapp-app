@@ -354,11 +354,20 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
   list.replaceChildren();
   const valid = reviewedMapEvents(events);
   const buttons = [];
+  // Visible names must distinguish identical-looking titles for keyboard,
+  // screen-reader button lists and voice-control users, not just descriptions.
+  const titleKey = title => title.replace(/\s+/g, ' ').toLowerCase();
+  const titleCounts = new Map();
+  for (const event of valid) {
+    const key = titleKey(event.title);
+    titleCounts.set(key, (titleCounts.get(key) || 0) + 1);
+  }
   for (const event of valid) {
     const item = doc.createElement('li');
     const button = doc.createElement('button');
     button.type = 'button';
-    button.textContent = 'Inspect ' + event.title;
+    button.textContent = 'Inspect ' + event.title +
+      (titleCounts.get(titleKey(event.title)) > 1 ? ' (Event ID: ' + event.id + ')' : '');
     button.setAttribute('aria-controls', 'reviewed-globe-detail');
     button.setAttribute('aria-expanded', 'false');
     button.addEventListener('click', () => {
