@@ -530,3 +530,15 @@ test('Zoom minus never enlarges a mobile board fitted below the desktop minimum'
   for (let i = 0; i < 12; i++) get('zout').listeners.click();
   assert.equal(readout.textContent, 'Zoom 35%', 'desktop minimum remains unchanged after Reset');
 });
+
+
+test('first-focus skip link bypasses navigation and case choices to the existing focusable board toolbar', () => {
+  const body = html.slice(html.indexOf('<body>') + '<body>'.length);
+  assert.match(body, /^<a class="skip-board" href="#board-controls">Skip to evidence board<\/a><header>/);
+  assert.equal([...html.matchAll(/id="board-controls"/g)].length, 1);
+  assert.match(html, /id="board-controls" tabindex="-1"/);
+  assert.match(html, /#board-controls:focus-visible/);
+  assert.match(html, /\.skip-board\{[^}]*max-width:calc\(100% - 32px\);min-height:44px/);
+  assert.match(html, /\.skip-board\{[^}]*transform:translateY\(-200%\)/);
+  assert.match(html, /\.skip-board:focus\{transform:none\}/);
+});
