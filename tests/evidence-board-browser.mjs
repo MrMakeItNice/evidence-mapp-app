@@ -7,7 +7,14 @@ const { chromium } = await import(process.env.EVIDENCE_BOARD_PLAYWRIGHT_MODULE
   ? pathToFileURL(process.env.EVIDENCE_BOARD_PLAYWRIGHT_MODULE).href : 'playwright');
 const html = await readFile(new URL('../evidence-board.html', import.meta.url), 'utf8');
 const cases = [{ id: '1', title: 'Investigation ' + 'UnbrokenTitle'.repeat(25) }];
-const references = [{ case_id: '1', title: 'Browser fixture citation', url: 'https://records.example/document' }];
+const references = [
+  { case_id: '1', title: 'Browser fixture citation', url: 'https://records.example/document?id=42#page=2' },
+  { case_id: '1', title: 'Second page citation', url: 'https://records.example/document?id=42#page=3' },
+  { case_id: '1', title: 'Duplicate destination', url: 'https://RECORDS.example:443/document?id=42#page=2' },
+  { case_id: '1', title: 'Credential-bearing fixture', url: 'https://records.example@untrusted.example/document' },
+  { case_id: '1', title: 'Unsafe scheme fixture', url: 'javascript:alert(1)' },
+  { case_id: '2', title: 'Different case citation', url: 'https://records.example/other' },
+];
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
@@ -80,6 +87,28 @@ try {
     assert.equal(await page.evaluate(() => localStorage.getItem('atlas-evidence-board-layout-v2-1')), saved);
   }
   console.log('PASS: locate selected citation at desktop and phone widths without altering card coordinates, zoom, or saved layout.');
+
+  // Verify the actual rendered provenance controls, not only the URL helper.
+  assert.equal(await page.locator('.tile').count(), 3, 'case plus exactly two eligible distinct citations');
+  assert.match(await page.locator('#citation-count').textContent(), /Showing 2 of 2 unique indexed citation URLs/);
+  for (let i = 0; i < 2; i++) {
+    const card = page.locator('.tile').nth(i + 1), record = references[i];
+    await card.focus();
+    await page.keyboard.press('Enter');
+    const inspector = page.locator('#details'), link = inspector.locator('a');
+    assert.equal(await inspector.locator('h2').textContent(), record.title);
+    assert.match(await inspector.locator('.badge').textContent(), /not independently verified/);
+    assert.equal(await inspector.locator('.indexed-url').textContent(), 'Indexed URL: ' + record.url);
+    assert.equal(await link.count(), 1);
+    assert.equal(await link.evaluate(el => el.href), record.url);
+    assert.equal(await link.getAttribute('target'), '_blank');
+    assert.ok((await link.getAttribute('rel')).split(/\s+/).includes('noopener'));
+    assert.ok((await link.getAttribute('rel')).split(/\s+/).includes('noreferrer'));
+    await page.keyboard.press('Escape');
+    assert.equal(await card.evaluate(el => el === document.activeElement), true);
+  }
+  console.log('PASS: native source inspector preserves distinct page URLs and rejects duplicate, credential-bearing, unsafe and unrelated citation fixtures.');
+
 
   for (const [width, height] of [[320,700], [768,1024], [1280,800]]) {
     await page.setViewportSize({ width, height });
