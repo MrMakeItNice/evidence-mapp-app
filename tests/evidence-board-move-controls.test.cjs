@@ -810,3 +810,23 @@ test('keyboard panning does not intercept navigation before a case is available'
     assert.equal(page.get('world').style.transform, original);
   }
 });
+
+
+test('Reset view is labeled by scope and preserves moved cards and their saved layout', async () => {
+  assert.match(html, /<button id="reset">Reset view<\/button>/);
+  assert.match(html, /Reset view fits the board without changing card positions\./);
+  const { get, stored } = await createBoard();
+  const tile = get('cards').children[1];
+  tile.listeners.keydown({ key: 'Enter', preventDefault() {} });
+  get('details').children.find(n => n.className === 'move-controls').children[2].listeners.click();
+  const position = { left: tile.style.left, top: tile.style.top };
+  get('save').listeners.click();
+  const saved = stored.get('atlas-evidence-board-layout-v2-1');
+  get('zin').listeners.click();
+  assert.equal(get('zoom-level').textContent, 'Zoom 120%');
+  get('reset').listeners.click();
+  assert.equal(get('zoom-level').textContent, 'Zoom 100%');
+  assert.deepEqual({ left: tile.style.left, top: tile.style.top }, position);
+  assert.equal(stored.get('atlas-evidence-board-layout-v2-1'), saved);
+  assert.equal(tile.attributes['aria-pressed'], 'true');
+});
