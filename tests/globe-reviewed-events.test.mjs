@@ -1220,3 +1220,26 @@ test('selected map event has a non-color visual cue driven by the existing expan
   assert.equal(buttons[0].getAttribute('aria-expanded'), 'false');
   assert.equal(buttons[1].getAttribute('aria-expanded'), 'true');
 });
+
+
+test('location-document reuse is disclosed even when it is indexed as an alternate event citation', () => {
+  const primary = withChanges({source_url: 'https://archive.example.gov/announcement'});
+  const alternate = withChanges({source_url: 'https://archive.example.gov/report?id=12#another-page'});
+  const unrelated = withChanges({source_url: 'https://archive.example.gov/report?id=13#another-page'});
+  const list = element('ul');
+  const [record] = renderReviewedMapList(document, list, [primary, alternate, unrelated], () => {});
+  assert.equal(record.location_cites_same_document, false);
+  assert.equal(record.location_cites_alternate_document, true);
+  assert.equal(record.alternate_sources.length, 2);
+  assert.match(list.children[0].children[1].textContent, /Location document also indexed as an alternate event citation; not independent corroboration/);
+  const panel = element('div');
+  showReviewedMapSource(document, panel, record);
+  assert.match(panel.children[3].textContent, /reuses a document indexed as an alternate event citation/);
+  assert.equal(panel.children[2].href, primary.source_url);
+  assert.equal(panel.children[4].href, event.location_source_url);
+  const [reverse] = reviewedMapEvents([alternate, primary, unrelated]);
+  assert.equal(reverse.location_cites_same_document, true);
+  assert.equal(reviewedMapEvents([primary, unrelated])[0].location_cites_alternate_document, false,
+    'different document query parameters must not be treated as the same document');
+  assert.equal(reviewedMapEvents([primary, {...alternate, review_status: 'pending'}])[0].location_cites_alternate_document, false);
+});
