@@ -818,3 +818,45 @@ test('counterevidence links cannot establish a missing or conflicting geographic
   const [malformed] = reviewedMapEvents([withChanges({counterevidence_urls: counterevidence_urls[0]})]);
   assert.deepEqual(malformed.counterevidence_urls, []);
 });
+
+
+test('editorial correction notes survive duplicate reviewed records and reach both inspection paths as text', () => {
+  const note = '<img src=x onerror=alert(1)> Corrected description';
+  const other = 'https://catalog.example.org/other#page-2';
+  const records = [
+    withChanges({correction_note: '  ' + note + '  '}),
+    withChanges({correction_note: note}),
+    withChanges({source_url: other, correction_note: 'Separate indexed correction'}),
+    withChanges({review_status: 'pending', correction_note: 'Pending note'}),
+    withChanges({source_url: 'javascript:alert(1)', correction_note: 'Unsafe source note'})
+  ];
+  const list = element('ul');
+  let selected;
+  const mapped = renderReviewedMapList(document, list, records, record => {selected = record;});
+  assert.equal(mapped.length, 1);
+  assert.deepEqual(mapped[0].correction_notes, [
+    {note, source_url: event.source_url},
+    {note: 'Separate indexed correction', source_url: other}
+  ]);
+  assert.match(list.children[0].children[1].textContent, /2 indexed editorial correction note/);
+  list.children[0].children[0].listeners.click();
+  for (const record of [mapped[0], selected]) {
+    const panel = element('div');
+    showReviewedMapSource(document, panel, record);
+    assert.match(panel.children.at(-2).textContent, /not independent findings and do not establish map placement/);
+    const items = panel.children.at(-1).children;
+    assert.equal(items.length, 2);
+    assert.equal(items[0].textContent, note + ' — Indexed under event citation: ' + event.source_url);
+    assert.equal(items[1].textContent, 'Separate indexed correction — Indexed under event citation: ' + other);
+    assert.equal(items[0].children.length, 0, 'markup is not parsed');
+  }
+});
+
+test('correction notes cannot qualify a missing or conflicting location and malformed notes are ignored', () => {
+  const correction_note = 'Editorial note';
+  assert.deepEqual(reviewedMapEvents([withChanges({location_source_url: '', correction_note})]), []);
+  assert.deepEqual(reviewedMapEvents([event, withChanges({lon: 10, correction_note})]), []);
+  for (const invalid of [null, {}, 42, '  ']) {
+    assert.deepEqual(reviewedMapEvents([withChanges({correction_note: invalid})])[0].correction_notes, []);
+  }
+});
