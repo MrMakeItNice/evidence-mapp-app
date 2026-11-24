@@ -979,3 +979,45 @@ test('date-basis notes never override event date or geographic eligibility', () 
   showReviewedMapSource(document, panel, reviewedMapEvents([event])[0]);
   assert.match(panel.children[1].textContent, /No separate date-basis note is indexed/);
 });
+
+
+test('source limitations preserve their own reviewed citations in both inspection paths', () => {
+  const note = '<b>Not independently confirmed</b>';
+  const other = 'https://archive.example.gov/second#p4';
+  const records = [
+    withChanges({source_limitation: '  ' + note + '  '}),
+    withChanges({source_limitation: note}),
+    withChanges({source_url: other, source_limitation: 'Different source limitation'}),
+    withChanges({review_status: 'pending', source_limitation: 'Pending note'}),
+    withChanges({source_url: 'javascript:alert(1)', source_limitation: 'Unsafe note'})
+  ];
+  const list = element('ul');
+  let selected;
+  const mapped = renderReviewedMapList(document, list, records, record => {selected = record;});
+  assert.equal(mapped.length, 1);
+  assert.deepEqual(mapped[0].source_limitations, [
+    {note, source_url: event.source_url},
+    {note: 'Different source limitation', source_url: other}
+  ]);
+  assert.match(list.children[0].children[1].textContent, /2 indexed source limitation/);
+  list.children[0].children[0].listeners.click();
+  for (const record of [mapped[0], selected]) {
+    const panel = element('div');
+    showReviewedMapSource(document, panel, record);
+    assert.match(panel.children.at(-2).textContent, /not independent findings/);
+    assert.match(panel.children.at(-2).textContent, /do not establish map placement/);
+    const items = panel.children.at(-1).children;
+    assert.equal(items[0].textContent, note + ' — Indexed under event citation: ' + event.source_url);
+    assert.equal(items[0].children.length, 0, 'render notes as text, not markup');
+    assert.equal(items[1].textContent, 'Different source limitation — Indexed under event citation: ' + other);
+  }
+});
+
+test('source limitations cannot establish map eligibility or override conflicting locations', () => {
+  const source_limitation = 'Context only';
+  assert.deepEqual(reviewedMapEvents([withChanges({location_source_url: '', source_limitation})]), []);
+  assert.deepEqual(reviewedMapEvents([event, withChanges({lat: 10, source_limitation})]), []);
+  for (const malformed of [null, {}, 42, '  ']) {
+    assert.deepEqual(reviewedMapEvents([withChanges({source_limitation: malformed})])[0].source_limitations, []);
+  }
+});
