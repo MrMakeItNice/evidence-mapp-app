@@ -168,7 +168,17 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
   return result.filter(event => !conflictingDetails.has(event.id)).map(event => {
     const displayed = new Set([event.source_url, event.location_source_url,
       ...event.alternate_sources.map(source => source.url), ...event.counterevidence_urls]);
-    return {...event, additional_source_urls: event.additional_source_urls.filter(url => !displayed.has(url))};
+    // An alternate event citation can reuse the location document too. Check
+    // after gathering every reviewed citation, so the warning is not lost
+    // when the first indexed event source happens to be a different document.
+    const locationDocument = new URL(event.location_source_url);
+    const locationCitesAlternateDocument = event.alternate_sources.some(source => {
+      const alternate = new URL(source.url);
+      return alternate.origin === locationDocument.origin &&
+        alternate.pathname === locationDocument.pathname && alternate.search === locationDocument.search;
+    });
+    return {...event, location_cites_alternate_document: locationCitesAlternateDocument,
+      additional_source_urls: event.additional_source_urls.filter(url => !displayed.has(url))};
   });
 }
 
@@ -207,7 +217,9 @@ export function showReviewedMapSource(doc, panel, event) {
     '. Coordinates reflect an editorial placement, not independently verified GPS precision. ' +
     (event.location_cites_same_document ?
       'The location citation reuses the same document as the event source (possibly a different page), not independent corroboration.' :
-      'A separate location-evidence URL does not by itself establish independent corroboration.');
+      event.location_cites_alternate_document ?
+        'The location citation reuses a document indexed as an alternate event citation (possibly a different page), not independent corroboration.' :
+        'A separate location-evidence URL does not by itself establish independent corroboration.');
   const locationLink = doc.createElement('a');
   locationLink.href = event.location_source_url;
   locationLink.target = '_blank';
@@ -391,7 +403,9 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
       ' · Location evidence: ' + event.location_source_host + ' · ' + event.category +
       (event.location_cites_same_document ?
         ' · Same document used for both citations; not independent corroboration' :
-        ' · Distinct citation URL; independence not established') +
+        event.location_cites_alternate_document ?
+          ' · Location document also indexed as an alternate event citation; not independent corroboration' :
+          ' · Distinct citation URL; independence not established') +
       (event.source_record_ids.length ? ' · ' + event.source_record_ids.length + ' indexed document identifier(s); inspect to locate original records' : '') +
       (event.alternate_sources.length ? ' · ' + event.alternate_sources.length + ' additional indexed event citation(s); independence not established' : '') +
       (event.additional_source_urls.length ? ' · ' + event.additional_source_urls.length + ' supplemental indexed link(s); individual review not established' : '') +
