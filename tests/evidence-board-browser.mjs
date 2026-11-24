@@ -20,6 +20,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   page.setDefaultTimeout(10000);
   const errors = [], unexpected = [];
+  let rejectCaseRequest = false, failedCaseRequests = 0;
   page.on('pageerror', error => errors.push(error.message));
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
@@ -27,8 +28,13 @@ try {
       return route.fulfill({ contentType: 'text/html', body: html });
     if (url.origin === 'https://board.example' && url.pathname === '/paper-trails-data.json')
       return route.fulfill({ json: { references } });
-    if (url.hostname === 'nxlffnplqdobfqxogmxo.supabase.co' && url.pathname === '/functions/v1/evidence-atlas/api/cases')
+    if (url.hostname === 'nxlffnplqdobfqxogmxo.supabase.co' && url.pathname === '/functions/v1/evidence-atlas/api/cases') {
+      if (rejectCaseRequest) {
+        failedCaseRequests++;
+        return route.fulfill({ status: 503, json: { error: 'Fixture service unavailable' }, headers: { 'access-control-allow-origin': '*' } });
+      }
       return route.fulfill({ json: cases, headers: { 'access-control-allow-origin': '*' } });
+    }
     if (url.pathname === '/favicon.ico') return route.fulfill({ status: 204 });
     unexpected.push(route.request().url());
     return route.abort();
@@ -146,9 +152,37 @@ try {
   await page.waitForFunction(() => document.getElementById('case-link-status').textContent.includes('unavailable'));
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true,
     'unavailable-case fallback with a long title must also wrap');
+  console.log('PASS: long-title reflow at phone/tablet/desktop widths and phone target sizes.');
+
+  // Exercise actual browser focus and recovery after a failed public-index request.
+  await page.goto('https://board.example/evidence-board.html#case=1');
+  rejectCaseRequest = true;
+  await page.reload();
+  const retry = page.locator('#retry-records');
+  await retry.waitFor({ state: 'visible' });
+  await page.waitForFunction(() => document.getElementById('retry-records').getAttribute('aria-disabled') === 'false');
+  assert.equal(failedCaseRequests, 1);
+  assert.equal(await page.locator('#heading').textContent(), 'Evidence service unavailable');
+  assert.match(await page.locator('#case-search-status').textContent(), /could not be loaded/);
+  assert.match(await page.locator('#status').textContent(), /No sample evidence has been substituted/);
+  assert.equal(await page.locator('.tile').count(), 0);
+  assert.equal(await page.locator('#save').isDisabled(), true);
+  assert.equal(await page.locator('#search').isDisabled(), true);
+  assert.ok(await retry.evaluate(el => el.getBoundingClientRect().height >= 44), 'phone retry touch target');
+  rejectCaseRequest = false;
+  await retry.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.getElementById('retry-records').hidden && !document.getElementById('save').disabled);
+  assert.equal(await page.locator('#search').evaluate(el => el === document.activeElement), true);
+  assert.equal(await page.locator('#heading').textContent(), cases[0].title);
+  assert.equal(await page.locator('.tile').count(), 3);
+  assert.match(await page.locator('#citation-count').textContent(), /Showing 2 of 2 unique indexed citation URLs/);
+  assert.equal(await page.locator('#search').isEnabled(), true);
+  assert.equal(failedCaseRequests, 1);
+  console.log('PASS: native keyboard retry restores published fixture citations and search focus after an HTTP 503, without sample evidence.');
   assert.deepEqual(errors, [], 'no uncaught frontend exceptions');
   assert.deepEqual(unexpected, [], 'all requests use fixtures; no production data or outgoing source requests');
-  console.log('PASS: long-title reflow at phone/tablet/desktop widths with phone target sizes and no page errors.');
+  console.log('PASS: no uncaught page errors or unexpected requests.');
 } finally {
   await browser.close();
 }
