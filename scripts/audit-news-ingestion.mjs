@@ -271,8 +271,9 @@ export function auditNewsIngestion(snapshot) {
     if (discovered !== null && discovered > asOf) futureNewsDiscoveryIds.push(n.id);
     if (published === null) {
       undated++;
-      const googleProxy = String(n.publisher || '').toLowerCase().includes('google') ||
-        String(n.source_url || '').toLowerCase().includes('news.google.com');
+      // A publisher label or URL substring is not proof of proxy provenance.
+      const googleProxy = urlProblem(n.source_url) === null &&
+        new URL(cleanUrl(n.source_url)).hostname === 'news.google.com';
       if (googleProxy) undatedGoogle++;
       else undatedNonGoogleIds.push(n.id);
     }
