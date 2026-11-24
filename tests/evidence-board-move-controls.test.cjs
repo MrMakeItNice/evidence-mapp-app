@@ -1115,3 +1115,68 @@ test('reselecting the active published case preserves unsaved layout, zoom and s
   assert.equal(get('heading').textContent, 'Other case');
   assert.equal(location.hash, '#case=2');
 });
+
+test('Escape cancels a card drag, restores its position and wires, and ignores a late release', async () => {
+  const { get, stored, windowListeners, getOpened } = await createBoard();
+  const card = get('cards').children[1], world = get('world');
+  const position = { ...card.style }, transform = world.style.transform;
+  const wires = () => get('wires').children.map(n => n.attributes.d);
+  const originalWires = wires();
+  card.listeners.pointerdown(pointer(91));
+  card.listeners.pointermove(pointer(91, { clientX: 90, clientY: 75 }));
+  assert.notDeepEqual(card.style, position);
+  let prevented = 0;
+  windowListeners.keydown({ key: 'Escape', preventDefault() { prevented++; } });
+  assert.equal(prevented, 1);
+  assert.deepEqual(card.style, position);
+  assert.deepEqual(wires(), originalWires);
+  assert.equal(world.style.transform, transform);
+  assert.equal(card.hasPointerCapture(91), false);
+  assert.equal(card.attributes['aria-pressed'], 'false');
+  card.listeners.pointermove(pointer(91, { clientX: 120 }));
+  card.listeners.pointerup(pointer(91));
+  assert.deepEqual(card.style, position);
+  assert.equal(card.attributes['aria-pressed'], 'false');
+  assert.match(get('status').textContent, /Card drag cancelled/);
+  assert.equal(stored.size, 0);
+  assert.equal(getOpened(), 0);
+});
+
+test('Escape cancels background panning without changing card coordinates, zoom or focus', async () => {
+  const { get, document, windowListeners, stored } = await createBoard();
+  const view = get('viewport'), world = get('world'), card = get('cards').children[0];
+  get('zin').listeners.click();
+  const transform = world.style.transform, position = { ...card.style }, zoom = get('zoom-level').textContent;
+  get('search').focus();
+  view.listeners.pointerdown(pointer(92));
+  view.listeners.pointermove(pointer(92, { clientX: 95, clientY: 95 }));
+  assert.notEqual(world.style.transform, transform);
+  windowListeners.keydown({ key: 'Escape', preventDefault() {} });
+  assert.equal(world.style.transform, transform);
+  assert.equal(view.hasPointerCapture(92), false);
+  assert.deepEqual(card.style, position);
+  assert.equal(get('zoom-level').textContent, zoom);
+  assert.equal(document.activeElement, get('search'));
+  assert.equal(stored.size, 0);
+  assert.match(get('status').textContent, /Board pan cancelled/);
+});
+
+test('gesture Escape cancellation leaves idle Escape, ordinary keys and modified shortcuts untouched', async () => {
+  const { get, windowListeners } = await createBoard();
+  let prevented = 0;
+  const event = extra => ({ key: 'Escape', preventDefault() { prevented++; }, ...extra });
+  windowListeners.keydown(event());
+  assert.equal(prevented, 0);
+  const card = get('cards').children[1], position = { ...card.style };
+  card.listeners.pointerdown(pointer(93));
+  for (const extra of [{ altKey: true }, { ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { key: 'ArrowRight' }]) {
+    windowListeners.keydown(event(extra));
+    assert.equal(card.hasPointerCapture(93), true);
+  }
+  assert.equal(prevented, 0);
+  card.listeners.pointermove(pointer(93, { clientX: 80 }));
+  assert.notDeepEqual(card.style, position, 'guarded keys did not cancel the gesture');
+  windowListeners.keydown(event());
+  assert.deepEqual(card.style, position);
+  assert.equal(prevented, 1);
+});
