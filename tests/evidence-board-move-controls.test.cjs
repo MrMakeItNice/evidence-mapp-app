@@ -542,3 +542,54 @@ test('first-focus skip link bypasses navigation and case choices to the existing
   assert.match(html, /\.skip-board\{[^}]*transform:translateY\(-200%\)/);
   assert.match(html, /\.skip-board:focus\{transform:none\}/);
 });
+
+
+test('card taps stay still at every zoom and real drags replace a stale saved status once per gesture', async () => {
+  const { get, stored } = await createBoard();
+  const card = get('cards').children[1], view = get('viewport'), status = get('status');
+  for (const width of [285, 1000, 1900]) {
+    view.clientWidth = width;
+    get('reset').listeners.click();
+    if (width === 1900) { for (let i=0;i<5;i++) get('zin').listeners.click(); }
+    const scale = Number(get('zoom-level').textContent.match(/\d+/)[0])/100;
+    get('save').listeners.click();
+    const x = parseFloat(card.style.left), y = parseFloat(card.style.top);
+    const wire = get('wires').children[0], saved = stored.get('atlas-evidence-board-layout-v2-1');
+    card.listeners.pointerdown(pointer(11));
+    card.listeners.pointermove(pointer(11,{clientX:3,clientY:3}));
+    card.listeners.pointerup(pointer(11));
+    assert.equal(parseFloat(card.style.left),x);
+    assert.equal(parseFloat(card.style.top),y);
+    assert.equal(get('wires').children[0],wire);
+    assert.equal(card.attributes['aria-pressed'],'true');
+    assert.match(status.textContent,/Layout saved/);
+    let value=status.textContent,writes=0;
+    Object.defineProperty(status,'textContent',{configurable:true,get:()=>value,set:next=>{value=next;writes++;}});
+    card.listeners.pointerdown(pointer(12));
+    card.listeners.pointermove(pointer(12,{clientX:5}));
+    assert.ok(Math.abs(parseFloat(card.style.left)-(x+5/scale))<1e-8);
+    assert.match(status.textContent,/unsaved changes/);
+    card.listeners.pointermove(pointer(12,{clientX:10}));
+    card.listeners.pointerup(pointer(12));
+    assert.equal(writes,1);
+    assert.equal(stored.get('atlas-evidence-board-layout-v2-1'),saved,'drag does not persist automatically');
+    get('save').listeners.click();
+    assert.match(status.textContent,/Layout saved/);
+  }
+});
+
+test('clamped card drags do not announce a change until coordinates actually move', async () => {
+  const { get } = await createBoard(undefined,undefined,false,JSON.stringify({case:{x:1000,y:660}}));
+  const card=get('cards').children[0],status=get('status'),wire=get('wires').children[0];
+  get('save').listeners.click();
+  card.listeners.pointerdown(pointer(21));
+  card.listeners.pointermove(pointer(21,{clientX:20,clientY:20}));
+  assert.equal(card.style.left,'1000px'); assert.equal(card.style.top,'660px');
+  assert.equal(get('wires').children[0],wire);
+  assert.match(status.textContent,/Layout saved/);
+  card.listeners.pointermove(pointer(21,{clientX:-10,clientY:-10}));
+  assert.equal(card.style.left,'990px'); assert.equal(card.style.top,'650px');
+  assert.match(status.textContent,/unsaved changes/);
+  card.listeners.pointercancel(pointer(21));
+  assert.match(status.textContent,/unsaved changes/);
+});
