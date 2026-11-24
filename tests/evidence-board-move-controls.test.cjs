@@ -645,7 +645,7 @@ test('non-pointer click activates the card inspector without rehandling ordinary
 test('copy citation preserves indexed provenance and full URL without opening a document', async () => {
   const writes = [];
   const record = { case_id: '1', title: 'Archive <scan>', publisher: 'Agency', publication_date: '1977-08-03',
-    reference_code: 'ABC-1', url: 'https://records.example.org/archive?id=1#page=4' };
+    reference_code: 'ABC-1', source_id: 204, source_role: 'Annotated research reference', url: 'https://records.example.org/archive?id=1#page=4' };
   const { get, getOpened } = await createBoard(undefined, [record], false, undefined, { writeText: async text => writes.push(text) });
   assert.ok(!get('details').children.some(n => n.className === 'copy-citation'), 'case is not a citation');
   get('cards').children[1].listeners.keydown({ key: 'Enter', preventDefault() {} });
@@ -653,10 +653,12 @@ test('copy citation preserves indexed provenance and full URL without opening a 
   const feedback = children.find(n => n.attributes.role === 'status');
   assert.equal(button.type, 'button');
   assert.equal(feedback.attributes['aria-atomic'], 'true');
+  assert.ok(children.some(n => n.textContent.includes('Atlas source record ID: 204') && n.textContent.includes('Indexed association (not a verified relationship): Annotated research reference')));
   await button.listeners.click();
   assert.deepEqual(writes, [
     ['Indexed source citation — not independently verified', 'Title: Archive <scan>', 'Publisher: Agency',
-      'Publication date: 1977-08-03', 'Reference: ABC-1', 'Indexed URL: ' + record.url].join('\n')
+      'Publication date: 1977-08-03', 'Reference: ABC-1', 'Atlas source record ID: 204',
+      'Indexed association (not a verified relationship): Annotated research reference', 'Indexed URL: ' + record.url].join('\n')
   ]);
   assert.match(feedback.textContent, /copied/);
   assert.equal(getOpened(), 0);
@@ -1372,4 +1374,19 @@ test('resizing reveals a clipped keyboard-focused card without changing selectio
   card.listeners.pointerdown(pointer(95));
   windowListeners.resize();
   assert.equal(world.style.transform, revealed, 'resizing must not fight an active gesture');
+});
+
+
+test('source trace metadata is explicit when missing or malformed and never assigned to the case card', async () => {
+  const writes = [];
+  const record = { case_id: '1', title: 'Citation', url: 'https://records.example/doc#page=2', source_id: {}, source_role: ['unknown'] };
+  const { get } = await createBoard(undefined, [record], false, undefined, { writeText: async text => writes.push(text) });
+  assert.ok(!get('details').children.some(n => n.textContent.includes('Atlas source record ID:')));
+  get('cards').children[1].listeners.keydown({ key: 'Enter', preventDefault() {} });
+  const details = get('details').children;
+  assert.ok(details.some(n => n.textContent.includes('Atlas source record ID: Not recorded') && n.textContent.includes('Indexed association (not a verified relationship): Not recorded')));
+  await details.find(n => n.className === 'copy-citation').listeners.click();
+  assert.match(writes[0], /Atlas source record ID: Not recorded/);
+  assert.match(writes[0], /Indexed association \(not a verified relationship\): Not recorded/);
+  assert.match(writes[0], /https:\/\/records\.example\/doc#page=2/);
 });
