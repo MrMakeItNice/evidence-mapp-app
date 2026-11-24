@@ -1112,3 +1112,46 @@ test('document identifiers never substitute for geographic provenance', () => {
   showReviewedMapSource(document, panel, reviewedMapEvents([event])[0]);
   assert.equal(panel.children.some(child => child.textContent?.includes('Indexed document identifiers')), false);
 });
+
+
+test('requires explicit well-formed citation URLs before accepting any map point', () => {
+  const bad = [
+    'https:archive.example.gov/report',
+    'https:/archive.example.gov/report',
+    'https:///archive.example.gov/report',
+    'https://@archive.example.gov/report',
+    'https://archive.example.gov\\report',
+    'https://archive.example.gov/\nreport',
+    ' https://archive.example.gov/report',
+    'https://archive.example.gov/report with space',
+    'https://archive.example.gov/\u0000report',
+    'https://?x=1',
+    'https://#x'
+  ];
+  for (const url of bad) {
+    assert.deepEqual(reviewedMapEvents([withChanges({source_url: url})]), [], url);
+    assert.deepEqual(reviewedMapEvents([withChanges({location_source_url: url})]), [], url);
+  }
+  const original = 'https://archive.example.gov/a%20b?doc=ID%2F12#p3';
+  const location = 'https://archive.example.gov/map?ref=23#location';
+  const [record] = reviewedMapEvents([withChanges({source_url: original, location_source_url: location})]);
+  assert.equal(record.source_url, original);
+  assert.equal(record.location_source_url, location);
+});
+
+test('does not repair malformed supplemental or counterevidence URLs into clickable citations', () => {
+  const bad = ['https:archive.example.gov/lead', 'https://@archive.example.gov/lead',
+    'https://archive.example.gov/lead\n', 'https:///archive.example.gov/lead'];
+  const extra = 'https://archive.example.gov/context?record=5#p2';
+  const counter = 'https://archive.example.gov/competing?record=6#p4';
+  const list = element('ul');
+  let selected;
+  const [record] = renderReviewedMapList(document, list, [withChanges({
+    additional_source_urls: [...bad, extra], counterevidence_urls: [...bad, counter]
+  })], value => {selected = value;});
+  list.children[0].children[0].listeners.click();
+  for (const item of [record, selected]) {
+    assert.deepEqual(item.additional_source_urls, [extra]);
+    assert.deepEqual(item.counterevidence_urls, [counter]);
+  }
+});
