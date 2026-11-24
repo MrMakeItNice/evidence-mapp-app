@@ -342,13 +342,27 @@ export function auditNewsIngestion(snapshot) {
     .filter(w => w.active !== true && assignedResearchWatchIds.has(w.id))
     .map(w => w.id).sort((a,b) => a-b);
   const topicWithItem = new Set(news.map(n => n.topic_id).filter(x => x != null));
-  function stale(watches, column) {
-    return watches.filter(w => {
-      if (w.active !== true) return false;
-      const seen = timestamp(w[column], column);
-      return seen === null || seen < asOf - 86400000;
-    }).length;
+  // Watch telemetry is not the same as collector health. Distinguish missing,
+  // old and future timestamps, and expose only bounded numeric IDs.
+  function watchFreshness(watches, column) {
+    const groups = { missing: [], old: [], future: [], recent: [] };
+    for (const watch of watches) {
+      if (watch.active !== true) continue;
+      const seen = timestamp(watch[column], column);
+      const group = seen === null ? 'missing' :
+        seen > asOf ? 'future' : seen < asOf - 86400000 ? 'old' : 'recent';
+      groups[group].push(watch.id);
+    }
+    return Object.fromEntries(Object.entries(groups).map(([key, ids]) => {
+      ids.sort((a,b) => a-b);
+      return [key, { count: ids.length, ids: ids.slice(0,25),
+        omitted_ids: Math.max(0, ids.length - 25) }];
+    }));
   }
+  const researchWatchFreshness = watchFreshness(researchWatches, 'last_checked_at');
+  const newsWatchFreshness = watchFreshness(newsWatches, 'last_collected_at');
+  // Keep legacy stale count as missing + old; future is a separate anomaly.
+  const staleCount = freshness => freshness.missing.count + freshness.old.count;
   const activeFeeds = feeds.filter(f => f.active === true);
   const feedLastSuccessUnknownOrOld = activeFeeds.filter(f => {
     const date = timestamp(f.last_success_at, 'feed.last_success_at');
@@ -494,9 +508,11 @@ export function auditNewsIngestion(snapshot) {
       inactive_research_with_inbox_records: inactiveWatchesWithInboxIds.length,
       inactive_research_with_inbox_ids: inactiveWatchesWithInboxIds.slice(0,25),
       omitted_inactive_research_with_inbox_ids: Math.max(0, inactiveWatchesWithInboxIds.length-25),
-      stale_research_timestamp_fields: stale(researchWatches, 'last_checked_at'),
+      stale_research_timestamp_fields: staleCount(researchWatchFreshness),
+      research_timestamp_freshness: researchWatchFreshness,
       active_news: newsWatches.filter(w=>w.active === true).length,
-      stale_news_timestamp_fields: stale(newsWatches, 'last_collected_at'),
+      stale_news_timestamp_fields: staleCount(newsWatchFreshness),
+      news_timestamp_freshness: newsWatchFreshness,
       active_collectors: activeFeeds.length,
       collectors_without_success_in_24h: feedLastSuccessUnknownOrOld,
       collectors_future_success_timestamp: futureFeedSuccessIds.length,
