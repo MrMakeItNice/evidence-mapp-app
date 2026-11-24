@@ -510,3 +510,23 @@ test('saved layout: valid exact positions still restore and invalid entries use 
   assert.equal(invalid.get('cards').children[0].style.left, '500px');
   assert.equal(invalid.get('cards').children[1].style.top, '75px');
 });
+
+test('Zoom minus never enlarges a mobile board fitted below the desktop minimum', async () => {
+  const { get } = await createBoard();
+  const view = get('viewport'), readout = get('zoom-level'), world = get('world');
+  view.clientWidth = 285;
+  get('reset').listeners.click();
+  assert.equal(readout.textContent, 'Zoom 30%');
+  const fitted = world.style.transform;
+  get('zout').listeners.click();
+  assert.equal(readout.textContent, 'Zoom 30%', 'zooming out from a fitted mobile scale must not enlarge it');
+  assert.equal(world.style.transform, fitted);
+  get('zin').listeners.click(); assert.equal(readout.textContent, 'Zoom 36%');
+  get('zout').listeners.click(); assert.equal(readout.textContent, 'Zoom 30%');
+  for (let i = 0; i < 12; i++) get('zout').listeners.click();
+  assert.equal(readout.textContent, 'Zoom 30%');
+  view.clientWidth = 1000;
+  get('reset').listeners.click(); assert.equal(readout.textContent, 'Zoom 100%');
+  for (let i = 0; i < 12; i++) get('zout').listeners.click();
+  assert.equal(readout.textContent, 'Zoom 35%', 'desktop minimum remains unchanged after Reset');
+});
