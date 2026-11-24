@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {reviewedMapEvents, showReviewedMapSource, renderReviewedMapList, inspectReviewedMapSource} from '../globe-reviewed-events.mjs';
+import {reviewedMapEvents, showReviewedMapSource, renderReviewedMapList, inspectReviewedMapSource, reviewedMapAvailability} from '../globe-reviewed-events.mjs';
 import {readFileSync} from 'node:fs';
 
 const event = {id: 'archive-01', title: 'Reviewed documented event', category: 'neutral',
@@ -619,4 +619,29 @@ test('conflicting geographic roles for one event ID suppress the point in either
     assert.equal(list.children.length, 0);
   }
   assert.equal(reviewedMapEvents([event, withChanges({location_role: 'beneficiary_site', review_status: 'pending'})]).length, 1);
+});
+
+
+test('map availability distinguishes failed, empty, withheld and eligible records without claiming global coverage', () => {
+  assert.match(reviewedMapAvailability(false, 0, 0), /feed unavailable/i);
+  assert.match(reviewedMapAvailability(true, 0, 0), /no event records yet/i);
+  const pending = [withChanges({review_status: 'pending'})];
+  assert.match(reviewedMapAvailability(true, pending.length, reviewedMapEvents(pending).length),
+    /No event in this feed qualifies/);
+  const conflict = [event, withChanges({lon: 10})];
+  assert.match(reviewedMapAvailability(true, conflict.length, reviewedMapEvents(conflict).length),
+    /conflicting records/);
+  assert.match(reviewedMapAvailability(true, 2, 1), /1 reviewed map event is/);
+  assert.match(reviewedMapAvailability(true, 3, 2), /2 reviewed map events are/);
+  assert.match(reviewedMapAvailability(true, 3, 2), /not global coverage/);
+  assert.match(reviewedMapAvailability(true, 0, 0), /not a count of events worldwide/);
+});
+test('map eligibility status remains visible even without WebGL or eligible map records', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /<section id="reviewed-globe-browser" class="reviewed-globe-browser" aria-labelledby="reviewed-globe-title">/);
+  assert.match(html, /id="reviewed-globe-availability" role="status" aria-atomic="true"/);
+  assert.match(html, /mapEventCandidates=feed\.events;mapFeedAvailable=true;/);
+  assert.ok(html.indexOf("textContent=reviewedMapAvailability(mapFeedAvailable,mapEventCandidates.length,mapRecords.length)") <
+    html.indexOf("const THREE=await import"), 'map availability must be updated before WebGL setup');
+  assert.doesNotMatch(html, /getElementById\('reviewed-globe-browser'\)\.hidden=mapRecords\.length===0/);
 });
