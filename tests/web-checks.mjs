@@ -286,6 +286,7 @@ assert.deepEqual(sourceJumpLinks.map(link => link[1]), [
   'often-chickwit-program-distinction',
   'source-scope-comparison',
   'artichoke-1952-counterevidence',
+  'northwoods-mongoose-scope',
   'bluebird-bluebeam-assessment'
 ]);
 assert.ok(sourceJumpLinks.every(link => link[2].length >= 16), 'Source jumps need descriptive names');
@@ -493,3 +494,17 @@ assert.match(chickwitFoiaAlias[1], /no graph reference to it was found in the re
 assert.match(chickwitFoiaAlias[1], /Do not infer project activity, testing, independent corroboration of an experiment, or a Blue Beam connection/);
 assert.match(chickwitFoiaAlias[1], /No new case, source record or public graph edge is created/);
 console.log("PASS: CHICKWIT archive alias reuses source #35 and preserves archival access and evidence limitations.");
+
+
+const northwoodsScope = bluebirdPage.match(/<p class="note" id="northwoods-mongoose-scope" tabindex="-1">([\s\S]*?)<\/p>/);
+assert.ok(northwoodsScope, 'Northwoods planning context must be separately labeled');
+for (const phrase of ['preliminary planning submission','JCS 1969/321','existing source #28, library review pending','FRUS document 314, existing source #191','not authorization or execution of the Northwoods proposals','not reviewed causal edges','No shared operation with BLUEBIRD or Blue Beam','No new case, source record or public graph edge is created']) {
+  assert.ok(northwoodsScope[1].includes(phrase), 'Missing scope safeguard: '+phrase);
+}
+for (const caseId of ['21','22']) {
+  assert.ok(northwoodsScope[1].includes('href="./paper-trails.html#case-'+caseId+'"'));
+  assert.ok(northwoodsScope[1].includes('href="./connection-explorer.html#case='+caseId+'"'));
+}
+assert.ok(northwoodsScope[1].includes('href="https://nsarchive2.gwu.edu/news/20010430/northwoods.pdf#page=1" target="_blank" rel="noopener noreferrer"'));
+assert.ok(northwoodsScope[1].includes('href="https://history.state.gov/historicaldocuments/frus1961-63v10/d314" target="_blank" rel="noopener noreferrer"'));
+console.log('PASS: Northwoods and Mongoose links reuse canonical cases and distinguish preliminary planning from approval or execution.');
