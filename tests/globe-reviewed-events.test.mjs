@@ -686,3 +686,45 @@ test('alternate citations do not bypass review, URL or geographic conflict gates
     source_url: 'https://archive.example.gov:443/report?id=12#p3'
   })])[0].alternate_sources, [], 'canonical equivalent URL is not a second citation');
 });
+
+
+test('overlapping globe markers never silently select one canonical event', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const start = html.indexOf('const visibleMarkerEvents=');
+  const end = html.indexOf('  if(visibleMarkerEvents.length===1)', start);
+  assert.ok(start >= 0 && end > start);
+  const selection = html.slice(start, end);
+  const run = new Function('markerHits', 'hit', 'geoPanel', 'document', 'mapList', 'mapRecords',
+    selection + '\nreturn visibleMarkerEvents;');
+  const marker = (record, distance) => ({distance, object: {userData: {event: record}}});
+  const [first, second] = reviewedMapEvents([event, withChanges({id: 'archive-02', title: 'Other event'})]);
+  const geoPanel = element('div');
+  const detail = element('div');
+  detail.hidden = false;
+  detail.onkeydown = () => {};
+  detail.append(element('p'));
+  const buttons = [element('button'), element('button')];
+  for (const button of buttons) {
+    button.setAttribute('aria-expanded', 'true');
+    button.focus = () => {button.focused = true;};
+  }
+  const mapList = {children: buttons.map(button => ({querySelector: () => button}))};
+  const doc = {getElementById: id => {assert.equal(id, 'reviewed-globe-detail'); return detail;}};
+  const args = [geoPanel, doc, mapList, [first, second]];
+  // Two ray intersections for one mesh still identify just one event.
+  assert.deepEqual(run([marker(first, 1), marker(first, 1.01)], {distance: 1.1}, ...args), [first]);
+  // An occluded marker must not create an ambiguous selection.
+  assert.deepEqual(run([marker(first, 1), marker(second, 2)], {distance: 1.1}, ...args), [first]);
+  assert.deepEqual(run([marker(second, 2)], {distance: 1.1}, ...args), []);
+  // Both visible: no chosen record; clear stale detail and focus the first listed candidate.
+  assert.equal(run([marker(second, 1), marker(first, 1.01)], {distance: 1.1}, ...args), undefined);
+  assert.match(geoPanel.textContent, /Multiple reviewed event markers overlap here \(2\)/);
+  assert.ok(geoPanel.textContent.includes(first.id) && geoPanel.textContent.includes(second.id));
+  assert.match(geoPanel.textContent, /do not establish a relationship/);
+  assert.equal(detail.hidden, true);
+  assert.equal(detail.children.length, 0);
+  assert.equal(detail.onkeydown, null);
+  assert.ok(buttons.every(button => button.getAttribute('aria-expanded') === 'false'));
+  assert.equal(buttons[0].focused, true);
+  assert.equal(buttons[1].focused, undefined);
+});
