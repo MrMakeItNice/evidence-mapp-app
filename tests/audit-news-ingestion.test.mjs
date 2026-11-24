@@ -884,3 +884,29 @@ test('retains valid escaped queries, Unicode hosts, IPv6, and case-insensitive H
     assert.equal(a.overlap.news_inbox_exact_url_rows,1);
   }
 });
+
+
+test('classifies Google News proxy by exact validated hostname, not label or substring',()=>{
+  const s=sample();
+  s.news_items[0].source_url='https://NEWS.GOOGLE.COM/rss/articles/ABC?oc=5';
+  s.news_items[0].publisher='Unknown publisher';
+  const urls=[
+    'https://news.google.com.example.org/story',
+    'https://agency.gov/?ref=news.google.com',
+    'https://agency.gov/ordinary',
+    'https://news.google.com@agency.gov/story',
+    'https://news.google.com/%zz',
+    null
+  ];
+  urls.forEach((source_url,i)=>s.news_items.push({
+    id:i+3,topic_id:1,source_url,publisher:'Google News',published_at:null
+  }));
+  s.expected_counts.news_items=s.news_items.length;
+  const a=auditNewsIngestion(s);
+  assert.equal(a.news.missing_publication_timestamp_google_proxies,1);
+  assert.equal(a.news.missing_publication_timestamp_other,6);
+  assert.deepEqual(a.news.undated_other_item_ids,[3,4,5,6,7,8]);
+  assert.equal(a.news.malformed_url,2);
+  assert.ok(!JSON.stringify(a).includes('news.google.com'));
+  assert.ok(!JSON.stringify(a).includes('agency.gov'));
+});
