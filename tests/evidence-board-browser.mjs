@@ -58,12 +58,18 @@ try {
       buttons: [...document.querySelectorAll('#board-controls button')].map(el => {
         const rect = el.getBoundingClientRect(); return { left: rect.left, right: rect.right, height: rect.height };
       }) }));
+    if (layout.content > layout.width + 1) console.error(await page.locator('body *').evaluateAll(elements => elements.filter(el => el.getBoundingClientRect().right > innerWidth + 1).map(el => ({ tag: el.tagName, id: el.id, className: String(el.className), right: el.getBoundingClientRect().right })).slice(0, 20)));
     assert.ok(layout.content <= layout.width + 1, `horizontal overflow at ${width}px: ${layout.content}`);
     for (const button of layout.buttons) {
       assert.ok(button.left >= 0 && button.right <= width + 1, `toolbar control outside ${width}px pane`);
       if (width <= 650) assert.ok(button.height >= 44, 'phone control target is under 44px');
     }
   }
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.evaluate(() => { location.hash = '#case=unavailable'; });
+  await page.waitForFunction(() => document.getElementById('case-link-status').textContent.includes('unavailable'));
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true,
+    'unavailable-case fallback with a long title must also wrap');
   assert.deepEqual(errors, [], 'no uncaught frontend exceptions');
   assert.deepEqual(unexpected, [], 'all requests use fixtures; no production data or outgoing source requests');
   console.log('PASS: long-title reflow at phone/tablet/desktop widths with phone target sizes and no page errors.');
