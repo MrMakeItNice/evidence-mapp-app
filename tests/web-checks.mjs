@@ -283,6 +283,7 @@ assert.deepEqual(sourceJumpLinks.map(link => link[1]), [
   'mkultra-mkdelta-scope',
   'chatter-thematic-comparison',
   'mksearch-program-continuity',
+  'often-chickwit-program-distinction',
   'source-scope-comparison',
   'artichoke-1952-counterevidence',
   'bluebird-bluebeam-assessment'
@@ -426,3 +427,24 @@ assert.match(mksearchContinuity[1], /not proof of any particular experiment's re
 assert.match(mksearchContinuity[1], /No new case, source record or public graph edge is created/);
 assert.ok(JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).references.some(r => String(r.case_id)==='34' && String(r.source_id)==='258' && r.url==='https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf'));
 console.log('PASS: MKSEARCH continuity links the existing case and hearing without double-counting evidence or inferring a current operation.');
+
+// One hearing documents different project roles, not two independent sources.
+const oftenChickwit = bluebirdPage.match(/<p id="often-chickwit-program-distinction" tabindex="-1">([\s\S]*?)<\/p>/);
+assert.ok(oftenChickwit);
+assert.match(oftenChickwit[1], /1967 Office of Research and Development and Edgewood Arsenal research program divided into OFTEN/);
+assert.match(oftenChickwit[1], /CHICKWIT \(collecting information on drug developments and acquiring samples\)/);
+assert.match(oftenChickwit[1], /disagreement between the CIA and Department of Defense over financing and sponsorship/);
+assert.match(oftenChickwit[1], /September 21, 1977 hearing; this note does not resolve that disagreement/);
+assert.match(oftenChickwit[1], /95mkultra\.pdf#page=171" target="_blank" rel="noopener noreferrer"/);
+assert.match(oftenChickwit[1], /single hearing \(source #258\)/);
+assert.match(oftenChickwit[1], /does not establish that these projects were identical to MKSEARCH/);
+assert.match(oftenChickwit[1], /or establish efficacy, current operations or a Project Blue Beam connection/);
+assert.match(oftenChickwit[1], /No new case, source record or public graph edge is created/);
+for (const [caseId, caseNumber, reference] of [[36,35,61],[37,36,63]]) {
+  assert.ok(oftenChickwit[1].includes('Case #'+caseNumber+' (record ID '+caseId+')'));
+  assert.ok(oftenChickwit[1].includes('href="./paper-trails.html#case-'+caseId+'"'));
+  assert.ok(oftenChickwit[1].includes('href="./connection-explorer.html#case='+caseId+'"'));
+  assert.ok(oftenChickwit[1].includes('generic research reference #'+reference));
+  assert.ok(JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).references.some(r => String(r.case_id)===String(caseId) && String(r.source_id)==='258' && r.url==='https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf'));
+}
+console.log('PASS: OFTEN and CHICKWIT reuse the original hearing and preserve the unresolved sponsorship discrepancy.');
