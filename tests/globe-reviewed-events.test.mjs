@@ -933,3 +933,49 @@ test('keyboard and marker selections share provenance and closing clears both re
   assert.equal(detail.hidden, true);
   assert.equal(firstButton.focused, true);
 });
+
+
+test('indexed date basis distinguishes a report or approval date from underlying activity', () => {
+  const note = '<b>Report published on event date; excavation dates unknown</b>';
+  const other = 'https://archive.example.gov/other#p4';
+  const records = [
+    withChanges({date_basis: '  ' + note + '  '}),
+    withChanges({date_basis: note}),
+    withChanges({source_url: other, date_basis: 'Follow-up report; activity date not established'}),
+    withChanges({review_status: 'pending', date_basis: 'Unreviewed note'}),
+    withChanges({source_url: 'javascript:alert(1)', date_basis: 'Unsafe citation'})
+  ];
+  const list = element('ul');
+  let selected;
+  const mapped = renderReviewedMapList(document, list, records, record => {selected = record;});
+  assert.equal(mapped.length, 1);
+  assert.deepEqual(mapped[0].date_basis_notes, [
+    {note, source_url: event.source_url},
+    {note: 'Follow-up report; activity date not established', source_url: other}
+  ]);
+  assert.match(list.children[0].children[1].textContent, /2 indexed date-basis note/);
+  list.children[0].children[0].listeners.click();
+  for (const record of [mapped[0], selected]) {
+    const panel = element('div');
+    showReviewedMapSource(document, panel, record);
+    assert.match(panel.children[1].textContent, /not necessarily the date of the underlying activity/);
+    assert.ok(panel.children[1].textContent.includes(note + ' — Citation: ' + event.source_url));
+    assert.ok(panel.children[1].textContent.includes(other));
+    assert.equal(panel.children[1].children.length, 0, 'render notes as text, not markup');
+    assert.equal(panel.children[4].href, event.location_source_url);
+  }
+});
+
+test('date-basis notes never override event date or geographic eligibility', () => {
+  const date_basis = 'Report date only';
+  for (const changes of [{event_date: '2024-02-30'}, {event_date: '9999-12-31'}, {location_source_url: ''}]) {
+    assert.deepEqual(reviewedMapEvents([withChanges({...changes, date_basis})]), []);
+  }
+  assert.deepEqual(reviewedMapEvents([event, withChanges({event_date: '2024-03-01', date_basis})]), []);
+  for (const malformed of [null, {}, 42, '  ']) {
+    assert.deepEqual(reviewedMapEvents([withChanges({date_basis: malformed})])[0].date_basis_notes, []);
+  }
+  const panel = element('div');
+  showReviewedMapSource(document, panel, reviewedMapEvents([event])[0]);
+  assert.match(panel.children[1].textContent, /No separate date-basis note is indexed/);
+});
