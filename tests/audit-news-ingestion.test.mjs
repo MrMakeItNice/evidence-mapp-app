@@ -989,3 +989,29 @@ test('bounded exact URL overlap sorts across distinct URL groups and retains doc
   assert.equal(a.news_inbox_omitted_id_pairs, 0);
   assert.deepEqual(a.news_inbox_exact_url_id_pairs, [[1,10],[1,15],[2,12],[9,10],[9,15]]);
 });
+
+
+test('bounded news/source reconciliation counts both date directions and keeps deterministic prefix', () => {
+  const s = sample();
+  const url = 'https://agency.gov/shared?document=9';
+  s.news_items = Array.from({length:40},(_,i)=>({
+    id:100+i,source_url:url,topic_id:1,review_status:'pending',
+    published_at:i%2===0?null:'2026-11-22T00:00:00Z'
+  })).reverse();
+  s.sources = Array.from({length:50},(_,i)=>({
+    id:200+i,url,published:true,publication_date:i%2===0?null:'2026-11-22'
+  })).reverse();
+  s.expected_counts.news_items=s.news_items.length;
+  s.expected_counts.sources=s.sources.length;
+  const r = auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.deepEqual(r.news_missing_source_dated,{
+    count:500,id_pairs:Array.from({length:25},(_,i)=>[100,201+2*i]),omitted_id_pairs:475
+  });
+  assert.deepEqual(r.source_missing_news_dated,{
+    count:500,id_pairs:Array.from({length:25},(_,i)=>[101,200+2*i]),omitted_id_pairs:475
+  });
+  s.news_items.reverse();
+  s.sources.reverse();
+  assert.deepEqual(auditNewsIngestion(s).overlap.news_source_publication_date_review,r);
+  assert.ok(!JSON.stringify(r).includes(url));
+});
