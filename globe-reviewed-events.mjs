@@ -1,5 +1,10 @@
 /** Read-only, accessible source inspection for reviewed geographic events. */
 const CATEGORIES = new Set(['positive', 'negative', 'neutral']);
+const LOCATION_ROLES = new Map([
+  ['occurrence_site', 'Occurrence site'],
+  ['archaeological_site_reference', 'Archaeological site reference (not an exact excavation or publication point)'],
+  ['beneficiary_site', 'Beneficiary site (not necessarily the decision or activity venue)']
+]);
 
 function calendarDate(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -31,7 +36,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
     const id = typeof event?.id === 'string' ? event.id.trim() : '';
     if (!event || event.review_status !== 'verified' || !id ||
         typeof event.title !== 'string' ||
-        !event.title.trim() || !CATEGORIES.has(event.category) ||
+        !event.title.trim() || !CATEGORIES.has(event.category) || !LOCATION_ROLES.has(event.location_role) ||
         (!calendarDate(event.event_date) || event.event_date > latestPossibleEventDate) || !Number.isFinite(event.lat) ||
         !Number.isFinite(event.lon) || Math.abs(event.lat) > 90 ||
         Math.abs(event.lon) > 180 || typeof event.location_note !== 'string' ||
@@ -46,6 +51,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
     if (previous) {
       if (previous.lat !== event.lat || previous.lon !== event.lon ||
           previous.event_date !== event.event_date || previous.category !== event.category ||
+          previous.location_role !== event.location_role ||
           previous.location_note !== event.location_note.trim() ||
           previous.location_source_url !== locationUrl.href) {
         conflictingDetails.add(id);
@@ -53,7 +59,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
       continue;
     }
     seen.set(id, {lat: event.lat, lon: event.lon, event_date: event.event_date,
-      category: event.category, location_note: event.location_note.trim(),
+      category: event.category, location_role: event.location_role, location_note: event.location_note.trim(),
       location_source_url: locationUrl.href});
     // URL fragments may point to different pages of the *same* document.
     // Host matching alone is not sufficient to identify a reused citation.
@@ -64,6 +70,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
       source_url: url.href, source_host: url.hostname,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
       location_cites_same_document: locationCitesSameDocument,
+      location_role: event.location_role, location_role_label: LOCATION_ROLES.get(event.location_role),
       location_note: event.location_note.trim()});
   }
   return result.filter(event => !conflictingDetails.has(event.id));
@@ -84,7 +91,7 @@ export function showReviewedMapSource(doc, panel, event) {
   link.textContent = 'Inspect original source (opens in new tab): ' + event.source_url;
   const mapNote = doc.createElement('p');
   mapNote.textContent = 'Displayed map point: ' + event.lat + '° latitude, ' + event.lon + '° longitude. ' +
-    'Map placement: ' + event.location_note +
+    'Location role: ' + event.location_role_label + ' · Map placement: ' + event.location_note +
     ' · Location evidence host: ' + event.location_source_host +
     '. Coordinates reflect an editorial placement, not independently verified GPS precision. ' +
     (event.location_cites_same_document ?
@@ -152,7 +159,7 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
     // These hosts may coincide; they are not independent corroboration.
     context.id = 'reviewed-globe-event-context-' + buttons.length;
     context.textContent = 'Event ID: ' + event.id + ' · ' + event.event_date +
-      ' · Map placement: ' + event.location_note + ' · Event source: ' + event.source_host +
+      ' · Location role: ' + event.location_role_label + ' · Map placement: ' + event.location_note + ' · Event source: ' + event.source_host +
       ' · Location evidence: ' + event.location_source_host + ' · ' + event.category +
       (event.location_cites_same_document ?
         ' · Same document used for both citations; not independent corroboration' :
