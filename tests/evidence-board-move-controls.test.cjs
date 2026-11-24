@@ -713,3 +713,14 @@ test('Clear search does not turn a failed case load into an empty result', async
   assert.equal(get('heading').textContent, heading);
   assert.equal(document.activeElement, undefined);
 });
+
+
+test('short landscape board overrides the tall canvas without affecting portrait', () => {
+  const css = html.split('<style>')[1].split('</style>')[0];
+  const rule = '@media(max-width:1050px) and (max-height:600px) and (orientation:landscape){.viewport{height:70vh;height:70dvh;min-height:260px}}';
+  assert.equal(css.split(rule).length, 2);
+  assert.ok(css.includes('.viewport{height:min(73vh,760px);min-height:480px;'));
+  assert.ok(css.includes('@media(max-width:650px){.shell{display:block}'));
+  assert.ok(css.indexOf(rule) > css.indexOf('.viewport{height:540px}'));
+  assert.ok(css.includes('.viewport{height:540px}'));
+});
