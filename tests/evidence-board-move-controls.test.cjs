@@ -91,7 +91,7 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
 
-async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout, clipboard, request) {
+async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout, clipboard, request, clock) {
   const elements = new Map(), stored = new Map(), windowListeners = {};
   if (savedLayout !== undefined) stored.set('atlas-evidence-board-layout-v2-1', savedLayout);
   const make = tag => ({
@@ -119,7 +119,7 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
   const citation = { case_id: '1', title: 'Original document', url: 'https://records.example.org/archive?id=1' };
   let opened = 0;
   vm.runInNewContext(html.match(/<script>([\s\S]*?)<\/script>/)[1], {
-    document, URL, encodeURIComponent, navigator: { clipboard },
+    document, URL, encodeURIComponent, AbortController, setTimeout, clearTimeout, ...clock, navigator: { clipboard },
     localStorage: { getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value) },
     window: { open() { opened++; }, addEventListener(type, handler) { windowListeners[type] = handler; } },
     fetch: request || (async url => ({ ok: !failedRequest, json: async () => url.includes('paper-trails-data')
@@ -999,4 +999,49 @@ test('empty retry results remain honest and successful retry does not steal unre
   assert.equal(get('heading').textContent, 'No published cases available');
   assert.equal(get('save').disabled, true);
   assert.equal(get('cards').children.length, 0);
+});
+
+for (const stage of ['request', 'response body']) {
+  test(`stalled ${stage} reaches a retryable deadline and late results cannot replace recovery`, async () => {
+    let expire, cleared = 0, healthy = false, finish;
+    const signals = [];
+    const pending = new Promise(resolve => { finish = resolve; });
+    const clock = { setTimeout(fn) { expire = fn; return 7; }, clearTimeout() { cleared++; } };
+    const payload = url => url.includes('paper-trails-data') ? { references: [] }
+      : [{ id: '1', title: healthy ? 'Recovered investigation' : 'Expired investigation' }];
+    const request = async (url, options) => {
+      signals.push(options?.signal);
+      if (healthy) return { ok: true, json: async () => payload(url) };
+      if (stage === 'request') await pending;
+      return { ok: true, json: async () => { if (!healthy && stage === 'response body') await pending; return payload(url); } };
+    };
+    const { get, stored } = await createBoard(undefined, undefined, false, undefined, undefined, request, clock);
+    assert.equal(typeof expire, 'function');
+    expire(); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(get('retry-records').hidden, false);
+    assert.equal(get('retry-records').attributes['aria-disabled'], 'false');
+    assert.match(get('status').textContent, /timed out/i);
+    assert.equal(get('save').disabled, true);
+    assert.equal(get('cards').children.length, 0);
+    assert.ok(signals.every(signal => signal?.aborted));
+    healthy = true;
+    await get('retry-records').listeners.click();
+    assert.equal(get('heading').textContent, 'Recovered investigation');
+    const card = get('cards').children[0], status = get('status').textContent;
+    healthy = false; finish(); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(get('heading').textContent, 'Recovered investigation');
+    assert.equal(get('cards').children[0], card);
+    assert.equal(get('status').textContent, status);
+    assert.equal(stored.size, 0);
+    assert.equal(cleared, 2, 'both attempts clear their deadlines');
+  });
+}
+
+test('settled record requests clean up their deadline on success and failure', async () => {
+  for (const failed of [false, true]) {
+    let cleared = 0;
+    const clock = { setTimeout() { return 9; }, clearTimeout(id) { assert.equal(id, 9); cleared++; } };
+    await createBoard(undefined, undefined, failed, undefined, undefined, undefined, clock);
+    assert.equal(cleared, 1);
+  }
 });
