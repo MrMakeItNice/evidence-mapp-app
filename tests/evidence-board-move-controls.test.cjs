@@ -1180,3 +1180,29 @@ test('gesture Escape cancellation leaves idle Escape, ordinary keys and modified
   assert.deepEqual(card.style, position);
   assert.equal(prevented, 1);
 });
+
+test('board status identifies the investigation on deep links, case selection and history without moving focus', async () => {
+  const cases = [{ id: '1', title: 'First investigation' }, { id: '2', title: 'Second <investigation>' }];
+  const references = cases.map(c => ({ case_id: c.id, title: 'Citation', url: 'https://records.example.org/' + c.id }));
+  const { get, document, location, windowListeners } = await createBoard(cases, references, false, undefined, undefined, undefined, undefined, { hash: '#case=2' });
+  const status = get('status');
+  assert.ok(status.textContent.startsWith('Opened investigation: Second <investigation>. '));
+  assert.ok(status.textContent.includes(get('citation-count').textContent));
+  get('search').focus();
+  get('cases').children[0].listeners.click();
+  assert.ok(status.textContent.startsWith('Opened investigation: First investigation. '));
+  assert.equal(document.activeElement, get('search'));
+  location.hash = '#case=2'; windowListeners.hashchange();
+  assert.ok(status.textContent.startsWith('Opened investigation: Second <investigation>. '));
+  assert.equal(document.activeElement, get('search'));
+  const message = status.textContent;
+  get('cards').children[1].listeners.pointerdown(pointer(94));
+  get('cards').children[1].listeners.pointerup(pointer(94));
+  assert.equal(status.textContent, message, 'source inspection does not announce another investigation');
+});
+
+test('case announcement retains the citation-gap qualification for an investigation without indexed URLs', async () => {
+  const { get } = await createBoard([{ id: '1', title: 'Case without indexed URLs' }], []);
+  assert.ok(get('status').textContent.startsWith('Opened investigation: Case without indexed URLs. '));
+  assert.match(get('status').textContent, /does not establish that no evidence exists/);
+});
