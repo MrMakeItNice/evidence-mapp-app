@@ -61,6 +61,15 @@ function collectSourceLimitation(event, sourceUrl, destination) {
   }
 }
 
+// Classification is an editorial assessment, not a measure of global conditions.
+function collectClassificationRationale(event, sourceUrl, destination) {
+  if (typeof event.classification_rationale !== 'string') return;
+  const note = event.classification_rationale.trim();
+  if (note && !destination.some(item => item.note === note && item.source_url === sourceUrl)) {
+    destination.push({note, source_url: sourceUrl});
+  }
+}
+
 export function reviewedMapEvents(events, asOfMs = Date.now()) {
   if (!Array.isArray(events)) return [];
   // A verified *occurrence* cannot be dated beyond the current calendar day
@@ -107,6 +116,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
       collectCorrection(event, url.href, previous.correction_notes);
       collectDateBasis(event, url.href, previous.date_basis_notes);
       collectSourceLimitation(event, url.href, previous.source_limitations);
+      collectClassificationRationale(event, url.href, previous.classification_rationales);
       continue;
     }
     const alternateSources = [];
@@ -115,12 +125,14 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
     const correctionNotes = [];
     const dateBasisNotes = [];
     const sourceLimitations = [];
+    const classificationRationales = [];
+    collectClassificationRationale(event, url.href, classificationRationales);
     collectSourceLimitation(event, url.href, sourceLimitations);
     collectDateBasis(event, url.href, dateBasisNotes);
     collectCorrection(event, url.href, correctionNotes);
     collectIndexedUrls(event.additional_source_urls, additionalSourceUrls);
     collectIndexedUrls(event.counterevidence_urls, counterevidenceUrls);
-    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes, source_limitations: sourceLimitations, lat: event.lat, lon: event.lon, event_date: event.event_date,
+    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes, source_limitations: sourceLimitations, classification_rationales: classificationRationales, lat: event.lat, lon: event.lon, event_date: event.event_date,
       category: event.category, location_role: event.location_role, location_note: event.location_note.trim(),
       location_source_url: locationUrl.href});
     // URL fragments may point to different pages of the *same* document.
@@ -130,7 +142,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname, alternate_sources: alternateSources,
-      additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes, source_limitations: sourceLimitations,
+      additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes, source_limitations: sourceLimitations, classification_rationales: classificationRationales,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
       location_cites_same_document: locationCitesSameDocument,
       location_role: event.location_role, location_role_label: LOCATION_ROLES.get(event.location_role),
@@ -242,6 +254,17 @@ export function showReviewedMapSource(doc, panel, event) {
     }
     panel.append(note, limitations);
   }
+  if (event.classification_rationales?.length) {
+    const note = doc.createElement('p');
+    note.textContent = 'Indexed editorial classification rationale: category labels are provisional assessments of this event, not independent findings or measures of global conditions. They do not establish map placement.';
+    const rationales = doc.createElement('ul');
+    for (const rationale of event.classification_rationales) {
+      const item = doc.createElement('li');
+      item.textContent = rationale.note + ' — Indexed under event citation: ' + rationale.source_url;
+      rationales.append(item);
+    }
+    panel.append(note, rationales);
+  }
   if (event.correction_notes?.length) {
     const note = doc.createElement('p');
     note.textContent = 'Indexed editorial correction notes: read these before relying on the event summary. They are not independent findings and do not establish map placement.';
@@ -325,6 +348,7 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
       (event.counterevidence_urls.length ? ' · ' + event.counterevidence_urls.length + ' indexed counterevidence link(s); individual review not established' : '') +
       (event.date_basis_notes.length ? ' · ' + event.date_basis_notes.length + ' indexed date-basis note(s); inspect before inferring activity dates' : '') +
       (event.source_limitations.length ? ' · ' + event.source_limitations.length + ' indexed source limitation(s); inspect before drawing conclusions' : '') +
+      (event.classification_rationales.length ? ' · ' + event.classification_rationales.length + ' indexed editorial classification rationale(s); category is a provisional assessment' : ' · No separate editorial classification rationale is indexed') +
       (event.correction_notes.length ? ' · ' + event.correction_notes.length + ' indexed editorial correction note(s); inspect before relying on summary' : '');
     button.setAttribute('aria-describedby', context.id);
     item.append(button, context);
