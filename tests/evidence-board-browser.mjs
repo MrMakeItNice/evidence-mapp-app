@@ -8,7 +8,7 @@ const { chromium } = await import(process.env.EVIDENCE_BOARD_PLAYWRIGHT_MODULE
 const html = await readFile(new URL('../evidence-board.html', import.meta.url), 'utf8');
 const cases = [{ id: '1', title: 'Investigation ' + 'UnbrokenTitle'.repeat(25) }];
 const references = [
-  { case_id: '1', title: 'Browser fixture citation', url: 'https://records.example/document?id=42#page=2' },
+  { case_id: '1', title: 'Browser fixture citation', url: 'https://records.example/document?id=42#page=2', publisher: 'Fixture archive', publication_date: '1977-08-03', reference_code: 'S1', source_id: 204, source_role: 'Annotated research reference' },
   { case_id: '1', title: 'Second page citation', url: 'https://records.example/document?id=42#page=3' },
   { case_id: '1', title: 'Duplicate destination', url: 'https://RECORDS.example:443/document?id=42#page=2' },
   { case_id: '1', title: 'Credential-bearing fixture', url: 'https://records.example@untrusted.example/document' },
@@ -117,6 +117,21 @@ try {
     assert.equal(await inspector.locator('h2').textContent(), record.title);
     assert.match(await inspector.locator('.badge').textContent(), /not independently verified/);
     assert.equal(await inspector.locator('.indexed-url').textContent(), 'Indexed URL: ' + record.url);
+    const trace = inspector.locator('.source-trace');
+    assert.equal(await trace.count(), 1);
+    assert.deepEqual((await trace.textContent()).split('\n'), [
+      'Publisher: ' + (record.publisher || 'Not recorded'),
+      'Publication date: ' + (record.publication_date || 'Not recorded'),
+      'Reference: ' + (record.reference_code || 'Not recorded'),
+      'Source host: records.example',
+      'Atlas source record ID: ' + (record.source_id || 'Not recorded'),
+      'Indexed association (not a verified relationship): ' + (record.source_role || 'Not recorded')
+    ]);
+    assert.equal(await trace.evaluate(el => getComputedStyle(el).whiteSpace), 'pre-line');
+    assert.ok(await trace.evaluate(el => {
+      const rect = el.getBoundingClientRect();
+      return rect.left >= 0 && rect.right <= innerWidth + 1 && el.scrollWidth <= el.clientWidth + 1;
+    }), 'source trace must fit the narrow inspector');
     assert.equal(await link.count(), 1);
     assert.equal(await link.evaluate(el => el.href), record.url);
     assert.equal(await link.getAttribute('target'), '_blank');
