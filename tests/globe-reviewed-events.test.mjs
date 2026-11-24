@@ -1261,3 +1261,13 @@ test('compact globe status explicitly announces complete selection context', () 
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /id="geo-panel" role="status" aria-atomic="true"/);
 });
+
+test('globe canvas identifies the equivalent source inspection list without pointer interaction', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const canvas = html.match(/<canvas\b[^>]*\bid="earth"[^>]*>/)?.[0];
+  assert.ok(canvas, 'interactive globe canvas exists');
+  assert.match(canvas, /aria-describedby="reviewed-globe-description"/);
+  assert.equal((html.match(/id="reviewed-globe-description"/g) || []).length, 1);
+  assert.match(html, /<p id="reviewed-globe-description">Use the reviewed map event list below to inspect source evidence without rotating or zooming the globe\./);
+  assert.match(html, /id="reviewed-globe-events"/);
+});
