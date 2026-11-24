@@ -56,9 +56,15 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
           previous.location_source_url !== locationUrl.href) {
         conflictingDetails.add(id);
       }
+      // Keep alternate reviewed event citations inspectable without counting
+      // them as new occurrences or independent corroboration.
+      if (url.href !== previous.source_url && !previous.alternate_sources.some(source => source.url === url.href)) {
+        previous.alternate_sources.push({url: url.href, title: event.title.trim()});
+      }
       continue;
     }
-    seen.set(id, {lat: event.lat, lon: event.lon, event_date: event.event_date,
+    const alternateSources = [];
+    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, lat: event.lat, lon: event.lon, event_date: event.event_date,
       category: event.category, location_role: event.location_role, location_note: event.location_note.trim(),
       location_source_url: locationUrl.href});
     // URL fragments may point to different pages of the *same* document.
@@ -67,7 +73,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
       url.pathname === locationUrl.pathname && url.search === locationUrl.search;
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
-      source_url: url.href, source_host: url.hostname,
+      source_url: url.href, source_host: url.hostname, alternate_sources: alternateSources,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
       location_cites_same_document: locationCitesSameDocument,
       location_role: event.location_role, location_role_label: LOCATION_ROLES.get(event.location_role),
@@ -112,6 +118,22 @@ export function showReviewedMapSource(doc, panel, event) {
   locationLink.rel = 'noopener noreferrer';
   locationLink.textContent = 'Inspect map location evidence (opens in new tab): ' + event.location_source_url;
   panel.append(heading, context, link, mapNote, locationLink);
+  if (event.alternate_sources?.length) {
+    const note = doc.createElement('p');
+    note.textContent = 'Other reviewed citations indexed under the same event ID; these are not additional events or established independent corroboration.';
+    const sources = doc.createElement('ul');
+    for (const source of event.alternate_sources) {
+      const item = doc.createElement('li');
+      const anchor = doc.createElement('a');
+      anchor.href = source.url;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.textContent = 'Inspect alternate event citation (opens in new tab): ' + source.title + ' — ' + source.url;
+      item.append(anchor);
+      sources.append(item);
+    }
+    panel.append(note, sources);
+  }
 }
 
 
@@ -172,7 +194,8 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
       ' · Location evidence: ' + event.location_source_host + ' · ' + event.category +
       (event.location_cites_same_document ?
         ' · Same document used for both citations; not independent corroboration' :
-        ' · Distinct citation URL; independence not established');
+        ' · Distinct citation URL; independence not established') +
+      (event.alternate_sources.length ? ' · ' + event.alternate_sources.length + ' additional indexed event citation(s); independence not established' : '');
     button.setAttribute('aria-describedby', context.id);
     item.append(button, context);
     list.append(item);
