@@ -569,7 +569,8 @@ test('same-title map events expose distinct canonical IDs and placement rational
   assert.equal(records.length, 2);
   const [firstButton, firstContext] = list.children[0].children;
   const [secondButton, secondContext] = list.children[1].children;
-  assert.equal(firstButton.textContent, secondButton.textContent);
+  assert.equal(firstButton.textContent, 'Inspect ' + event.title + ' (Event ID: archive-01)');
+  assert.equal(secondButton.textContent, 'Inspect ' + second.title + ' (Event ID: archive-02)');
   assert.equal(firstButton.getAttribute('aria-describedby'), firstContext.id);
   assert.equal(secondButton.getAttribute('aria-describedby'), secondContext.id);
   assert.ok(firstContext.textContent.includes('Event ID: archive-01 ·'));
@@ -1160,4 +1161,25 @@ test('does not repair malformed supplemental or counterevidence URLs into clicka
     assert.deepEqual(item.additional_source_urls, [extra]);
     assert.deepEqual(item.counterevidence_urls, [counter]);
   }
+});
+
+
+test('visible inspection labels distinguish case and whitespace variants only for eligible distinct events', () => {
+  const second = withChanges({id: 'archive-02', title: 'REVIEWED   documented event'});
+  const third = withChanges({id: 'archive-03', title: 'Different event'});
+  const pending = withChanges({id: 'archive-04', title: third.title, review_status: 'pending'});
+  const duplicate = withChanges({title: event.title});
+  const list = element('ul');
+  let selected;
+  const records = renderReviewedMapList(document, list,
+    [event, second, third, pending, duplicate], record => {selected = record;});
+  assert.equal(records.length, 3);
+  const buttons = list.children.map(item => item.children[0]);
+  assert.equal(buttons[0].textContent, 'Inspect ' + event.title + ' (Event ID: archive-01)');
+  assert.equal(buttons[1].textContent, 'Inspect ' + second.title + ' (Event ID: archive-02)');
+  assert.equal(buttons[2].textContent, 'Inspect ' + third.title);
+  buttons[1].listeners.click();
+  assert.equal(selected.id, 'archive-02');
+  assert.equal(buttons[1].getAttribute('aria-expanded'), 'true');
+  assert.equal(buttons[0].getAttribute('aria-expanded'), 'false');
 });
