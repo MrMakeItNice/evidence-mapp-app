@@ -1087,3 +1087,31 @@ test('unavailable and malformed case links explicitly identify the fallback with
     assert.equal(f.location.hash, '#case=1');
   }
 });
+
+test('reselecting the active published case preserves unsaved layout, zoom and selected source', async () => {
+  const { get, stored, document, location, historyCalls } = await createBoard([
+    { id: '1', title: 'Published case' }, { id: '2', title: 'Other case' }
+  ]);
+  const card = get('cards').children[1];
+  card.listeners.keydown({ key: 'Enter', preventDefault() {} });
+  const controls = get('details').children.find(n => n.className === 'move-controls');
+  controls.children[2].listeners.click();
+  get('zin').listeners.click();
+  const position = { ...card.style }, transform = get('world').style.transform;
+  const status = get('status').textContent, heading = get('details').children[0];
+  const current = get('cases').children[0];
+  current.focus(); current.listeners.click();
+  assert.equal(get('cards').children[1], card, 'reselection must not rebuild the board');
+  assert.deepEqual(card.style, position);
+  assert.equal(get('world').style.transform, transform);
+  assert.equal(get('details').children[0], heading);
+  assert.equal(card.attributes['aria-pressed'], 'true');
+  assert.equal(get('status').textContent, status);
+  assert.equal(document.activeElement, current);
+  assert.equal(location.hash, '#case=1');
+  assert.equal(historyCalls.length, 1, 'no redundant history entry');
+  assert.equal(stored.size, 0, 'no implicit layout save');
+  get('cases').children[1].listeners.click();
+  assert.equal(get('heading').textContent, 'Other case');
+  assert.equal(location.hash, '#case=2');
+});
