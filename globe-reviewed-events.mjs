@@ -70,6 +70,15 @@ function collectClassificationRationale(event, sourceUrl, destination) {
   }
 }
 
+// An archive/document identifier belongs to its own citation, not to all sources.
+function collectSourceRecordId(event, sourceUrl, destination) {
+  if (typeof event.source_record_id !== 'string') return;
+  const identifier = event.source_record_id.trim();
+  if (identifier && !destination.some(item => item.identifier === identifier && item.source_url === sourceUrl)) {
+    destination.push({identifier, source_url: sourceUrl});
+  }
+}
+
 export function reviewedMapEvents(events, asOfMs = Date.now()) {
   if (!Array.isArray(events)) return [];
   // A verified *occurrence* cannot be dated beyond the current calendar day
@@ -117,6 +126,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
       collectDateBasis(event, url.href, previous.date_basis_notes);
       collectSourceLimitation(event, url.href, previous.source_limitations);
       collectClassificationRationale(event, url.href, previous.classification_rationales);
+      collectSourceRecordId(event, url.href, previous.source_record_ids);
       continue;
     }
     const alternateSources = [];
@@ -126,13 +136,15 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
     const dateBasisNotes = [];
     const sourceLimitations = [];
     const classificationRationales = [];
+    const sourceRecordIds = [];
+    collectSourceRecordId(event, url.href, sourceRecordIds);
     collectClassificationRationale(event, url.href, classificationRationales);
     collectSourceLimitation(event, url.href, sourceLimitations);
     collectDateBasis(event, url.href, dateBasisNotes);
     collectCorrection(event, url.href, correctionNotes);
     collectIndexedUrls(event.additional_source_urls, additionalSourceUrls);
     collectIndexedUrls(event.counterevidence_urls, counterevidenceUrls);
-    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes, source_limitations: sourceLimitations, classification_rationales: classificationRationales, lat: event.lat, lon: event.lon, event_date: event.event_date,
+    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes, source_limitations: sourceLimitations, classification_rationales: classificationRationales, source_record_ids: sourceRecordIds, lat: event.lat, lon: event.lon, event_date: event.event_date,
       category: event.category, location_role: event.location_role, location_note: event.location_note.trim(),
       location_source_url: locationUrl.href});
     // URL fragments may point to different pages of the *same* document.
@@ -142,7 +154,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname, alternate_sources: alternateSources,
-      additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes, source_limitations: sourceLimitations, classification_rationales: classificationRationales,
+      additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes, source_limitations: sourceLimitations, classification_rationales: classificationRationales, source_record_ids: sourceRecordIds,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
       location_cites_same_document: locationCitesSameDocument,
       location_role: event.location_role, location_role_label: LOCATION_ROLES.get(event.location_role),
@@ -195,6 +207,17 @@ export function showReviewedMapSource(doc, panel, event) {
   locationLink.rel = 'noopener noreferrer';
   locationLink.textContent = 'Inspect map location evidence (opens in new tab): ' + event.location_source_url;
   panel.append(heading, context, link, mapNote, locationLink);
+  if (event.source_record_ids?.length) {
+    const note = doc.createElement('p');
+    note.textContent = 'Indexed document identifiers: use these to locate the cited records. Identifiers are editorial metadata, not independent verification or geographic evidence.';
+    const records = doc.createElement('ul');
+    for (const record of event.source_record_ids) {
+      const item = doc.createElement('li');
+      item.textContent = record.identifier + ' — Indexed under event citation: ' + record.source_url;
+      records.append(item);
+    }
+    panel.append(note, records);
+  }
   if (event.alternate_sources?.length) {
     const note = doc.createElement('p');
     note.textContent = 'Other reviewed citations indexed under the same event ID; these are not additional events or established independent corroboration.';
@@ -343,6 +366,7 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
       (event.location_cites_same_document ?
         ' · Same document used for both citations; not independent corroboration' :
         ' · Distinct citation URL; independence not established') +
+      (event.source_record_ids.length ? ' · ' + event.source_record_ids.length + ' indexed document identifier(s); inspect to locate original records' : '') +
       (event.alternate_sources.length ? ' · ' + event.alternate_sources.length + ' additional indexed event citation(s); independence not established' : '') +
       (event.additional_source_urls.length ? ' · ' + event.additional_source_urls.length + ' supplemental indexed link(s); individual review not established' : '') +
       (event.counterevidence_urls.length ? ' · ' + event.counterevidence_urls.length + ' indexed counterevidence link(s); individual review not established' : '') +
