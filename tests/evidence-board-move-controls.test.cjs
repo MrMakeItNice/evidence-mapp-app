@@ -110,6 +110,7 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
   });
   const get = id => { if (!elements.has(id)) elements.set(id, make('div')); return elements.get(id); };
   get('viewport').clientWidth = 1000;
+  get('viewport').clientHeight = 480;
   get('save').disabled = /<button id="save"[^>]*\bdisabled/.test(html); // Initial native HTML state in the simulated DOM.
   const document = {
     title: html.match(/<title>(.*?)<\/title>/)[1],
@@ -1250,4 +1251,43 @@ test('a genuinely empty case index still reports an empty collection', async () 
   assert.equal(get('search').disabled, false);
   assert.equal(get('retry-records').hidden, true);
   assert.equal(get('save').disabled, true);
+});
+
+test('zoom retains the board point under the viewport center after panning and at both limits', async () => {
+  for (const [width, height] of [[320,540], [780,300], [1280,760]]) {
+    const { get, stored, document } = await createBoard();
+    const view = get('viewport'), world = get('world');
+    view.clientWidth = width; view.clientHeight = height;
+    get('reset').listeners.click();
+    view.focus();
+    view.listeners.keydown({ key: 'ArrowRight', target: view, preventDefault() {} });
+    view.listeners.keydown({ key: 'ArrowUp', target: view, shiftKey: true, preventDefault() {} });
+    const transform = () => {
+      const match = world.style.transform.match(/^translate\(([-\d.e+]+)px,([-\d.e+]+)px\) scale\(([-\d.e+]+)\)$/);
+      assert.ok(match, 'valid finite transform');
+      return match.slice(1).map(Number);
+    };
+    const center = () => {
+      const [x,y,z] = transform();
+      return [(width/2-x)/z, (height/2-y)/z];
+    };
+    const point = center(), card = get('cards').children[1], position = { ...card.style };
+    const inspector = get('details').children[0], initialZoom = transform()[2];
+    for (const button of ['zin','zin','zout',...Array(20).fill('zin'),...Array(20).fill('zout')]) {
+      const previous = world.style.transform, scale = transform()[2];
+      get(button).listeners.click();
+      const current = center();
+      assert.ok(Math.abs(current[0]-point[0]) < 1e-8);
+      assert.ok(Math.abs(current[1]-point[1]) < 1e-8);
+      if (scale === transform()[2]) assert.equal(world.style.transform, previous);
+    }
+    assert.equal(transform()[2], Math.min(.35,initialZoom));
+    assert.deepEqual(card.style, position);
+    assert.equal(get('details').children[0], inspector);
+    assert.equal(document.activeElement, view);
+    assert.equal(stored.size, 0);
+    get('reset').listeners.click();
+    assert.equal(transform()[2], initialZoom);
+    assert.equal(transform()[1], 15);
+  }
 });
