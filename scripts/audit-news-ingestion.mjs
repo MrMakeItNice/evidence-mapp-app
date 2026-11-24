@@ -295,6 +295,8 @@ export function auditNewsIngestion(snapshot) {
   const newsPublicationAfterDiscoveryIds = [];
   let discovered24h = 0, pending14d = 0, undatedGoogle = 0, undated = 0;
   const agedPendingNewsByTopic = new Map();
+  const recentNewsByTopic = new Map();
+  let recentUndated = 0, recentUnassigned = 0, recentUnassignedUndated = 0;
   for (const n of news) {
     if (n.topic_id != null && !newsTopicIds.has(n.topic_id)) throw new Error('Unknown news topic');
     const published = timestamp(n.published_at, 'news.published_at');
@@ -313,7 +315,19 @@ export function auditNewsIngestion(snapshot) {
       else undatedNonGoogleIds.push(n.id);
     }
     if (published !== null && published > asOf) flaggedFutureNewsIds.push(n.id);
-    if (discovered !== null && discovered <= asOf && discovered >= asOf - 86400000) discovered24h++;
+    if (discovered !== null && discovered <= asOf && discovered >= asOf - 86400000) {
+      discovered24h++;
+      if (published === null) recentUndated++;
+      if (positiveId(n.topic_id)) {
+        const counts = recentNewsByTopic.get(n.topic_id) ?? {recent_count:0, undated_count:0};
+        counts.recent_count++;
+        if (published === null) counts.undated_count++;
+        recentNewsByTopic.set(n.topic_id, counts);
+      } else {
+        recentUnassigned++;
+        if (published === null) recentUnassignedUndated++;
+      }
+    }
     if (n.review_status === 'pending' && discovered !== null && discovered < asOf - 14 * 86400000) {
       pending14d++;
       // Rank review backlog by numeric topic ID only; never print unpublished titles.
@@ -322,6 +336,10 @@ export function auditNewsIngestion(snapshot) {
       }
     }
   }
+  // Measure ongoing intake quality independently of the cumulative backlog.
+  const recentNewsTopicRank = [...recentNewsByTopic]
+    .map(([topic_id, counts]) => ({topic_id, ...counts}))
+    .sort((a,b) => b.undated_count - a.undated_count || b.recent_count - a.recent_count || a.topic_id - b.topic_id);
   const agedNewsTopicRank = [...agedPendingNewsByTopic]
     .map(([topic_id, count]) => ({topic_id, count}))
     .sort((a, b) => b.count - a.count || a.topic_id - b.topic_id);
@@ -441,6 +459,11 @@ export function auditNewsIngestion(snapshot) {
       total: news.length,
       pending: news.filter(n => n.review_status === 'pending').length,
       discovered_last_24h: discovered24h,
+      undated_discovered_last_24h: recentUndated,
+      recent_publication_date_by_topic: recentNewsTopicRank.slice(0,10),
+      omitted_recent_publication_date_topics: Math.max(0,recentNewsTopicRank.length-10),
+      recent_without_topic: recentUnassigned,
+      recent_undated_without_topic: recentUnassignedUndated,
       pending_over_14d: pending14d,
       pending_without_discovery_timestamp: unknownPendingNewsDiscoveryIds.length,
       unknown_discovery_pending_item_ids: unknownPendingNewsDiscoveryIds.slice(0,25),
