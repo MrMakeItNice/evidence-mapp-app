@@ -88,21 +88,36 @@ function repeatedGroups(map) {
 }
 function overlapCount(a, b) {
   let total = 0;
-  for (const [url, ids] of a) if (b.has(url)) total += ids.length * b.get(url).length;
+  for (const [url, ids] of a) {
+    if (!b.has(url)) continue;
+    total += ids.length * b.get(url).length;
+    if (!Number.isSafeInteger(total)) throw new Error('Unsafe overlap count');
+  }
   return total;
 }
 // Numeric-only exact-URL join candidates for manual source linking; never auto-link records.
+// Sort each matching left ID once; materialize only the requested prefix of the join.
 function overlapCandidatePairs(left, right, limit = 25) {
+  const total = overlapCount(left, right);
   const pairs = [];
+  const matchedLeft = [];
+  const sortedRight = new Map();
   for (const [url, leftIds] of left) {
-    const rightIds = right.get(url);
-    if (!rightIds) continue;
-    for (const leftId of leftIds) for (const rightId of rightIds) pairs.push([leftId, rightId]);
+    if (!right.has(url)) continue;
+    for (const leftId of leftIds) matchedLeft.push([leftId, url]);
   }
-  pairs.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  matchedLeft.sort((a, b) => a[0] - b[0]);
+  for (const [leftId, url] of matchedLeft) {
+    if (pairs.length >= limit) break;
+    if (!sortedRight.has(url)) sortedRight.set(url, [...right.get(url)].sort((a, b) => a - b));
+    for (const rightId of sortedRight.get(url)) {
+      if (pairs.length >= limit) break;
+      pairs.push([leftId, rightId]);
+    }
+  }
   return {
-    id_pairs: pairs.slice(0, limit),
-    omitted_id_pairs: Math.max(0, pairs.length - limit)
+    id_pairs: pairs,
+    omitted_id_pairs: total - pairs.length
   };
 }
 
