@@ -724,3 +724,17 @@ test('short landscape board overrides the tall canvas without affecting portrait
   assert.ok(css.indexOf(rule) > css.indexOf('.viewport{height:540px}'));
   assert.ok(css.includes('.viewport{height:540px}'));
 });
+
+
+test('phone users can jump past the case list and return to a focusable search heading', () => {
+  const css = html.match(/<style>([\s\S]*?)<\/style>/)[1];
+  assert.equal((html.match(/id="case-files-heading"/g) || []).length, 1);
+  assert.match(html, /<h2 id="case-files-heading" tabindex="-1">Case files<\/h2>/);
+  assert.ok(html.indexOf('id="case-files-heading"') < html.indexOf('id="search"'));
+  assert.match(html, /id="board-controls" tabindex="-1"/);
+  assert.ok(html.indexOf('href="#board-controls">Board controls') < html.indexOf('id="cases"'));
+  assert.match(html, /id="save">Save layout<\/button><a class="board-jump case-search-jump" href="#case-files-heading">Search case files/);
+  assert.match(css, /#case-files-heading:focus-visible\{outline:2px solid var\(--mint\)/);
+  assert.match(css, /\.board-jump\.case-search-jump\{display:none\}\s*@media\(max-width:650px\)\{\.board-jump\.case-search-jump\{display:inline-flex\}\}/);
+  assert.match(css, /\.board-jump\{display:inline-flex;align-items:center;min-height:44px/);
+});
