@@ -508,3 +508,12 @@ for (const caseId of ['21','22']) {
 assert.ok(northwoodsScope[1].includes('href="https://nsarchive2.gwu.edu/news/20010430/northwoods.pdf#page=1" target="_blank" rel="noopener noreferrer"'));
 assert.ok(northwoodsScope[1].includes('href="https://history.state.gov/historicaldocuments/frus1961-63v10/d314" target="_blank" rel="noopener noreferrer"'));
 console.log('PASS: Northwoods and Mongoose links reuse canonical cases and distinguish preliminary planning from approval or execution.');
+
+
+for (const phrase of ['#32, #33, #34 and #35','March 16','advance approval required','separately from contingency planning','not independently checked original scans','do not count the two reports as independent corroboration','Neither establishes execution of the Northwoods proposals','candidate sources for review','not new library entries or evidence for Blue Beam']) {
+  assert.ok(northwoodsScope[1].includes(phrase), 'Missing Phase I evidence safeguard: '+phrase);
+}
+for (const doc of ['359','360']) {
+  assert.ok(northwoodsScope[1].includes('href="https://history.state.gov/historicaldocuments/frus1961-63v10/d'+doc+'" target="_blank" rel="noopener noreferrer"'));
+}
+console.log('PASS: Mongoose Phase I reports distinguish authorization, activity and contingency planning without double-counting evidence.');
