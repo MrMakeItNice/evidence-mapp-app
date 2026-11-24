@@ -576,3 +576,13 @@ for (const href of ["https://nsarchive.gwu.edu/sites/default/files/documents/DOC
 assert.equal((artichokeJulyResponsibility[1].match(/target="_blank" rel="noopener noreferrer"/g)||[]).length,3);
 assert.doesNotMatch(artichokeJulyResponsibility[1],/case-33|case=33|case-32|case=32/);
 console.log('PASS: July ARTICHOKE administrative recommendation retains source scope and canonical navigation.');
+
+
+const artichokeTransferDateReview = bluebirdPage.match(/<p id="artichoke-transfer-date-review">([\s\S]*?)<\/p>/);
+assert.ok(artichokeTransferDateReview);
+assert.equal((bluebirdPage.match(/id="artichoke-transfer-date-review"/g)||[]).length,1);
+for (const phrase of ["exact date unresolved","existing source #212","November 21, 1952 memorandum","October 1952","C01434879","November 1952 transfer","both pages visually reviewed","original scans were not verified here","investigator hypothesis, not a finding","final approval order remain unverified","do not count them as independent corroboration","No evidence of a Project Blue Beam connection","canonical ARTICHOKE Case #3 (record ID 4)"]) assert.ok(artichokeTransferDateReview[1].includes(phrase), 'Missing transfer provenance: '+phrase);
+for (const href of ["#artichoke-july-1952-responsibility","#cia-1977-archive-note","https://nsarchive2.gwu.edu/NSAEBB/NSAEBB438/st02.pdf#page=1","https://www.cia.gov/readingroom/docs/project%20bluebirdartichoke%5B15132379%5D.pdf","./paper-trails.html#case-4","./connection-explorer.html#case=4"]) assert.ok(artichokeTransferDateReview[1].includes('href="'+href+'"'));
+assert.equal((artichokeTransferDateReview[1].match(/target="_blank" rel="noopener noreferrer"/g)||[]).length,2);
+assert.doesNotMatch(artichokeTransferDateReview[1],/case-33|case=33|case-32|case=32/);
+console.log('PASS: ARTICHOKE transfer date review preserves competing dates, provenance and canonical navigation.');
