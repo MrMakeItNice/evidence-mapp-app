@@ -198,7 +198,7 @@ export function showReviewedMapSource(doc, panel, event) {
   heading.setAttribute('role', 'heading');
   heading.setAttribute('aria-level', '3');
   const context = doc.createElement('p');
-  context.textContent = 'Event ID: ' + event.id + ' · ' + event.category + ' · Event: ' + event.event_date +
+  context.textContent = 'Event ID: ' + event.id + ' · ' + event.category + ' · Indexed date: ' + event.event_date +
     ' · Source host: ' + event.source_host +
     '. This is an editorially reviewed event record; a link does not independently verify its claims.' +
     (event.date_basis_notes?.length ?
@@ -329,7 +329,7 @@ export function inspectReviewedMapSource(doc, detail, event, returnFocusTo, comp
   if (compactPanel) {
     compactPanel.replaceChildren();
     compactPanel.textContent = 'Selected reviewed map event: ' + event.title + ' (' + event.id + ') · ' +
-      event.event_date + ' · ' + event.category + '. Location role: ' + event.location_role_label +
+      'Indexed date: ' + event.event_date + ' · ' + event.category + '. Location role: ' + event.location_role_label +
       '. Original sources and map placement evidence are in the selected event detail below.';
   }
   showReviewedMapSource(doc, detail, event);
@@ -400,7 +400,7 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
     // Announce both provenance roles when a keyboard user focuses the event.
     // These hosts may coincide; they are not independent corroboration.
     context.id = 'reviewed-globe-event-context-' + buttons.length;
-    context.textContent = 'Event ID: ' + event.id + ' · ' + event.event_date +
+    context.textContent = 'Event ID: ' + event.id + ' · Indexed date: ' + event.event_date +
       ' · Location role: ' + event.location_role_label + ' · Map placement: ' + event.location_note + ' · Event source: ' + event.source_host +
       ' · Location evidence: ' + event.location_source_host + ' · ' + event.category +
       (event.location_cites_same_document ?
