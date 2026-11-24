@@ -226,7 +226,7 @@ console.log('PASS: MKULTRA canonical navigation shares existing hearing #258 wit
 
 
 // MKULTRA and MKDELTA describe different administrative functions in one primary record.
-const mkdeltaScope = bluebirdPage.match(/<p id="mkultra-mkdelta-scope">([\s\S]*?)<\/p>/);
+const mkdeltaScope = bluebirdPage.match(/<p id="mkultra-mkdelta-scope" tabindex="-1">([\s\S]*?)<\/p>/);
 assert.ok(mkdeltaScope);
 assert.equal((bluebirdPage.match(/id="mkultra-mkdelta-scope"/g)||[]).length,1);
 assert.match(mkdeltaScope[1],/Documented administrative relationship/);
@@ -243,7 +243,7 @@ assert.match(mkdeltaScope[1],/no new case, source-library record or public relat
 console.log('PASS: MKULTRA/MKDELTA source scope uses one primary record and canonical navigation.');
 
 // CHATTER is a source-backed thematic comparison, not a causal edge.
-const chatterComparison = bluebirdPage.match(/<p id="chatter-thematic-comparison">([\s\S]*?)<\/p>/);
+const chatterComparison = bluebirdPage.match(/<p id="chatter-thematic-comparison" tabindex="-1">([\s\S]*?)<\/p>/);
 assert.ok(chatterComparison);
 assert.equal((bluebirdPage.match(/id="chatter-thematic-comparison"/g)||[]).length,1);
 assert.match(chatterComparison[1],/Thematic similarity, not a documented operational link/);
@@ -274,12 +274,14 @@ assert.match(artichokeCounterevidence[1],/not a newly indexed source or a Projec
 console.log('PASS: 1952 ARTICHOKE counterevidence is scoped to the documented report, not a Blue Beam relationship.');
 
 // Keep primary-source and uncertainty notes discoverable from the BLUEBIRD/Blue Beam comparison.
-const sourceJumpNav = bluebirdPage.match(/<nav class="source-jumps" aria-label="BLUEBIRD and ARTICHOKE evidence notes">([\s\S]*?)<\/nav>/);
+const sourceJumpNav = bluebirdPage.match(/<nav class="source-jumps" aria-label="Evidence notes and relationship comparisons">([\s\S]*?)<\/nav>/);
 assert.ok(sourceJumpNav, 'Missing source-scope navigation landmark');
 const sourceJumpLinks = [...sourceJumpNav[1].matchAll(/<a href="#([^"]+)">([^<]+)<\/a>/g)];
 assert.deepEqual(sourceJumpLinks.map(link => link[1]), [
   'cia-1975-indexed-source-note',
   'senate-1977-source-note',
+  'mkultra-mkdelta-scope',
+  'chatter-thematic-comparison',
   'source-scope-comparison',
   'bluebird-bluebeam-assessment'
 ]);
@@ -301,7 +303,11 @@ for (const id of sourceJumpLinks.map(link => link[1])) {
 }
 assert.match(bluebirdPage, /:target\{outline:3px solid #0b8671;outline-offset:4px;background:#eefaf5\}/);
 
-console.log('PASS: source-scope notes and Blue Beam assessment have unique accessible 44px jump links.');
+assert.deepEqual(sourceJumpLinks.slice(2,4).map(link => link[2]), [
+  'MKULTRA / MKDELTA · documented administrative link',
+  'CHATTER · thematic similarity only'
+]);
+console.log('PASS: evidence notes, relationship comparisons and Blue Beam assessment have unique accessible 44px jump links.');
 
 // Direct links, browser history, and repeat in-page jumps must reveal a closed
 // comparison panel; other hashes must not override the visitor's chosen state.
