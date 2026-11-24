@@ -50,6 +50,7 @@ try {
   await page.keyboard.press('Tab');
   await page.waitForFunction(() => document.activeElement.id === 'search');
   console.log('PASS: second skip link reaches the case-search heading and native Tab enters the search input.');
+  await page.goto('about:blank'); // Force a new document, rather than same-page fragment navigation.
   await page.goto('https://board.example/evidence-board.html#case=1');
   await page.waitForFunction(() => !document.getElementById('save').disabled);
   await page.keyboard.press('Tab');
