@@ -1206,3 +1206,48 @@ test('case announcement retains the citation-gap qualification for an investigat
   assert.ok(get('status').textContent.startsWith('Opened investigation: Case without indexed URLs. '));
   assert.match(get('status').textContent, /does not establish that no evidence exists/);
 });
+
+test('malformed published case rows do not block valid investigations or disappear from the search warning', async () => {
+  const rows = [null, { id: 'bad', title: 42 }, { id: 'blank', title: '  ' },
+    { id: {}, title: 'Invalid identity' }, { id: 2, title: 'Valid investigation' }];
+  const { get, location } = await createBoard(rows, []);
+  assert.equal(get('heading').textContent, 'Valid investigation');
+  assert.equal(get('cases').children.length, 1);
+  assert.equal(get('search').disabled, false);
+  assert.equal(location.hash, '#case=2');
+  assert.match(get('case-search-status').textContent, /4 malformed case records were omitted/);
+  get('search').value = 'not found';
+  get('search').listeners.input({ target: get('search') });
+  assert.match(get('case-search-status').textContent, /No published cases match/);
+  assert.match(get('case-search-status').textContent, /4 malformed case records were omitted/);
+  get('clear-cases').listeners.click();
+  assert.equal(get('cases').children.length, 1);
+  assert.match(get('case-search-status').textContent, /4 malformed case records were omitted/);
+});
+
+test('an entirely malformed nonempty case index is an error, not an empty published collection, and can recover', async () => {
+  let recovered = false;
+  const request = async url => ({ ok: true, json: async () => url.includes('paper-trails-data')
+    ? { references: [] } : recovered ? [{ id: '7', title: 'Recovered investigation' }] : [{ id: '7', title: {} }] });
+  const { get } = await createBoard(undefined, undefined, false, undefined, undefined, request);
+  assert.equal(get('heading').textContent, 'Evidence service unavailable');
+  assert.match(get('status').textContent, /No usable case records in the returned index/);
+  assert.equal(get('search').disabled, true);
+  assert.equal(get('save').disabled, true);
+  assert.equal(get('retry-records').hidden, false);
+  recovered = true;
+  await get('retry-records').listeners.click();
+  assert.equal(get('heading').textContent, 'Recovered investigation');
+  assert.equal(get('search').disabled, false);
+  assert.equal(get('retry-records').hidden, true);
+  assert.equal(get('case-search-status').textContent, '1 of 1 matching published cases shown.');
+});
+
+test('a genuinely empty case index still reports an empty collection', async () => {
+  const { get } = await createBoard([], []);
+  assert.equal(get('heading').textContent, 'No published cases available');
+  assert.equal(get('case-search-status').textContent, 'No published cases available.');
+  assert.equal(get('search').disabled, false);
+  assert.equal(get('retry-records').hidden, true);
+  assert.equal(get('save').disabled, true);
+});
