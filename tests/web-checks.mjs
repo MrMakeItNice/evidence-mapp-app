@@ -224,6 +224,23 @@ console.log('PASS: MKULTRA canonical navigation shares existing hearing #258 wit
 
 
 
+
+// CHATTER is a source-backed thematic comparison, not a causal edge.
+const chatterComparison = bluebirdPage.match(/<p id="chatter-thematic-comparison">([\s\S]*?)<\/p>/);
+assert.ok(chatterComparison);
+assert.equal((bluebirdPage.match(/id="chatter-thematic-comparison"/g)||[]).length,1);
+assert.match(chatterComparison[1],/Thematic similarity, not a documented operational link/);
+assert.match(chatterComparison[1],/U\.S\. Navy project running from 1947 to 1953/);
+assert.match(chatterComparison[1],/printed p\. 67; PDF viewer p\. 70/);
+assert.match(chatterComparison[1],/does not establish shared command, joint operations or a Project Blue Beam connection/);
+assert.match(chatterComparison[1],/one underlying hearing, not independent corroboration/);
+assert.match(chatterComparison[1],/href="\.\/paper-trails\.html#case-5"/);
+assert.match(chatterComparison[1],/href="\.\/connection-explorer\.html#case=5"/);
+assert.match(chatterComparison[1],/href="https:\/\/www\.intelligence\.senate\.gov\/wp-content\/uploads\/2024\/08\/sites-default-files-hearings-95mkultra\.pdf#page=70" target="_blank" rel="noopener noreferrer"/);
+assert.match(chatterComparison[1],/no new public relationship edge is created/);
+assert.ok(JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).references.some(r => String(r.case_id)==='5' && String(r.source_id)==='258' && r.url==='https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf'));
+console.log('PASS: CHATTER thematic comparison uses existing case and congressional source without inferring operational links.');
+
 // Keep primary-source and uncertainty notes discoverable from the BLUEBIRD/Blue Beam comparison.
 const sourceJumpNav = bluebirdPage.match(/<nav class="source-jumps" aria-label="BLUEBIRD and ARTICHOKE evidence notes">([\s\S]*?)<\/nav>/);
 assert.ok(sourceJumpNav, 'Missing source-scope navigation landmark');
