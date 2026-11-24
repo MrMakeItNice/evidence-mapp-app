@@ -728,3 +728,45 @@ test('overlapping globe markers never silently select one canonical event', () =
   assert.equal(buttons[0].focused, true);
   assert.equal(buttons[1].focused, undefined);
 });
+
+
+test('optional indexed citations remain safe, deduplicated, and distinct from reviewed map provenance', () => {
+  const supplementary = 'https://catalog.example.org/item?id=5#p3';
+  const alternate = 'https://another.example.org/report';
+  const later = 'https://catalog.example.org/item?id=6#page';
+  const records = [
+    withChanges({additional_source_urls: [supplementary, 'https://catalog.example.org:443/item?id=5#p3',
+      event.source_url, event.location_source_url, alternate, 'javascript:alert(1)',
+      'http://catalog.example.org/unsafe', 'https://user:pass@catalog.example.org/unsafe', null, {}]}),
+    withChanges({source_url: alternate, additional_source_urls: [supplementary, later]}),
+    withChanges({review_status: 'pending', additional_source_urls: ['https://pending.example.org/lead']})
+  ];
+  const list = element('ul');
+  let selected;
+  const mapped = renderReviewedMapList(document, list, records, record => {selected = record;});
+  assert.equal(mapped.length, 1, 'citations never create additional map points');
+  assert.equal(mapped[0].alternate_sources.length, 1);
+  assert.deepEqual(mapped[0].additional_source_urls, [supplementary, later]);
+  assert.equal(mapped[0].location_source_url, event.location_source_url);
+  assert.match(list.children[0].children[1].textContent, /2 supplemental indexed link\(s\); individual review not established/);
+  list.children[0].children[0].listeners.click();
+  const panel = element('div');
+  showReviewedMapSource(document, panel, selected);
+  assert.match(panel.children[7].textContent, /individual review and independent corroboration are not established/);
+  assert.match(panel.children[7].textContent, /do not establish map placement/);
+  const links = panel.children[8].children.map(item => item.children[0]);
+  assert.deepEqual(links.map(link => link.href), [supplementary, later]);
+  for (const link of links) {
+    assert.equal(link.target, '_blank');
+    assert.equal(link.rel, 'noopener noreferrer');
+    assert.match(link.textContent, /opens in new tab/);
+  }
+});
+
+test('optional indexed links cannot qualify a missing or conflicting location for publication', () => {
+  const extra = ['https://catalog.example.org/map'];
+  assert.deepEqual(reviewedMapEvents([withChanges({location_source_url: '', additional_source_urls: extra})]), []);
+  assert.deepEqual(reviewedMapEvents([event, withChanges({lon: 10, additional_source_urls: extra})]), []);
+  const [malformed] = reviewedMapEvents([withChanges({additional_source_urls: extra[0]})]);
+  assert.deepEqual(malformed.additional_source_urls, []);
+});
