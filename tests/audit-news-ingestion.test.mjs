@@ -1069,3 +1069,41 @@ test('publication chronology review tolerates 24 hours and requires actual disco
   assert.equal(x.inbox.omitted_publication_after_discovery_item_ids,0);
   assert.ok(!JSON.stringify(x).includes('SECRET'));
 });
+
+
+test('recent date-quality cohort uses inclusive window and separate unassigned counts',()=>{
+  const s=sample();
+  s.news_items.push(
+    {id:3,topic_id:2,published_at:null,discovered_at:'2026-11-22T02:20:00Z'},
+    {id:4,topic_id:2,published_at:null,discovered_at:'2026-11-22T02:19:59Z'},
+    {id:5,topic_id:2,published_at:null,discovered_at:'2026-11-23T02:20:01Z'},
+    {id:6,topic_id:null,published_at:null,discovered_at:s.as_of},
+    {id:7,topic_id:2,published_at:null,discovered_at:null});
+  s.expected_counts.news_items=s.news_items.length;
+  const n=auditNewsIngestion(s).news;
+  assert.equal(n.discovered_last_24h,4);
+  assert.equal(n.undated_discovered_last_24h,3);
+  assert.equal(n.recent_without_topic,1);
+  assert.equal(n.recent_undated_without_topic,1);
+  assert.deepEqual(n.recent_publication_date_by_topic,[
+    {topic_id:1,recent_count:2,undated_count:1},
+    {topic_id:2,recent_count:1,undated_count:1}
+  ]);
+});
+
+test('recent topic cohort caps output deterministically without dropping global counts',()=>{
+  const s=sample();
+  s.news_topics=Array.from({length:12},(_,i)=>({id:i+1,active:true,title:'SECRET TOPIC'}));
+  s.news_items=Array.from({length:12},(_,i)=>({
+    id:i+1,topic_id:i+1,published_at:null,discovered_at:s.as_of
+  })).reverse();
+  s.expected_counts.news_topics=12;
+  s.expected_counts.news_items=12;
+  const n=auditNewsIngestion(s).news;
+  assert.equal(n.undated_discovered_last_24h,12);
+  assert.equal(n.omitted_recent_publication_date_topics,2);
+  assert.deepEqual(n.recent_publication_date_by_topic.map(x=>x.topic_id),[1,2,3,4,5,6,7,8,9,10]);
+  s.news_items.reverse();
+  assert.deepEqual(auditNewsIngestion(s).news.recent_publication_date_by_topic,n.recent_publication_date_by_topic);
+  assert.ok(!JSON.stringify(n).includes('SECRET'));
+});
