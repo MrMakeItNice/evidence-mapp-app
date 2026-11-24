@@ -1183,3 +1183,24 @@ test('visible inspection labels distinguish case and whitespace variants only fo
   assert.equal(buttons[1].getAttribute('aria-expanded'), 'true');
   assert.equal(buttons[0].getAttribute('aria-expanded'), 'false');
 });
+
+
+test('focused provenance region announces the current canonical event and offers a heading', () => {
+  const detail = element('div');
+  const labelsAtFocus = [];
+  detail.focus = () => labelsAtFocus.push(detail.getAttribute('aria-label'));
+  const second = withChanges({id: 'archive-02', title: event.title});
+  const [firstRecord, secondRecord] = reviewedMapEvents([event, second]);
+  for (const record of [firstRecord, secondRecord]) {
+    inspectReviewedMapSource(document, detail, record);
+    assert.equal(detail.children[0].textContent, event.title);
+    assert.equal(detail.children[0].getAttribute('role'), 'heading');
+    assert.equal(detail.children[0].getAttribute('aria-level'), '3');
+    assert.equal(detail.children[2].href, event.source_url);
+    assert.equal(detail.children[4].href, event.location_source_url);
+  }
+  assert.deepEqual(labelsAtFocus, [
+    'Selected map event source and location evidence: ' + event.title + ' (Event ID: archive-01)',
+    'Selected map event source and location evidence: ' + event.title + ' (Event ID: archive-02)'
+  ]);
+});
