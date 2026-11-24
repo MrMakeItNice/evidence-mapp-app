@@ -40,6 +40,17 @@ function collectCorrection(event, sourceUrl, destination) {
   }
 }
 
+// A source may date a report, approval or disclosure rather than the underlying
+// physical activity. Retain the editorial date basis under its own citation;
+// the note is context only, never a substitute for a valid event date or location.
+function collectDateBasis(event, sourceUrl, destination) {
+  if (typeof event.date_basis !== 'string') return;
+  const note = event.date_basis.trim();
+  if (note && !destination.some(item => item.note === note && item.source_url === sourceUrl)) {
+    destination.push({note, source_url: sourceUrl});
+  }
+}
+
 export function reviewedMapEvents(events, asOfMs = Date.now()) {
   if (!Array.isArray(events)) return [];
   // A verified *occurrence* cannot be dated beyond the current calendar day
@@ -84,16 +95,19 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
       collectIndexedUrls(event.additional_source_urls, previous.additional_source_urls);
       collectIndexedUrls(event.counterevidence_urls, previous.counterevidence_urls);
       collectCorrection(event, url.href, previous.correction_notes);
+      collectDateBasis(event, url.href, previous.date_basis_notes);
       continue;
     }
     const alternateSources = [];
     const additionalSourceUrls = [];
     const counterevidenceUrls = [];
     const correctionNotes = [];
+    const dateBasisNotes = [];
+    collectDateBasis(event, url.href, dateBasisNotes);
     collectCorrection(event, url.href, correctionNotes);
     collectIndexedUrls(event.additional_source_urls, additionalSourceUrls);
     collectIndexedUrls(event.counterevidence_urls, counterevidenceUrls);
-    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, lat: event.lat, lon: event.lon, event_date: event.event_date,
+    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes, lat: event.lat, lon: event.lon, event_date: event.event_date,
       category: event.category, location_role: event.location_role, location_note: event.location_note.trim(),
       location_source_url: locationUrl.href});
     // URL fragments may point to different pages of the *same* document.
@@ -103,7 +117,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname, alternate_sources: alternateSources,
-      additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes,
+      additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, date_basis_notes: dateBasisNotes,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
       location_cites_same_document: locationCitesSameDocument,
       location_role: event.location_role, location_role_label: LOCATION_ROLES.get(event.location_role),
@@ -132,7 +146,11 @@ export function showReviewedMapSource(doc, panel, event) {
   const context = doc.createElement('p');
   context.textContent = 'Event ID: ' + event.id + ' · ' + event.category + ' · Event: ' + event.event_date +
     ' · Source host: ' + event.source_host +
-    '. This is an editorially reviewed event record; a link does not independently verify its claims.';
+    '. This is an editorially reviewed event record; a link does not independently verify its claims.' +
+    (event.date_basis_notes?.length ?
+      ' Indexed date basis (not necessarily the date of the underlying activity): ' +
+        event.date_basis_notes.map(item => item.note + ' — Citation: ' + item.source_url).join('; ') :
+      ' No separate date-basis note is indexed; consult the source before inferring when underlying activities occurred.');
   const link = doc.createElement('a');
   link.href = event.source_url;
   link.target = '_blank';
@@ -281,6 +299,7 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
       (event.alternate_sources.length ? ' · ' + event.alternate_sources.length + ' additional indexed event citation(s); independence not established' : '') +
       (event.additional_source_urls.length ? ' · ' + event.additional_source_urls.length + ' supplemental indexed link(s); individual review not established' : '') +
       (event.counterevidence_urls.length ? ' · ' + event.counterevidence_urls.length + ' indexed counterevidence link(s); individual review not established' : '') +
+      (event.date_basis_notes.length ? ' · ' + event.date_basis_notes.length + ' indexed date-basis note(s); inspect before inferring activity dates' : '') +
       (event.correction_notes.length ? ' · ' + event.correction_notes.length + ' indexed editorial correction note(s); inspect before relying on summary' : '');
     button.setAttribute('aria-describedby', context.id);
     item.append(button, context);
