@@ -888,3 +888,31 @@ test('window blur cancels card and background gestures, releases capture and per
   windowListeners.blur();
   assert.equal(document.activeElement, focused, 'idle blur cleanup does not move page focus');
 });
+
+
+test('empty published index replaces loading heading without fabricating cards or enabling save', async () => {
+  const { get, stored } = await createBoard([], []);
+  assert.equal(get('heading').textContent, 'No published cases available');
+  assert.match(get('status').textContent, /No sample evidence has been substituted/);
+  assert.equal(get('cards').children.length, 0);
+  assert.equal(get('wires').children.length, 0);
+  assert.equal(get('save').disabled, true);
+  assert.equal(stored.size, 0);
+});
+
+test('case-only inspector explains that an indexed-citation gap is not corroboration or proof of absence', async () => {
+  const published = [{ id: '1', title: 'Case without citations' }, { id: '2', title: 'Case with citation' }];
+  const references = [{ case_id: '2', title: 'Archive record', url: 'https://records.example.org/archive?id=2' }];
+  const { get, getOpened } = await createBoard(published, references);
+  const notice = () => get('details').children.find(n => n.className === 'smallnote empty-citations');
+  assert.equal(notice(), undefined, 'the initially selected case has a citation');
+  get('cases').children[0].listeners.click();
+  assert.equal(get('cards').children.length, 1);
+  assert.equal(get('wires').children.length, 0);
+  assert.match(notice().textContent, /case card alone is not corroborating evidence/);
+  assert.match(notice().textContent, /does not establish that no evidence exists/);
+  get('cases').children[1].listeners.click();
+  assert.equal(notice(), undefined, 'the prior case notice must not persist');
+  assert.equal(get('cards').children.length, 2);
+  assert.equal(getOpened(), 0);
+});
