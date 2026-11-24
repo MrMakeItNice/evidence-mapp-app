@@ -92,11 +92,13 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
 });
 
 async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout, clipboard) {
-  const elements = new Map(), stored = new Map();
+  const elements = new Map(), stored = new Map(), windowListeners = {};
   if (savedLayout !== undefined) stored.set('atlas-evidence-board-layout-v2-1', savedLayout);
   const make = tag => ({
     tag, children: [], style: {}, attributes: {}, dataset: {}, listeners: {}, textContent: '', className: '',
-    focus() { document.activeElement = this; }, blur() { if (document.activeElement === this) document.activeElement = undefined; }, setPointerCapture() {},
+    focus() { document.activeElement = this; }, blur() { if (document.activeElement === this) document.activeElement = undefined; },
+    captures: new Set(), setPointerCapture(id) { this.captures.add(id); }, hasPointerCapture(id) { return this.captures.has(id); },
+    releasePointerCapture(id) { this.captures.delete(id); this.listeners.lostpointercapture?.({ pointerId: id }); },
     append(...items) { this.children.push(...items); },
     replaceChildren(...items) { this.children = items; },
     setAttribute(name, value) { this.attributes[name] = value; },
@@ -119,12 +121,12 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
   vm.runInNewContext(html.match(/<script>([\s\S]*?)<\/script>/)[1], {
     document, URL, encodeURIComponent, navigator: { clipboard },
     localStorage: { getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value) },
-    window: { open() { opened++; } },
+    window: { open() { opened++; }, addEventListener(type, handler) { windowListeners[type] = handler; } },
     fetch: async url => ({ ok: !failedRequest, json: async () => url.includes('paper-trails-data')
       ? { references: references ?? [citation] } : publishedCases })
   });
   await new Promise(resolve => setImmediate(resolve));
-  return { get, stored, document, citation, getOpened: () => opened };
+  return { get, stored, document, citation, windowListeners, getOpened: () => opened };
 }
 
 test('rendered source inspector moves its selected card through native buttons and saves the resulting layout', async () => {
@@ -852,4 +854,37 @@ test('source inspector shows the full validated indexed URL before copying or op
   cards[0].listeners.keydown({ key: 'Enter', preventDefault() {} });
   assert.equal(urls().length, 0, 'switching back clears the previous destination');
   assert.equal(getOpened(), 0, 'preview never opens a source automatically');
+});
+
+
+test('window blur cancels card and background gestures, releases capture and permits fresh navigation', async () => {
+  const { get, document, windowListeners } = await createBoard();
+  assert.equal(typeof windowListeners.blur, 'function');
+  const card = get('cards').children[1], view = get('viewport'), world = get('world');
+  const left = card.style.left;
+  card.listeners.pointerdown(pointer(81));
+  assert.equal(card.hasPointerCapture(81), true);
+  windowListeners.blur();
+  assert.equal(card.hasPointerCapture(81), false);
+  card.listeners.pointermove(pointer(81, { clientX: 80 }));
+  card.listeners.pointerup(pointer(81));
+  assert.equal(card.style.left, left);
+  assert.equal(card.attributes['aria-pressed'], 'false', 'late release must not inspect a cancelled card');
+  view.listeners.pointerdown(pointer(82));
+  const transform = world.style.transform;
+  windowListeners.blur();
+  assert.equal(view.hasPointerCapture(82), false);
+  view.listeners.pointermove(pointer(82, { clientX: 80 }));
+  view.listeners.pointerup(pointer(82));
+  assert.equal(world.style.transform, transform);
+  view.focus();
+  let prevented = 0;
+  view.listeners.keydown({ key: 'ArrowRight', target: view, preventDefault() { prevented++; } });
+  assert.equal(prevented, 1, 'stale drag state must not block keyboard panning');
+  assert.notEqual(world.style.transform, transform);
+  card.listeners.pointerdown(pointer(83)); card.listeners.pointerup(pointer(83));
+  assert.equal(card.attributes['aria-pressed'], 'true', 'a fresh gesture works after cancellation');
+  const focused = document.activeElement;
+  windowListeners.blur();
+  assert.equal(document.activeElement, focused, 'idle blur cleanup does not move page focus');
 });
