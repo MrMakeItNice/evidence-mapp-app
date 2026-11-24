@@ -448,3 +448,19 @@ for (const [caseId, caseNumber, reference] of [[36,35,61],[37,36,63]]) {
   assert.ok(JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).references.some(r => String(r.case_id)===String(caseId) && String(r.source_id)==='258' && r.url==='https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf'));
 }
 console.log('PASS: OFTEN and CHICKWIT reuse the original hearing and preserve the unresolved sponsorship discrepancy.');
+
+
+ // The September follow-up is an indexed hearing, not a new case or resolved dispute.
+const septemberHearingUrl = "https://www.prisonlegalnews.org/news/publications/human-drug-testing-by-the-cia-1977-hearings-before-us-senate/";
+assert.ok(oftenChickwit[1].includes('Follow-up hearing — existing source #279:'));
+assert.ok(oftenChickwit[1].includes('href="'+septemberHearingUrl+'" target="_blank" rel="noopener noreferrer"'));
+assert.match(oftenChickwit[1], /September 21 testimony, printed pp\. 126–130/);
+assert.match(oftenChickwit[1], /machine-read text and a link to the original scan; the scan could not be visually checked here/);
+assert.match(oftenChickwit[1], /Verify the printed pages before relying on exact wording/);
+assert.match(oftenChickwit[1], /separate hearing from source #258/);
+assert.match(oftenChickwit[1], /generic research references #57, #60 and #62/);
+assert.match(oftenChickwit[1], /not three independent confirmations or evidence of a Blue Beam relationship/);
+for (const id of ['34','36','37']) {
+  assert.ok(JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).references.some(r => String(r.case_id)===id && String(r.source_id)==='279' && r.url===septemberHearingUrl));
+}
+console.log('PASS: September hearing follow-up uses indexed provenance and preserves scan-verification caveat.');
