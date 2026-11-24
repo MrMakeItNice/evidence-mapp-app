@@ -1049,3 +1049,23 @@ test('bounded inbox metadata review preserves four exact counts and sorted prefi
   assert.ok(!JSON.stringify(r).includes(url));
   assert.ok(!JSON.stringify(r).includes('Agency'));
 });
+
+
+test('publication chronology review tolerates 24 hours and requires actual discovery',()=>{
+  const s=sample();
+  const early='2026-11-20T00:00:00Z';
+  const boundary='2026-11-21T00:00:00Z';
+  const late='2026-11-21T00:00:01Z';
+  Object.assign(s.news_items[0],{discovered_at:early,published_at:boundary});
+  Object.assign(s.news_items[1],{discovered_at:early,published_at:late});
+  Object.assign(s.research_inbox[0],{discovered_at:null,added_at:early,published_at:late});
+  s.research_inbox.push({...s.research_inbox[0],id:11,discovered_at:early,published_at:late});
+  s.expected_counts.research_inbox=2;
+  const x=auditNewsIngestion(s);
+  assert.equal(x.news.publication_more_than_24h_after_discovery,1);
+  assert.deepEqual(x.news.publication_after_discovery_item_ids,[2]);
+  assert.equal(x.inbox.publication_more_than_24h_after_discovery,1);
+  assert.deepEqual(x.inbox.publication_after_discovery_item_ids,[11]);
+  assert.equal(x.inbox.omitted_publication_after_discovery_item_ids,0);
+  assert.ok(!JSON.stringify(x).includes('SECRET'));
+});
