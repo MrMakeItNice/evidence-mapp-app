@@ -681,3 +681,35 @@ test('pending citation copy cannot replace newly selected record feedback or run
   assert.equal(get('details').children[0].textContent, 'Published case');
   assert.ok(!get('details').children.some(n => n.className === 'copy-citation' || n.attributes.role === 'status'));
 });
+
+
+test('Clear search restores cases and input focus without changing the inspected investigation', async () => {
+  assert.match(html, /<button id="clear-cases" type="button" disabled>Clear search<\/button>/);
+  const { get, document } = await createBoard([{ id: '1', title: 'Published case' }, { id: '2', title: 'Second investigation' }]);
+  const clear = get('clear-cases'), input = get('search');
+  assert.equal(clear.disabled, true);
+  get('cases').children[1].listeners.click();
+  const cards = get('cards').children, heading = get('heading').textContent;
+  input.value = 'no match'; input.listeners.input({ target: input });
+  assert.equal(clear.disabled, false); assert.equal(get('cases').children.length, 0);
+  clear.focus(); clear.listeners.click();
+  assert.equal(input.value, ''); assert.equal(document.activeElement, input);
+  assert.equal(clear.disabled, true); assert.equal(get('cases').children.length, 2);
+  assert.equal(get('cases').children[1].attributes['aria-pressed'], 'true');
+  assert.equal(get('cards').children, cards, 'clearing a filter must not rebuild the active board');
+  assert.equal(get('heading').textContent, heading);
+  assert.match(get('case-search-status').textContent, /2 of 2/);
+  input.value = '   '; input.listeners.input({ target: input });
+  assert.equal(clear.disabled, false, 'raw whitespace can still be cleared');
+  clear.listeners.click(); assert.equal(input.value, '');
+});
+
+test('Clear search does not turn a failed case load into an empty result', async () => {
+  const { get, document } = await createBoard(undefined, undefined, true);
+  const status = get('case-search-status').textContent;
+  const heading = get('heading').textContent;
+  get('clear-cases').listeners.click();
+  assert.equal(get('case-search-status').textContent, status);
+  assert.equal(get('heading').textContent, heading);
+  assert.equal(document.activeElement, undefined);
+});
