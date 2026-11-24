@@ -22,9 +22,9 @@ function safeSourceUrl(value) {
 
 // These optional links are indexed with the reviewed record, not separately vetted
 // evidence. They must never determine map eligibility or count as extra events.
-function collectAdditionalSourceUrls(record, destination) {
-  if (!Array.isArray(record.additional_source_urls)) return;
-  for (const value of record.additional_source_urls) {
+function collectIndexedUrls(values, destination) {
+  if (!Array.isArray(values)) return;
+  for (const value of values) {
     const url = safeSourceUrl(value);
     if (url && !destination.includes(url.href)) destination.push(url.href);
   }
@@ -71,13 +71,16 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
       if (url.href !== previous.source_url && !previous.alternate_sources.some(source => source.url === url.href)) {
         previous.alternate_sources.push({url: url.href, title: event.title.trim()});
       }
-      collectAdditionalSourceUrls(event, previous.additional_source_urls);
+      collectIndexedUrls(event.additional_source_urls, previous.additional_source_urls);
+      collectIndexedUrls(event.counterevidence_urls, previous.counterevidence_urls);
       continue;
     }
     const alternateSources = [];
     const additionalSourceUrls = [];
-    collectAdditionalSourceUrls(event, additionalSourceUrls);
-    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, lat: event.lat, lon: event.lon, event_date: event.event_date,
+    const counterevidenceUrls = [];
+    collectIndexedUrls(event.additional_source_urls, additionalSourceUrls);
+    collectIndexedUrls(event.counterevidence_urls, counterevidenceUrls);
+    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, lat: event.lat, lon: event.lon, event_date: event.event_date,
       category: event.category, location_role: event.location_role, location_note: event.location_note.trim(),
       location_source_url: locationUrl.href});
     // URL fragments may point to different pages of the *same* document.
@@ -87,7 +90,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname, alternate_sources: alternateSources,
-      additional_source_urls: additionalSourceUrls,
+      additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
       location_cites_same_document: locationCitesSameDocument,
       location_role: event.location_role, location_role_label: LOCATION_ROLES.get(event.location_role),
@@ -95,7 +98,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
   }
   return result.filter(event => !conflictingDetails.has(event.id)).map(event => {
     const displayed = new Set([event.source_url, event.location_source_url,
-      ...event.alternate_sources.map(source => source.url)]);
+      ...event.alternate_sources.map(source => source.url), ...event.counterevidence_urls]);
     return {...event, additional_source_urls: event.additional_source_urls.filter(url => !displayed.has(url))};
   });
 }
@@ -168,6 +171,22 @@ export function showReviewedMapSource(doc, panel, event) {
     }
     panel.append(note, sources);
   }
+  if (event.counterevidence_urls?.length) {
+    const note = doc.createElement('p');
+    note.textContent = 'Indexed counterevidence or competing interpretations: inspect these links before drawing conclusions. Individual review, independence and whether they contradict the event are not established. These links do not establish map placement.';
+    const sources = doc.createElement('ul');
+    for (const url of event.counterevidence_urls) {
+      const item = doc.createElement('li');
+      const anchor = doc.createElement('a');
+      anchor.href = url;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.textContent = 'Inspect indexed counterevidence (opens in new tab): ' + url;
+      item.append(anchor);
+      sources.append(item);
+    }
+    panel.append(note, sources);
+  }
 }
 
 
@@ -230,7 +249,8 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
         ' · Same document used for both citations; not independent corroboration' :
         ' · Distinct citation URL; independence not established') +
       (event.alternate_sources.length ? ' · ' + event.alternate_sources.length + ' additional indexed event citation(s); independence not established' : '') +
-      (event.additional_source_urls.length ? ' · ' + event.additional_source_urls.length + ' supplemental indexed link(s); individual review not established' : '');
+      (event.additional_source_urls.length ? ' · ' + event.additional_source_urls.length + ' supplemental indexed link(s); individual review not established' : '') +
+      (event.counterevidence_urls.length ? ' · ' + event.counterevidence_urls.length + ' indexed counterevidence link(s); individual review not established' : '');
     button.setAttribute('aria-describedby', context.id);
     item.append(button, context);
     list.append(item);
