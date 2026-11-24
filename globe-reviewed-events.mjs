@@ -30,6 +30,16 @@ function collectIndexedUrls(values, destination) {
   }
 }
 
+// Preserve editorial corrections with the citation they were indexed under.
+// These are record notes, not independently verified findings or location evidence.
+function collectCorrection(event, sourceUrl, destination) {
+  if (typeof event.correction_note !== 'string') return;
+  const note = event.correction_note.trim();
+  if (note && !destination.some(item => item.note === note && item.source_url === sourceUrl)) {
+    destination.push({note, source_url: sourceUrl});
+  }
+}
+
 export function reviewedMapEvents(events, asOfMs = Date.now()) {
   if (!Array.isArray(events)) return [];
   // A verified *occurrence* cannot be dated beyond the current calendar day
@@ -73,14 +83,17 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
       }
       collectIndexedUrls(event.additional_source_urls, previous.additional_source_urls);
       collectIndexedUrls(event.counterevidence_urls, previous.counterevidence_urls);
+      collectCorrection(event, url.href, previous.correction_notes);
       continue;
     }
     const alternateSources = [];
     const additionalSourceUrls = [];
     const counterevidenceUrls = [];
+    const correctionNotes = [];
+    collectCorrection(event, url.href, correctionNotes);
     collectIndexedUrls(event.additional_source_urls, additionalSourceUrls);
     collectIndexedUrls(event.counterevidence_urls, counterevidenceUrls);
-    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, lat: event.lat, lon: event.lon, event_date: event.event_date,
+    seen.set(id, {source_url: url.href, alternate_sources: alternateSources, additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes, lat: event.lat, lon: event.lon, event_date: event.event_date,
       category: event.category, location_role: event.location_role, location_note: event.location_note.trim(),
       location_source_url: locationUrl.href});
     // URL fragments may point to different pages of the *same* document.
@@ -90,7 +103,7 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
     result.push({id, title: event.title.trim(), category: event.category,
       event_date: event.event_date, lat: event.lat, lon: event.lon,
       source_url: url.href, source_host: url.hostname, alternate_sources: alternateSources,
-      additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls,
+      additional_source_urls: additionalSourceUrls, counterevidence_urls: counterevidenceUrls, correction_notes: correctionNotes,
       location_source_url: locationUrl.href, location_source_host: locationUrl.hostname,
       location_cites_same_document: locationCitesSameDocument,
       location_role: event.location_role, location_role_label: LOCATION_ROLES.get(event.location_role),
@@ -187,6 +200,17 @@ export function showReviewedMapSource(doc, panel, event) {
     }
     panel.append(note, sources);
   }
+  if (event.correction_notes?.length) {
+    const note = doc.createElement('p');
+    note.textContent = 'Indexed editorial correction notes: read these before relying on the event summary. They are not independent findings and do not establish map placement.';
+    const corrections = doc.createElement('ul');
+    for (const correction of event.correction_notes) {
+      const item = doc.createElement('li');
+      item.textContent = correction.note + ' — Indexed under event citation: ' + correction.source_url;
+      corrections.append(item);
+    }
+    panel.append(note, corrections);
+  }
 }
 
 
@@ -250,7 +274,8 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
         ' · Distinct citation URL; independence not established') +
       (event.alternate_sources.length ? ' · ' + event.alternate_sources.length + ' additional indexed event citation(s); independence not established' : '') +
       (event.additional_source_urls.length ? ' · ' + event.additional_source_urls.length + ' supplemental indexed link(s); individual review not established' : '') +
-      (event.counterevidence_urls.length ? ' · ' + event.counterevidence_urls.length + ' indexed counterevidence link(s); individual review not established' : '');
+      (event.counterevidence_urls.length ? ' · ' + event.counterevidence_urls.length + ' indexed counterevidence link(s); individual review not established' : '') +
+      (event.correction_notes.length ? ' · ' + event.correction_notes.length + ' indexed editorial correction note(s); inspect before relying on summary' : '');
     button.setAttribute('aria-describedby', context.id);
     item.append(button, context);
     list.append(item);
