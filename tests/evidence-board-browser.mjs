@@ -162,6 +162,25 @@ try {
   }
   console.log('PASS: native source inspector preserves distinct page URLs and rejects duplicate, credential-bearing, unsafe and unrelated citation fixtures.');
 
+  // Warn before the alternate pointer path opens a separate browsing context.
+  assert.match(await page.locator('#card-instructions').innerText(), /Double-click a citation to open its indexed URL in a new tab/);
+  const warningIds = (await citation.getAttribute('aria-describedby')).split(/\s+/);
+  assert.ok(warningIds.includes('card-instructions'));
+  const boardUrlBeforePopup = page.url();
+  await page.context().route('https://records.example/**', route => route.fulfill({ contentType: 'text/html', body: '<title>Fixture indexed document</title>' }));
+  await page.getByRole('button', { name: 'Fit all cards', exact: true }).click();
+  const popupOpened = page.waitForEvent('popup');
+  await citation.dblclick();
+  const sourcePopup = await popupOpened;
+  await sourcePopup.waitForLoadState('domcontentloaded');
+  assert.equal(sourcePopup.url(), references[0].url);
+  assert.equal(page.url(), boardUrlBeforePopup);
+  await sourcePopup.close();
+  assert.equal(await citation.getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('#details h2').textContent(), references[0].title);
+  console.log('PASS: persistent card guidance warns of a new tab; double-click opens the exact indexed fixture URL and retains the board.');
+
+
 
   // Narrow the pane while native keyboard focus remains on the citation.
   await page.setViewportSize({ width: 1280, height: 800 });
