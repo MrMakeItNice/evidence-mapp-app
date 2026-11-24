@@ -517,3 +517,13 @@ for (const doc of ['359','360']) {
   assert.ok(northwoodsScope[1].includes('href="https://history.state.gov/historicaldocuments/frus1961-63v10/d'+doc+'" target="_blank" rel="noopener noreferrer"'));
 }
 console.log('PASS: Mongoose Phase I reports distinguish authorization, activity and contingency planning without double-counting evidence.');
+
+
+// Phase II framework authorization does not approve every proposed operation.
+for (const phrase of ["August 17, 1962 Taylor memorandum","August 20, 1962","requiring approval of specific action schedules","separately requests approval to proceed with Phase II","Contradicted interpretation:","conflicts with document 380","does not establish that all covert activity was prohibited","Neither framework approval nor a later request establishes execution of Northwoods or a Blue Beam relationship","not independently inspected original scans or new library entries"]) {
+  assert.ok(northwoodsScope[1].includes(phrase), 'Missing Phase II evidence safeguard: '+phrase);
+}
+for (const doc of ['380','423']) {
+  assert.ok(northwoodsScope[1].includes('href="https://history.state.gov/historicaldocuments/frus1961-63v10/d'+doc+'" target="_blank" rel="noopener noreferrer"'));
+}
+console.log('PASS: Phase II framework approval and later requests remain distinct from execution and Blue Beam hypotheses.');
