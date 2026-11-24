@@ -91,7 +91,7 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
 
-async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout, clipboard, request, clock) {
+async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout, clipboard, request, clock, navigation = {}) {
   const elements = new Map(), stored = new Map(), windowListeners = {};
   if (savedLayout !== undefined) stored.set('atlas-evidence-board-layout-v2-1', savedLayout);
   const make = tag => ({
@@ -118,15 +118,17 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
   };
   const citation = { case_id: '1', title: 'Original document', url: 'https://records.example.org/archive?id=1' };
   let opened = 0;
+  const location = { hash: navigation.hash || '' }, historyCalls = [];
+  const history = Object.fromEntries(['pushState','replaceState'].map(method => [method, (_, __, hash) => { historyCalls.push({ method, hash }); location.hash = hash; }]));
   vm.runInNewContext(html.match(/<script>([\s\S]*?)<\/script>/)[1], {
     document, URL, encodeURIComponent, AbortController, setTimeout, clearTimeout, ...clock, navigator: { clipboard },
     localStorage: { getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value) },
-    window: { open() { opened++; }, addEventListener(type, handler) { windowListeners[type] = handler; } },
+    window: { location, history, open() { opened++; }, addEventListener(type, handler) { windowListeners[type] = handler; } },
     fetch: request || (async url => ({ ok: !failedRequest, json: async () => url.includes('paper-trails-data')
       ? { references: references ?? [citation] } : publishedCases }))
   });
   await new Promise(resolve => setImmediate(resolve));
-  return { get, stored, document, citation, windowListeners, getOpened: () => opened };
+  return { get, stored, document, citation, windowListeners, location, historyCalls, getOpened: () => opened };
 }
 
 test('rendered source inspector moves its selected card through native buttons and saves the resulting layout', async () => {
@@ -1043,5 +1045,45 @@ test('settled record requests clean up their deadline on success and failure', a
     const clock = { setTimeout() { return 9; }, clearTimeout(id) { assert.equal(id, 9); cleared++; } };
     await createBoard(undefined, undefined, failed, undefined, undefined, undefined, clock);
     assert.equal(cleared, 1);
+  }
+});
+
+test('published case deep links open the requested investigation and preserve focus', async () => {
+  const records = [{ id: '1', title: 'Default case' }, { id: '2/3', title: 'Linked case' }];
+  const f = await createBoard(records, undefined, false, undefined, undefined, undefined, undefined, { hash: '#case=2%2F3' });
+  assert.equal(f.get('heading').textContent, 'Linked case');
+  assert.equal(f.get('cases').children[1].attributes['aria-pressed'], 'true');
+  assert.equal(f.get('case-link-status').textContent, '');
+  assert.equal(f.document.activeElement, undefined);
+  assert.deepEqual(f.historyCalls, []);
+});
+
+test('case selection creates shareable history; hash traversal preserves non-case navigation', async () => {
+  const f = await createBoard([{ id: '1', title: 'Default case' }, { id: '2', title: 'Second case' }]);
+  assert.deepEqual(f.historyCalls, [{ method: 'replaceState', hash: '#case=1' }]);
+  const second = f.get('cases').children[1]; second.focus(); second.listeners.click();
+  assert.equal(f.get('heading').textContent, 'Second case');
+  assert.equal(f.location.hash, '#case=2');
+  assert.equal(f.historyCalls[1].method, 'pushState');
+  assert.equal(f.document.activeElement, second);
+  const card = f.get('cards').children[0];
+  f.location.hash = '#board-controls'; f.windowListeners.hashchange();
+  assert.equal(f.get('cards').children[0], card);
+  f.location.hash = '#case=1'; f.windowListeners.hashchange();
+  assert.equal(f.get('heading').textContent, 'Default case');
+  assert.equal(f.historyCalls.length, 2, 'history traversal must not push another entry');
+  assert.equal(f.stored.size, 0);
+});
+
+test('unavailable and malformed case links explicitly identify the fallback without rewriting history', async () => {
+  for (const hash of ['#case=999', '#case=%ZZ']) {
+    const f = await createBoard(undefined, undefined, false, undefined, undefined, undefined, undefined, { hash });
+    assert.equal(f.get('heading').textContent, 'Published case');
+    assert.match(f.get('case-link-status').textContent, /unavailable.*Showing Published case instead/);
+    assert.equal(f.location.hash, hash);
+    assert.deepEqual(f.historyCalls, []);
+    f.get('cases').children[0].listeners.click();
+    assert.equal(f.get('case-link-status').textContent, '');
+    assert.equal(f.location.hash, '#case=1');
   }
 });
