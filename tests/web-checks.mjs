@@ -287,6 +287,7 @@ assert.deepEqual(sourceJumpLinks.map(link => link[1]), [
   'source-scope-comparison',
   'artichoke-1952-counterevidence',
   'northwoods-mongoose-scope',
+  'mongoose-approval-markers',
   'bluebird-bluebeam-assessment'
 ]);
 assert.ok(sourceJumpLinks.every(link => link[2].length >= 16), 'Source jumps need descriptive names');
@@ -534,3 +535,15 @@ for (const phrase of ['National Archives record 176-10011-10055','PDF viewer pp.
 }
 assert.ok(northwoodsScope[1].includes('href="https://www.archives.gov/files/research/jfk/releases/2018/176-10011-10055.pdf#page=2" target="_blank" rel="noopener noreferrer"'));
 console.log('PASS: July 25 Mongoose scan and FRUS transcription share document identity; explicit counterevidence is scoped.');
+
+// The document's approval notation is scoped to this plan; not proof of execution.
+const mongooseApprovalMarkers = bluebirdPage.match(/<p class="note" id="mongoose-approval-markers" tabindex="-1">([\s\S]*?)<\/p>/);
+assert.ok(mongooseApprovalMarkers);
+for (const phrase of ['March 13, 1962','asterisks identify activities already approved','further planning awaits policy decisions','note 2 dates the marked approvals to March 5, 1962','not a visually verified original scan','not proof of execution or a universal rule for other documents','does not establish its approval or execution','candidate source','No Project Blue Beam connection is demonstrated','No new case, source record or public graph edge is created']) {
+  assert.ok(mongooseApprovalMarkers[1].includes(phrase), 'Missing approval scope: '+phrase);
+}
+for (const href of ['https://history.state.gov/historicaldocuments/frus1961-63v10-12mSupp/d280','./paper-trails.html#case-22','./connection-explorer.html#case=22','#northwoods-mongoose-scope']) {
+  assert.ok(mongooseApprovalMarkers[1].includes('href="'+href+'"'));
+}
+assert.ok(mongooseApprovalMarkers[1].includes('target="_blank" rel="noopener noreferrer"'));
+console.log('PASS: Mongoose plan approval notation has a scoped source and canonical navigation.');
