@@ -547,3 +547,12 @@ for (const href of ['https://history.state.gov/historicaldocuments/frus1961-63v1
 }
 assert.ok(mongooseApprovalMarkers[1].includes('target="_blank" rel="noopener noreferrer"'));
 console.log('PASS: Mongoose plan approval notation has a scoped source and canonical navigation.');
+
+// The original BLUEBIRD proposal distinguishes approval from execution and preserves canonical navigation.
+const bluebird1950Approval = bluebirdPage.match(/<p id="bluebird-1950-approval-scope">([\s\S]*?)<\/p>/);
+assert.ok(bluebird1950Approval);
+assert.equal((bluebirdPage.match(/id="bluebird-1950-approval-scope"/g)||[]).length,1);
+for (const phrase of ["CIA-RDP83-01042R000800010003-1","approved for release 2004/01/29","April 5, 1950 memorandum requests project approval","April 20, 1950 records authorization of $65,515","requires approval for specific projects rather than blanket geographic assignments","not proof that its safeguards were followed","Funding approval is not proof of execution or efficacy","PDF pp. 1–3 were visually reviewed","one underlying memorandum","canonical Case #2 (record ID 3)","not independent confirmations or new library records","No Project Blue Beam connection is established"]) assert.ok(bluebird1950Approval[1].includes(phrase), 'Missing BLUEBIRD scope: '+phrase);
+for (const href of ["https://nsarchive.gwu.edu/sites/default/files/documents/1950-04-05%20JM%20Box%209%20F5%20Replacement%20CIA%20FOIA-ocr.pdf#page=1","https://nsarchive.gwu.edu/sites/default/files/documents/1950-04-05%20JM%20Box%209%20F5%20Replacement%20CIA%20FOIA-ocr.pdf#page=3","#senate-1977-source-note"]) assert.ok(bluebird1950Approval[1].includes('href="'+href+'"'));
+assert.equal((bluebird1950Approval[1].match(/target="_blank" rel="noopener noreferrer"/g)||[]).length,2);
+console.log('PASS: original BLUEBIRD approval record retains scope, provenance and no inferred Blue Beam edge.');
