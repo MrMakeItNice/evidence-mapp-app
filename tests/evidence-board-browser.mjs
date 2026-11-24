@@ -50,6 +50,26 @@ try {
   await page.keyboard.press('Tab');
   await page.waitForFunction(() => document.activeElement.id === 'search');
   console.log('PASS: second skip link reaches the case-search heading and native Tab enters the search input.');
+
+  const caseSearch = page.getByRole('search', { name: 'Published cases', exact: true });
+  assert.equal(await caseSearch.count(), 1, 'case search exposes a named landmark');
+  const searchbox = caseSearch.getByRole('searchbox', { name: 'Search published cases', exact: true });
+  assert.equal(await searchbox.count(), 1);
+  assert.equal(await caseSearch.locator('#case-search-status').count(), 1);
+  const searchUrl = page.url();
+  const initialCards = await page.locator('.tile').allTextContents();
+  await searchbox.fill('No matching investigation');
+  assert.equal(await caseSearch.locator('#cases button').count(), 0);
+  await searchbox.press('Enter');
+  assert.equal(page.url(), searchUrl, 'Enter must not submit or navigate away');
+  assert.deepEqual(await page.locator('.tile').allTextContents(), initialCards, 'filtering preserves the open board');
+  await caseSearch.getByRole('button', { name: 'Clear search', exact: true }).click();
+  assert.equal(await searchbox.inputValue(), '');
+  assert.equal(await searchbox.evaluate(el => el === document.activeElement), true);
+  assert.equal(await caseSearch.locator('#cases button').count(), cases.length);
+  assert.deepEqual(await page.locator('.tile').allTextContents(), initialCards);
+  console.log('PASS: named case-search landmark contains controls, status and results; filtering, Enter and Clear preserve the open board.');
+
   await page.goto('about:blank'); // Force a new document, rather than same-page fragment navigation.
   await page.goto('https://board.example/evidence-board.html#case=1');
   await page.waitForFunction(() => !document.getElementById('save').disabled);
