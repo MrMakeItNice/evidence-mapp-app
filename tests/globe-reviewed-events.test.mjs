@@ -1243,3 +1243,9 @@ test('location-document reuse is disclosed even when it is indexed as an alterna
     'different document query parameters must not be treated as the same document');
   assert.equal(reviewedMapEvents([primary, {...alternate, review_status: 'pending'}])[0].location_cites_alternate_document, false);
 });
+
+
+test('compact globe status explicitly announces complete selection context', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="geo-panel" role="status" aria-atomic="true"/);
+});
