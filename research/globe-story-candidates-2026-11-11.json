@@ -103,17 +103,35 @@
     },
     {
       "id": "us-covid-phe-ended-2023",
-      "title": "U.S. federal COVID-19 public-health emergency declaration ends",
+      "title": "U.S. HHS COVID-19 public health emergency under Section 319 expires",
       "topic": "covid-19",
       "category": "neutral",
       "event_date": "2023-05-11",
-      "date_basis": "Federal public-health emergency end date",
-      "lat": 38.8951,
-      "lon": -77.0364,
-      "location_basis": "Washington DC federal policy location",
+      "date_basis": "May 11, 2023 expiration of the Section 319 Public Health Service Act emergency; CDC MMWR early release May 5 and issue date May 12; archived CDC guidance updated September 12, 2023 confirms the end date.",
+      "lat": null,
+      "lon": null,
+      "location_basis": "Nationwide U.S. policy scope, not a point occurrence or documented Washington, D.C. event venue.",
       "source_url": "https://archive.cdc.gov/www_cdc_gov/coronavirus/2019-ncov/your-health/end-of-phe.html",
       "review_status": "pending_editorial_review",
-      "classification_rationale": "Administrative transition, with both benefits and changes to data reporting."
+      "classification_rationale": "Provisional neutral administrative transition. Changes to surveillance authorities and reporting are documented; no net health or social impact is assigned.",
+      "additional_source_urls": [
+        "https://www.cdc.gov/mmwr/volumes/72/wr/mm7219e1.htm",
+        "https://www.cdc.gov/mmwr/volumes/72/wr/pdfs/mm7219e1-h.pdf"
+      ],
+      "source_record_id": "CDC archived End of the Federal COVID-19 PHE Declaration (updated September 12, 2023); Silk et al., MMWR 72(19):523–528, DOI 10.15585/mmwr.mm7219e1; pp. 523–524 (PDF pp. 1–2, including Table 1). HTML and PDF are versions of the same report.",
+      "location_role": "national_policy_scope_only",
+      "location_name": "United States",
+      "location_source_url": "https://www.cdc.gov/mmwr/volumes/72/wr/mm7219e1.htm",
+      "location_note": "The report identifies the United States as the scope of the declaration and surveillance transition, not a specific geographic point. The previously staged Washington, D.C. coordinates lack traceable event-location provenance and have been removed.",
+      "source_reviewed_on": "2026-11-23",
+      "source_limitation": "CDC sources document the expiration and reporting changes, not independent confirmation of all downstream effects. MMWR describes planned changes; Table 1 distinguishes continued and discontinued reporting. Do not infer that all surveillance ended or that COVID-19 ceased to exist.",
+      "distinction_note": "Do not conflate the HHS Section 319 expiration with the separate April 10, 2023 termination of the presidential national emergency under the National Emergencies Act (Public Law 118-3, 137 Stat. 6), or WHO's May 5 international PHEIC determination. Distinct authorities and dates do not establish causation.",
+      "context_source_urls": [
+        "https://www.govinfo.gov/content/pkg/PLAW-118publ3/html/PLAW-118publ3.htm",
+        "https://www.govinfo.gov/content/pkg/PLAW-118publ3/pdf/PLAW-118publ3.pdf#page=1"
+      ],
+      "duplicate_review_note": "Read-only source lookup by selected CDC URLs, MMWR identifier, public health emergency title and Public Law URL returned no matching rows; published Paper Trails reference scan found no relevant emergency source. This is a limited duplicate screen, not exhaustive. Reuse existing candidate ID and deduplicate equivalent URLs and document versions before any future import; no new case or source record created.",
+      "map_review_requirement": "Withhold all pins and geographic event counts. Retain only for editorial review and eventual non-geographic topic discovery after approval. A nationwide policy scope is not a capital-city event location."
     }
   ]
 }
