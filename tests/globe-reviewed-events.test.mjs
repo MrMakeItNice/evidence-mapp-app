@@ -395,6 +395,18 @@ test('Escape closes the current reviewed-source preview and returns focus to its
   assert.equal(detail.hidden, false, 'ordinary keyboard navigation does not dismiss the panel');
   assert.equal(prevented, false);
 
+  for (const flag of ['altKey', 'ctrlKey', 'metaKey', 'shiftKey', 'defaultPrevented', 'isComposing']) {
+    const currentHandler = detail.onkeydown;
+    const currentChildren = detail.children;
+    detail.onkeydown({key: 'Escape', [flag]: true, preventDefault() { prevented = true; }});
+    assert.equal(prevented, false, flag + ' must not consume the key');
+    assert.equal(detail.hidden, false, flag + ' must not dismiss the panel');
+    assert.equal(detail.onkeydown, currentHandler);
+    assert.equal(detail.children, currentChildren);
+    assert.equal(second.getAttribute('aria-expanded'), 'true');
+    assert.equal(second.focused, undefined, 'ignored key must not move focus');
+  }
+
   detail.onkeydown({key: 'Escape', preventDefault() { prevented = true; }});
   assert.equal(prevented, true);
   assert.equal(detail.hidden, true);
