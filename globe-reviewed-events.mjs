@@ -76,6 +76,15 @@ export function reviewedMapEvents(events, asOfMs = Date.now()) {
   return result.filter(event => !conflictingDetails.has(event.id));
 }
 
+/** Explain map eligibility separately from global Pulse coverage. */
+export function reviewedMapAvailability(feedAvailable, candidateCount, mapCount) {
+  if (!feedAvailable) return 'Reviewed map feed unavailable. Source-backed locations cannot be assessed.';
+  if (candidateCount === 0) return 'The curated feed contains no event records yet. This is not a count of events worldwide.';
+  if (mapCount === 0) return 'No event in this feed qualifies for a reviewed map point. Events may lack reviewed geographic evidence or have conflicting records; this does not mean no events occurred.';
+  return mapCount + (mapCount === 1 ? ' reviewed map event is' : ' reviewed map events are') +
+    ' available to inspect. Other feed records may not qualify for mapping; this is not global coverage.';
+}
+
 export function showReviewedMapSource(doc, panel, event) {
   panel.replaceChildren();
   const heading = doc.createElement('strong');
