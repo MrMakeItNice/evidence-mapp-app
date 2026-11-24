@@ -910,3 +910,44 @@ test('classifies Google News proxy by exact validated hostname, not label or sub
   assert.ok(!JSON.stringify(a).includes('news.google.com'));
   assert.ok(!JSON.stringify(a).includes('agency.gov'));
 });
+
+
+test('watch freshness separates missing, old, future and recent active timestamps',()=>{
+  const s=sample();
+  const rows=[
+    {id:9,active:true,value:'2026-11-23T02:20:01Z'},
+    {id:4,active:true,value:'2026-11-22T02:20:00Z'},
+    {id:3,active:true,value:'2026-11-22T02:19:59Z'},
+    {id:2,active:true,value:null},
+    {id:1,active:true,value:'2026-11-23T02:20:00Z'},
+    {id:5,active:false,value:null},
+    {id:7,active:true,value:'2026-11-23T02:21:00Z'}
+  ];
+  for(const [collection,field] of [
+    ['research_watch_topics','last_checked_at'],['news_watch_topics','last_collected_at']
+  ]) {
+    s[collection]=rows.map(({id,active,value})=>({id,active,[field]:value,name:'SECRET WATCH'}));
+    s.expected_counts[collection]=rows.length;
+  }
+  const w=auditNewsIngestion(s).watches;
+  for(const kind of ['research','news']) {
+    const f=w[kind+'_timestamp_freshness'];
+    assert.deepEqual(f.missing,{count:1,ids:[2],omitted_ids:0});
+    assert.deepEqual(f.old,{count:1,ids:[3],omitted_ids:0});
+    assert.deepEqual(f.future,{count:2,ids:[7,9],omitted_ids:0});
+    assert.deepEqual(f.recent,{count:2,ids:[1,4],omitted_ids:0});
+    assert.equal(w['stale_'+kind+'_timestamp_fields'],2);
+  }
+  assert.ok(!JSON.stringify(w).includes('SECRET WATCH'));
+  assert.equal(w.collectors_without_success_in_24h,0);
+});
+
+test('watch freshness caps numeric IDs while retaining complete counts',()=>{
+  const s=sample();
+  s.research_watch_topics=Array.from({length:30},(_,i)=>({id:30-i,active:true,last_checked_at:null}));
+  s.expected_counts.research_watch_topics=30;
+  const f=auditNewsIngestion(s).watches.research_timestamp_freshness.missing;
+  assert.equal(f.count,30);
+  assert.deepEqual(f.ids,Array.from({length:25},(_,i)=>i+1));
+  assert.equal(f.omitted_ids,5);
+});
