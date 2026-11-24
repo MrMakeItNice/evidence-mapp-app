@@ -313,7 +313,7 @@ import {renderReviewedMapList, showReviewedMapSource, inspectReviewedMapSource, 
 const pulseCriteria={positive:"Documented improvements in health, rights, peace, environmental restoration, safety or well-being. Requires an identifiable event and source.",negative:"Documented harm, violence, rights violations, preventable damage or deterioration. Requires an identifiable event and source.",neutral:"Mixed, uncertain, procedural or not-yet-assessable developments. Uncertainty must not be forced into good or bad."};document.querySelectorAll("[data-pulse]").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll("[data-pulse]").forEach(b=>b.setAttribute("aria-pressed",String(b===button)));document.getElementById("pulse-panel").textContent=pulseCriteria[button.dataset.pulse]+" No audited count available yet."}));
 const pulsePanel=document.getElementById("pulse-panel");let reviewedEvents=[],mapEventCandidates=[],pulseLoaded=false;let mapFeedAvailable=false;const pulseButtons=[...document.querySelectorAll("[data-pulse]")];function pulseRender(){for(const b of pulseButtons){const category=b.dataset.pulse;b.querySelector("strong").textContent=pulseLoaded&&reviewedEvents.length?String(reviewedEvents.filter(e=>e.category===category).length):"—";}const active=pulseButtons.find(b=>b.getAttribute("aria-pressed")==="true");if(active)pulsePanel.textContent=pulseCriteria[active.dataset.pulse]+" "+(pulseLoaded&&reviewedEvents.length?reviewedEvents.filter(e=>e.category===active.dataset.pulse).length+" reviewed events in this curated feed.":"No reviewed events available yet; counts are not zero.");}try{const response=await fetch("./global-evidence-pulse.json",{cache:"no-store"});if(!response.ok)throw Error("feed unavailable");const feed=await response.json();if(feed.schema_version!==1||!Array.isArray(feed.events))throw Error("invalid feed");mapEventCandidates=feed.events;mapFeedAvailable=true;const seen=new Set();reviewedEvents=feed.events.filter(e=>{if(!e||typeof e.id!=="string"||seen.has(e.id)||!["positive","negative","neutral"].includes(e.category)||typeof e.title!=="string"||!e.title.trim()||typeof e.source_url!=="string"||!/^https:\/\//.test(e.source_url)||typeof e.event_date!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(e.event_date)||!Number.isFinite(e.lat)||!Number.isFinite(e.lon)||Math.abs(e.lat)>90||Math.abs(e.lon)>180||e.review_status!=="verified")return false;seen.add(e.id);return true});pulseLoaded=true;pulseRender();}catch(error){pulsePanel.textContent="Reviewed event feed unavailable; no global count can be calculated.";}
 const mapList=document.getElementById('reviewed-globe-events');
-const mapRecords=renderReviewedMapList(document,mapList,mapEventCandidates,(event,button)=>inspectReviewedMapSource(document,document.getElementById('reviewed-globe-detail'),event,button));
+const mapRecords=renderReviewedMapList(document,mapList,mapEventCandidates,(event,button)=>inspectReviewedMapSource(document,document.getElementById('reviewed-globe-detail'),event,button,document.getElementById('geo-panel')));
 document.getElementById('reviewed-globe-availability').textContent=reviewedMapAvailability(mapFeedAvailable,mapEventCandidates.length,mapRecords.length);
 const status=document.getElementById('globe-status'),fallback=document.getElementById('fallback');
 try{
@@ -368,10 +368,10 @@ try{
    // Keep the existing compact globe readout, but route marker selection
    // through the same accessible source button as the keyboard list.
    // That preserves the full-width preview, focus, Back/Escape and aria-expanded state.
-   showReviewedMapSource(document,geoPanel,selectedMarker);
    const listIndex=mapRecords.findIndex(record=>record.id===selectedMarker.id);
    const sourceButton=mapList.children[listIndex]?.querySelector('button');
-   sourceButton?.click();
+   if(sourceButton)sourceButton.click();
+   else showReviewedMapSource(document,geoPanel,selectedMarker);
    return;
   }
   if(!hit)return;
