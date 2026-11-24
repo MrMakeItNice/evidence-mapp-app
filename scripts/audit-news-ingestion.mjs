@@ -297,6 +297,8 @@ export function auditNewsIngestion(snapshot) {
   const agedPendingNewsByTopic = new Map();
   const recentNewsByTopic = new Map();
   let recentUndated = 0, recentUnassigned = 0, recentUnassignedUndated = 0;
+  let recentGoogle = 0, recentGoogleUndated = 0;
+  let recentUnassignedGoogle = 0, recentUnassignedGoogleUndated = 0;
   for (const n of news) {
     if (n.topic_id != null && !newsTopicIds.has(n.topic_id)) throw new Error('Unknown news topic');
     const published = timestamp(n.published_at, 'news.published_at');
@@ -306,11 +308,11 @@ export function auditNewsIngestion(snapshot) {
     if (discovered !== null && discovered > asOf) futureNewsDiscoveryIds.push(n.id);
     // Allow up to one day of metadata skew; this is a review signal, not an error verdict.
     if (published !== null && discovered !== null && published - discovered > 86400000) newsPublicationAfterDiscoveryIds.push(n.id);
+    // Hostname classification is syntax-only, not verified publisher provenance.
+    const googleProxy = urlProblem(n.source_url) === null &&
+      new URL(cleanUrl(n.source_url)).hostname === 'news.google.com';
     if (published === null) {
       undated++;
-      // A publisher label or URL substring is not proof of proxy provenance.
-      const googleProxy = urlProblem(n.source_url) === null &&
-        new URL(cleanUrl(n.source_url)).hostname === 'news.google.com';
       if (googleProxy) undatedGoogle++;
       else undatedNonGoogleIds.push(n.id);
     }
@@ -318,14 +320,28 @@ export function auditNewsIngestion(snapshot) {
     if (discovered !== null && discovered <= asOf && discovered >= asOf - 86400000) {
       discovered24h++;
       if (published === null) recentUndated++;
+      if (googleProxy) {
+        recentGoogle++;
+        if (published === null) recentGoogleUndated++;
+      }
       if (positiveId(n.topic_id)) {
-        const counts = recentNewsByTopic.get(n.topic_id) ?? {recent_count:0, undated_count:0};
+        const counts = recentNewsByTopic.get(n.topic_id) ?? {
+          recent_count:0, undated_count:0, recent_google_proxy_count:0, recent_google_proxy_undated_count:0
+        };
         counts.recent_count++;
         if (published === null) counts.undated_count++;
+        if (googleProxy) {
+          counts.recent_google_proxy_count++;
+          if (published === null) counts.recent_google_proxy_undated_count++;
+        }
         recentNewsByTopic.set(n.topic_id, counts);
       } else {
         recentUnassigned++;
         if (published === null) recentUnassignedUndated++;
+        if (googleProxy) {
+          recentUnassignedGoogle++;
+          if (published === null) recentUnassignedGoogleUndated++;
+        }
       }
     }
     if (n.review_status === 'pending' && discovered !== null && discovered < asOf - 14 * 86400000) {
@@ -460,10 +476,14 @@ export function auditNewsIngestion(snapshot) {
       pending: news.filter(n => n.review_status === 'pending').length,
       discovered_last_24h: discovered24h,
       undated_discovered_last_24h: recentUndated,
+      google_proxy_discovered_last_24h: recentGoogle,
+      google_proxy_undated_discovered_last_24h: recentGoogleUndated,
       recent_publication_date_by_topic: recentNewsTopicRank.slice(0,10),
       omitted_recent_publication_date_topics: Math.max(0,recentNewsTopicRank.length-10),
       recent_without_topic: recentUnassigned,
       recent_undated_without_topic: recentUnassignedUndated,
+      recent_google_proxy_without_topic: recentUnassignedGoogle,
+      recent_google_proxy_undated_without_topic: recentUnassignedGoogleUndated,
       pending_over_14d: pending14d,
       pending_without_discovery_timestamp: unknownPendingNewsDiscoveryIds.length,
       unknown_discovery_pending_item_ids: unknownPendingNewsDiscoveryIds.slice(0,25),
