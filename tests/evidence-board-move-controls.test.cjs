@@ -1291,3 +1291,36 @@ test('zoom retains the board point under the viewport center after panning and a
     assert.equal(transform()[1], 15);
   }
 });
+
+test('zoom-out adapts to a narrower pane without Reset and never enlarges after widening', async () => {
+  const { get, stored, document } = await createBoard();
+  const view = get('viewport'), world = get('world'), card = get('cards').children[1];
+  view.clientHeight = 480;
+  const scale = () => Number(world.style.transform.match(/scale\(([^)]+)\)/)[1]);
+  for (let i = 0; i < 20; i++) get('zout').listeners.click();
+  assert.equal(scale(), .35);
+  const position = { ...card.style }, inspector = get('details').children[0], status = get('status').textContent;
+  get('search').focus();
+  const previous = world.style.transform;
+  view.clientWidth = 285;
+  assert.equal(world.style.transform, previous, 'resizing alone must not reset or pan the view');
+  get('zout').listeners.click();
+  assert.equal(scale(), .3, 'zoom-out reaches the current fitted width without Reset');
+  assert.equal(get('zoom-level').textContent, 'Zoom 30%');
+  view.clientWidth = 1000;
+  const narrow = world.style.transform;
+  get('zout').listeners.click();
+  assert.equal(world.style.transform, narrow, 'zoom-out after widening must never enlarge the board');
+  get('zin').listeners.click();
+  assert.equal(scale(), .36);
+  get('zout').listeners.click();
+  assert.equal(scale(), .3);
+  assert.deepEqual(card.style, position);
+  assert.equal(get('details').children[0], inspector);
+  assert.equal(get('status').textContent, status);
+  assert.equal(document.activeElement, get('search'));
+  assert.equal(stored.size, 0);
+  get('reset').listeners.click();
+  for (let i = 0; i < 20; i++) get('zout').listeners.click();
+  assert.equal(scale(), .35, 'explicit Reset restores the wide-pane minimum');
+});
