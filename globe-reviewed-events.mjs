@@ -355,7 +355,9 @@ export function inspectReviewedMapSource(doc, detail, event, returnFocusTo, comp
     // A fresh handler follows the current selection; never retain an old
     // event button when another source is inspected.
     detail.onkeydown = event => {
-      if (event.key !== 'Escape') return;
+      // Preserve operating-system, browser and assistive-technology shortcuts.
+      if (event.key !== 'Escape' || event.altKey || event.ctrlKey || event.metaKey ||
+          event.shiftKey || event.defaultPrevented || event.isComposing) return;
       event.preventDefault();
       close();
     };
