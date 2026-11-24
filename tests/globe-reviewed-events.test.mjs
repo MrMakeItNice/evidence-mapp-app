@@ -860,3 +860,44 @@ test('correction notes cannot qualify a missing or conflicting location and malf
     assert.deepEqual(reviewedMapEvents([withChanges({correction_note: invalid})])[0].correction_notes, []);
   }
 });
+
+
+test('selecting an unmarked globe point clears stale event provenance and expanded state', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const start = html.indexOf('function inspectLocation(e){');
+  const end = html.indexOf(' function bindGlobeGestures', start);
+  assert.ok(start >= 0 && end > start);
+  const createInspect = new Function('canvas', 'mouse', 'raycaster', 'camera', 'markerMeshes',
+    'earth', 'globe', 'geoPanel', 'document', 'mapList', 'mapRecords', 'showReviewedMapSource',
+    html.slice(start, end) + '\nreturn inspectLocation;');
+  const detail = element('div');
+  detail.hidden = false;
+  detail.append(element('p'));
+  detail.onkeydown = () => {};
+  const buttons = [element('button'), element('button')];
+  buttons[0].setAttribute('aria-expanded', 'true');
+  buttons[1].setAttribute('aria-expanded', 'false');
+  const mapList = {children: buttons.map(button => ({querySelector: () => button}))};
+  const geoPanel = element('div');
+  const hit = {distance: 1, point: {clone: () => ({})}};
+  let surface = [];
+  const raycaster = {setFromCamera() {}, intersectObjects: () => [], intersectObject: () => surface};
+  const canvas = {getBoundingClientRect: () => ({left: 0, top: 0, width: 100, height: 100})};
+  const globe = {worldToLocal: () => ({normalize: () => ({x: 1, y: 0, z: 0})})};
+  const inspect = createInspect(canvas, {set() {}}, raycaster, {}, [], {}, globe, geoPanel,
+    {getElementById: id => {assert.equal(id, 'reviewed-globe-detail'); return detail;}},
+    mapList, [event], () => assert.fail('unmarked point has no reviewed source'));
+  // A tap outside the Earth is not a location selection.
+  inspect({clientX: 50, clientY: 50});
+  assert.equal(detail.hidden, false);
+  assert.equal(buttons[0].getAttribute('aria-expanded'), 'true');
+  // An actual surface tap must remove any old source association.
+  surface = [hit];
+  inspect({clientX: 50, clientY: 50});
+  assert.equal(detail.hidden, true);
+  assert.equal(detail.children.length, 0);
+  assert.equal(detail.onkeydown, null);
+  assert.ok(buttons.every(button => button.getAttribute('aria-expanded') === 'false'));
+  assert.match(geoPanel.textContent, /not a verified event location/);
+  assert.match(geoPanel.textContent, /No reviewed event marker was selected here/);
+});
