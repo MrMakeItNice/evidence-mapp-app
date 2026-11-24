@@ -222,6 +222,26 @@ try {
       buttons: [...document.querySelectorAll('#board-controls button')].map(el => {
         const rect = el.getBoundingClientRect(); return { left: rect.left, right: rect.right, height: rect.height };
       }) }));
+    const searchSizing = await page.locator('#search').evaluate(el => ({
+      font: getComputedStyle(el).fontSize, root: getComputedStyle(document.documentElement).fontSize,
+      height: el.getBoundingClientRect().height, left: el.getBoundingClientRect().left,
+      right: el.getBoundingClientRect().right
+    }));
+    assert.equal(searchSizing.font, width <= 650 ? searchSizing.root : '14px');
+    if (width <= 650) {
+      assert.ok(searchSizing.height >= 44 && searchSizing.left >= 0 && searchSizing.right <= width + 1);
+      const currentBoard = await page.locator('.tile').allTextContents();
+      await page.locator('#search').fill('No matching phone case');
+      assert.equal(await page.locator('#cases button').count(), 0);
+      await page.getByRole('button', { name: 'Clear search', exact: true }).click();
+      assert.equal(await page.locator('#search').evaluate(el => el === document.activeElement), true);
+      assert.equal(await page.locator('#cases button').count(), cases.length);
+      assert.deepEqual(await page.locator('.tile').allTextContents(), currentBoard);
+      const enlargedText = await page.addStyleTag({ content: ':root { font-size: 20px; }' });
+      assert.equal(await page.locator('#search').evaluate(el => getComputedStyle(el).fontSize), '20px');
+      assert.ok(await page.locator('#search').evaluate(el => el.getBoundingClientRect().right <= innerWidth + 1));
+      await enlargedText.evaluate(el => el.remove());
+    }
     if (layout.content > layout.width + 1) console.error(await page.locator('body *').evaluateAll(elements => elements.filter(el => el.getBoundingClientRect().right > innerWidth + 1).map(el => ({ tag: el.tagName, id: el.id, className: String(el.className), right: el.getBoundingClientRect().right })).slice(0, 20)));
     assert.ok(layout.content <= layout.width + 1, `horizontal overflow at ${width}px: ${layout.content}`);
     for (const button of layout.buttons) {
