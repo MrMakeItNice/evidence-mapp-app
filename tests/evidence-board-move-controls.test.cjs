@@ -111,7 +111,8 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
   const get = id => { if (!elements.has(id)) elements.set(id, make('div')); return elements.get(id); };
   get('viewport').clientWidth = 1000;
   get('viewport').clientHeight = 480;
-  get('save').disabled = /<button id="save"[^>]*\bdisabled/.test(html); // Initial native HTML state in the simulated DOM.
+  get('save').disabled = /<button id="save"[^>]*\bdisabled/.test(html);
+  get('fit-all').disabled = /<button id="fit-all"[^>]*\bdisabled/.test(html); // Initial native HTML state in the simulated DOM.
   const document = {
     title: html.match(/<title>(.*?)<\/title>/)[1],
     getElementById: get, createElement: make, createElementNS: (_, tag) => make(tag),
@@ -1389,4 +1390,38 @@ test('source trace metadata is explicit when missing or malformed and never assi
   assert.match(writes[0], /Atlas source record ID: Not recorded/);
   assert.match(writes[0], /Indexed association \(not a verified relationship\): Not recorded/);
   assert.match(writes[0], /https:\/\/records\.example\/doc#page=2/);
+});
+
+test('Fit all cards frames measured card bounds without moving cards, selection or saved layout', async () => {
+  const { get, stored, document } = await createBoard();
+  const view = get('viewport'), cards = get('cards').children, world = get('world');
+  view.clientWidth = 320; view.clientHeight = 540;
+  cards.forEach((card, i) => { card.offsetWidth = i ? 174 : 216; card.offsetHeight = i ? 260 : 198; });
+  const positions = cards.map(card => ({ ...card.style })), heading = get('details').children[0];
+  get('search').focus();
+  get('fit-all').listeners.click();
+  const values = world.style.transform.match(/translate\(([^p]+)px,([^p]+)px\) scale\(([^)]+)\)/).slice(1).map(Number);
+  const [x,y,z] = values;
+  assert.ok(z > 0 && z <= 1);
+  for (const card of cards) {
+    const left = x + parseFloat(card.style.left)*z, top = y + parseFloat(card.style.top)*z;
+    assert.ok(left >= 15.99 && top >= 15.99);
+    assert.ok(left + card.offsetWidth*z <= 304.01 && top + card.offsetHeight*z <= 524.01);
+  }
+  assert.deepEqual(cards.map(card => ({ ...card.style })), positions);
+  assert.equal(get('details').children[0], heading);
+  assert.equal(document.activeElement, get('search'));
+  assert.equal(stored.size, 0);
+  assert.match(get('status').textContent, /View fitted to show all cards/);
+  get('zout').listeners.click();
+  assert.ok(Number(world.style.transform.match(/scale\(([^)]+)\)/)[1]) <= z, 'zoom-out after fitting cannot enlarge the view');
+});
+
+test('Fit all cards stays unavailable without a rendered investigation', async () => {
+  for (const page of [await createBoard([], []), await createBoard(undefined, undefined, true)]) {
+    assert.equal(page.get('fit-all').disabled, true);
+    const before = page.get('world').style.transform;
+    page.get('fit-all').listeners.click();
+    assert.equal(page.get('world').style.transform, before);
+  }
 });

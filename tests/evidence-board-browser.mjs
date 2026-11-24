@@ -161,6 +161,22 @@ try {
     selected: el.getAttribute('aria-pressed'), zoom: document.getElementById('zoom-level').textContent })), beforeResize);
   console.log('PASS: keyboard-focused citation stays visible after narrowing without changing its layout, selection or zoom.');
 
+  for (const [width, height] of [[320,700], [1280,800]]) {
+    await page.setViewportSize({ width, height });
+    const positions = await page.locator('.tile').evaluateAll(cards => cards.map(card => [card.style.left, card.style.top, card.getAttribute('aria-pressed')]));
+    const inspectorTitle = await page.locator('#details h2').textContent();
+    const savedLayout = await page.evaluate(() => localStorage.getItem('atlas-evidence-board-layout-v2-1'));
+    await page.getByRole('button', { name: 'Fit all cards', exact: true }).click();
+    assert.ok(await page.locator('.tile').evaluateAll(cards => {
+      const frame = document.getElementById('viewport').getBoundingClientRect();
+      return cards.every(card => { const box = card.getBoundingClientRect(); return box.left >= frame.left + 15 && box.right <= frame.right - 15 && box.top >= frame.top + 15 && box.bottom <= frame.bottom - 15; });
+    }), 'every card must fit inside the board with a visible margin');
+    assert.deepEqual(await page.locator('.tile').evaluateAll(cards => cards.map(card => [card.style.left, card.style.top, card.getAttribute('aria-pressed')])), positions);
+    assert.equal(await page.locator('#details h2').textContent(), inspectorTitle);
+    assert.equal(await page.evaluate(() => localStorage.getItem('atlas-evidence-board-layout-v2-1')), savedLayout);
+  }
+  console.log('PASS: Fit all cards frames every measured card at phone and desktop widths without moving or saving evidence.');
+
   for (const [width, height] of [[320,700], [768,1024], [1280,800]]) {
     await page.setViewportSize({ width, height });
     const layout = await page.evaluate(() => ({ width: innerWidth, content: document.documentElement.scrollWidth,
