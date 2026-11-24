@@ -510,7 +510,7 @@ assert.ok(northwoodsScope[1].includes('href="https://history.state.gov/historica
 console.log('PASS: Northwoods and Mongoose links reuse canonical cases and distinguish preliminary planning from approval or execution.');
 
 
-for (const phrase of ['#32, #33, #34 and #35','March 16','advance approval required','separately from contingency planning','not independently checked original scans','do not count the two reports as independent corroboration','Neither establishes execution of the Northwoods proposals','candidate sources for review','not new library entries or evidence for Blue Beam']) {
+for (const phrase of ['#32, #33, #34 and #35','March 16','advance approval required','separately from contingency planning','the July 24 scan has not been independently checked','do not count the two reports as independent corroboration','Neither establishes execution of the Northwoods proposals','candidate sources for review','not new library entries or evidence for Blue Beam']) {
   assert.ok(northwoodsScope[1].includes(phrase), 'Missing Phase I evidence safeguard: '+phrase);
 }
 for (const doc of ['359','360']) {
@@ -527,3 +527,10 @@ for (const doc of ['380','423']) {
   assert.ok(northwoodsScope[1].includes('href="https://history.state.gov/historicaldocuments/frus1961-63v10/d'+doc+'" target="_blank" rel="noopener noreferrer"'));
 }
 console.log('PASS: Phase II framework approval and later requests remain distinct from execution and Blue Beam hypotheses.');
+
+ // A scan and an edited transcription of one memorandum are not separate evidence.
+for (const phrase of ['National Archives record 176-10011-10055','PDF viewer pp. 2–4, memorandum pp. 1–3','identification sheet and these three memorandum pages were visually checked','two versions of the same underlying memorandum, not independent confirmations','Punta del Este conference and Kennedy’s visit to Mexico','direct counterevidence to attributing those events to Mongoose planning merely because their objectives overlapped','does not establish that the events had no policy relationship','internal program assessment, not independent verification','remaining scan pages and precise release date have not been verified']) {
+  assert.ok(northwoodsScope[1].includes(phrase), 'Missing archival provenance safeguard: '+phrase);
+}
+assert.ok(northwoodsScope[1].includes('href="https://www.archives.gov/files/research/jfk/releases/2018/176-10011-10055.pdf#page=2" target="_blank" rel="noopener noreferrer"'));
+console.log('PASS: July 25 Mongoose scan and FRUS transcription share document identity; explicit counterevidence is scoped.');
