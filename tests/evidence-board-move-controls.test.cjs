@@ -593,3 +593,17 @@ test('clamped card drags do not announce a change until coordinates actually mov
   card.listeners.pointercancel(pointer(21));
   assert.match(status.textContent,/unsaved changes/);
 });
+
+test('keyboard destination outlines are available outside narrow-screen media queries', () => {
+  const css = html.match(/<style>([\s\S]*?)<\/style>/)[1];
+  const rule = css.match(/#board-controls:focus-visible,#selected-record:focus-visible,#details h2:focus-visible\{([^}]+)\}/);
+  assert.ok(rule, 'all three programmatic keyboard destinations share a visible focus rule');
+  let depth = 0;
+  for (const ch of css.slice(0, rule.index)) {
+    if (ch === '{') depth++;
+    if (ch === '}') depth--;
+  }
+  assert.equal(depth, 0, 'desktop focus must not depend on a narrow-screen media query');
+  assert.match(rule[1], /outline:2px solid var\(--mint\)/);
+  assert.match(rule[1], /outline-offset:-2px/);
+});
