@@ -185,6 +185,8 @@ export function showReviewedMapSource(doc, panel, event) {
   panel.replaceChildren();
   const heading = doc.createElement('strong');
   heading.textContent = event.title;
+  heading.setAttribute('role', 'heading');
+  heading.setAttribute('aria-level', '3');
   const context = doc.createElement('p');
   context.textContent = 'Event ID: ' + event.id + ' · ' + event.category + ' · Event: ' + event.event_date +
     ' · Source host: ' + event.source_host +
@@ -319,6 +321,9 @@ export function inspectReviewedMapSource(doc, detail, event, returnFocusTo, comp
       '. Original sources and map placement evidence are in the selected event detail below.';
   }
   showReviewedMapSource(doc, detail, event);
+  // Focus enters this named region, so identify the current event even when
+  // several list entries have identical titles. Keep the label literal text.
+  detail.setAttribute('aria-label', 'Selected map event source and location evidence: ' + event.title + ' (Event ID: ' + event.id + ')');
   if (returnFocusTo) {
     const close = () => {
       detail.hidden = true;
