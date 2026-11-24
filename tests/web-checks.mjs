@@ -464,3 +464,15 @@ for (const id of ['34','36','37']) {
   assert.ok(JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).references.some(r => String(r.case_id)===id && String(r.source_id)==='279' && r.url===septemberHearingUrl));
 }
 console.log('PASS: September hearing follow-up uses indexed provenance and preserves scan-verification caveat.');
+
+
+const chickwitIdentityNote = bluebirdPage.match(/<strong>Case identity note — CHICKWIT:<\/strong>([\s\S]*?)This is a separate hearing/);
+assert.ok(chickwitIdentityNote, 'CHICKWIT naming clarification must remain next to the source #279 follow-up');
+assert.match(chickwitIdentityNote[1], /printed p\. 126, CIA witness Gordon identifies the project name as CHICKWIT without the MK prefix/);
+assert.match(chickwitIdentityNote[1], /attributed testimony, not independent proof of the absence of testing/);
+assert.match(chickwitIdentityNote[1], /MKCHICKWIT \/ CHICKWIT refers to the same Case #36 \(record ID 37\)/);
+assert.match(chickwitIdentityNote[1], /search alias for editorial review, not a separate case/);
+assert.match(chickwitIdentityNote[1], /two access points to source #279, not independent sources/);
+assert.match(oftenChickwit[1], /href="https:\/\/www\.prisonlegalnews\.org\/media\/publications\/human_drug_testing_by_the_cia_1977_hearings_before_us_senate\.pdf" target="_blank" rel="noopener noreferrer"/);
+assert.match(oftenChickwit[1], /scan could not be visually checked here/);
+console.log('PASS: CHICKWIT testimony clarifies naming without a new case, duplicate source or stronger evidence claim.');
