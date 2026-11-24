@@ -1066,3 +1066,49 @@ test('classification rationale cannot substitute for location evidence or resolv
   renderReviewedMapList(document, list, [event], () => {});
   assert.match(list.children[0].children[1].textContent, /No separate editorial classification rationale is indexed/);
 });
+
+
+test('indexed archive identifiers stay associated with their original reviewed citations', () => {
+  const identifier = '<b>Archive reference 12</b>';
+  const other = 'https://archive.example.gov/other#p4';
+  const candidates = [
+    withChanges({source_record_id: '  ' + identifier + '  '}),
+    withChanges({source_record_id: identifier}),
+    withChanges({source_url: other, source_record_id: identifier}),
+    withChanges({review_status: 'pending', source_record_id: 'Pending record'}),
+    withChanges({source_url: 'javascript:alert(1)', source_record_id: 'Unsafe record'})
+  ];
+  const list = element('ul');
+  let selected;
+  const mapped = renderReviewedMapList(document, list, candidates, record => {selected = record;});
+  assert.equal(mapped.length, 1);
+  assert.deepEqual(mapped[0].source_record_ids, [
+    {identifier, source_url: event.source_url}, {identifier, source_url: other}
+  ]);
+  assert.match(list.children[0].children[1].textContent, /2 indexed document identifier/);
+  list.children[0].children[0].listeners.click();
+  for (const record of [mapped[0], selected]) {
+    const panel = element('div');
+    showReviewedMapSource(document, panel, record);
+    const index = panel.children.findIndex(child => child.textContent?.includes('Indexed document identifiers'));
+    assert.ok(index >= 0);
+    assert.match(panel.children[index].textContent, /not independent verification or geographic evidence/);
+    const items = panel.children[index + 1].children;
+    assert.equal(items[0].textContent, identifier + ' — Indexed under event citation: ' + event.source_url);
+    assert.equal(items[0].children.length, 0);
+    assert.equal(items[1].textContent, identifier + ' — Indexed under event citation: ' + other);
+    assert.equal(panel.children[4].href, event.location_source_url);
+  }
+});
+
+test('document identifiers never substitute for geographic provenance', () => {
+  const source_record_id = 'Archive reference 12';
+  assert.deepEqual(reviewedMapEvents([withChanges({location_source_url: '', source_record_id})]), []);
+  assert.deepEqual(reviewedMapEvents([event, withChanges({lon: 12, source_record_id})]), []);
+  for (const invalid of [null, {}, 42, '  ']) {
+    assert.deepEqual(reviewedMapEvents([withChanges({source_record_id: invalid})])[0].source_record_ids, []);
+  }
+  const panel = element('div');
+  showReviewedMapSource(document, panel, reviewedMapEvents([event])[0]);
+  assert.equal(panel.children.some(child => child.textContent?.includes('Indexed document identifiers')), false);
+});
