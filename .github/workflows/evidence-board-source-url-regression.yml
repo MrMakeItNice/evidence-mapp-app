@@ -7,6 +7,7 @@ on:
       - 'tests/evidence-board-source-url.test.cjs'
       - 'tests/evidence-board-citation-language.test.cjs'
       - 'tests/evidence-board-move-controls.test.cjs'
+      - 'tests/evidence-board-browser.mjs'
       - '.github/workflows/evidence-board-source-url-regression.yml'
   workflow_dispatch:
 
@@ -21,3 +22,20 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run source URL regression tests
         run: node --test tests/evidence-board-source-url.test.cjs tests/evidence-board-citation-language.test.cjs tests/evidence-board-move-controls.test.cjs
+
+  browser-accessibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned browser test dependency
+        run: npm install --prefix "$RUNNER_TEMP/evidence-board-browser" --no-audit --no-fund --ignore-scripts playwright@1.62.1
+      - name: Install Chromium
+        run: node "$RUNNER_TEMP/evidence-board-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Check native keyboard navigation, reflow and forced colors
+        env:
+          EVIDENCE_BOARD_PLAYWRIGHT_MODULE: ${{ runner.temp }}/evidence-board-browser/node_modules/playwright/index.mjs
+        run: node tests/evidence-board-browser.mjs
