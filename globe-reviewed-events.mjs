@@ -215,13 +215,19 @@ export function showReviewedMapSource(doc, panel, event) {
 
 
 /** Present list selections in a readable, keyboard-reachable detail region. */
-export function inspectReviewedMapSource(doc, detail, event, returnFocusTo) {
+export function inspectReviewedMapSource(doc, detail, event, returnFocusTo, compactPanel) {
+  // Both readouts must describe the same selected event, regardless of input method.
+  if (compactPanel) showReviewedMapSource(doc, compactPanel, event);
   showReviewedMapSource(doc, detail, event);
   if (returnFocusTo) {
     const close = () => {
       detail.hidden = true;
       detail.replaceChildren();
       detail.onkeydown = null;
+      if (compactPanel) {
+        compactPanel.replaceChildren();
+        compactPanel.textContent = 'No reviewed event selected. Choose a map marker or an event in the source list.';
+      }
       returnFocusTo.setAttribute('aria-expanded', 'false');
       returnFocusTo.focus();
     };
