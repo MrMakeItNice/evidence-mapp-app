@@ -241,6 +241,21 @@ assert.match(chatterComparison[1],/no new public relationship edge is created/);
 assert.ok(JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).references.some(r => String(r.case_id)==='5' && String(r.source_id)==='258' && r.url==='https://www.intelligence.senate.gov/wp-content/uploads/2024/08/sites-default-files-hearings-95mkultra.pdf'));
 console.log('PASS: CHATTER thematic comparison uses existing case and congressional source without inferring operational links.');
 
+// Contemporaneous counterevidence must preserve the difference between a broad claim and a limited file search.
+const artichokeCounterevidence = bluebirdPage.match(/<p id="artichoke-1952-counterevidence">([\s\S]*?)<\/p>/);
+assert.ok(artichokeCounterevidence);
+assert.equal((bluebirdPage.match(/id="artichoke-1952-counterevidence"/g)||[]).length,1);
+assert.match(artichokeCounterevidence[1],/July 14, 1952/);
+assert.match(artichokeCounterevidence[1],/John Marks Collection, Box 6, document 06/);
+assert.match(artichokeCounterevidence[1],/Artichoke-ocr\.pdf#page=1" target="_blank" rel="noopener noreferrer"/);
+assert.match(artichokeCounterevidence[1],/counterevidence to the broad hypothetical claim/);
+assert.match(artichokeCounterevidence[1],/does not contradict the narrower 1975 statement/);
+assert.match(artichokeCounterevidence[1],/not independent validation of efficacy/);
+assert.match(artichokeCounterevidence[1],/original declassification date is not established/);
+assert.match(artichokeCounterevidence[1],/canonical ARTICHOKE Case #3 \(record ID 4\), pending editorial review/);
+assert.match(artichokeCounterevidence[1],/not a newly indexed source or a Project Blue Beam connection/);
+console.log('PASS: 1952 ARTICHOKE counterevidence is scoped to the documented report, not a Blue Beam relationship.');
+
 // Keep primary-source and uncertainty notes discoverable from the BLUEBIRD/Blue Beam comparison.
 const sourceJumpNav = bluebirdPage.match(/<nav class="source-jumps" aria-label="BLUEBIRD and ARTICHOKE evidence notes">([\s\S]*?)<\/nav>/);
 assert.ok(sourceJumpNav, 'Missing source-scope navigation landmark');
