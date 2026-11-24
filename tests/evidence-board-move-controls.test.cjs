@@ -91,7 +91,7 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
 
-async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout, clipboard) {
+async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout, clipboard, request) {
   const elements = new Map(), stored = new Map(), windowListeners = {};
   if (savedLayout !== undefined) stored.set('atlas-evidence-board-layout-v2-1', savedLayout);
   const make = tag => ({
@@ -122,8 +122,8 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
     document, URL, encodeURIComponent, navigator: { clipboard },
     localStorage: { getItem: key => stored.get(key) || null, setItem: (key, value) => stored.set(key, value) },
     window: { open() { opened++; }, addEventListener(type, handler) { windowListeners[type] = handler; } },
-    fetch: async url => ({ ok: !failedRequest, json: async () => url.includes('paper-trails-data')
-      ? { references: references ?? [citation] } : publishedCases })
+    fetch: request || (async url => ({ ok: !failedRequest, json: async () => url.includes('paper-trails-data')
+      ? { references: references ?? [citation] } : publishedCases }))
   });
   await new Promise(resolve => setImmediate(resolve));
   return { get, stored, document, citation, windowListeners, getOpened: () => opened };
@@ -943,4 +943,60 @@ test('keyboard-focused cards pan into view without moving cards, changing select
   assert.equal(stored.size, 0);
   assert.equal(getOpened(), 0);
   assert.match(html, /overflow:hidden;overflow:clip;position:relative/, 'prevent native focus scrolling from fighting board panning');
+});
+
+test('retry recovers a failed board load without overlapping requests and restores search focus', async () => {
+  let requests = 0, available = false, release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const request = async url => {
+    requests++;
+    if (!available) return { ok: false };
+    await gate;
+    return { ok: true, json: async () => url.includes('paper-trails-data')
+      ? { references: [] } : [{ id: '1', title: 'Recovered record' }] };
+  };
+  const { get, document, stored } = await createBoard(undefined, undefined, false, undefined, undefined, request);
+  const retry = get('retry-records');
+  assert.equal(retry.hidden, false);
+  assert.equal(get('search').disabled, true);
+  get('search').value = 'Recovered';
+  retry.focus(); available = true;
+  const pending = retry.listeners.click();
+  retry.listeners.click();
+  assert.equal(requests, 4, 'one initial pair and one retry pair only');
+  assert.equal(retry.attributes['aria-disabled'], 'true');
+  release(); await pending;
+  assert.equal(retry.hidden, true);
+  assert.equal(get('search').disabled, false);
+  assert.equal(get('search').value, 'Recovered');
+  assert.equal(get('heading').textContent, 'Recovered record');
+  assert.equal(document.activeElement, get('search'));
+  assert.equal(stored.size, 0);
+});
+
+test('retry keeps a repeated failure actionable and never relabels it as empty evidence', async () => {
+  const { get, document } = await createBoard(undefined, undefined, true);
+  const retry = get('retry-records'); retry.focus();
+  await retry.listeners.click();
+  assert.equal(retry.hidden, false);
+  assert.equal(retry.attributes['aria-disabled'], 'false');
+  assert.equal(retry.textContent, 'Retry loading records');
+  assert.equal(document.activeElement, retry);
+  assert.equal(get('save').disabled, true);
+  assert.equal(get('cards').children.length, 0);
+  assert.match(get('case-search-status').textContent, /unavailable/);
+  assert.match(get('status').textContent, /Could not load/);
+});
+
+test('empty retry results remain honest and successful retry does not steal unrelated focus', async () => {
+  let available = false;
+  const request = async url => ({ ok: available, json: async () => url.includes('paper-trails-data') ? { references: [] } : [] });
+  const { get, document } = await createBoard(undefined, undefined, false, undefined, undefined, request);
+  get('viewport').focus(); available = true;
+  await get('retry-records').listeners.click();
+  assert.equal(document.activeElement, get('viewport'));
+  assert.equal(get('retry-records').hidden, true);
+  assert.equal(get('heading').textContent, 'No published cases available');
+  assert.equal(get('save').disabled, true);
+  assert.equal(get('cards').children.length, 0);
 });
