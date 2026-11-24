@@ -91,8 +91,9 @@ test('long citation URLs have distinct layout IDs, even with the same first 220 
   assert.match(html, /id:sourceNodeId\(item\.url\)/, 'board nodes use full untruncated citation keys');
 });
 
-async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false) {
+async function createBoard(publishedCases = [{ id: '1', title: 'Published case' }], references, failedRequest = false, savedLayout) {
   const elements = new Map(), stored = new Map();
+  if (savedLayout !== undefined) stored.set('atlas-evidence-board-layout-v2-1', savedLayout);
   const make = tag => ({
     tag, children: [], style: {}, attributes: {}, dataset: {}, listeners: {}, textContent: '', className: '',
     focus() { document.activeElement = this; }, blur() { if (document.activeElement === this) document.activeElement = undefined; }, setPointerCapture() {},
@@ -486,4 +487,26 @@ test('zoom readout follows buttons and responsive Reset without repeat announcem
   const atMinimum = writes;
   get('zout').listeners.click(); assert.equal(writes, atMinimum);
   assert.equal(get('status').textContent, status);
+});
+
+test('saved layout: malformed or non-object storage leaves the published case and citations usable', async () => {
+  for (const value of ['null', '[]', '42', '"old layout"', '{broken']) {
+    const { get } = await createBoard(undefined, undefined, false, value);
+    assert.equal(get('heading').textContent, 'Published case', value);
+    assert.equal(get('cards').children.length, 2, value);
+    assert.equal(get('search').disabled, false, value);
+    assert.equal(get('cards').children[0].style.left, '500px', value);
+    assert.match(get('citation-count').textContent, /1 of 1 unique indexed citation URLs/);
+  }
+});
+
+test('saved layout: valid exact positions still restore and invalid entries use defaults', async () => {
+  const url = 'https://records.example.org/archive?id=1';
+  const key = 'source-' + encodeURIComponent(url);
+  const valid = await createBoard(undefined, undefined, false, JSON.stringify({ case: { x: 100, y: 200 }, [key]: { x: 350, y: 120 } }));
+  assert.equal(valid.get('cards').children[0].style.left, '100px');
+  assert.equal(valid.get('cards').children[1].style.top, '120px');
+  const invalid = await createBoard(undefined, undefined, false, JSON.stringify({ case: { x: 'bad', y: 20 }, [key]: null }));
+  assert.equal(invalid.get('cards').children[0].style.left, '500px');
+  assert.equal(invalid.get('cards').children[1].style.top, '75px');
 });
