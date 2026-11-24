@@ -476,3 +476,20 @@ assert.match(chickwitIdentityNote[1], /two access points to source #279, not ind
 assert.match(oftenChickwit[1], /href="https:\/\/www\.prisonlegalnews\.org\/media\/publications\/human_drug_testing_by_the_cia_1977_hearings_before_us_senate\.pdf" target="_blank" rel="noopener noreferrer"/);
 assert.match(oftenChickwit[1], /scan could not be visually checked here/);
 console.log('PASS: CHICKWIT testimony clarifies naming without a new case, duplicate source or stronger evidence claim.');
+
+
+// The archival alias is an existing source, not a new case or evidence edge.
+const chickwitFoiaAlias = bluebirdPage.match(/<p id="chickwit-foia-alias-review">([\s\S]*?)<\/p>/);
+assert.ok(chickwitFoiaAlias);
+assert.equal(bluebirdPage.split('id="chickwit-foia-alias-review"').length, 2);
+assert.match(chickwitFoiaAlias[1], /existing source #35 \(review pending\)/);
+assert.match(chickwitFoiaAlias[1], /February 1, 2013 \(F-2013-00528; approval-for-release marking 2021\/10\/22, C05956999; page 1\)/);
+assert.match(chickwitFoiaAlias[1], /Final%20Letter%5B15992821%5D\.pdf" target="_blank" rel="noopener noreferrer"/);
+assert.match(chickwitFoiaAlias[1], /scan retrieval redirected to the Reading Room; visual verification and the referenced enclosure remain outstanding/);
+assert.match(chickwitFoiaAlias[1], /not a contemporaneous operational record/);
+assert.match(chickwitFoiaAlias[1], /href="\.\/paper-trails\.html#case-37"/);
+assert.match(chickwitFoiaAlias[1], /href="\.\/connection-explorer\.html#case=37"/);
+assert.match(chickwitFoiaAlias[1], /no graph reference to it was found in the relationship table/);
+assert.match(chickwitFoiaAlias[1], /Do not infer project activity, testing, independent corroboration of an experiment, or a Blue Beam connection/);
+assert.match(chickwitFoiaAlias[1], /No new case, source record or public graph edge is created/);
+console.log("PASS: CHICKWIT archive alias reuses source #35 and preserves archival access and evidence limitations.");
