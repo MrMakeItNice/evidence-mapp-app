@@ -184,26 +184,32 @@ function exactNewsSourcePublicationDateReview(news, sources, limit = 25) {
   for (const source of sources) {
     const url = cleanUrl(source.url);
     if (urlProblem(url) !== null) continue;
-    if (!sourceIndex.has(url)) sourceIndex.set(url, []);
-    sourceIndex.get(url).push(source);
+    if (!sourceIndex.has(url)) sourceIndex.set(url, {missing: [], dated: []});
+    sourceIndex.get(url)[absent(source.publication_date) ? 'missing' : 'dated'].push(source.id);
   }
-  const newsMissing = [], sourceMissing = [];
-  for (const item of news) {
+  for (const group of sourceIndex.values()) {
+    group.missing.sort((a,b) => a-b);
+    group.dated.sort((a,b) => a-b);
+  }
+  const newsMissing = {count: 0, id_pairs: []}, sourceMissing = {count: 0, id_pairs: []};
+  // Numeric IDs are validated by checkCollection. Count matching buckets
+  // without enumerating every pair; only materialize the sorted review prefix.
+  for (const item of [...news].sort((a,b) => a.id-b.id)) {
     const url = cleanUrl(item.source_url);
     if (urlProblem(url) !== null) continue;
-    for (const source of sourceIndex.get(url) ?? []) {
-      if (absent(item.published_at) && !absent(source.publication_date)) {
-        newsMissing.push([item.id, source.id]);
-      } else if (!absent(item.published_at) && absent(source.publication_date)) {
-        sourceMissing.push([item.id, source.id]);
-      }
+    const group = sourceIndex.get(url);
+    if (!group) continue;
+    const missing = absent(item.published_at);
+    const ids = missing ? group.dated : group.missing;
+    const target = missing ? newsMissing : sourceMissing;
+    target.count += ids.length;
+    if (!Number.isSafeInteger(target.count)) throw new Error('Unsafe metadata pair count');
+    for (let i=0; i<ids.length && target.id_pairs.length<limit; i++) {
+      target.id_pairs.push([item.id, ids[i]]);
     }
   }
-  const summarize = pairs => {
-    pairs.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-    return { count: pairs.length, id_pairs: pairs.slice(0, limit),
-      omitted_id_pairs: Math.max(0, pairs.length - limit) };
-  };
+  const summarize = target => ({...target,
+    omitted_id_pairs: target.count - target.id_pairs.length});
   return {
     news_missing_source_dated: summarize(newsMissing),
     source_missing_news_dated: summarize(sourceMissing)
