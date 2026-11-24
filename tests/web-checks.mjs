@@ -259,7 +259,7 @@ assert.ok(JSON.parse(fs.readFileSync('paper-trails-data.json','utf8')).reference
 console.log('PASS: CHATTER thematic comparison uses existing case and congressional source without inferring operational links.');
 
 // Contemporaneous counterevidence must preserve the difference between a broad claim and a limited file search.
-const artichokeCounterevidence = bluebirdPage.match(/<p id="artichoke-1952-counterevidence">([\s\S]*?)<\/p>/);
+const artichokeCounterevidence = bluebirdPage.match(/<p id="artichoke-1952-counterevidence" tabindex="-1">([\s\S]*?)<\/p>/);
 assert.ok(artichokeCounterevidence);
 assert.equal((bluebirdPage.match(/id="artichoke-1952-counterevidence"/g)||[]).length,1);
 assert.match(artichokeCounterevidence[1],/July 14, 1952/);
@@ -283,6 +283,7 @@ assert.deepEqual(sourceJumpLinks.map(link => link[1]), [
   'mkultra-mkdelta-scope',
   'chatter-thematic-comparison',
   'source-scope-comparison',
+  'artichoke-1952-counterevidence',
   'bluebird-bluebeam-assessment'
 ]);
 assert.ok(sourceJumpLinks.every(link => link[2].length >= 16), 'Source jumps need descriptive names');
@@ -315,13 +316,13 @@ const comparisonScripts = [...bluebirdPage.matchAll(/<script\b[^>]*>([\s\S]*?)<\
 assert.equal(comparisonScripts.length, 1, 'Expected one isolated Rabbit Hole navigation script');
 new vm.Script(comparisonScripts[0][1], {filename:'rabbit-hole.html:source-comparison'});
 const comparisonPanel = {open:false};
-const fakeHash = {hash:'#source-scope-comparison'};
+const fakeHash = {hash:'#artichoke-1952-counterevidence'};
 const handlers = {};
 vm.runInNewContext(comparisonScripts[0][1], {
   document: {
     getElementById: id => id === 'source-scope-comparison' ? comparisonPanel : null,
-    querySelectorAll: selector => selector === 'a[href="#source-scope-comparison"]'
-      ? [{addEventListener: (kind, fn) => { handlers[kind] = fn; }}] : []
+    querySelectorAll: selector => ['a[href="#source-scope-comparison"]', 'a[href="#artichoke-1952-counterevidence"]'].includes(selector)
+      ? [{addEventListener: (kind, fn) => { handlers[selector + ':' + kind] = fn; }}] : []
   },
   window: {
     location:fakeHash,
@@ -337,8 +338,15 @@ fakeHash.hash='#source-scope-comparison';
 handlers.hashchange();
 assert.equal(comparisonPanel.open,true,'History navigation must expand comparison');
 comparisonPanel.open=false;
-handlers.click();
+handlers['a[href="#source-scope-comparison"]:click']();
 assert.equal(comparisonPanel.open,true,'Clicking an unchanged hash must expand comparison');
+comparisonPanel.open=false;
+fakeHash.hash='#artichoke-1952-counterevidence';
+handlers.hashchange();
+assert.equal(comparisonPanel.open,true,'History must reveal nested counterevidence');
+comparisonPanel.open=false;
+handlers['a[href="#artichoke-1952-counterevidence"]:click']();
+assert.equal(comparisonPanel.open,true,'Repeat counterevidence jump must expand comparison');
 console.log('PASS: source-scope comparison opens for direct/history/repeat jumps without changing unrelated navigation.');
 
 // Investigation path cards use semantic, full-card links, not tiny heading-only tap targets.
