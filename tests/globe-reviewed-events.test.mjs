@@ -770,3 +770,51 @@ test('optional indexed links cannot qualify a missing or conflicting location fo
   const [malformed] = reviewedMapEvents([withChanges({additional_source_urls: extra[0]})]);
   assert.deepEqual(malformed.additional_source_urls, []);
 });
+
+
+test('indexed counterevidence is visible as a separate role in pointer and keyboard previews', () => {
+  const opposing = 'https://catalog.example.org/alternative?id=5#p3';
+  const second = 'https://other.example.org/review';
+  const supplemental = 'https://catalog.example.org/context';
+  const records = [
+    withChanges({counterevidence_urls: [opposing, 'https://catalog.example.org:443/alternative?id=5#p3',
+      'javascript:alert(1)', 'https://user:pass@catalog.example.org/unsafe',
+      'http://catalog.example.org/unsafe', null, {}, event.source_url],
+      additional_source_urls: [opposing, supplemental]}),
+    withChanges({counterevidence_urls: [opposing, second]}),
+    withChanges({review_status: 'pending', counterevidence_urls: ['https://pending.example.org/lead']})
+  ];
+  const list = element('ul');
+  let selected;
+  const mapped = renderReviewedMapList(document, list, records, record => {selected = record;});
+  assert.equal(mapped.length, 1);
+  assert.deepEqual(mapped[0].counterevidence_urls, [opposing, event.source_url, second],
+    'preserve explicit counterevidence role even when a primary citation is reused');
+  assert.deepEqual(mapped[0].additional_source_urls, [supplemental],
+    'a counterevidence URL should not be repeated as generic supplemental evidence');
+  assert.match(list.children[0].children[1].textContent, /3 indexed counterevidence link/);
+  list.children[0].children[0].listeners.click();
+  for (const record of [mapped[0], selected]) {
+    const panel = element('div');
+    showReviewedMapSource(document, panel, record);
+    assert.match(panel.children[7].textContent, /whether they contradict the event are not established/);
+    assert.match(panel.children[7].textContent, /do not establish map placement/);
+    assert.equal(panel.children[2].href, event.source_url);
+    assert.equal(panel.children[4].href, event.location_source_url);
+    const links = panel.children[8].children.map(item => item.children[0]);
+    assert.deepEqual(links.map(link => link.href), [opposing, event.source_url, second]);
+    for (const link of links) {
+      assert.equal(link.target, '_blank');
+      assert.equal(link.rel, 'noopener noreferrer');
+      assert.match(link.textContent, /Inspect indexed counterevidence \(opens in new tab\)/);
+    }
+  }
+});
+
+test('counterevidence links cannot establish a missing or conflicting geographic placement', () => {
+  const counterevidence_urls = ['https://catalog.example.org/map'];
+  assert.deepEqual(reviewedMapEvents([withChanges({location_source_url: '', counterevidence_urls})]), []);
+  assert.deepEqual(reviewedMapEvents([event, withChanges({lon: 10, counterevidence_urls})]), []);
+  const [malformed] = reviewedMapEvents([withChanges({counterevidence_urls: counterevidence_urls[0]})]);
+  assert.deepEqual(malformed.counterevidence_urls, []);
+});
