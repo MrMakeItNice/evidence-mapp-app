@@ -645,3 +645,44 @@ test('map eligibility status remains visible even without WebGL or eligible map 
     html.indexOf("const THREE=await import"), 'map availability must be updated before WebGL setup');
   assert.doesNotMatch(html, /getElementById\('reviewed-globe-browser'\)\.hidden=mapRecords\.length===0/);
 });
+
+
+test('alternate reviewed citations remain inspectable without inflating canonical map events', () => {
+  const alternate = withChanges({title: 'Alternate description',
+    source_url: 'https://other-archive.example.gov/report?id=28#page-4'});
+  for (const feed of [[event, alternate, alternate], [alternate, event, event]]) {
+    const records = reviewedMapEvents(feed);
+    assert.equal(records.length, 1);
+    assert.deepEqual(records[0].alternate_sources, [
+      {url: feed[1].source_url, title: feed[1].title}
+    ]);
+    const panel = element('div');
+    showReviewedMapSource(document, panel, records[0]);
+    assert.match(panel.children[5].textContent, /not additional events or established independent corroboration/);
+    const link = panel.children[6].children[0].children[0];
+    assert.equal(link.href, feed[1].source_url);
+    assert.equal(link.rel, 'noopener noreferrer');
+    assert.equal(link.target, '_blank');
+    assert.ok(link.textContent.includes(feed[1].title));
+    const list = element('ul');
+    renderReviewedMapList(document, list, feed, () => {});
+    assert.equal(list.children.length, 1);
+    assert.match(list.children[0].children[1].textContent, /1 additional indexed event citation/);
+  }
+});
+
+test('alternate citations do not bypass review, URL or geographic conflict gates', () => {
+  const alternate = withChanges({source_url: 'https://other-archive.example.gov/report#p4'});
+  for (const excluded of [
+    {...alternate, review_status: 'pending'},
+    {...alternate, source_url: 'javascript:alert(1)'},
+    {...alternate, source_url: 'https://user:secret@other-archive.example.gov/report'}
+  ]) {
+    assert.deepEqual(reviewedMapEvents([event, excluded])[0].alternate_sources, []);
+  }
+  assert.deepEqual(reviewedMapEvents([event, {...alternate, lon: 20}]), []);
+  assert.deepEqual(reviewedMapEvents([event, {...alternate, location_note: 'Conflicting precision'}]), []);
+  assert.deepEqual(reviewedMapEvents([event, withChanges({
+    source_url: 'https://archive.example.gov:443/report?id=12#p3'
+  })])[0].alternate_sources, [], 'canonical equivalent URL is not a second citation');
+});
