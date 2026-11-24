@@ -566,3 +566,13 @@ for (const href of ["https://nsarchive.gwu.edu/sites/default/files/documents/195
 assert.equal((artichokeAprilLimits[1].match(/target="_blank" rel="noopener noreferrer"/g)||[]).length,3);
 assert.doesNotMatch(artichokeAprilLimits[1],/case-33|case=33/);
 console.log('PASS: April ARTICHOKE field-test delay is date-scoped, uses canonical navigation, and does not promote a Blue Beam link.');
+
+// Distinguish a recorded ARTICHOKE reorganization recommendation from final approval.
+const artichokeJulyResponsibility = bluebirdPage.match(/<p id="artichoke-july-1952-responsibility">([\s\S]*?)<\/p>/);
+assert.ok(artichokeJulyResponsibility);
+assert.equal((bluebirdPage.match(/id="artichoke-july-1952-responsibility"/g)||[]).length,1);
+for (const phrase of ["Documented recommendation","July 14, 1952","paragraphs 2–5","not evidence of final approval or implementation","distinct document from the same-day interrogation report","not independent confirmation","Both scan pages were visually reviewed","original release date and final approval order remain unverified","not evidence of participation in a specific Defense project","or a Project Blue Beam connection","No new case, source record or public graph edge is created"]) assert.ok(artichokeJulyResponsibility[1].includes(phrase), 'Missing July recommendation scope: '+phrase);
+for (const href of ["https://nsarchive.gwu.edu/sites/default/files/documents/DOC08-19520714-JM%20Box%206%20F13-ocr.pdf#page=1","https://nsarchive.gwu.edu/sites/default/files/documents/DOC08-19520714-JM%20Box%206%20F13-ocr.pdf#page=2","https://nsarchive.gwu.edu/document/32722-document-07-memorandum-cia-acting-assistant-director-scientific-intelligence-deputy","./paper-trails.html#case-4","./connection-explorer.html#case=4"]) assert.ok(artichokeJulyResponsibility[1].includes('href="'+href+'"'));
+assert.equal((artichokeJulyResponsibility[1].match(/target="_blank" rel="noopener noreferrer"/g)||[]).length,3);
+assert.doesNotMatch(artichokeJulyResponsibility[1],/case-33|case=33|case-32|case=32/);
+console.log('PASS: July ARTICHOKE administrative recommendation retains source scope and canonical navigation.');
