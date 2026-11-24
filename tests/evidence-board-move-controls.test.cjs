@@ -1324,3 +1324,20 @@ test('zoom-out adapts to a narrower pane without Reset and never enlarges after 
   for (let i = 0; i < 20; i++) get('zout').listeners.click();
   assert.equal(scale(), .35, 'explicit Reset restores the wide-pane minimum');
 });
+
+
+test('disabled JavaScript explains unavailable live citations and hides unusable board controls', () => {
+  const head = html.match(/<head>[\s\S]*?<\/head>/)[0];
+  const body = html.match(/<body>[\s\S]*?<\/body>/)[0];
+  assert.match(head, /<noscript><style>\.shell,\.skip-board\{display:none\}<\/style><\/noscript>/);
+  const fallback = body.match(/<noscript>([\s\S]*?)<\/noscript>/);
+  assert.ok(fallback, 'body has a non-script fallback');
+  assert.match(fallback[1], /<h1>Evidence Board requires JavaScript<\/h1>/);
+  assert.match(fallback[1], /indexed citation cards cannot load while JavaScript is disabled/);
+  assert.match(fallback[1], /This does not mean that no evidence exists/);
+  assert.match(fallback[1], /href="\.\/paper-trails\.html"/);
+  assert.match(fallback[1], /href="\.\/index\.html"/);
+  assert.match(fallback[1], /Other interactive pages may also require JavaScript/);
+  assert.match(body, /<\/noscript><div class="shell">/);
+  assert.match(body, /<script>[\s\S]*?<\/script>/);
+});
