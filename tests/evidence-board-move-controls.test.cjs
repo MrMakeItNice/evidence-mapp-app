@@ -108,6 +108,7 @@ async function createBoard(publishedCases = [{ id: '1', title: 'Published case' 
   });
   const get = id => { if (!elements.has(id)) elements.set(id, make('div')); return elements.get(id); };
   get('viewport').clientWidth = 1000;
+  get('save').disabled = /<button id="save"[^>]*\bdisabled/.test(html); // Initial native HTML state in the simulated DOM.
   const document = {
     title: html.match(/<title>(.*?)<\/title>/)[1],
     getElementById: get, createElement: make, createElementNS: (_, tag) => make(tag),
@@ -733,8 +734,25 @@ test('phone users can jump past the case list and return to a focusable search h
   assert.ok(html.indexOf('id="case-files-heading"') < html.indexOf('id="search"'));
   assert.match(html, /id="board-controls" tabindex="-1"/);
   assert.ok(html.indexOf('href="#board-controls">Board controls') < html.indexOf('id="cases"'));
-  assert.match(html, /id="save">Save layout<\/button><a class="board-jump case-search-jump" href="#case-files-heading">Search case files/);
+  assert.match(html, /id="save"[^>]*>Save layout<\/button><a class="board-jump case-search-jump" href="#case-files-heading">Search case files/);
   assert.match(css, /#case-files-heading:focus-visible\{outline:2px solid var\(--mint\)/);
   assert.match(css, /\.board-jump\.case-search-jump\{display:none\}\s*@media\(max-width:650px\)\{\.board-jump\.case-search-jump\{display:inline-flex\}\}/);
   assert.match(css, /\.board-jump\{display:inline-flex;align-items:center;min-height:44px/);
+});
+
+
+test('Save layout becomes available only with a rendered case and stays unavailable for empty or failed loads', async () => {
+  assert.match(html, /<button id="save" disabled>Save layout<\/button>/);
+  const loaded = await createBoard();
+  assert.equal(loaded.get('save').disabled, false);
+  loaded.get('save').listeners.click();
+  assert.ok(loaded.stored.has('atlas-evidence-board-layout-v2-1'));
+  assert.match(loaded.get('status').textContent, /Layout saved/);
+  for (const page of [await createBoard([], []), await createBoard(undefined, undefined, true)]) {
+    assert.equal(page.get('save').disabled, true);
+    const status = page.get('status').textContent;
+    page.get('save').listeners.click(); // Guard also protects non-native/programmatic activation.
+    assert.equal(page.stored.size, 0);
+    assert.equal(page.get('status').textContent, status);
+  }
 });
