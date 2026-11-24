@@ -1204,3 +1204,19 @@ test('focused provenance region announces the current canonical event and offers
     'Selected map event source and location evidence: ' + event.title + ' (Event ID: archive-02)'
   ]);
 });
+
+
+test('selected map event has a non-color visual cue driven by the existing expanded state', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /#reviewed-globe-events > li > button\[aria-expanded="true"\]\{border:3px double #a8e6cb;padding:8px 10px\}/);
+  const list = element('ul');
+  renderReviewedMapList(document, list, [event, withChanges({id: 'archive-02'})], () => {});
+  const buttons = list.children.map(item => item.children[0]);
+  assert.ok(buttons.every(button => button.getAttribute('aria-expanded') === 'false'));
+  buttons[0].listeners.click();
+  assert.equal(buttons[0].getAttribute('aria-expanded'), 'true');
+  assert.equal(buttons[1].getAttribute('aria-expanded'), 'false');
+  buttons[1].listeners.click();
+  assert.equal(buttons[0].getAttribute('aria-expanded'), 'false');
+  assert.equal(buttons[1].getAttribute('aria-expanded'), 'true');
+});
