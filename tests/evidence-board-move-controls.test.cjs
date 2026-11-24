@@ -1425,3 +1425,32 @@ test('Fit all cards stays unavailable without a rendered investigation', async (
     assert.equal(page.get('world').style.transform, before);
   }
 });
+
+test('shared citation inspector links only other published cases with the same exact safe URL', async () => {
+  const cases = [{id:1,title:'First'},{id:2,title:'Second'},{id:3,title:'Different page'},{id:4,title:'Different query'}];
+  const url = 'https://records.example.org/doc?id=1#page=2';
+  const refs = [{case_id:1,title:'Citation',url},{case_id:2,title:'Other citation',url},{case_id:2,title:'Duplicate',url},{case_id:3,url:url.replace('page=2','page=3')},{case_id:4,url:url.replace('id=1','id=2')},{case_id:99,url}];
+  const {get,location,document,stored} = await createBoard(cases, refs);
+  get('cards').children[1].listeners.keydown({key:'Enter',preventDefault(){}});
+  const group = get('details').children.find(n=>n.className==='shared-citations');
+  assert.ok(group);
+  assert.match(group.children[0].textContent,/1 other published case$/);
+  assert.match(group.children[1].textContent,/not independent corroboration/);
+  assert.deepEqual(group.children[2].children.map(n=>n.textContent),['Second']);
+  group.children[2].children[0].listeners.click();
+  assert.equal(get('heading').textContent,'Second');
+  assert.equal(location.hash,'#case=2');
+  assert.equal(document.activeElement,get('details').children[0]);
+  assert.equal(stored.size,0);
+  assert.ok(!get('details').children.some(n=>n.className==='shared-citations'));
+});
+
+test('shared citation inspector caps other published cases and discloses the total', async () => {
+  const cases = Array.from({length:11},(_,i)=>({id:i+1,title:'Case '+(i+1)}));
+  const refs = cases.map(c=>({case_id:c.id,title:'Citation',url:'https://records.example.org/doc#page=2'}));
+  const {get} = await createBoard(cases,refs);
+  get('cards').children[1].listeners.keydown({key:'Enter',preventDefault(){}});
+  const group=get('details').children.find(n=>n.className==='shared-citations');
+  assert.equal(group.children[2].children.length,8);
+  assert.equal(group.children[3].textContent,'Showing 8 of 10 other published cases.');
+});
