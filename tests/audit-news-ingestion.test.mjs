@@ -951,3 +951,41 @@ test('watch freshness caps numeric IDs while retaining complete counts',()=>{
   assert.deepEqual(f.ids,Array.from({length:25},(_,i)=>i+1));
   assert.equal(f.omitted_ids,5);
 });
+
+
+test('bounded exact URL overlap retains lexicographic prefix and exact omitted count', () => {
+  const s = sample();
+  const url = 'https://agency.gov/shared?document=1';
+  s.news_items = Array.from({length: 40}, (_, i) => ({id: 100+i, source_url: url, topic_id: 1, review_status: 'pending'})).reverse();
+  s.research_inbox = Array.from({length: 50}, (_, i) => ({id: 200+i, source_url: url, review_status: 'pending'})).reverse();
+  s.expected_counts.news_items = s.news_items.length;
+  s.expected_counts.research_inbox = s.research_inbox.length;
+  const a = auditNewsIngestion(s).overlap;
+  assert.equal(a.news_inbox_exact_url_rows, 2000);
+  assert.equal(a.news_inbox_omitted_id_pairs, 1975);
+  assert.deepEqual(a.news_inbox_exact_url_id_pairs, Array.from({length:25}, (_,i) => [100,200+i]));
+  s.news_items.reverse();
+  s.research_inbox.reverse();
+  assert.deepEqual(auditNewsIngestion(s).overlap, a);
+});
+
+test('bounded exact URL overlap sorts across distinct URL groups and retains document query identity', () => {
+  const s = sample();
+  s.news_items = [
+    {id: 9, source_url: 'https://agency.gov/doc?id=1'},
+    {id: 2, source_url: 'https://agency.gov/doc?id=2'},
+    {id: 1, source_url: 'https://agency.gov/doc?id=1'},
+    {id: 3, source_url: 'https://agency.gov/doc?id=3'}
+  ];
+  s.research_inbox = [
+    {id: 15, source_url: 'https://agency.gov/doc?id=1'},
+    {id: 12, source_url: 'https://agency.gov/doc?id=2'},
+    {id: 10, source_url: 'https://agency.gov/doc?id=1'}
+  ];
+  s.expected_counts.news_items = s.news_items.length;
+  s.expected_counts.research_inbox = s.research_inbox.length;
+  const a = auditNewsIngestion(s).overlap;
+  assert.equal(a.news_inbox_exact_url_rows, 5);
+  assert.equal(a.news_inbox_omitted_id_pairs, 0);
+  assert.deepEqual(a.news_inbox_exact_url_id_pairs, [[1,10],[1,15],[2,12],[9,10],[9,15]]);
+});
