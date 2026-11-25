@@ -210,6 +210,7 @@ export function showReviewedMapSource(doc, panel, event) {
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.textContent = 'Inspect original source (opens in new tab): ' + event.source_url;
+  link.setAttribute('aria-label', link.textContent + ' — Event: ' + event.title + ' (Event ID: ' + event.id + ')');
   const mapNote = doc.createElement('p');
   mapNote.textContent = 'Displayed map point: ' + event.lat + '° latitude, ' + event.lon + '° longitude. ' +
     'Location role: ' + event.location_role_label + ' · Map placement: ' + event.location_note +
@@ -225,6 +226,7 @@ export function showReviewedMapSource(doc, panel, event) {
   locationLink.target = '_blank';
   locationLink.rel = 'noopener noreferrer';
   locationLink.textContent = 'Inspect map location evidence (opens in new tab): ' + event.location_source_url;
+  locationLink.setAttribute('aria-label', locationLink.textContent + ' — Event: ' + event.title + ' (Event ID: ' + event.id + ')');
   panel.append(heading, context, link, mapNote, locationLink);
   if (event.source_record_ids?.length) {
     const note = doc.createElement('p');
