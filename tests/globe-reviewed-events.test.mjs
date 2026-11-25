@@ -1371,3 +1371,27 @@ test('actual marker construction uses only independently validated map records, 
   assert.deepEqual(buildMarkers(THREE, {add: () => assert.fail('unexpected map pin')},
     [], reviewedEvents, candidates), []);
 });
+
+
+test('source link lists retain visible citation labels and distinguish the selected event by canonical identity', () => {
+  const panel = element('div');
+  const records = reviewedMapEvents([event, withChanges({id: 'archive-02'})], Date.parse('2026-11-24T12:00:00Z'));
+  assert.equal(records.length, 2);
+  const labels = [];
+  for (const record of records) {
+    showReviewedMapSource(document, panel, record);
+    const original = panel.children[2], geographic = panel.children[4];
+    assert.equal(original.href, record.source_url);
+    assert.equal(geographic.href, record.location_source_url);
+    for (const link of [original, geographic]) {
+      assert.ok(link.getAttribute('aria-label').startsWith(link.textContent));
+      assert.ok(link.getAttribute('aria-label').includes('Event ID: ' + record.id));
+      assert.ok(link.getAttribute('aria-label').includes(record.title));
+      assert.equal(link.target, '_blank');
+      assert.equal(link.rel, 'noopener noreferrer');
+    }
+    labels.push(original.getAttribute('aria-label'));
+    assert.notEqual(original.getAttribute('aria-label'), geographic.getAttribute('aria-label'));
+  }
+  assert.notEqual(labels[0], labels[1]);
+});
