@@ -6,7 +6,7 @@ const fixtureURL='https://example.invalid';
 const date=new Date().toISOString();
 const location={kind:'publisher',lat:0,lon:-90,label:'Synthetic fixture point',basis:'Browser test only; not evidence',source_url:fixtureURL+'/place',review_status:'verified'};
 const story=(id,extra={})=>({id,original_url:fixtureURL+'/'+id,outlet:'Fixture outlet A',headline_original:'Synthetic water story '+id,language:'en',publisher_country:'Fixture country',attribution_url:fixtureURL+'/terms',publication_status:'published',editorial_status:'cleared_for_public_index',published_at:date,tone:'positive',tone_rationale:'Synthetic only',coverage_group:'water',publisher_location:location,...extra});
-const feed={schema_version:1,kind:'public_media_reports',checked_at:date,coverage_note:'Synthetic browser fixture, not live data',reports:[story('a'),story('b',{tone:'negative',outlet:'Fixture outlet B',language:'es',headline_original:'Agua',headline_translated:'Water',translation_attribution:'Synthetic translation'}),story('c',{tone:'neutral',publisher_location:null}),story('old',{published_at:null,published_date_reported:'2000-01-01',tone:'uncertain',publisher_location:null})]};
+const feed={schema_version:1,kind:'public_media_reports',checked_at:date,coverage_note:'Synthetic browser fixture, not live data',reports:[story('a',{publication_time_source_url:fixtureURL+'/rss?edition=local#entry'}),story('b',{tone:'negative',outlet:'Fixture outlet B',language:'es',headline_original:'Agua',headline_translated:'Water',translation_attribution:'Synthetic translation'}),story('c',{tone:'neutral',publisher_location:null}),story('old',{published_at:null,published_date_reported:'2000-01-01',tone:'uncertain',publisher_location:null})]};
 const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 try{
  for(const mobile of [false,true]){
@@ -35,6 +35,8 @@ try{
   await page.locator('#media-detail').filter({hasText:'Reporting cluster'}).waitFor();
   assert.match(await page.locator('#media-detail').textContent(),/positive: 1 · negative: 1/);
   assert.equal(await page.locator('#media-detail a').filter({hasText:'Original article'}).count(),2);
+  assert.equal(await page.locator('#media-detail a').filter({hasText:'Inspect publication date/time source'}).getAttribute('href'),fixtureURL+'/rss?edition=local#entry');
+  assert.match(await page.locator('#media-detail').textContent(),/Separate publication date\/time citation not supplied/);
   await page.locator('#media-detail button').click();
   await page.locator('#media-query').fill('Agua');await page.locator('#media-query').press('Enter');
   await page.locator('#media-status').filter({hasText:'1 indexed reports'}).waitFor();
