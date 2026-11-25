@@ -367,6 +367,29 @@ try {
   assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).overflowY), 'visible');
   assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).maxHeight), 'none');
   console.log('PASS: named phone case list has bounded height, keyboard scrolling, visible final-result focus and a Tab exit; desktop remains unbounded.');
+  // Same-title records remain separate and identifiable through real keyboard activation.
+  cases.splice(0,cases.length,{id:'1',title:'Project BLUEBIRD'},{id:'32',title:'Project BLUEBIRD'},{id:'4',title:'Unique investigation'});
+  await page.goto('https://board.example/evidence-board.html#case=1');
+  await page.reload();
+  await page.waitForFunction(() => !document.getElementById('save').disabled);
+  for (const width of [320,768,1280]) {
+    await page.setViewportSize({width,height:800});
+    const repeated=page.getByRole('button',{name:'Project BLUEBIRD · Case ID 32',exact:true});
+    assert.equal(await repeated.count(),1);
+    assert.ok(await repeated.evaluate(el=>el.scrollWidth<=el.clientWidth && el.getBoundingClientRect().right<=innerWidth));
+  }
+  await page.locator('#search').fill('BLUEBIRD');
+  const secondRecord=page.getByRole('button',{name:'Project BLUEBIRD · Case ID 32',exact:true});
+  await secondRecord.focus();
+  await page.keyboard.press('Enter');
+  assert.equal(new URL(page.url()).hash,'#case=32');
+  assert.equal(await page.locator('#heading').textContent(),'Project BLUEBIRD');
+  assert.equal(await page.locator('#details .badge').textContent(),'Published case · Case ID 32');
+  assert.equal(await secondRecord.getAttribute('aria-pressed'),'true');
+  await page.getByRole('button',{name:'Clear search',exact:true}).click();
+  assert.equal(await secondRecord.count(),1);
+  assert.equal(await page.getByRole('button',{name:'Unique investigation',exact:true}).count(),1);
+  console.log('PASS: repeated titles have distinct visible/accessible Case ID labels at 320/768/1280px; keyboard selection opens the exact record and inspector, filtering/Clear keep stable labels and unique titles remain unchanged.');
   assert.deepEqual(errors, [], 'no uncaught frontend exceptions');
   assert.deepEqual(unexpected, [], 'all requests use fixtures; no production data or outgoing source requests');
   console.log('PASS: no uncaught page errors or unexpected requests.');

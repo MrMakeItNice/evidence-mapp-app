@@ -1512,3 +1512,41 @@ test('new queries and Clear reset the case-list scroll without replacing the ope
   assert.equal(document.activeElement,search);
   assert.equal(get('cards').children[0],card);
 });
+
+
+test('repeated titles retain distinct record labels across batches, search and selection', async () => {
+  const published=[{id:1,title:'Repeated'}, ...Array.from({length:18},(_,i)=>({id:i+2,title:'Unique '+i})), {id:'record-20',title:' REPEATED '}];
+  const original=JSON.stringify(published);
+  const {get,location}=await createBoard(published,[]);
+  assert.equal(get('cases').children[0].textContent,'Repeated · Case ID 1', 'identify repeats beyond the initial batch');
+  assert.equal(get('cases').children[1].textContent,'Unique 0');
+  assert.equal(get('details').children[1].textContent,'Published case · Case ID 1');
+  const first=get('cases').children[0];
+  get('more-cases').listeners.click();
+  assert.equal(get('cases').children[0],first);
+  assert.equal(get('cases').children.at(-1).textContent,' REPEATED  · Case ID record-20');
+  get('search').value='Repeated'; get('search').listeners.input({target:get('search')});
+  assert.deepEqual(get('cases').children.map(n=>n.textContent),['Repeated · Case ID 1',' REPEATED  · Case ID record-20']);
+  get('cases').children[1].listeners.click();
+  assert.equal(location.hash,'#case=record-20');
+  assert.equal(get('heading').textContent,' REPEATED ');
+  assert.equal(get('details').children[1].textContent,'Published case · Case ID record-20');
+  assert.equal(get('cases').children[1].attributes['aria-pressed'],'true');
+  get('clear-cases').listeners.click();
+  assert.equal(get('cases').children[0].textContent,'Repeated · Case ID 1');
+  assert.equal(JSON.stringify(published),original, 'labels do not mutate titles or record IDs');
+});
+
+test('shared citation navigation uses the same repeated-title labels and literal record IDs', async () => {
+  const id='<record&2>', url='https://records.example.org/shared';
+  const {get,location}=await createBoard([{id:1,title:'Same title'},{id,title:'Same title'},{id:3,title:'Unique'}], [{case_id:1,url},{case_id:id,url}]);
+  get('cards').children[1].listeners.keydown({key:'Enter',preventDefault(){}});
+  const group=get('details').children.find(n=>n.className==='shared-citations');
+  const link=group.children[2].children[0];
+  assert.equal(link.textContent,'Same title · Case ID <record&2>');
+  assert.equal(get('cases').children[1].textContent,link.textContent);
+  assert.equal(link.children.length,0, 'IDs remain literal text, never markup');
+  link.listeners.click();
+  assert.equal(location.hash,'#case='+encodeURIComponent(id));
+  assert.equal(get('details').children[1].textContent,'Published case · Case ID <record&2>');
+});
