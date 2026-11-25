@@ -286,6 +286,7 @@ assert.deepEqual(sourceJumpLinks.map(link => link[1]), [
   'often-chickwit-program-distinction',
   'source-scope-comparison',
   'artichoke-1952-counterevidence',
+  'artichoke-transfer-date-review',
   'northwoods-mongoose-scope',
   'mongoose-approval-markers',
   'bluebird-bluebeam-assessment'
@@ -325,7 +326,7 @@ const handlers = {};
 vm.runInNewContext(comparisonScripts[0][1], {
   document: {
     getElementById: id => id === 'source-scope-comparison' ? comparisonPanel : null,
-    querySelectorAll: selector => ['a[href="#source-scope-comparison"]', 'a[href="#artichoke-1952-counterevidence"]'].includes(selector)
+    querySelectorAll: selector => ['a[href="#source-scope-comparison"]', 'a[href="#artichoke-1952-counterevidence"]', 'a[href="#artichoke-transfer-date-review"]'].includes(selector)
       ? [{addEventListener: (kind, fn) => { handlers[selector + ':' + kind] = fn; }}] : []
   },
   window: {
@@ -351,6 +352,13 @@ assert.equal(comparisonPanel.open,true,'History must reveal nested countereviden
 comparisonPanel.open=false;
 handlers['a[href="#artichoke-1952-counterevidence"]:click']();
 assert.equal(comparisonPanel.open,true,'Repeat counterevidence jump must expand comparison');
+comparisonPanel.open=false;
+fakeHash.hash='#artichoke-transfer-date-review';
+handlers.hashchange();
+assert.equal(comparisonPanel.open,true,'Transfer date deep link must reveal its containing comparison');
+comparisonPanel.open=false;
+handlers['a[href="#artichoke-transfer-date-review"]:click']();
+assert.equal(comparisonPanel.open,true,'Repeat transfer date jump must reveal its comparison');
 console.log('PASS: source-scope comparison opens for direct/history/repeat jumps without changing unrelated navigation.');
 
 // Investigation path cards use semantic, full-card links, not tiny heading-only tap targets.
@@ -578,7 +586,7 @@ assert.doesNotMatch(artichokeJulyResponsibility[1],/case-33|case=33|case-32|case
 console.log('PASS: July ARTICHOKE administrative recommendation retains source scope and canonical navigation.');
 
 
-const artichokeTransferDateReview = bluebirdPage.match(/<p id="artichoke-transfer-date-review">([\s\S]*?)<\/p>/);
+const artichokeTransferDateReview = bluebirdPage.match(/<p id="artichoke-transfer-date-review" tabindex="-1">([\s\S]*?)<\/p>/);
 assert.ok(artichokeTransferDateReview);
 assert.equal((bluebirdPage.match(/id="artichoke-transfer-date-review"/g)||[]).length,1);
 for (const phrase of ["exact date unresolved","existing source #212","November 21, 1952 memorandum","October 1952","C01434879","November 1952 transfer","both pages visually reviewed","original scans were not verified here","investigator hypothesis, not a finding","final approval order remain unverified","do not count them as independent corroboration","No evidence of a Project Blue Beam connection","canonical ARTICHOKE Case #3 (record ID 4)"]) assert.ok(artichokeTransferDateReview[1].includes(phrase), 'Missing transfer provenance: '+phrase);
