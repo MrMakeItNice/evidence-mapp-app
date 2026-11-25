@@ -1,0 +1,27 @@
+name: Offline review queue triage regression
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/triage-review-queue.mjs'
+      - 'tests/triage-review-queue.test.mjs'
+      - '.github/workflows/review-queue-triage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: node --check scripts/triage-review-queue.mjs
+      - name: Run focused regression tests
+        run: node --test tests/triage-review-queue.test.mjs
