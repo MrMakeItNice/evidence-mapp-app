@@ -70,6 +70,18 @@ try {
   assert.deepEqual(await page.locator('.tile').allTextContents(), initialCards);
   console.log('PASS: named case-search landmark contains controls, status and results; filtering, Enter and Clear preserve the open board.');
 
+  await page.goto('about:blank');
+  await page.goto('https://board.example/evidence-board.html#case=1');
+  await page.waitForFunction(() => !document.getElementById('save').disabled);
+  for (let i = 0; i < 3; i++) await page.keyboard.press('Tab');
+  assert.equal(await page.getByRole('link', { name: 'Skip to selected record', exact: true }).evaluate(el => el === document.activeElement), true);
+  const selectedBeforeSkip = await page.locator('.tile[aria-pressed="true"]').getAttribute('aria-label');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.activeElement.id === 'selected-record');
+  assert.equal(await page.locator('.tile[aria-pressed="true"]').getAttribute('aria-label'), selectedBeforeSkip);
+  await page.keyboard.press('Tab');
+  assert.equal(await page.locator('#details a').first().evaluate(el => el === document.activeElement), true);
+  console.log('PASS: third skip link focuses the selected-record inspector and Tab enters its controls without changing selection.');
   await page.goto('about:blank'); // Force a new document, rather than same-page fragment navigation.
   await page.goto('https://board.example/evidence-board.html#case=1');
   await page.waitForFunction(() => !document.getElementById('save').disabled);

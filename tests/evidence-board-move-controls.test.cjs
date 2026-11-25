@@ -541,7 +541,7 @@ test('Zoom minus never enlarges a mobile board fitted below the desktop minimum'
 
 test('first-focus skip link bypasses navigation and case choices to the existing focusable board toolbar', () => {
   const body = html.slice(html.indexOf('<body>') + '<body>'.length);
-  assert.match(body, /^<a class="skip-board" href="#board-controls">Skip to evidence board<\/a><a class="skip-board" href="#case-files-heading">Skip to case search<\/a><header>/);
+  assert.match(body, /^<a class="skip-board" href="#board-controls">Skip to evidence board<\/a><a class="skip-board" href="#case-files-heading">Skip to case search<\/a><a class="skip-board" href="#selected-record">Skip to selected record<\/a><header>/);
   assert.equal([...html.matchAll(/id="board-controls"/g)].length, 1);
   assert.match(html, /id="board-controls" tabindex="-1"/);
   assert.match(html, /#board-controls:focus-visible/);
