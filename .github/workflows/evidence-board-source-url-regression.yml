@@ -1,6 +1,13 @@
 name: Evidence Board source URL regression
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'evidence-board.html'
+      - 'tests/evidence-board-source-url.test.cjs'
+      - '.github/workflows/evidence-board-source-url-regression.yml'
   pull_request:
     paths:
       - 'evidence-board.html'
@@ -20,6 +27,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Run source URL regression tests
         run: node --test tests/evidence-board-source-url.test.cjs tests/evidence-board-citation-language.test.cjs tests/evidence-board-move-controls.test.cjs
 
