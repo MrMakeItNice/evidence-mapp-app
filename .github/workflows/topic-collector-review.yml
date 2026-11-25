@@ -1,0 +1,28 @@
+name: Topic collector coverage (offline)
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-topic-collector-coverage.mjs'
+      - 'tests/audit-topic-collector-coverage.test.mjs'
+      - '.github/workflows/topic-collector-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks
+        run: |
+          node --check scripts/audit-topic-collector-coverage.mjs
+          node --check tests/audit-topic-collector-coverage.test.mjs
+      - name: Run isolated regression tests
+        run: node --test tests/audit-topic-collector-coverage.test.mjs
