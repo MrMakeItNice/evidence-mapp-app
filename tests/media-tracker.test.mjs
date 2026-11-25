@@ -64,3 +64,35 @@ test('producer preflight retains cleared distinct perspectives and honest missin
   assert.equal(f.reports[1].publisher_location,null);
   assert.equal(f.reports[1].published_at,null);
 });
+
+test('staging preflight CLI is read-only and never echoes rejected candidate data',async()=>{
+  const {mkdtemp,writeFile,readFile,readdir,rm}=await import('node:fs/promises');
+  const {tmpdir}=await import('node:os');
+  const {join}=await import('node:path');
+  const {fileURLToPath}=await import('node:url');
+  const {spawnSync}=await import('node:child_process');
+  const dir=await mkdtemp(join(tmpdir(),'media-preflight-'));
+  const cli=fileURLToPath(new URL('../scripts/check-public-media-export.mjs',import.meta.url));
+  const path=join(dir,'candidate.json');
+  const run=(...args)=>spawnSync(process.execPath,[cli,...args],{encoding:'utf8',cwd:dir});
+  try{
+    const good=JSON.stringify(rawExport([row('a')]));
+    await writeFile(path,good);
+    const accepted=run(path);
+    assert.equal(accepted.status,0,accepted.stderr);
+    assert.match(accepted.stdout,/1 records/);
+    assert.equal(await readFile(path,'utf8'),good);
+    const bad=JSON.stringify(rawExport([row('a',{editorial_status:'pending',human_notes:'PRIVATE_FIXTURE_CANARY'})]));
+    await writeFile(path,bad);
+    for(const input of [bad,'{"PRIVATE_FIXTURE_CANARY":']){
+      await writeFile(path,input);
+      const rejected=run(path);
+      assert.equal(rejected.status,1);
+      assert.doesNotMatch(rejected.stdout+rejected.stderr,/PRIVATE_FIXTURE_CANARY/);
+      assert.equal(await readFile(path,'utf8'),input);
+    }
+    assert.equal(run().status,2);
+    assert.equal(run(join(dir,'missing.json')).status,1);
+    assert.deepEqual(await readdir(dir),['candidate.json']);
+  }finally{await rm(dir,{recursive:true,force:true});}
+});
