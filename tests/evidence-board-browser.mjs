@@ -300,13 +300,17 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('#cases button').length === 18);
   const moreCases = page.getByRole('button', { name: 'Show more cases', exact: true });
   const retainedBoard = await page.locator('.tile').allTextContents();
+  const originalCaseButtons = await page.locator('#cases button').elementHandles();
   assert.ok(await moreCases.evaluate(el => el.getBoundingClientRect().height >= 44));
   await moreCases.focus();
   await page.keyboard.press('Enter');
   assert.equal(await page.locator('#cases button').count(), 36);
+  for (let i=0; i<originalCaseButtons.length; i++) assert.equal(await page.locator('#cases button').nth(i).evaluate((el, original) => el === original, originalCaseButtons[i]), true);
+  const expandedCaseButtons = await page.locator('#cases button').elementHandles();
   assert.equal(await page.locator('#cases button').nth(18).evaluate(el => el === document.activeElement), true);
   await moreCases.click();
   assert.equal(await page.locator('#cases button').count(), 41);
+  for (let i=0; i<expandedCaseButtons.length; i++) assert.equal(await page.locator('#cases button').nth(i).evaluate((el, original) => el === original, expandedCaseButtons[i]), true);
   assert.equal(await page.locator('#cases button').nth(36).evaluate(el => el === document.activeElement), true);
   assert.equal(await moreCases.isVisible(), false);
   assert.deepEqual(await page.locator('.tile').allTextContents(), retainedBoard);
@@ -318,7 +322,7 @@ try {
   assert.equal(await moreCases.isVisible(), true);
   await page.locator('#search').fill('No matching case');
   assert.equal(await moreCases.isVisible(), false);
-  console.log('PASS: keyboard Show more browses 18/36/41 cases, focuses each new batch, preserves the board and resets on filtering.');
+  console.log('PASS: keyboard Show more retains existing case-button identity through 18/36/41 cases, focuses each new batch, preserves the board and resets on filtering.');
   assert.deepEqual(errors, [], 'no uncaught frontend exceptions');
   assert.deepEqual(unexpected, [], 'all requests use fixtures; no production data or outgoing source requests');
   console.log('PASS: no uncaught page errors or unexpected requests.');

@@ -1461,12 +1461,16 @@ test('Show more reveals bounded batches, focuses the first new result and preser
   const { get, document, stored } = await createBoard(published, []);
   const list=get('cases'), more=get('more-cases'), card=get('cards').children[0], details=get('details').children[0];
   assert.equal(more.hidden, false);
+  const initialButtons = [...list.children];
   more.listeners.click();
   assert.equal(list.children.length, 36);
+  assert.ok(initialButtons.every((button, i) => list.children[i] === button), 'expanding retains the initial case buttons');
+  const firstTwoBatches = [...list.children];
   assert.equal(document.activeElement, list.children[18]);
   assert.match(get('case-search-status').textContent, /36 of 41/);
   more.listeners.click();
   assert.equal(list.children.length, 41);
+  assert.ok(firstTwoBatches.every((button, i) => list.children[i] === button), 'final expansion retains both previous batches');
   assert.equal(document.activeElement, list.children[36]);
   assert.equal(more.hidden, true);
   more.listeners.click();
