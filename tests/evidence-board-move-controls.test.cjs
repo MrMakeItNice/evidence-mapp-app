@@ -1493,3 +1493,22 @@ test('Show more remains unavailable for empty, failed and fully displayed search
     assert.equal(get('cases').children.length, count);
   }
 });
+
+
+test('new queries and Clear reset the case-list scroll without replacing the open board', async () => {
+  const published=Array.from({ length: 41 }, (_,i)=>({ id:String(i+1), title:'Case '+(i+1) }));
+  const { get, document }=await createBoard(published, []);
+  const list=get('cases'), search=get('search'), card=get('cards').children[0];
+  list.scrollTop=500;
+  search.value='Case'; search.listeners.input({ target:search });
+  assert.equal(list.scrollTop,0);
+  list.scrollTop=160;
+  get('more-cases').listeners.click();
+  assert.equal(list.scrollTop,160, 'expansion does not explicitly reset prior scroll');
+  assert.equal(document.activeElement,list.children[18]);
+  list.scrollTop=700;
+  get('clear-cases').listeners.click();
+  assert.equal(list.scrollTop,0);
+  assert.equal(document.activeElement,search);
+  assert.equal(get('cards').children[0],card);
+});

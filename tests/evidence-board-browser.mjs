@@ -347,6 +347,22 @@ try {
   });
   await page.keyboard.press('Tab');
   assert.equal(await page.locator('#zin').evaluate(el => el===document.activeElement), true, 'Tab leaves the case list');
+  const boardBeforeQueryReset = await page.locator('.tile').allTextContents();
+  await page.locator('#search').fill('Case ');
+  await page.waitForFunction(() => document.getElementById('cases').scrollTop === 0);
+  assert.equal(await page.locator('#search').evaluate(el => el===document.activeElement), true);
+  assert.ok(await page.locator('#cases button').first().evaluate(el => {
+    const bounds=el.getBoundingClientRect(), frame=document.getElementById('cases').getBoundingClientRect();
+    return bounds.top>=frame.top && bounds.bottom<=frame.bottom;
+  }));
+  await caseRegion.focus();
+  await page.keyboard.press('End');
+  await page.waitForFunction(() => document.getElementById('cases').scrollTop > 0);
+  await page.getByRole('button', { name: 'Clear search', exact: true }).click();
+  await page.waitForFunction(() => document.getElementById('cases').scrollTop === 0);
+  assert.equal(await page.locator('#search').evaluate(el => el===document.activeElement), true);
+  assert.deepEqual(await page.locator('.tile').allTextContents(), boardBeforeQueryReset);
+  console.log('PASS: changed query and Clear return phone results to the top, retain input focus and preserve the open board.');
   await page.setViewportSize({ width: 1280, height: 800 });
   assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).overflowY), 'visible');
   assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).maxHeight), 'none');
