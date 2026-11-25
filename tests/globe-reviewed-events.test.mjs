@@ -1332,3 +1332,42 @@ test('accessible event list exposes the same reviewed coordinates before opening
   showReviewedMapSource(document, panel, valid[0]);
   assert.match(panel.children[3].textContent, /Displayed map point: 37\.7° latitude, -122\.4° longitude/);
 });
+
+
+test('actual marker construction uses only independently validated map records, not countable or raw events', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const markerLine = html.split('\n').find(line => line.includes('const markerMeshes=[];'));
+  assert.ok(markerLine, 'actual homepage marker construction exists');
+  const candidates = [
+    event,
+    withChanges({id: 'countable-policy', lat: null, lon: null, location_source_url: null}),
+    withChanges({id: 'missing-provenance', location_source_url: null}),
+    withChanges({id: 'conflicted-location'}),
+    withChanges({id: 'conflicted-location', lon: -121.1}),
+    withChanges({id: 'pending-site', review_status: 'pending'})
+  ];
+  const list = element('ul');
+  const mapRecords = renderReviewedMapList(document, list, candidates, () => {});
+  // Simulate a future count collection that includes non-geographic records
+  // and has already deduplicated conflicts. It must never drive marker creation.
+  const reviewedEvents = candidates.slice(0, 4);
+  const markerObjects = [];
+  const THREE = {
+    Vector3: class {constructor(x,y,z) {Object.assign(this,{x,y,z});}},
+    SphereGeometry: class {},
+    MeshBasicMaterial: class {},
+    Mesh: class {constructor() {this.userData={};this.position={copy: point => {this.point=point;}};}}
+  };
+  const buildMarkers = new Function('THREE', 'globe', 'mapRecords', 'reviewedEvents',
+    'mapEventCandidates', markerLine + '\nreturn markerMeshes;');
+  const pins = buildMarkers(THREE, {add: pin => markerObjects.push(pin)}, mapRecords, reviewedEvents, candidates);
+  assert.deepEqual(mapRecords.map(record => record.id), ['archive-01']);
+  assert.equal(list.children.length, 1);
+  assert.equal(pins.length, 1);
+  assert.deepEqual(markerObjects, pins);
+  assert.equal(pins[0].userData.event, mapRecords[0]);
+  assert.ok(Object.values(pins[0].point).every(Number.isFinite));
+  // An empty map-eligible collection must yield no markers even when counts exist.
+  assert.deepEqual(buildMarkers(THREE, {add: () => assert.fail('unexpected map pin')},
+    [], reviewedEvents, candidates), []);
+});
