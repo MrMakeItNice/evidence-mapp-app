@@ -1,0 +1,23 @@
+name: Research news-inbox overlap audit
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-news-inbox-overlaps.mjs'
+      - 'tests/audit-news-inbox-overlaps.test.mjs'
+      - '.github/workflows/news-inbox-overlap-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  overlap-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Offline syntax and regression checks (no database access)
+        run: |
+          node --check scripts/audit-news-inbox-overlaps.mjs
+          node --test tests/audit-news-inbox-overlaps.test.mjs
