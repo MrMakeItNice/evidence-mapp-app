@@ -13,13 +13,18 @@ try {
   for(const baseline of [true,false]) {
     const page=await browser.newPage({viewport:{width:1280,height:900}});
     const errors=[],unexpected=[];
+    let pauseCases=false,releaseCases,casesPaused,rejectCases=false;
     page.on('pageerror',e=>errors.push(e.message));
     const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
-    await page.route('**/*',route=>{
+    await page.route('**/*',async route=>{
       const u=new URL(route.request().url());
       if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:html});
       if(u.origin==='https://classic.example'&&u.pathname==='/paper-trails-data.json')return route.fulfill({json:{references}});
-      if(u.hostname==='nxlffnplqdobfqxogmxo.supabase.co'&&u.pathname==='/functions/v1/evidence-atlas/api/cases')return route.fulfill({json:cases,headers:{'access-control-allow-origin':'*'}});
+      if(u.hostname==='nxlffnplqdobfqxogmxo.supabase.co'&&u.pathname==='/functions/v1/evidence-atlas/api/cases'){
+        if(pauseCases)await new Promise(resolve=>{releaseCases=resolve;casesPaused()});
+        if(rejectCases)return route.fulfill({status:503,json:{error:'Fixture service unavailable'},headers:{'access-control-allow-origin':'*'}});
+        return route.fulfill({json:cases,headers:{'access-control-allow-origin':'*'}});
+      }
       if(u.pathname==='/favicon.ico')return route.fulfill({status:204});
       unexpected.push(u.href);return route.abort();
     });
@@ -171,6 +176,56 @@ try {
         assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'Escape outside inspector is untouched');
       }
       console.log('PASS: shared-citation case navigation focuses the new investigation heading, Escape reaches its live case card, and Tab leaves details at 320/768/1280px without returning to removed cards.');
+      pauseCases=true;
+      const paused=new Promise(resolve=>casesPaused=resolve);
+      await page.reload();await paused;
+      assert.equal(await page.locator('#search').isDisabled(),true,'loading search cannot report a false no-match');
+      assert.equal(await page.locator('#search-status').textContent(),'Loading published case search…');
+      assert.equal(await page.locator('#results button').count(),0);
+      pauseCases=false;releaseCases();
+      await page.waitForFunction(()=>!document.querySelector('#search').disabled);
+      assert.equal(await page.locator('#search-status').textContent(),'Type a title to search 2 published cases.');
+      cases.push(...Array.from({length:20},(_,i)=>({id:i+3,title:'SearchMatch '+(i+1)})));
+      await page.reload();await page.waitForFunction(()=>!document.querySelector('#search').disabled);
+      assert.equal(await page.locator('#search').getAttribute('aria-describedby'),'search-status');
+      assert.equal(await page.locator('#search-status').getAttribute('role'),'status');
+      assert.equal(await page.locator('#search-status').getAttribute('aria-atomic'),'true');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        const caseTitle=await page.locator('#detail h2').textContent(),caseHash=new URL(page.url()).hash;
+        await page.locator('#search').fill('SearchMatch');
+        assert.equal(await page.locator('#results button').count(),15);
+        assert.equal(await page.locator('#search-status').textContent(),'15 of 20 matching published cases shown. Refine your search to find other cases.');
+        assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
+        assert.ok(await page.locator('#search-status').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth));
+        await page.locator('#search').fill('NoMatchingFixture');
+        assert.equal(await page.locator('#results button').count(),0);
+        assert.equal(await page.locator('#search-status').textContent(),'No matching published cases. Try another title.');
+        await page.locator('#search').fill('');
+        assert.equal(await page.locator('#results button').count(),0);
+        assert.equal(await page.locator('#search-status').textContent(),'Type a title to search 22 published cases.');
+        assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#detail h2').textContent(),caseTitle);
+        assert.equal(new URL(page.url()).hash,caseHash,'query updates do not navigate');
+      }
+      await page.locator('#search').fill('SearchMatch 20');
+      assert.equal(await page.locator('#search-status').textContent(),'1 matching published case.');
+      await page.locator('#results button').press('Enter');
+      assert.equal(new URL(page.url()).hash,'#case=22');
+      assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: SearchMatch 20. Search again to find another case.');
+      assert.equal(await page.locator('#results button').count(),0);
+      rejectCases=true;await page.reload();
+      await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('unavailable'));
+      assert.equal(await page.locator('#search').isDisabled(),true);
+      assert.equal(await page.locator('#search-status').textContent(),'Published case search is unavailable. Please retry later.');
+      assert.equal(await page.locator('#results button').count(),0);
+      assert.equal(await page.locator('#graph .node').count(),0,'failure does not fabricate records');
+      assert.match(await page.locator('#status').textContent(),/Could not load the public investigation data/);
+      rejectCases=false;cases.splice(0);await page.reload();
+      await page.waitForFunction(()=>!document.querySelector('#search').disabled);
+      assert.equal(await page.locator('#search-status').textContent(),'No published cases available.');
+      assert.equal(await page.locator('#results button').count(),0);
+      console.log('PASS: loading, unavailable and empty published-data states stay distinct; search counts, 15-of-20 truncation, no-match and selected-case feedback work at 320/768/1280px without query updates stealing focus or changing the case.');
       console.log('PASS: named group exposes all case/source buttons; native Tab, Enter/Space inspection and Tab exit work at 320/768/1280px.');
     }
     assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
