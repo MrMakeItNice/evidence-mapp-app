@@ -541,7 +541,7 @@ test('Zoom minus never enlarges a mobile board fitted below the desktop minimum'
 
 test('first-focus skip link bypasses navigation and case choices to the existing focusable board toolbar', () => {
   const body = html.slice(html.indexOf('<body>') + '<body>'.length);
-  assert.match(body, /^<a class="skip-board" href="#board-controls">Skip to evidence board<\/a><a class="skip-board" href="#case-files-heading">Skip to case search<\/a><header>/);
+  assert.match(body, /^<a class="skip-board" href="#board-controls">Skip to evidence board<\/a><a class="skip-board" href="#case-files-heading">Skip to case search<\/a><a class="skip-board" href="#selected-record">Skip to selected record<\/a><header>/);
   assert.equal([...html.matchAll(/id="board-controls"/g)].length, 1);
   assert.match(html, /id="board-controls" tabindex="-1"/);
   assert.match(html, /#board-controls:focus-visible/);
@@ -1475,4 +1475,39 @@ test('shared citation inspector reveals more exact matches without resetting the
   assert.equal(get('heading').textContent,'Case 20');
   assert.equal(location.hash,'#case=20');
   assert.equal(document.activeElement,get('details').children[0]);
+});
+
+
+test('Show more reveals bounded batches, focuses the first new result and preserves the open board', async () => {
+  const published = Array.from({ length: 41 }, (_, i) => ({ id: String(i+1), title: 'Case ' + (i+1) }));
+  const { get, document, stored } = await createBoard(published, []);
+  const list=get('cases'), more=get('more-cases'), card=get('cards').children[0], details=get('details').children[0];
+  assert.equal(more.hidden, false);
+  more.listeners.click();
+  assert.equal(list.children.length, 36);
+  assert.equal(document.activeElement, list.children[18]);
+  assert.match(get('case-search-status').textContent, /36 of 41/);
+  more.listeners.click();
+  assert.equal(list.children.length, 41);
+  assert.equal(document.activeElement, list.children[36]);
+  assert.equal(more.hidden, true);
+  more.listeners.click();
+  assert.equal(list.children.length, 41);
+  assert.equal(get('cards').children[0], card);
+  assert.equal(get('details').children[0], details);
+  assert.equal(stored.size, 0);
+  get('search').value='Case';
+  get('search').listeners.input({ target: get('search') });
+  assert.equal(list.children.length, 18);
+  assert.equal(more.hidden, false);
+});
+
+test('Show more remains unavailable for empty, failed and fully displayed searches', async () => {
+  for (const board of [await createBoard([], []), await createBoard(undefined, undefined, true), await createBoard()]) {
+    const { get }=board;
+    assert.equal(get('more-cases').hidden, true);
+    const count=get('cases').children.length;
+    get('more-cases').listeners.click();
+    assert.equal(get('cases').children.length, count);
+  }
 });
