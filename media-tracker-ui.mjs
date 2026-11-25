@@ -11,7 +11,7 @@ export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new
   const button=(label,fn)=>{const el=make('button',label);el.type='button';el.addEventListener('click',fn);return el;};
   const locFor=r=>mode()==='event'?r.event_location:r.publisher_location;
   const headline=r=>headlines.value==='translated'&&r.headline_translated?r.headline_translated:r.headline_original;
-  const date=r=>r.published_at?r.published_at+' · Pacific day shown in tracker':'Publication timestamp unavailable';
+  const date=r=>r.published_at?r.published_at+' · Pacific day shown in tracker':r.published_date_reported?'Publisher-reported date: '+r.published_date_reported+' · Time/time zone unavailable; not counted in Pacific daily totals':'Publication date and timestamp unavailable';
   const toneCounts=c=>Object.entries(c.counts).filter(([,v])=>v).map(([k,v])=>k+': '+v).join(' · ');
   function closeDetail(){detail.hidden=true;detail.replaceChildren();}
   function article(r,full=false){
@@ -48,7 +48,7 @@ export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new
     if(!feed){view=null;for(const row of tallies)row.querySelector('strong').textContent='—';$('media-result-total').textContent='';viewHandler(null,mode());return;}
     view=selectMedia(feed,{query:submitted,country:country.value,language:language.value,outlet:outlet.value,mode:mode()==='event'?'event':'publisher',now:now()});
     for(const row of tallies)row.querySelector('strong').textContent=String(view.counts[row.dataset.tone]);
-    status.textContent=(view.searching?'Search results across indexed dates':'Today: '+view.day+' (Pacific)')+' · '+view.reports.length+' indexed reports · '+view.unlocated.length+' without mapped location · '+view.undated.length+' without publication timestamp. Feed checked: '+feed.checked_at+'. '+feed.coverage_note;
+    status.textContent=(view.searching?'Search results across indexed dates':'Today: '+view.day+' (Pacific)')+' · '+view.reports.length+' indexed reports · '+view.unlocated.length+' without mapped location · '+view.undated.length+' without publication timestamp ('+view.dateOnly.length+' publisher-date-only). Feed checked: '+feed.checked_at+'. '+feed.coverage_note;
     $('media-result-total').textContent='('+view.reports.length+')';
     for(const [name,count] of view.outlets)outlets.append(make('li',name+': '+count));
     for(const cluster of view.clusters){
