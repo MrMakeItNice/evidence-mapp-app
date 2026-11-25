@@ -323,6 +323,32 @@ try {
   await page.locator('#search').fill('No matching case');
   assert.equal(await moreCases.isVisible(), false);
   console.log('PASS: keyboard Show more retains existing case-button identity through 18/36/41 cases, focuses each new batch, preserves the board and resets on filtering.');
+  await page.locator('#search').fill('Case');
+  await moreCases.click();
+  await moreCases.click();
+  const caseRegion = page.getByRole('region', { name: 'Matching published cases', exact: true });
+  assert.equal(await caseRegion.count(), 1);
+  const bounded = await caseRegion.evaluate(el => ({ height: el.getBoundingClientRect().height,
+    maximum: innerHeight * .55, client: el.clientHeight, content: el.scrollHeight }));
+  assert.ok(bounded.height <= bounded.maximum + 1 && bounded.content > bounded.client,
+    'phone case list is a bounded scroll area');
+  await caseRegion.focus();
+  assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).outlineStyle), 'solid');
+  await page.keyboard.press('End');
+  await page.waitForFunction(() => document.getElementById('cases').scrollTop > 0);
+  const lastCase = page.locator('#cases button').last();
+  await lastCase.focus();
+  await page.waitForFunction(() => {
+    const list=document.getElementById('cases'), item=list.lastElementChild;
+    const frame=list.getBoundingClientRect(), bounds=item.getBoundingClientRect();
+    return document.activeElement===item && bounds.top >= frame.top && bounds.bottom <= frame.bottom;
+  });
+  await page.keyboard.press('Tab');
+  assert.equal(await page.locator('#zin').evaluate(el => el===document.activeElement), true, 'Tab leaves the case list');
+  await page.setViewportSize({ width: 1280, height: 800 });
+  assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).overflowY), 'visible');
+  assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).maxHeight), 'none');
+  console.log('PASS: named phone case list has bounded height, keyboard scrolling, visible final-result focus and a Tab exit; desktop remains unbounded.');
   assert.deepEqual(errors, [], 'no uncaught frontend exceptions');
   assert.deepEqual(unexpected, [], 'all requests use fixtures; no production data or outgoing source requests');
   console.log('PASS: no uncaught page errors or unexpected requests.');
