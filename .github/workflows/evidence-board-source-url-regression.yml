@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'evidence-board.html'
+      - 'connection-explorer.html'
+      - 'tests/classic-explorer-browser.mjs'
       - 'tests/evidence-board-source-url.test.cjs'
       - 'tests/evidence-board-citation-language.test.cjs'
       - 'tests/evidence-board-move-controls.test.cjs'
@@ -39,3 +41,7 @@ jobs:
         env:
           EVIDENCE_BOARD_PLAYWRIGHT_MODULE: ${{ runner.temp }}/evidence-board-browser/node_modules/playwright/index.mjs
         run: node tests/evidence-board-browser.mjs
+      - name: Check Classic Explorer accessibility tree and keyboard activation
+        env:
+          EVIDENCE_BOARD_PLAYWRIGHT_MODULE: ${{ runner.temp }}/evidence-board-browser/node_modules/playwright/index.mjs
+        run: node tests/classic-explorer-browser.mjs
