@@ -1286,3 +1286,12 @@ test('indexed date is labeled consistently in the list, compact preview and full
   assert.match(detail.children[1].textContent, /physical activity date not established/);
   assert.doesNotMatch(detail.children[1].textContent, /· Event: /);
 });
+
+test('feed contract distinguishes the indexed event date from underlying activity dates', () => {
+  const feed = JSON.parse(readFileSync(new URL('../global-evidence-pulse.json', import.meta.url), 'utf8'));
+  assert.match(feed.event_contract.event_date, /date of the indexed event itself/);
+  assert.match(feed.event_contract.event_date, /report, approval or disclosure that is itself the event/);
+  assert.match(feed.event_contract.event_date, /not an inferred date of underlying activity/);
+  assert.match(feed.event_contract.event_date, /explain the basis in date_basis/);
+  assert.ok(feed.event_contract.optional_fields.includes('date_basis'));
+});
