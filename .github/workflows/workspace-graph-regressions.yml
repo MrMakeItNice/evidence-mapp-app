@@ -1,0 +1,25 @@
+name: Workspace Connections Map regressions
+
+on:
+  pull_request:
+    paths:
+      - 'workspace.html'
+      - 'tests/workspace-graph-inspection.test.cjs'
+      - 'tests/workspace-network-controls.test.cjs'
+      - '.github/workflows/workspace-graph-regressions.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  graph-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact-record inspection and accessible map controls
+        run: node --test tests/workspace-graph-inspection.test.cjs tests/workspace-network-controls.test.cjs
