@@ -128,3 +128,40 @@ test('Pacific briefing freshness changes at local 06:00 and 18:00, including DST
   assert.equal(mediaFeedFreshness('2026-11-25T16:00:00Z',now).state,'unconfirmed');
   assert.equal(mediaFeedFreshness(null,now).state,'unconfirmed');
 });
+
+test('explicit staging creates only a validated private candidate and never retains rejected bytes',async()=>{
+  const {mkdtemp,writeFile,readFile,readdir,rm,stat}=await import('node:fs/promises');
+  const {tmpdir}=await import('node:os');
+  const {join}=await import('node:path');
+  const {fileURLToPath}=await import('node:url');
+  const {spawnSync}=await import('node:child_process');
+  const dir=await mkdtemp(join(tmpdir(),'media-stage-test-'));
+  const cli=fileURLToPath(new URL('../scripts/check-public-media-export.mjs',import.meta.url));
+  const input=join(dir,'input.json');
+  const run=()=>spawnSync(process.execPath,[cli,'--stage',input],{encoding:'utf8',cwd:dir,env:{...process.env,TMPDIR:dir,TMP:dir,TEMP:dir}});
+  try{
+    const good=rawExport([row('a'),row('b',{publisher_location:null,published_at:null,tone:'mixed'})]);
+    // Repeated JSON keys are resolved by JSON.parse. Never copy discarded raw bytes.
+    const raw=JSON.stringify(good).replace('"headline_original":"Water project"','"headline_original":"PRIVATE_DISCARDED_CANARY","headline_original":"Water project"');
+    await writeFile(input,raw);
+    const accepted=run();
+    assert.equal(accepted.status,0,accepted.stderr);
+    const dirs=(await readdir(dir)).filter(x=>x.startsWith('atlas-media-stage-'));
+    assert.equal(dirs.length,1);
+    const output=join(dir,dirs[0],'candidate-media-export.json');
+    const staged=await readFile(output,'utf8');
+    assert.deepEqual(JSON.parse(staged),good);
+    assert.doesNotMatch(staged,/PRIVATE_DISCARDED_CANARY/);
+    assert.equal(validatePublicMediaExport(JSON.parse(staged)).reports.length,2);
+    assert.equal(await readFile(input,'utf8'),raw);
+    if(process.platform!=='win32')assert.equal((await stat(output)).mode&0o777,0o600);
+    for(const rejected of [JSON.stringify(rawExport([row('pending',{editorial_status:'pending',human_notes:'PRIVATE_REJECTED_CANARY'})])),'{"PRIVATE_REJECTED_CANARY":']){
+      await writeFile(input,rejected);
+      const result=run();
+      assert.equal(result.status,1);
+      assert.doesNotMatch(result.stdout+result.stderr,/PRIVATE_REJECTED_CANARY/);
+      assert.deepEqual((await readdir(dir)).filter(x=>x.startsWith('atlas-media-stage-')),dirs);
+      assert.equal(await readFile(input,'utf8'),rejected);
+    }
+  }finally{await rm(dir,{recursive:true,force:true});}
+});
