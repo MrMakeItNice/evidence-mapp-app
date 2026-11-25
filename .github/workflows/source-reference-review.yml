@@ -1,0 +1,28 @@
+name: Source reference review (offline)
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/review-source-reference-coverage.mjs'
+      - 'tests/review-source-reference-coverage.test.mjs'
+      - '.github/workflows/source-reference-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-reference-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax
+        run: |
+          node --check scripts/review-source-reference-coverage.mjs
+          node --check tests/review-source-reference-coverage.test.mjs
+      - name: Run isolated coverage and privacy tests
+        run: node --test tests/review-source-reference-coverage.test.mjs
