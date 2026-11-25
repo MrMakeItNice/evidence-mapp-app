@@ -1412,3 +1412,23 @@ test('globe integration preserves the separate Ancient Civilizations research pa
   assert.match(mystery.slice(rabbit), /<h3 id="rabbit-hole-title">Rabbit Hole<\/h3>/);
   assert.match(mystery.slice(rabbit), /href="\.\/global-search\.html\?q=unidentified%20anomalous%20phenomena"/);
 });
+
+test('globe cursor distinguishes unavailable geographic evidence from an assessed empty map', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const cursorLine = html.split('\n').find(line => line.includes('const point=globe.worldToLocal(hit.point.clone()).normalize();'));
+  assert.ok(cursorLine, 'actual homepage cursor readout exists');
+  const renderCursor = new Function('globe', 'hit', 'geoPanel', 'mapFeedAvailable', 'mapRecords', cursorLine);
+  const globe = {worldToLocal: () => ({normalize: () => ({x: 1, y: 0, z: 0})})};
+  const hit = {point: {clone: () => ({})}};
+  for (const [available, records, expected] of [
+    [false, [], 'Reviewed map feed unavailable; source-backed locations cannot be assessed.'],
+    [true, [], 'No reviewed geographic events are available in this feed;'],
+    [true, [event], 'No reviewed event marker was selected here;']
+  ]) {
+    const panel = element('div');
+    renderCursor(globe, hit, panel, available, records);
+    assert.ok(panel.textContent.includes(expected));
+    assert.match(panel.textContent, /not a verified event location/);
+    if (!available) assert.doesNotMatch(panel.textContent, /No reviewed geographic events are available in this feed/);
+  }
+});
