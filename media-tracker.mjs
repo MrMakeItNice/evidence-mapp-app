@@ -60,7 +60,7 @@ export function readMediaFeed(feed) {
     const translated=clean(r.headline_translated)&&clean(r.translation_attribution);
     reports.push({id,original_url:url,outlet,headline_original:headline,language:clean(r.language),
       attribution_url:r.attribution_url,author:clean(r.author),publisher_country:clean(r.publisher_country),
-      published_at:timestamp(r.published_at),published_date_reported:reportedDate(r.published_date_reported),tone,tone_rationale:rationale||'Not yet classified',
+      published_at:timestamp(r.published_at),published_date_reported:reportedDate(r.published_date_reported),publication_time_source_url:https(r.publication_time_source_url),tone,tone_rationale:rationale||'Not yet classified',
       headline_translated:translated?clean(r.headline_translated):'',translation_attribution:translated?clean(r.translation_attribution):'',
       topics:Array.isArray(r.topics)?r.topics.filter(x=>typeof x==='string').map(clean).filter(Boolean):[],
       coverage_group:clean(r.coverage_group),syndication_id:clean(r.syndication_id),correction_url:https(r.correction_url),
@@ -109,7 +109,7 @@ export function validatePublicMediaExport(feed) {
   checkKeys(feed,['schema_version','kind','checked_at','coverage_note','reports'],'envelope');
   if(!Array.isArray(feed.reports))throw new Error('Invalid public export reports');
   const strings=['id','original_url','outlet','headline_original','language','attribution_url','author','publisher_country',
-    'published_at','published_date_reported','tone','tone_rationale','headline_translated','translation_attribution','coverage_group','syndication_id','correction_url'];
+    'published_at','published_date_reported','publication_time_source_url','tone','tone_rationale','headline_translated','translation_attribution','coverage_group','syndication_id','correction_url'];
   const ids=new Set(),urls=new Set();
   for(const r of feed.reports){
     checkKeys(r,[...strings,'publication_status','editorial_status','topics','publisher_location','event_location'],'report');
@@ -118,6 +118,7 @@ export function validatePublicMediaExport(feed) {
     for(const k of strings)if(r[k]!=null&&typeof r[k]!=='string')throw new Error('Invalid public export field: '+k);
     if(r.published_at!=null&&!timestamp(r.published_at))throw new Error('Invalid publication timestamp');
     if(r.published_date_reported!=null&&!reportedDate(r.published_date_reported))throw new Error('Invalid publisher-reported date');
+    if(r.publication_time_source_url!=null&&!https(r.publication_time_source_url))throw new Error('Invalid publication time source URL');
     if(r.correction_url!=null&&!https(r.correction_url))throw new Error('Invalid correction URL');
     if(!TONES.includes(r.tone)||!clean(r.tone_rationale))throw new Error('Missing provisional reporting tone rationale');
     if(Boolean(clean(r.headline_translated))!==Boolean(clean(r.translation_attribution)))throw new Error('Incomplete translation attribution');
