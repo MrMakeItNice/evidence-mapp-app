@@ -1,0 +1,21 @@
+name: Rabbit Hole evidence identity and navigation checks
+
+on:
+  pull_request:
+    paths:
+      - 'rabbit-hole.html'
+      - 'tests/web-checks.mjs'
+      - '.github/workflows/rabbit-hole-research-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rabbit-hole:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run frontend, source-link and case-identity checks
+        run: node tests/web-checks.mjs
