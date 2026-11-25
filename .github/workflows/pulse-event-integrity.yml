@@ -4,6 +4,8 @@ on:
     paths:
       - index.html
       - pulse-events.mjs
+      - media-tracker.mjs
+      - tests/media-tracker.test.mjs
       - tests/pulse-event-integrity.test.mjs
       - .github/workflows/pulse-event-integrity.yml
   workflow_dispatch:
@@ -19,6 +21,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: node --check media-tracker.mjs
+      - run: node --test tests/media-tracker.test.mjs
       - run: node --check pulse-events.mjs
       - run: node --test tests/pulse-event-integrity.test.mjs
       - run: node tests/globe-controls.mjs
