@@ -1295,3 +1295,22 @@ test('feed contract distinguishes the indexed event date from underlying activit
   assert.match(feed.event_contract.event_date, /explain the basis in date_basis/);
   assert.ok(feed.event_contract.optional_fields.includes('date_basis'));
 });
+
+test('feed contract keeps non-geographic events off the map without requiring invented coordinates for counting', () => {
+  const feed = JSON.parse(readFileSync(new URL('../global-evidence-pulse.json', import.meta.url), 'utf8'));
+  for (const key of ['lat', 'lon']) {
+    assert.match(feed.event_contract[key], /Required for globe pins only/);
+    assert.match(feed.event_contract[key], /Omit or use null for non-geographic records/);
+  }
+  assert.ok(feed.review_policy.some(rule => /must remain off the globe/.test(rule) &&
+    /pending integration/.test(rule)), 'do not advertise unfinished Pulse eligibility as implemented');
+  assert.ok(!feed.review_policy.includes('Require a specific occurrence, place, date, and source.'));
+  for (const changes of [{lat: null, lon: null}, {lat: undefined, lon: undefined},
+      {lat: null}, {lon: undefined}]) {
+    const candidate = withChanges(changes);
+    const list = element('ul');
+    assert.deepEqual(reviewedMapEvents([candidate]), []);
+    assert.deepEqual(renderReviewedMapList(document, list, [candidate], () => {}), []);
+    assert.equal(list.children.length, 0);
+  }
+});
