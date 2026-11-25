@@ -6,6 +6,7 @@ on:
       - 'evidence-board.html'
       - 'connection-explorer.html'
       - 'tests/classic-explorer-browser.mjs'
+      - 'tests/classic-explorer-source-url.test.cjs'
       - 'tests/evidence-board-source-url.test.cjs'
       - 'tests/evidence-board-citation-language.test.cjs'
       - 'tests/evidence-board-move-controls.test.cjs'
@@ -23,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run source URL regression tests
-        run: node --test tests/evidence-board-source-url.test.cjs tests/evidence-board-citation-language.test.cjs tests/evidence-board-move-controls.test.cjs
+        run: node --test tests/classic-explorer-source-url.test.cjs tests/evidence-board-source-url.test.cjs tests/evidence-board-citation-language.test.cjs tests/evidence-board-move-controls.test.cjs
 
   browser-accessibility:
     runs-on: ubuntu-latest

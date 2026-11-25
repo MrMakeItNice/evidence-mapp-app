@@ -112,6 +112,38 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('#graph .node').nth(0).evaluate(el=>el===document.activeElement),true);
       console.log('PASS: keyboard inspection focuses visible details heading, Tab reaches source link, Escape returns to originating case/source, pointer focus and modified keys remain unchanged.');
+      const destination='https://records.example/long?record='+ 'x'.repeat(300)+'&id=42#page=7';
+      const unsafe=[{title:'Script citation',url:'javascript:alert(1)'},
+        {title:'Credential citation',url:'https://user:password@records.example/private'},
+        {title:'File citation',url:'file:///fixture'}];
+      references.push({case_id:1,title:'Exact destination citation',url:destination},...unsafe.map(r=>({case_id:1,...r})));
+      await page.reload();
+      await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===7);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.locator('#graph .node').nth(3).focus();await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#detail .indexed-url').textContent(),'Indexed URL: '+destination);
+        assert.equal(await page.locator('#detail a').getAttribute('href'),destination);
+        assert.match(await page.locator('#detail a').textContent(),/records.example.*opens in new tab/);
+        assert.equal(await page.locator('#detail a').getAttribute('target'),'_blank');
+        assert.equal(await page.locator('#detail a').getAttribute('rel'),'noopener noreferrer');
+        assert.ok(await page.locator('#detail .indexed-url').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth));
+        await page.keyboard.press('Tab');
+        assert.equal(await page.locator('#detail a').evaluate(el=>el===document.activeElement),true);
+        await page.keyboard.press('Escape');
+      }
+      for(let i=4;i<7;i++) {
+        await page.locator('#graph .node').nth(i).focus();await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#detail a').count(),0);
+        assert.equal(await page.locator('#detail .indexed-url').count(),0);
+        assert.match(await page.locator('#detail').textContent(),/No safe HTTP\(S\) destination/);
+        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#graph .node').nth(i).evaluate(el=>el===document.activeElement),true);
+      }
+      await page.locator('#graph .node').first().press('Enter');
+      assert.equal(await page.locator('#detail .indexed-url').count(),0,'case card has no invented citation URL');
+      console.log('PASS: full indexed destination preserves long query/fragment, wraps at 320/768/1280px and labels host/new tab; script/file/credential citations render no link and retain keyboard return.');
       console.log('PASS: named group exposes all case/source buttons; native Tab, Enter/Space inspection and Tab exit work at 320/768/1280px.');
     }
     assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
