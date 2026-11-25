@@ -430,7 +430,7 @@ test('case identity stays aligned in the tab and named board group without follo
 });
 
 test('case search announces the display cap, whitespace-normalized matches and empty results without losing selection', async () => {
-  assert.match(html, /id="search"[^>]*aria-describedby="case-search-status" disabled/);
+  assert.match(html, /id="search"[^>]*aria-describedby="case-search-help case-search-status" disabled/);
   assert.match(html, /id="case-search-status"[^>]*role="status" aria-atomic="true"/);
   const published = Array.from({ length: 25 }, (_, i) => ({ id: String(i + 1), title: 'Case ' + (i + 1) }));
   const { get } = await createBoard(published, []);
@@ -541,7 +541,7 @@ test('Zoom minus never enlarges a mobile board fitted below the desktop minimum'
 
 test('first-focus skip link bypasses navigation and case choices to the existing focusable board toolbar', () => {
   const body = html.slice(html.indexOf('<body>') + '<body>'.length);
-  assert.match(body, /^<a class="skip-board" href="#board-controls">Skip to evidence board<\/a><a class="skip-board" href="#case-files-heading">Skip to case search<\/a><header>/);
+  assert.match(body, /^<a class="skip-board" href="#board-controls">Skip to evidence board<\/a><a class="skip-board" href="#case-files-heading">Skip to case search<\/a><a class="skip-board" href="#selected-record">Skip to selected record<\/a><header>/);
   assert.equal([...html.matchAll(/id="board-controls"/g)].length, 1);
   assert.match(html, /id="board-controls" tabindex="-1"/);
   assert.match(html, /#board-controls:focus-visible/);
@@ -1453,4 +1453,119 @@ test('shared citation inspector caps other published cases and discloses the tot
   const group=get('details').children.find(n=>n.className==='shared-citations');
   assert.equal(group.children[2].children.length,8);
   assert.equal(group.children[3].textContent,'Showing 8 of 10 other published cases.');
+});
+
+
+test('Show more reveals bounded batches, focuses the first new result and preserves the open board', async () => {
+  const published = Array.from({ length: 41 }, (_, i) => ({ id: String(i+1), title: 'Case ' + (i+1) }));
+  const { get, document, stored } = await createBoard(published, []);
+  const list=get('cases'), more=get('more-cases'), card=get('cards').children[0], details=get('details').children[0];
+  assert.equal(more.hidden, false);
+  const initialButtons = [...list.children];
+  more.listeners.click();
+  assert.equal(list.children.length, 36);
+  assert.ok(initialButtons.every((button, i) => list.children[i] === button), 'expanding retains the initial case buttons');
+  const firstTwoBatches = [...list.children];
+  assert.equal(document.activeElement, list.children[18]);
+  assert.match(get('case-search-status').textContent, /36 of 41/);
+  more.listeners.click();
+  assert.equal(list.children.length, 41);
+  assert.ok(firstTwoBatches.every((button, i) => list.children[i] === button), 'final expansion retains both previous batches');
+  assert.equal(document.activeElement, list.children[36]);
+  assert.equal(more.hidden, true);
+  more.listeners.click();
+  assert.equal(list.children.length, 41);
+  assert.equal(get('cards').children[0], card);
+  assert.equal(get('details').children[0], details);
+  assert.equal(stored.size, 0);
+  get('search').value='Case';
+  get('search').listeners.input({ target: get('search') });
+  assert.equal(list.children.length, 18);
+  assert.equal(more.hidden, false);
+});
+
+test('Show more remains unavailable for empty, failed and fully displayed searches', async () => {
+  for (const board of [await createBoard([], []), await createBoard(undefined, undefined, true), await createBoard()]) {
+    const { get }=board;
+    assert.equal(get('more-cases').hidden, true);
+    const count=get('cases').children.length;
+    get('more-cases').listeners.click();
+    assert.equal(get('cases').children.length, count);
+  }
+});
+
+
+test('new queries and Clear reset the case-list scroll without replacing the open board', async () => {
+  const published=Array.from({ length: 41 }, (_,i)=>({ id:String(i+1), title:'Case '+(i+1) }));
+  const { get, document }=await createBoard(published, []);
+  const list=get('cases'), search=get('search'), card=get('cards').children[0];
+  list.scrollTop=500;
+  search.value='Case'; search.listeners.input({ target:search });
+  assert.equal(list.scrollTop,0);
+  list.scrollTop=160;
+  get('more-cases').listeners.click();
+  assert.equal(list.scrollTop,160, 'expansion does not explicitly reset prior scroll');
+  assert.equal(document.activeElement,list.children[18]);
+  list.scrollTop=700;
+  get('clear-cases').listeners.click();
+  assert.equal(list.scrollTop,0);
+  assert.equal(document.activeElement,search);
+  assert.equal(get('cards').children[0],card);
+});
+
+
+test('repeated titles retain distinct record labels across batches, search and selection', async () => {
+  const published=[{id:1,title:'Repeated'}, ...Array.from({length:18},(_,i)=>({id:i+2,title:'Unique '+i})), {id:'record-20',title:' REPEATED '}];
+  const original=JSON.stringify(published);
+  const {get,location}=await createBoard(published,[]);
+  assert.equal(get('cases').children[0].textContent,'Repeated · Case ID 1', 'identify repeats beyond the initial batch');
+  assert.equal(get('cases').children[1].textContent,'Unique 0');
+  assert.equal(get('details').children[1].textContent,'Published case · Case ID 1');
+  const first=get('cases').children[0];
+  get('more-cases').listeners.click();
+  assert.equal(get('cases').children[0],first);
+  assert.equal(get('cases').children.at(-1).textContent,' REPEATED  · Case ID record-20');
+  get('search').value='Repeated'; get('search').listeners.input({target:get('search')});
+  assert.deepEqual(get('cases').children.map(n=>n.textContent),['Repeated · Case ID 1',' REPEATED  · Case ID record-20']);
+  get('cases').children[1].listeners.click();
+  assert.equal(location.hash,'#case=record-20');
+  assert.equal(get('heading').textContent,' REPEATED ');
+  assert.equal(get('details').children[1].textContent,'Published case · Case ID record-20');
+  assert.equal(get('cases').children[1].attributes['aria-pressed'],'true');
+  get('clear-cases').listeners.click();
+  assert.equal(get('cases').children[0].textContent,'Repeated · Case ID 1');
+  assert.equal(JSON.stringify(published),original, 'labels do not mutate titles or record IDs');
+});
+
+test('shared citation navigation uses the same repeated-title labels and literal record IDs', async () => {
+  const id='<record&2>', url='https://records.example.org/shared';
+  const {get,location}=await createBoard([{id:1,title:'Same title'},{id,title:'Same title'},{id:3,title:'Unique'}], [{case_id:1,url},{case_id:id,url}]);
+  get('cards').children[1].listeners.keydown({key:'Enter',preventDefault(){}});
+  const group=get('details').children.find(n=>n.className==='shared-citations');
+  const link=group.children[2].children[0];
+  assert.equal(link.textContent,'Same title · Case ID <record&2>');
+  assert.equal(get('cases').children[1].textContent,link.textContent);
+  assert.equal(link.children.length,0, 'IDs remain literal text, never markup');
+  link.listeners.click();
+  assert.equal(location.hash,'#case='+encodeURIComponent(id));
+  assert.equal(get('details').children[1].textContent,'Published case · Case ID <record&2>');
+});
+
+
+test('exact #Case ID search separates same-title records without changing the open board', async () => {
+  const {get,location,stored}=await createBoard([{id:3,title:'Project BLUEBIRD'},{id:32,title:'Project BLUEBIRD'},{id:'record-Ab',title:'Other'},{id:132,title:'Case 32'}],[]);
+  const card=get('cards').children[0], details=get('details').children[0];
+  const search=get('search'), list=get('cases');
+  for (const [query,expected] of [[' #32 ',['32']],['#3',['3']],['# 32',['32']],['#record-Ab',['record-Ab']],['#record-ab',[]],['#032',[]],['#',[]],['#999',[]],['32',['132']],['BLUEBIRD',['3','32']]]) {
+    search.value=query;search.listeners.input({target:search});
+    assert.deepEqual(list.children.map(n=>n.dataset.caseId),expected,query);
+    assert.equal(get('cards').children[0],card);
+    assert.equal(get('details').children[0],details);
+    assert.equal(stored.size,0);
+  }
+  search.value='#32';search.listeners.input({target:search});list.children[0].listeners.click();
+  assert.equal(location.hash,'#case=32');
+  assert.equal(get('details').children[1].textContent,'Published case · Case ID 32');
+  get('clear-cases').listeners.click();assert.equal(list.children.length,4);
+  assert.match(html,/id="case-search-help"[^>]*>Search by title, or enter # followed by an exact Case ID/);
 });

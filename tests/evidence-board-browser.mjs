@@ -70,6 +70,18 @@ try {
   assert.deepEqual(await page.locator('.tile').allTextContents(), initialCards);
   console.log('PASS: named case-search landmark contains controls, status and results; filtering, Enter and Clear preserve the open board.');
 
+  await page.goto('about:blank');
+  await page.goto('https://board.example/evidence-board.html#case=1');
+  await page.waitForFunction(() => !document.getElementById('save').disabled);
+  for (let i = 0; i < 3; i++) await page.keyboard.press('Tab');
+  assert.equal(await page.getByRole('link', { name: 'Skip to selected record', exact: true }).evaluate(el => el === document.activeElement), true);
+  const selectedBeforeSkip = await page.locator('.tile[aria-pressed="true"]').getAttribute('aria-label');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.activeElement.id === 'selected-record');
+  assert.equal(await page.locator('.tile[aria-pressed="true"]').getAttribute('aria-label'), selectedBeforeSkip);
+  await page.keyboard.press('Tab');
+  assert.equal(await page.locator('#details a').first().evaluate(el => el === document.activeElement), true);
+  console.log('PASS: third skip link focuses the selected-record inspector and Tab enters its controls without changing selection.');
   await page.goto('about:blank'); // Force a new document, rather than same-page fragment navigation.
   await page.goto('https://board.example/evidence-board.html#case=1');
   await page.waitForFunction(() => !document.getElementById('save').disabled);
@@ -282,6 +294,125 @@ try {
   assert.equal(await page.locator('#search').isEnabled(), true);
   assert.equal(failedCaseRequests, 1);
   console.log('PASS: native keyboard retry restores published fixture citations and search focus after an HTTP 503, without sample evidence.');
+  // Browse the full fixture index without knowing a title in advance.
+  cases.push(...Array.from({ length: 40 }, (_, i) => ({ id: String(i+2), title: 'Case ' + (i+2) })));
+  await page.reload();
+  await page.waitForFunction(() => document.querySelectorAll('#cases button').length === 18);
+  const moreCases = page.getByRole('button', { name: 'Show more cases', exact: true });
+  const retainedBoard = await page.locator('.tile').allTextContents();
+  const originalCaseButtons = await page.locator('#cases button').elementHandles();
+  assert.ok(await moreCases.evaluate(el => el.getBoundingClientRect().height >= 44));
+  await moreCases.focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#cases button').count(), 36);
+  for (let i=0; i<originalCaseButtons.length; i++) assert.equal(await page.locator('#cases button').nth(i).evaluate((el, original) => el === original, originalCaseButtons[i]), true);
+  const expandedCaseButtons = await page.locator('#cases button').elementHandles();
+  assert.equal(await page.locator('#cases button').nth(18).evaluate(el => el === document.activeElement), true);
+  await moreCases.click();
+  assert.equal(await page.locator('#cases button').count(), 41);
+  for (let i=0; i<expandedCaseButtons.length; i++) assert.equal(await page.locator('#cases button').nth(i).evaluate((el, original) => el === original, expandedCaseButtons[i]), true);
+  assert.equal(await page.locator('#cases button').nth(36).evaluate(el => el === document.activeElement), true);
+  assert.equal(await moreCases.isVisible(), false);
+  assert.deepEqual(await page.locator('.tile').allTextContents(), retainedBoard);
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#heading').textContent(), 'Case 37');
+  assert.equal(await page.locator('#cases button[aria-pressed="true"]').count(), 1);
+  await page.locator('#search').fill('Case');
+  assert.equal(await page.locator('#cases button').count(), 18);
+  assert.equal(await moreCases.isVisible(), true);
+  await page.locator('#search').fill('No matching case');
+  assert.equal(await moreCases.isVisible(), false);
+  console.log('PASS: keyboard Show more retains existing case-button identity through 18/36/41 cases, focuses each new batch, preserves the board and resets on filtering.');
+  await page.locator('#search').fill('Case');
+  await moreCases.click();
+  await moreCases.click();
+  const caseRegion = page.getByRole('region', { name: 'Matching published cases', exact: true });
+  assert.equal(await caseRegion.count(), 1);
+  const bounded = await caseRegion.evaluate(el => ({ height: el.getBoundingClientRect().height,
+    maximum: innerHeight * .55, client: el.clientHeight, content: el.scrollHeight }));
+  assert.ok(bounded.height <= bounded.maximum + 1 && bounded.content > bounded.client,
+    'phone case list is a bounded scroll area');
+  await page.getByRole('link', { name: 'Board controls ↓', exact: true }).focus();
+  await page.keyboard.press('Tab');
+  assert.equal(await caseRegion.evaluate(el => el === document.activeElement), true);
+  assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).outlineStyle), 'solid');
+  await page.keyboard.press('End');
+  await page.waitForFunction(() => document.getElementById('cases').scrollTop > 0);
+  const lastCase = page.locator('#cases button').last();
+  await lastCase.focus();
+  await page.waitForFunction(() => {
+    const list=document.getElementById('cases'), item=list.lastElementChild;
+    const frame=list.getBoundingClientRect(), bounds=item.getBoundingClientRect();
+    return document.activeElement===item && bounds.top >= frame.top && bounds.bottom <= frame.bottom;
+  });
+  await page.keyboard.press('Tab');
+  assert.equal(await page.locator('#zin').evaluate(el => el===document.activeElement), true, 'Tab leaves the case list');
+  const boardBeforeQueryReset = await page.locator('.tile').allTextContents();
+  await page.locator('#search').fill('Case ');
+  await page.waitForFunction(() => document.getElementById('cases').scrollTop === 0);
+  assert.equal(await page.locator('#search').evaluate(el => el===document.activeElement), true);
+  assert.ok(await page.locator('#cases button').first().evaluate(el => {
+    const bounds=el.getBoundingClientRect(), frame=document.getElementById('cases').getBoundingClientRect();
+    return bounds.top>=frame.top && bounds.bottom<=frame.bottom;
+  }));
+  await caseRegion.focus();
+  await page.keyboard.press('End');
+  await page.waitForFunction(() => document.getElementById('cases').scrollTop > 0);
+  await page.getByRole('button', { name: 'Clear search', exact: true }).click();
+  await page.waitForFunction(() => document.getElementById('cases').scrollTop === 0);
+  assert.equal(await page.locator('#search').evaluate(el => el===document.activeElement), true);
+  assert.deepEqual(await page.locator('.tile').allTextContents(), boardBeforeQueryReset);
+  console.log('PASS: changed query and Clear return phone results to the top, retain input focus and preserve the open board.');
+  await page.setViewportSize({ width: 1280, height: 800 });
+  assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).overflowY), 'visible');
+  assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).maxHeight), 'none');
+  console.log('PASS: named phone case list has bounded height, keyboard scrolling, visible final-result focus and a Tab exit; desktop remains unbounded.');
+  // Same-title records remain separate and identifiable through real keyboard activation.
+  cases.splice(0,cases.length,{id:'1',title:'Project BLUEBIRD'},{id:'32',title:'Project BLUEBIRD'},{id:'4',title:'Unique investigation'});
+  await page.goto('https://board.example/evidence-board.html#case=1');
+  await page.reload();
+  await page.waitForFunction(() => !document.getElementById('save').disabled);
+  for (const width of [320,768,1280]) {
+    await page.setViewportSize({width,height:800});
+    const repeated=page.getByRole('button',{name:'Project BLUEBIRD · Case ID 32',exact:true});
+    assert.equal(await repeated.count(),1);
+    assert.ok(await repeated.evaluate(el=>el.scrollWidth<=el.clientWidth && el.getBoundingClientRect().right<=innerWidth));
+  }
+  await page.locator('#search').fill('BLUEBIRD');
+  const secondRecord=page.getByRole('button',{name:'Project BLUEBIRD · Case ID 32',exact:true});
+  await secondRecord.focus();
+  await page.keyboard.press('Enter');
+  assert.equal(new URL(page.url()).hash,'#case=32');
+  assert.equal(await page.locator('#heading').textContent(),'Project BLUEBIRD');
+  assert.equal(await page.locator('#details .badge').textContent(),'Published case · Case ID 32');
+  assert.equal(await secondRecord.getAttribute('aria-pressed'),'true');
+  await page.getByRole('button',{name:'Clear search',exact:true}).click();
+  assert.equal(await secondRecord.count(),1);
+  assert.equal(await page.getByRole('button',{name:'Unique investigation',exact:true}).count(),1);
+  console.log('PASS: repeated titles have distinct visible/accessible Case ID labels at 320/768/1280px; keyboard selection opens the exact record and inspector, filtering/Clear keep stable labels and unique titles remain unchanged.');
+  const beforeIdFilter=await page.locator('.tile').allTextContents();
+  await page.locator('#search').fill('#32');
+  assert.equal(await page.locator('#cases button').count(),1);
+  assert.equal(await secondRecord.count(),1);
+  assert.deepEqual(await page.locator('.tile').allTextContents(),beforeIdFilter);
+  assert.match(await page.locator('#search').getAttribute('aria-describedby'),/case-search-help/);
+  assert.match(await page.locator('#case-search-help').textContent(),/exact Case ID.*#32/);
+  for(const width of [320,768,1280]) {
+    await page.setViewportSize({width,height:800});
+    assert.ok(await page.locator('#case-search-help').evaluate(el=>el.scrollWidth<=el.clientWidth && el.getBoundingClientRect().right<=innerWidth));
+  }
+  await page.locator('#search').fill('#1');
+  const firstRecord=page.getByRole('button',{name:'Project BLUEBIRD · Case ID 1',exact:true});
+  await firstRecord.focus();await page.keyboard.press('Enter');
+  assert.equal(new URL(page.url()).hash,'#case=1');
+  await page.locator('#search').fill('#999');
+  assert.equal(await page.locator('#cases button').count(),0);
+  assert.match(await page.locator('#case-search-status').textContent(),/exact #Case ID/);
+  assert.equal(new URL(page.url()).hash,'#case=1');
+  await page.getByRole('button',{name:'Clear search',exact:true}).click();
+  assert.equal(await page.locator('#cases button').count(),3);
+  assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
+  console.log('PASS: exact #ID lookup filters repeated titles without changing the board, supports native keyboard selection, explains syntax at 320/768/1280px and recovers from unknown IDs with Clear.');
   assert.deepEqual(errors, [], 'no uncaught frontend exceptions');
   assert.deepEqual(unexpected, [], 'all requests use fixtures; no production data or outgoing source requests');
   console.log('PASS: no uncaught page errors or unexpected requests.');
