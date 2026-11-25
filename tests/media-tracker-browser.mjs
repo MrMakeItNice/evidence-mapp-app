@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
+import {validatePublicMediaExport} from '../media-tracker.mjs';
 import {readFileSync} from 'node:fs';
 const base='http://127.0.0.1:8123';
 const fixtureURL='https://example.invalid';
@@ -7,6 +8,11 @@ const date=new Date().toISOString();
 const location={kind:'publisher',lat:0,lon:-90,label:'Synthetic fixture point',basis:'Browser test only; not evidence',source_url:fixtureURL+'/place',review_status:'verified'};
 const story=(id,extra={})=>({id,original_url:fixtureURL+'/'+id,outlet:'Fixture outlet A',headline_original:'Synthetic water story '+id,language:'en',publisher_country:'Fixture country',attribution_url:fixtureURL+'/terms',publication_status:'published',editorial_status:'cleared_for_public_index',published_at:date,tone:'positive',tone_rationale:'Synthetic only',coverage_group:'water',publisher_location:location,...extra});
 const feed={schema_version:1,kind:'public_media_reports',checked_at:date,coverage_note:'Synthetic browser fixture, not live data',reports:[story('a',{publication_time_source_url:fixtureURL+'/rss?edition=local#entry'}),story('b',{tone:'negative',outlet:'Fixture outlet B',language:'es',headline_original:'Agua',headline_translated:'Water',translation_attribution:'Synthetic translation'}),story('c',{tone:'neutral',publisher_location:null}),story('old',{published_at:null,published_date_reported:'2000-01-01',tone:'uncertain',publisher_location:null})]};
+// Structural preflight checks before launching the browser.
+assert.equal(validatePublicMediaExport(feed).reports[0].publication_time_source_url,fixtureURL+'/rss?edition=local#entry');
+assert.equal(validatePublicMediaExport(feed).reports[1].publication_time_source_url,null);
+for(const invalid of ['http://example.invalid/feed','https://user:pass@example.invalid/feed','javascript:alert(1)',42])
+ assert.throws(()=>validatePublicMediaExport({...feed,reports:[story('bad',{publication_time_source_url:invalid})]}));
 const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 try{
  for(const mobile of [false,true]){
