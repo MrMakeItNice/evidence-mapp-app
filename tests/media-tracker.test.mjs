@@ -96,3 +96,17 @@ test('staging preflight CLI is read-only and never echoes rejected candidate dat
     assert.deepEqual(await readdir(dir),['candidate.json']);
   }finally{await rm(dir,{recursive:true,force:true});}
 });
+
+test('publisher-reported date only is searchable without inventing Pacific day or time',()=>{
+  const rows=[row('date-only',{published_at:null,published_date_reported:'2026-11-25'}),row('precise'),row('unknown',{published_at:null})];
+  const checked=validatePublicMediaExport(rawExport(rows));
+  assert.equal(checked.reports[0].published_at,null);
+  assert.equal(checked.reports[0].published_date_reported,'2026-11-25');
+  assert.equal(selectMedia(checked,{now:new Date('2026-11-25T10:00:00Z')}).reports.length,1);
+  const found=selectMedia(checked,{query:'2026-11-25'});
+  assert.equal(found.reports.length,2);
+  assert.equal(found.dateOnly.length,1);
+  assert.equal(found.undated.length,1);
+  for(const invalid of ['2026-02-30','2026-11-25T00:00:00Z','2026-11-5',123])
+    assert.throws(()=>validatePublicMediaExport(rawExport([row('bad',{published_at:null,published_date_reported:invalid})])),/Invalid/);
+});
