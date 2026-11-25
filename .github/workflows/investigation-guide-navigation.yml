@@ -1,0 +1,24 @@
+name: Beginner investigation guide navigation
+
+on:
+  pull_request:
+    paths:
+      - 'first-investigation-guide.html'
+      - 'tests/investigation-guide-navigation.test.cjs'
+      - '.github/workflows/investigation-guide-navigation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guide-navigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check beginner guide syntax and navigation
+        run: node --test tests/investigation-guide-navigation.test.cjs
