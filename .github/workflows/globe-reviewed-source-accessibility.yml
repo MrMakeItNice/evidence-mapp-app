@@ -1,0 +1,28 @@
+name: Globe reviewed-source accessibility
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'globe-reviewed-events.mjs'
+      - 'tests/globe-reviewed-events.test.mjs'
+      - '.github/workflows/globe-reviewed-source-accessibility.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reviewed-globe-events:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check reviewed-map source module syntax
+        run: node --check globe-reviewed-events.mjs
+      - name: Exercise source vetting, keyboard list and previews
+        run: node --test tests/globe-reviewed-events.test.mjs
+      - name: Check existing globe controls regressions
+        run: node tests/globe-controls.mjs
