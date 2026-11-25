@@ -1,0 +1,21 @@
+name: Globe discovery regression
+on:
+  pull_request:
+    paths:
+      - index.html
+      - globe-explore.js
+      - global-search.html
+      - tests/global-search-query-privacy.test.cjs
+      - tests/globe-discovery.test.cjs
+      - .github/workflows/globe-discovery.yml
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check globe-explore.js
+      - run: node --test tests/globe-discovery.test.cjs tests/global-search-query-privacy.test.cjs

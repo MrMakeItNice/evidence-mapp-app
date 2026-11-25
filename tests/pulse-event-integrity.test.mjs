@@ -51,7 +51,7 @@ function simulateTopPulse({data=feed([original]),networkError=false}={}){
   const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
   assert.match(html,/data-pulse="positive" aria-pressed="true"/);
   const start=html.indexOf('const pulseCriteria=');
-  const end=html.indexOf("const status=document.getElementById('globe-status')",start);
+  const end=html.indexOf("const mapList=",start);
   assert.ok(start>=0&&end>start,'find the actual globe pulse controller');
   const script=html.slice(start,end);
   const panel={textContent:'Select a category for criteria.'};

@@ -7,9 +7,9 @@
     "id": "Stable unique event ID; repeated articles about one occurrence share one ID",
     "title": "Specific verifiable description of what happened",
     "category": "positive | negative | neutral; label is a provisional editorial assessment",
-    "event_date": "YYYY-MM-DD date of occurrence, not publication date",
-    "lat": "Verified event latitude, -90 to 90",
-    "lon": "Verified event longitude, -180 to 180",
+    "event_date": "YYYY-MM-DD date of the indexed event itself. For a report, approval or disclosure that is itself the event, use its documented date, not an inferred date of underlying activity; explain the basis in date_basis.",
+    "lat": "Required for globe pins only: source-backed map latitude, -90 to 90; interpret using location_role and location_note. Omit or use null for non-geographic records.",
+    "lon": "Required for globe pins only: source-backed map longitude, -180 to 180; interpret using location_role and location_note. Omit or use null for non-geographic records.",
     "source_url": "Original independently inspectable https source",
     "review_status": "verified only after editorial review",
     "optional_fields": [
@@ -20,15 +20,26 @@
       "classification_rationale",
       "counterevidence_urls",
       "confidence",
-      "correction_note"
-    ]
+      "correction_note",
+      "date_basis",
+      "source_limitation",
+      "source_record_id"
+    ],
+    "date_basis": "Optional editorial note explaining what the event date refers to (e.g. publication, approval or disclosure when that is the event itself); not proof of the underlying activity date",
+    "location_source_url": "Inspectably linked HTTPS evidence for the geographic placement (required to show globe pins; may equal event source URL)",
+    "location_note": "Editorial explanation of how the linked evidence supports the coordinates and whether they are approximate (required for globe pins)",
+    "location_role": "Required for globe pins only: occurrence_site | archaeological_site_reference | beneficiary_site. The latter two are sourced reference locations, not necessarily the occurrence venue. Non-geographic records must not be mapped.",
+    "source_limitation": "Optional source-specific editorial note about uncertainty, incomplete coverage, dependence on another citation or what the source cannot establish; never a substitute for location evidence or editorial review.",
+    "source_record_id": "Optional indexed archive or document identifier associated with its own event citation; not independent verification or geographic evidence."
   },
   "review_policy": [
     "Do not equate article sentiment with event impact.",
     "Count distinct events, not articles or media mentions.",
-    "Require a specific occurrence, place, date, and source.",
+    "Require a specific documented event, date, source and editorial review. Do not require a geographic point for a non-geographic event.",
     "Review contradictory evidence and mixed outcomes before classification.",
     "Disclose geographic, language, source-selection, and reporting-period limitations.",
-    "Do not present these counts as proof that the world is objectively improving or worsening."
+    "Do not present these counts as proof that the world is objectively improving or worsening.",
+    "Only map events with an explicitly sourced location basis; a reviewed event citation alone does not establish GPS precision.",
+    "Never substitute an issuing-office city, administrative centroid or nationwide policy scope for a sourced map point. A non-geographic event may qualify for Pulse counting after editorial review, but must remain off the globe. The existing Pulse validator still requires coordinates; separate counting eligibility is pending integration (PRs #370 and #381)."
   ]
 }
