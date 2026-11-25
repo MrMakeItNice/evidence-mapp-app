@@ -1395,3 +1395,20 @@ test('source link lists retain visible citation labels and distinguish the selec
   }
   assert.notEqual(labels[0], labels[1]);
 });
+
+test('globe integration preserves the separate Ancient Civilizations research path above Rabbit Hole', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const start = html.indexOf('<section id="mystery-atlas"');
+  const end = html.indexOf('<section class="atlas-pulse"', start);
+  assert.ok(start >= 0 && end > start);
+  const mystery = html.slice(start, end);
+  const ancient = mystery.indexOf('id="ancient-civilizations"');
+  const rabbit = mystery.indexOf('id="rabbit-hole"');
+  assert.ok(ancient >= 0 && rabbit > ancient);
+  const ancientSection = mystery.slice(ancient, rabbit);
+  assert.match(ancientSection, /<h3 id="ancient-civilizations-title">Ancient Civilizations<\/h3>/);
+  assert.match(ancientSection, /href="\.\/global-search\.html\?q=ancient%20archaeological%20sites"/);
+  assert.match(ancientSection, /href="\.\/first-investigation-guide\.html"/);
+  assert.match(mystery.slice(rabbit), /<h3 id="rabbit-hole-title">Rabbit Hole<\/h3>/);
+  assert.match(mystery.slice(rabbit), /href="\.\/global-search\.html\?q=unidentified%20anomalous%20phenomena"/);
+});
