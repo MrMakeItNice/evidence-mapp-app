@@ -25,7 +25,7 @@ export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new
     node.append(make('p',loc?((mode()==='event'?'Event':'Publication')+' location: '+loc.label+' — '+loc.basis):'No sourced location in this map mode; no pin.'));
     if(full&&loc)node.append(link(loc.source_url,'Inspect location evidence (new tab)'),make('p','Displayed point: '+loc.lat+', '+loc.lon));
     node.append(link(r.original_url,'Original article — '+r.outlet+' (new tab)'),make('p',r.verification_label));
-    if(full){node.append(link(r.attribution_url,'Attribution / content-use source (new tab)'));if(r.correction_url)node.append(link(r.correction_url,'Correction (new tab)'));}
+    if(full){node.append(link(r.attribution_url,'Attribution / content-use source (new tab)'));if(r.publication_time_source_url)node.append(link(r.publication_time_source_url,'Inspect publication date/time source (new tab)'));else node.append(make('p','Separate publication date/time citation not supplied.'));if(r.correction_url)node.append(link(r.correction_url,'Correction (new tab)'));}
     else node.append(button('Inspect story and focus map',()=>{showStories([r],'Selected story',loc);}));
     return node;
   }
