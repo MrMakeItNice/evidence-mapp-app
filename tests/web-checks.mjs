@@ -594,3 +594,12 @@ for (const href of ["#artichoke-july-1952-responsibility","#cia-1977-archive-not
 assert.equal((artichokeTransferDateReview[1].match(/target="_blank" rel="noopener noreferrer"/g)||[]).length,2);
 assert.doesNotMatch(artichokeTransferDateReview[1],/case-33|case=33|case-32|case=32/);
 console.log('PASS: ARTICHOKE transfer date review preserves competing dates, provenance and canonical navigation.');
+
+// BLUE BOOK is a distinct archival research path, not a duplicate case or causal edge.
+const blueBookIdentityReview = bluebirdPage.match(/<p class="note" id="blue-book-identity-review">([\s\S]*?)<\/p>/);
+assert.ok(blueBookIdentityReview);
+assert.equal(bluebirdPage.split('id="blue-book-identity-review"').length,2);
+for (const phrase of ["section 341.15","SIGN through GRUDGE to BLUE BOOK","March 1952","December 17, 1969","701 unresolved sightings out of 12,618","Unidentified is not a finding of extraterrestrial origin or staged events","neither is an alias for the separate unverified Blue Beam hypothesis","do not establish operational coordination","not a new Case File, source-library record or public graph edge"]) assert.ok(blueBookIdentityReview[1].includes(phrase), 'Missing BLUE BOOK identity guard: '+phrase);
+for (const href of ["https://www.archives.gov/research/guide-fed-records/groups/341.html","https://www.archives.gov/research/military/air-force/ufos","./paper-trails.html#case-3","#bluebird-bluebeam-assessment"]) assert.ok(blueBookIdentityReview[1].includes('href="'+href+'"'));
+assert.doesNotMatch(blueBookIdentityReview[1],/case-32|case=32|case-33|case=33/);
+console.log('PASS: BLUE BOOK archival lineage is distinct from BLUEBIRD and Blue Beam, with no new case or graph edge.');
