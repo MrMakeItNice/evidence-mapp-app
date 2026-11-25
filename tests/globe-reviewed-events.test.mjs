@@ -514,9 +514,11 @@ test('different location URLs remain distinct without claiming source independen
 
 test('globe checks all feed records before Pulse deduplication can hide a disputed location', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  assert.match(html, /let reviewedEvents=\[\],mapEventCandidates=\[\],pulseLoaded=false/);
-  assert.match(html, /if\(feed\.schema_version!==1\|\|!Array\.isArray\(feed\.events\)\)throw Error\("invalid feed"\);mapEventCandidates=feed\.events/,
+  assert.match(html, /let mapEventCandidates=\[\],mapFeedAvailable=false/);
+  assert.match(html, /if\(feed\.schema_version===1&&Array\.isArray\(feed\.events\)\)\{mapEventCandidates=feed\.events;mapFeedAvailable=true;\}/,
     'only a schema-valid original feed supplies map candidates');
+  assert.ok(html.indexOf('mapEventCandidates=feed.events') < html.indexOf('reviewedEvents=reviewedEventsFromFeed(feed)'),
+    'retain all raw candidates before the independent counting gate can reject duplicates');
   assert.match(html, /renderReviewedMapList\(document,mapList,mapEventCandidates,/,
     'map provenance gate must inspect the complete feed, not the already-deduplicated Pulse count');
   assert.doesNotMatch(html, /renderReviewedMapList\(document,mapList,reviewedEvents,/);
