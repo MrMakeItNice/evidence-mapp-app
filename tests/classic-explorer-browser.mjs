@@ -212,7 +212,7 @@ try {
       assert.equal(await page.locator('#search-status').textContent(),'1 matching published case.');
       await page.locator('#results button').press('Enter');
       assert.equal(new URL(page.url()).hash,'#case=22');
-      assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: SearchMatch 20. Search again to find another case.');
+      assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: SearchMatch 20 · Case #22. Search again to find another case.');
       assert.equal(await page.locator('#results button').count(),0);
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
@@ -242,6 +242,32 @@ try {
         assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
       }
       console.log('PASS: search-result Enter/Space and pointer selection focus the opened investigation heading; removed result is detached, heading is visible with keyboard outline, Escape reaches the live case card and Tab can leave details at 320/768/1280px.');
+      const duplicateTitle='Duplicate investigation '+ 'x'.repeat(120);
+      cases.push({id:23,title:duplicateTitle,summary:'First distinct record'}, {id:24,title:duplicateTitle,summary:'Second distinct record'});
+      references.push({case_id:23,title:'First distinct source',url:'https://records.example/first'}, {case_id:24,title:'Second distinct source',url:'https://records.example/second'});
+      await page.reload();await page.waitForFunction(()=>!document.querySelector('#search').disabled);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const [i,id,summary,source] of [[0,23,'First distinct record','First distinct source'],[1,24,'Second distinct record','Second distinct source']]) {
+          await page.locator('#search').fill('Duplicate investigation');
+          assert.equal(await page.locator('#results button').count(),2,'same-title records remain separate');
+          const label=duplicateTitle+' · Case #'+id;
+          const result=page.locator('#results').getByRole('button',{name:label,exact:true});
+          assert.equal(await result.textContent(),label,'visible text and accessible name agree');
+          assert.ok(await result.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'long title plus ID wraps');
+          await page.locator('#search').press('Tab');
+          if(i)await page.keyboard.press('Tab');
+          assert.equal(await result.evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press(i?'Space':'Enter');
+          assert.equal(new URL(page.url()).hash,'#case='+id);
+          assert.equal(await page.locator('#detail h2').textContent(),duplicateTitle);
+          assert.equal(await page.locator('#detail p').textContent(),summary);
+          assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),source);
+          assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: '+label+'. Search again to find another case.');
+          assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+        }
+      }
+      console.log('PASS: same-title search results have distinct visible/accessibility case IDs, wrap long labels, and native Tab/Enter/Space open the exact record, summary, source and confirmation at 320/768/1280px without merging records.');
       rejectCases=true;await page.reload();
       await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('unavailable'));
       assert.equal(await page.locator('#search').isDisabled(),true);
