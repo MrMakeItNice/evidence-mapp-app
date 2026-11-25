@@ -149,6 +149,27 @@
 }
 @media(max-width:470px){.globe-explore-controls{flex-direction:column}.globe-explore-controls button{min-height:44px}}
 
+
+/* Daily reporting is a separate, fail-closed media index; preserve the existing globe geometry and touch policy. */
+.daily-media{position:relative;z-index:8;width:min(820px,calc(100% - 32px));margin:24px auto 12px;padding:16px;background:#0b1e2be8;border:1px solid #597e80;border-radius:8px;overflow-wrap:anywhere}
+.daily-media h2{margin:0 0 8px;font:800 clamp(22px,3vw,32px)/1.2 Georgia,serif}
+.daily-media p,.daily-media li{font-size:13px;line-height:1.55;color:#c4d5dc}
+.daily-media label{display:block;font-size:13px;color:#d1ede5}
+.daily-media input,.daily-media select,.daily-media button{min-height:44px;max-width:100%;padding:8px;border:1px solid #73949b;border-radius:4px;background:#102638;color:#f5f7fa;font:16px system-ui,sans-serif}
+.daily-media input{flex:1;min-width:0}.daily-media select{display:block;width:100%}.daily-media button{cursor:pointer}.daily-media a{display:inline-block;color:#b8f0dc;text-decoration:underline;min-height:32px}
+.daily-media :focus-visible{outline:3px solid #a8e6cb;outline-offset:3px}
+.media-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:8px 0}
+.media-controls label{flex:1;min-width:130px}
+.media-tallies{display:flex;gap:8px;list-style:none;flex-wrap:wrap;padding:0}
+.media-tallies li{flex:1;min-width:102px;border:1px solid #597e80;padding:8px;border-radius:4px;font-weight:700}
+.media-tallies strong{display:block;font-size:20px;color:inherit}
+.media-tallies [data-tone="positive"]{color:#73e6ac}.media-tallies [data-tone="negative"]{color:#ff9595}.media-tallies [data-tone="neutral"],.media-tallies [data-tone="mixed"],.media-tallies [data-tone="uncertain"]{color:#c5cbd2}
+.daily-media details{border-top:1px solid #34585e;padding:8px 0}.daily-media summary{min-height:36px;cursor:pointer;font-weight:700}
+.daily-media article{border-top:1px solid #34585e;padding:10px 0}.daily-media article h4{margin:6px 0;font-size:16px}.daily-media article p{margin:5px 0}
+#media-detail{border:1px solid #80aaab;border-radius:5px;padding:12px;margin-top:12px}#media-detail[hidden]{display:none}
+.globe-area[data-map-mode="media"] .pulse{display:none}.globe-area[data-map-mode="media"] .globe-cta{top:auto;bottom:20px;left:20px;transform:none}.globe-area[data-map-mode="media"] .globe-cta:hover{transform:none}
+@media(max-width:800px){.globe-area[data-map-mode="media"] .globe-cta{position:static;transform:none}.daily-media{padding:12px}}
+
 </style></head><body>
 <dialog id="ea-opening" class="ea-opening" aria-label="Welcome to Evidence Atlas" aria-describedby="ea-opening-instructions">
   <div class="ea-opening-brand">EVIDENCE <b>◇</b> ATLAS</div>
@@ -172,6 +193,23 @@
 <header class="top"><a class="brand" href="#top">EVIDENCE <b>◇</b> ATLAS</a><nav class="nav" aria-label="Main navigation"><a href="./discover.html">Cases</a><a href="./paper-trails.html">Paper Trails</a><a href="./evidence-board.html">Evidence Board</a><a href="./connection-explorer.html">Connections</a><a href="./global-search.html">Global Search</a><a href="./discover.html#ask-evidence" data-ea-open>Ask Evidence</a><a href="./shared-future.html">Our Shared Future</a><a href="./religion-accountability.html">Religions &amp; Accountability</a><a href="#mystery-atlas">Mystery Atlas</a><a href="#explore">Explore</a><a class="workspace" href="./workspace.html?workspace=1">Agent Control Center</a></nav></header>
 <main id="top"><div role="region" aria-label="Evidence Web feature" style="background:#132c37;border-bottom:1px solid #426b72;padding:14px 5%;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><strong style="color:#a8e6cb">NEW TO EXPLORE · THE EVIDENCE WEB</strong><div style="color:#d8e6e7;font-size:14px">Trace an investigation through cited records and shared documents. Links show citations—not proof of wrongdoing.</div></div><a href="./connection-explorer.html" style="background:#a8e6cb;color:#0b2430;padding:11px 17px;border-radius:4px;font-weight:800">Explore the interactive web ↗</a></div>
 <section class="hero" aria-label="Evidence Atlas introduction"><div class="hero-text"><div class="kicker">People · Power · Patterns · Solutions</div><h1><span>The world is connected.</span><span>Follow the evidence.</span></h1><p class="intro">Discover the people, institutions, financial trails, and events shaping our shared world.<br><strong>One Planet. One Humanity. One Future.</strong></p></div>
+<section class="daily-media" id="daily-media" aria-labelledby="daily-media-title">
+  <h2 id="daily-media-title">Daily News Tracker</h2>
+  <p>Attributed published reporting · Pacific calendar day · Publication location is not the event location.</p>
+  <form id="media-search" role="search" aria-label="Search indexed news stories">
+    <label for="media-query">Search stories, topics, outlets, dates or locations</label>
+    <div class="media-controls"><input id="media-query" type="search" autocomplete="off"><button type="submit">Search stories</button><button type="button" id="media-clear">Clear to today</button></div>
+    <div class="media-controls"><label>Country <select id="media-country"><option value="">All countries</option></select></label><label>Language <select id="media-language"><option value="">All languages</option></select></label><label>Outlet <select id="media-outlet"><option value="">All outlets</option></select></label></div>
+    <div class="media-controls"><label>Map location <select id="media-map-mode"><option value="publisher">Publisher / publication</option><option value="event">Documented event</option><option value="reviewed">Reviewed investigation events</option></select></label><label>Headlines <select id="media-headline-mode"><option value="original">Original language</option><option value="translated">Attributed translation</option></select></label><button type="button" id="media-refresh">Refresh feed</button></div>
+  </form>
+  <p id="media-status" role="status" aria-atomic="true">Public reporting feed has not loaded. Counts unavailable.</p>
+  <ul class="media-tallies" aria-label="Reporting tone counts"><li data-tone="positive">+ Positive <strong>—</strong></li><li data-tone="negative">− Negative <strong>—</strong></li><li data-tone="neutral">= Neutral <strong>—</strong></li><li data-tone="mixed">± Mixed <strong>—</strong></li><li data-tone="uncertain">? Uncertain <strong>—</strong></li></ul>
+  <p>These are provisional story-level labels, not ratings of outlets, measures of global harm, or independent verification. Mixed-location clusters use a gray marker with all categories listed below.</p>
+  <details id="media-outlet-samples"><summary>Outlet sample counts</summary><ul id="media-outlet-list"></ul></details>
+  <details id="media-location-list"><summary>Publication / event map clusters</summary><ul id="media-clusters"></ul></details>
+  <details id="media-results-panel"><summary>Search and Compare coverage <span id="media-result-total"></span></summary><p>Related coverage is grouped by the supplied topic identifier, not assumed to prove a connection. Different tones do not establish conflicting claims. Independently supported evidence and missing perspectives require a separate, sourced editorial comparison; none is inferred here.</p><div id="media-results"></div></details>
+  <section id="media-detail" tabindex="-1" aria-label="Selected reporting and location provenance" hidden></section>
+</section>
 <form id="globe-explore-form" class="globe-explore-form" role="search" aria-label="Explore Evidence Atlas by globe topic">
   <label for="globe-explore-query">Find a topic or research section</label>
   <div class="globe-explore-controls"><input id="globe-explore-query" type="search" aria-describedby="globe-explore-help" placeholder="Try Rabbit Holes, Case Files or MKULTRA" autocomplete="off" required><button type="submit">Explore research</button></div>
@@ -180,7 +218,7 @@
   <div id="globe-explore-status" class="globe-explore-status" role="status" aria-live="polite"></div>
 </form>
 
-<div class="globe-area"><section class="pulse" aria-labelledby="pulse-title"><h2 id="pulse-title">Global Evidence Pulse</h2><p>Counts cover unique, verified events.</p><div class="pulse-grid"><button type="button" data-pulse="negative" aria-pressed="false">Negative<strong>—</strong></button><button type="button" data-pulse="neutral" aria-pressed="false">Neutral<strong>—</strong></button><button type="button" data-pulse="positive" aria-pressed="true">Positive<strong>—</strong></button></div><div id="pulse-panel" class="pulse-panel" role="status">Select a category for criteria.</div><p>Verified feed pending. Global coverage unmeasured.</p></section><section id="globe-explore-panel" class="globe-explore-panel" tabindex="-1" aria-labelledby="globe-explore-title" hidden><h2 id="globe-explore-title"></h2><p id="globe-explore-summary"></p><nav id="globe-explore-links" aria-label="Research destinations"></nav><p class="location-caveat">Topic links do not imply geographic evidence. Globe pins require reviewed records and sourced locations.</p><button id="globe-explore-close" class="globe-explore-close" type="button">Close research lens</button></section><div class="geo-panel" id="geo-panel" role="status" aria-atomic="true">Tap to inspect. Drag to rotate. Pinch or scroll to zoom.</div><div class="globe-viewport"><div id="fallback" class="fallback" aria-hidden="true"></div><canvas id="earth" class="globe-canvas" tabindex="0" role="application" aria-label="Interactive Earth. Arrow keys rotate; plus and minus zoom; Home resets. Swipe sideways to rotate; vertical swipes scroll the page; pinch zooms." aria-describedby="reviewed-globe-description"></canvas><div class="globe-overlay"></div></div><a class="globe-cta" href="#explore">Ready to explore? ◇</a><div class="globe-tools"><button type="button" id="globe-out" aria-label="Zoom out">−</button><button type="button" id="globe-reset">Reset view</button><button type="button" id="globe-in" aria-label="Zoom in">+</button></div><div class="globe-hint"><span class="globe-hint-mouse">Click to inspect · Drag to rotate · Scroll to zoom</span><span class="globe-hint-touch">Swipe sideways to rotate · Swipe vertically to scroll · Pinch to zoom · Tap to inspect</span></div><div id="globe-status" class="globe-status" role="status">Loading interactive Earth…</div></div></section>
+<div class="globe-area" data-map-mode="media"><section class="pulse" aria-labelledby="pulse-title"><h2 id="pulse-title">Global Evidence Pulse</h2><p>Counts cover unique, verified events.</p><div class="pulse-grid"><button type="button" data-pulse="negative" aria-pressed="false">Negative<strong>—</strong></button><button type="button" data-pulse="neutral" aria-pressed="false">Neutral<strong>—</strong></button><button type="button" data-pulse="positive" aria-pressed="true">Positive<strong>—</strong></button></div><div id="pulse-panel" class="pulse-panel" role="status">Select a category for criteria.</div><p>Verified feed pending. Global coverage unmeasured.</p></section><section id="globe-explore-panel" class="globe-explore-panel" tabindex="-1" aria-labelledby="globe-explore-title" hidden><h2 id="globe-explore-title"></h2><p id="globe-explore-summary"></p><nav id="globe-explore-links" aria-label="Research destinations"></nav><p class="location-caveat">Topic links do not imply geographic evidence. Globe pins require reviewed records and sourced locations.</p><button id="globe-explore-close" class="globe-explore-close" type="button">Close research lens</button></section><div class="geo-panel" id="geo-panel" role="status" aria-atomic="true">Tap to inspect. Drag to rotate. Pinch or scroll to zoom.</div><div class="globe-viewport"><div id="fallback" class="fallback" aria-hidden="true"></div><canvas id="earth" class="globe-canvas" tabindex="0" role="application" aria-label="Interactive Earth. Arrow keys rotate; plus and minus zoom; Home resets. Swipe sideways to rotate; vertical swipes scroll the page; pinch zooms." aria-describedby="reviewed-globe-description"></canvas><div class="globe-overlay"></div></div><a class="globe-cta" href="#explore">Ready to explore? ◇</a><div class="globe-tools"><button type="button" id="globe-out" aria-label="Zoom out">−</button><button type="button" id="globe-reset">Reset view</button><button type="button" id="globe-in" aria-label="Zoom in">+</button></div><div class="globe-hint"><span class="globe-hint-mouse">Click to inspect · Drag to rotate · Scroll to zoom</span><span class="globe-hint-touch">Swipe sideways to rotate · Swipe vertically to scroll · Pinch to zoom · Tap to inspect</span></div><div id="globe-status" class="globe-status" role="status">Loading interactive Earth…</div></div></section>
 
 <section id="reviewed-globe-browser" class="reviewed-globe-browser" aria-labelledby="reviewed-globe-title">
   <h2 id="reviewed-globe-title">Inspect reviewed map events</h2>
@@ -356,7 +394,9 @@
 </script>
 <script type="module">
 import {reviewedEventsFromFeed} from "./pulse-events.mjs";
+import {mountMediaTracker} from "./media-tracker-ui.mjs";
 import {renderReviewedMapList, showReviewedMapSource, inspectReviewedMapSource, reviewedMapAvailability} from "./globe-reviewed-events.mjs";
+const mediaTracker=mountMediaTracker(document);
 const pulseCriteria={positive:"Documented improvements in health, rights, peace, environmental restoration, safety or well-being. Requires an identifiable event and source.",negative:"Documented harm, violence, rights violations, preventable damage or deterioration. Requires an identifiable event and source.",neutral:"Mixed, uncertain, procedural or not-yet-assessable developments. Uncertainty must not be forced into good or bad."};
 const pulsePanel=document.getElementById("pulse-panel");
 const pulseButtons=[...document.querySelectorAll("[data-pulse]")];
@@ -419,6 +459,32 @@ try{
  const markerMeshes=[];const markerColors={positive:0x4edba8,negative:0xf27f75,neutral:0xd9b778};function positionFor(lat,lon,r=1.565){const a=(90-lat)*Math.PI/180,b=(lon+180)*Math.PI/180;return new THREE.Vector3(-r*Math.sin(a)*Math.cos(b),r*Math.cos(a),r*Math.sin(a)*Math.sin(b));}for(const event of mapRecords){const pin=new THREE.Mesh(new THREE.SphereGeometry(.024,12,12),new THREE.MeshBasicMaterial({color:markerColors[event.category]}));pin.position.copy(positionFor(event.lat,event.lon));pin.userData.event=event;globe.add(pin);markerMeshes.push(pin);}
 
  const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2(),geoPanel=document.getElementById('geo-panel');
+ const mediaMeshes=[];
+ function updateMediaMarkers(view,mode){
+   for(const pin of mediaMeshes){globe.remove(pin);pin.geometry.dispose();pin.material.dispose();}
+   mediaMeshes.length=0;
+   const reviewedMode=mode==='reviewed';
+   for(const pin of markerMeshes)pin.visible=reviewedMode;
+   if(reviewedMode||!view)return;
+   for(const cluster of view.clusters){
+     const tones=Object.keys(cluster.counts).filter(t=>cluster.counts[t]>0);
+     const tone=tones.length===1?tones[0]:'mixed';
+     const color=tone==='positive'?0x4edba8:tone==='negative'?0xf27f75:0xb0b8c3;
+     const geometry=tone==='positive'?new THREE.SphereGeometry(.045,12,12):tone==='negative'?new THREE.OctahedronGeometry(.053):new THREE.BoxGeometry(.065,.065,.065);
+     const pin=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color}));
+     pin.position.copy(positionFor(cluster.lat,cluster.lon,1.58));pin.userData.cluster=cluster;globe.add(pin);mediaMeshes.push(pin);
+   }
+ }
+ function inspectMediaMarker(e){
+   if(mediaTracker.mode()==='reviewed')return false;
+   const rect=canvas.getBoundingClientRect();mouse.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+   raycaster.setFromCamera(mouse,camera);
+   const surface=raycaster.intersectObject(earth)[0];
+   const clusters=[...new Set(raycaster.intersectObjects(mediaMeshes).filter(h=>!surface||h.distance<=surface.distance+.07).map(h=>h.object.userData.cluster))];
+   if(clusters.length){mediaTracker.inspectClusters(clusters);geoPanel.textContent='Selected reporting cluster. See the story and location provenance in Daily News Tracker.';}
+   else geoPanel.textContent=mediaTracker.available()?'No indexed reporting marker selected here. This does not establish absence of reporting.':'Public media feed unavailable; reporting at this location cannot be assessed.';
+   return true;
+ }
  globe.rotation.y=.35;globe.rotation.x=.13;
  let zoom=8.5,targetX=.13,targetY=.35,userInteracted=false,minZoom=5.5,maxZoom=14;
  const pitchLimit=Math.PI/2;
@@ -435,7 +501,18 @@ try{
  }
  function resetView(){delete canvas.dataset.userZoom;targetX=.13;targetY=.35;zoom=defaultZoom();userInteracted=false}
  function changeZoom(value){interact();canvas.dataset.userZoom='1';zoom=clampZoom(value)}
+ if(typeof mediaTracker!=='undefined'){
+   mediaTracker.subscribe(updateMediaMarkers);
+   mediaTracker.onFocus(loc=>{
+     if(!loc){resetView();return;}
+     const point=positionFor(loc.lat,loc.lon,1);
+     const yaw=Math.atan2(-point.x,point.z);
+     targetY+=Math.atan2(Math.sin(yaw-targetY),Math.cos(yaw-targetY));
+     targetX=Math.atan2(point.y,Math.hypot(point.x,point.z));interact();
+   });
+ }
  function inspectLocation(e){
+  if(typeof inspectMediaMarker==='function'&&inspectMediaMarker(e))return;
   const rect=canvas.getBoundingClientRect();mouse.set(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);raycaster.setFromCamera(mouse,camera);const markerHits=raycaster.intersectObjects(markerMeshes);const hit=raycaster.intersectObject(earth)[0];const visibleMarkerEvents=[...new Map(markerHits.filter(h=>!hit||h.distance<=hit.distance+.015).map(h=>[h.object.userData.event.id,h.object.userData.event])).values()];
   if(visibleMarkerEvents.length>1){
    // Several distinct reviewed events may share a map point or overlap at this zoom.

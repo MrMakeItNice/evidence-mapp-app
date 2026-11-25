@@ -1,0 +1,32 @@
+name: Daily media tracker integration browser checks
+on:
+  pull_request:
+    paths:
+      - index.html
+      - media-tracker.mjs
+      - media-tracker-ui.mjs
+      - tests/media-tracker-browser.mjs
+      - .github/workflows/media-tracker-browser.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrated-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check media-tracker-ui.mjs
+      - run: node --test tests/media-tracker.test.mjs tests/pulse-event-integrity.test.mjs tests/globe-reviewed-events.test.mjs tests/globe-discovery.test.cjs tests/global-search-query-privacy.test.cjs
+      - run: node tests/globe-controls.mjs
+      - run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.51.1 three@0.160.1
+      - run: npx --no-install playwright install --with-deps chromium
+      - run: |
+          python3 -m http.server 8123 --bind 127.0.0.1 > /tmp/media-test-server.log 2>&1 &
+          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8123/index.html >/dev/null && break; sleep 1; done
+          node tests/media-tracker-browser.mjs
