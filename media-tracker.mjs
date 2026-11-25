@@ -6,6 +6,11 @@ function https(v) {
   try { const u = new URL(v); return typeof v === 'string' && u.protocol === 'https:' && !u.username && !u.password ? v : null; }
   catch { return null; }
 }
+function reportedDate(v) {
+  if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+  const d = new Date(v+'T00:00:00Z');
+  return Number.isFinite(+d) && d.toISOString().slice(0,10)===v ? v : null;
+}
 function timestamp(v) {
   if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(v)) return null;
   const day = v.slice(0,10), d = new Date(day+'T00:00:00Z');
@@ -41,7 +46,7 @@ export function readMediaFeed(feed) {
     const translated=clean(r.headline_translated)&&clean(r.translation_attribution);
     reports.push({id,original_url:url,outlet,headline_original:headline,language:clean(r.language),
       attribution_url:r.attribution_url,author:clean(r.author),publisher_country:clean(r.publisher_country),
-      published_at:timestamp(r.published_at),tone,tone_rationale:rationale||'Not yet classified',
+      published_at:timestamp(r.published_at),published_date_reported:reportedDate(r.published_date_reported),tone,tone_rationale:rationale||'Not yet classified',
       headline_translated:translated?clean(r.headline_translated):'',translation_attribution:translated?clean(r.translation_attribution):'',
       topics:Array.isArray(r.topics)?r.topics.filter(x=>typeof x==='string').map(clean).filter(Boolean):[],
       coverage_group:clean(r.coverage_group),syndication_id:clean(r.syndication_id),correction_url:https(r.correction_url),
@@ -59,7 +64,7 @@ export function selectMedia(feed,{query='',country='',language='',outlet='',now=
     if(!searching&&(!r.published_at||pacificDay(r.published_at)!==day)) return false;
     if(country&&fold(r.publisher_country)!==fold(country)||language&&fold(r.language)!==fold(language)||outlet&&fold(r.outlet)!==fold(outlet)) return false;
     const hay=fold([r.headline_original,r.headline_translated,r.outlet,r.publisher_country,r.language,r.published_at,
-      r.published_at?pacificDay(r.published_at):'',r.publisher_location?.label,r.event_location?.label,...r.topics].join(' '));
+      r.published_at?pacificDay(r.published_at):'',r.published_date_reported,r.publisher_location?.label,r.event_location?.label,...r.topics].join(' '));
     return terms.every(t=>hay.includes(t));
   });
   const counts=Object.fromEntries(TONES.map(t=>[t,0])),outlets=new Map(),clusters=new Map(),groups=new Map();
@@ -75,7 +80,7 @@ export function selectMedia(feed,{query='',country='',language='',outlet='',now=
   }
   return {day,searching,mode,reports,counts,outlets:[...outlets],clusters:[...clusters.values()],
     unlocated:reports.filter(r=>!(mode==='publisher'?r.publisher_location:r.event_location)),
-    undated:reports.filter(r=>!r.published_at),coverageGroups:[...groups],
+    undated:reports.filter(r=>!r.published_at),dateOnly:reports.filter(r=>!r.published_at&&r.published_date_reported),coverageGroups:[...groups],
     checked_at:feed.checked_at,coverage_note:feed.coverage_note};
 }
 
@@ -90,7 +95,7 @@ export function validatePublicMediaExport(feed) {
   checkKeys(feed,['schema_version','kind','checked_at','coverage_note','reports'],'envelope');
   if(!Array.isArray(feed.reports))throw new Error('Invalid public export reports');
   const strings=['id','original_url','outlet','headline_original','language','attribution_url','author','publisher_country',
-    'published_at','tone','tone_rationale','headline_translated','translation_attribution','coverage_group','syndication_id','correction_url'];
+    'published_at','published_date_reported','tone','tone_rationale','headline_translated','translation_attribution','coverage_group','syndication_id','correction_url'];
   const ids=new Set(),urls=new Set();
   for(const r of feed.reports){
     checkKeys(r,[...strings,'publication_status','editorial_status','topics','publisher_location','event_location'],'report');
@@ -98,6 +103,7 @@ export function validatePublicMediaExport(feed) {
       throw new Error('Non-cleared record in public export');
     for(const k of strings)if(r[k]!=null&&typeof r[k]!=='string')throw new Error('Invalid public export field: '+k);
     if(r.published_at!=null&&!timestamp(r.published_at))throw new Error('Invalid publication timestamp');
+    if(r.published_date_reported!=null&&!reportedDate(r.published_date_reported))throw new Error('Invalid publisher-reported date');
     if(r.correction_url!=null&&!https(r.correction_url))throw new Error('Invalid correction URL');
     if(!TONES.includes(r.tone)||!clean(r.tone_rationale))throw new Error('Missing provisional reporting tone rationale');
     if(Boolean(clean(r.headline_translated))!==Boolean(clean(r.translation_attribution)))throw new Error('Incomplete translation attribution');
