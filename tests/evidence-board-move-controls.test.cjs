@@ -1445,12 +1445,34 @@ test('shared citation inspector links only other published cases with the same e
   assert.ok(!get('details').children.some(n=>n.className==='shared-citations'));
 });
 
-test('shared citation inspector caps other published cases and discloses the total', async () => {
-  const cases = Array.from({length:11},(_,i)=>({id:i+1,title:'Case '+(i+1)}));
-  const refs = cases.map(c=>({case_id:c.id,title:'Citation',url:'https://records.example.org/doc#page=2'}));
-  const {get} = await createBoard(cases,refs);
+test('shared citation inspector reveals more exact matches without resetting the board', async () => {
+  const cases = Array.from({length:20},(_,i)=>({id:i+1,title:'Case '+(i+1)}));
+  cases.push({id:21,title:'Different document'});
+  const refs = cases.map(c=>({case_id:c.id,title:'Citation',url:'https://records.example.org/doc#page='+ (c.id===21?3:2)}));
+  const {get,document,location,stored} = await createBoard(cases,refs);
   get('cards').children[1].listeners.keydown({key:'Enter',preventDefault(){}});
   const group=get('details').children.find(n=>n.className==='shared-citations');
-  assert.equal(group.children[2].children.length,8);
-  assert.equal(group.children[3].textContent,'Showing 8 of 10 other published cases.');
+  const list=group.children[2], count=group.children[3], more=group.children[4];
+  const original=get('cards').children[1];
+  assert.equal(list.children.length,8);
+  assert.equal(count.textContent,'Showing 8 of 19 other published cases.');
+  assert.equal(more.hidden,false);
+  more.listeners.click();
+  assert.equal(list.children.length,16);
+  assert.equal(document.activeElement,list.children[8]);
+  assert.equal(count.textContent,'Showing 16 of 19 other published cases.');
+  more.listeners.click();
+  assert.equal(list.children.length,19);
+  assert.equal(document.activeElement,list.children[16]);
+  assert.equal(count.textContent,'Showing 19 of 19 other published cases.');
+  assert.equal(more.hidden,true);
+  more.listeners.click();
+  assert.equal(list.children.length,19);
+  assert.equal(get('cards').children[1],original);
+  assert.equal(stored.size,0);
+  assert.equal(list.children[18].textContent,'Case 20');
+  list.children[18].listeners.click();
+  assert.equal(get('heading').textContent,'Case 20');
+  assert.equal(location.hash,'#case=20');
+  assert.equal(document.activeElement,get('details').children[0]);
 });
