@@ -1,0 +1,27 @@
+name: News collector source URL regression
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/evidence-news-collector/index.ts'
+      - 'tests/news-collector-url.test.cjs'
+      - '.github/workflows/news-collector-url-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/evidence-news-collector/index.ts'
+      - 'tests/news-collector-url.test.cjs'
+      - '.github/workflows/news-collector-url-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collector-url-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check source URL validation
+        run: node --test tests/news-collector-url.test.cjs
