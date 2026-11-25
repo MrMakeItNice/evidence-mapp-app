@@ -8,7 +8,7 @@
 <div class="warning"><strong>What this measures:</strong> metadata completeness in the public case index, not the number of verified claims or sources. The full research database has separate source registers, claims, and relationship records that are not assessed here. An evidence-level label is not a substitute for examining primary records.</div>
 <div class="summary" aria-label="Published case metrics"><div class="stat"><b id="casesN">—</b><span>Published case files</span></div><div class="stat"><b id="officialN">—</b><span>With recorded official findings</span></div><div class="stat"><b id="questionsN">—</b><span>With disputed questions</span></div><div class="stat"><b id="datesN">—</b><span>With a start date</span></div></div>
 <section class="panel"><h2>Fields populated across the published index</h2><p>Coverage updates automatically as published cases are added or edited. It does not indicate the quality, relevance, or independence of underlying sources.</p><div id="bars" class="bars" aria-live="polite"></div></section>
-<section class="panel"><h2>Browse research gaps</h2><p>Filter by missing context or search case titles. Open any case for its published description and currently available supporting context.</p><div class="filters"><input id="q" type="search" placeholder="Search cases…" aria-label="Search cases"><select id="filter" aria-label="Research field filter"><option value="all">All published cases</option><option value="official_missing">Official finding not recorded</option><option value="questions_missing">Disputed questions not recorded</option><option value="dates_missing">Start date not recorded</option><option value="official_present">Official finding recorded</option><option value="questions_present">Disputed questions recorded</option></select></div><p id="status" role="status">Loading published case index…</p><div id="caseList" class="case-list"></div><p style="margin-top:18px"><button id="more" type="button" hidden>Show more</button></p></section>
+<section class="panel"><h2>Browse research gaps</h2><p>Filter by missing context or search case titles. Open any case for its published description and currently available supporting context.</p><div class="filters"><input id="q" type="search" placeholder="Search cases…" aria-label="Search cases" disabled><select id="filter" aria-label="Research field filter" disabled><option value="all">All published cases</option><option value="official_missing">Official finding not recorded</option><option value="questions_missing">Disputed questions not recorded</option><option value="dates_missing">Start date not recorded</option><option value="official_present">Official finding recorded</option><option value="questions_present">Disputed questions recorded</option></select></div><p id="status" role="status">Loading published case index…</p><button id="retry" type="button" hidden>Retry loading cases</button><div id="caseList" class="case-list"></div><p style="margin-top:18px"><button id="more" type="button" hidden>Show more</button></p></section>
 <footer>Evidence Atlas · Public research transparency · Case labels and conclusions require source-by-source review. Connections are not evidence of causation.</footer></main>
 <script>
 (() => {
@@ -46,6 +46,46 @@
   el('q').addEventListener('input',()=>{count=18;render()});
   el('filter').addEventListener('change',()=>{count=18;render()});
   el('more').addEventListener('click',()=>{count+=18;render()});
-  (async()=>{try{const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),12000);let response;try{response=await fetch(endpoint,{signal:ctl.signal,cache:'no-store'})}finally{clearTimeout(timeout)}if(!response.ok)throw Error('Status '+response.status);const data=await response.json();if(!Array.isArray(data))throw Error('Unexpected response');cases=data.filter(c=>c&&c.id&&c.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));chart();render();}catch(e){el('status').textContent='Published cases cannot be loaded right now. Try again later. ('+String(e.message||'network error')+')';}})();
+  let loading=false;
+  async function loadCases(fromRetry=false){
+    if(loading)return;
+    const retry=el('retry');
+    loading=true;
+    // Keep the retry control focusable while a retry is in flight; the loading guard
+    // prevents repeat requests without removing a keyboard user's focus target.
+    retry.hidden=!fromRetry;
+    retry.setAttribute('aria-disabled',fromRetry?'true':'false');
+    if(fromRetry)retry.textContent='Loading cases…';
+    el('status').textContent='Loading published case index…';
+    try{
+      const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),12000);
+      let response;
+      try{response=await fetch(endpoint,{signal:ctl.signal,cache:'no-store'})}
+      finally{clearTimeout(timeout)}
+      if(!response.ok)throw Error('HTTP '+response.status);
+      const data=await response.json();
+      if(!Array.isArray(data))throw Error('Unexpected response');
+      cases=data.filter(c=>c&&c.id&&c.title).sort((a,b)=>Number(a.case_number)-Number(b.case_number));
+      el('q').disabled=false;
+      el('filter').disabled=false;
+      chart();
+      render();
+      // Transfer focus only if the user is still on Retry, not if they moved elsewhere.
+      const wasOnRetry=fromRetry&&document.activeElement===retry;
+      retry.hidden=true;
+      if(wasOnRetry)el('q').focus();
+    }catch{
+      el('status').textContent='Published cases cannot be loaded right now. No quality metrics are available.';
+      el('q').disabled=true;
+      el('filter').disabled=true;
+      retry.hidden=false;
+    }finally{
+      loading=false;
+      retry.removeAttribute('aria-disabled');
+      retry.textContent='Retry loading cases';
+    }
+  }
+  el('retry').addEventListener('click',()=>loadCases(true));
+  loadCases();
 })();
 </script></body></html>
