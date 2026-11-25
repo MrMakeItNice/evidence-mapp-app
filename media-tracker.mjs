@@ -78,3 +78,41 @@ export function selectMedia(feed,{query='',country='',language='',outlet='',now=
     undated:reports.filter(r=>!r.published_at),coverageGroups:[...groups],
     checked_at:feed.checked_at,coverage_note:feed.coverage_note};
 }
+
+// Producer-side preflight: run against an independently cleared staging export BEFORE making
+// its raw bytes public. Browser filtering cannot remove already-public private bytes.
+// This is a structural check, NOT editorial approval, rights clearance, or a DB/RLS fix.
+export function validatePublicMediaExport(feed) {
+  const checkKeys=(obj,allowed,label)=>{
+    if(!obj||typeof obj!=='object'||Array.isArray(obj)||Object.keys(obj).some(k=>!allowed.includes(k)))
+      throw new Error('Unexpected public export fields: '+label);
+  };
+  checkKeys(feed,['schema_version','kind','checked_at','coverage_note','reports'],'envelope');
+  if(!Array.isArray(feed.reports))throw new Error('Invalid public export reports');
+  const strings=['id','original_url','outlet','headline_original','language','attribution_url','author','publisher_country',
+    'published_at','tone','tone_rationale','headline_translated','translation_attribution','coverage_group','syndication_id','correction_url'];
+  const ids=new Set(),urls=new Set();
+  for(const r of feed.reports){
+    checkKeys(r,[...strings,'publication_status','editorial_status','topics','publisher_location','event_location'],'report');
+    if(r.publication_status!=='published'||r.editorial_status!=='cleared_for_public_index')
+      throw new Error('Non-cleared record in public export');
+    for(const k of strings)if(r[k]!=null&&typeof r[k]!=='string')throw new Error('Invalid public export field: '+k);
+    if(r.published_at!=null&&!timestamp(r.published_at))throw new Error('Invalid publication timestamp');
+    if(r.correction_url!=null&&!https(r.correction_url))throw new Error('Invalid correction URL');
+    if(!TONES.includes(r.tone)||!clean(r.tone_rationale))throw new Error('Missing provisional reporting tone rationale');
+    if(Boolean(clean(r.headline_translated))!==Boolean(clean(r.translation_attribution)))throw new Error('Incomplete translation attribution');
+    if(r.topics!=null&&(!Array.isArray(r.topics)||r.topics.some(t=>typeof t!=='string')))throw new Error('Invalid topics');
+    for(const kind of ['publisher','event']){
+      const loc=r[kind+'_location'];
+      if(loc==null)continue;
+      checkKeys(loc,['kind','lat','lon','label','basis','source_url','review_status'],kind+' location');
+      if(!location(loc,kind))throw new Error('Unverified or invalid '+kind+' location');
+    }
+    const id=clean(r.id),url=https(r.original_url);
+    if(ids.has(id)||urls.has(url))throw new Error('Duplicate public export record');
+    ids.add(id);urls.add(url);
+  }
+  const validated=readMediaFeed(feed);
+  if(validated.reports.length!==feed.reports.length)throw new Error('Public export record count mismatch');
+  return validated;
+}
