@@ -1314,3 +1314,21 @@ test('feed contract keeps non-geographic events off the map without requiring in
     assert.equal(list.children.length, 0);
   }
 });
+
+test('accessible event list exposes the same reviewed coordinates before opening evidence', () => {
+  const list = element('ul');
+  const valid = renderReviewedMapList(document, list, [
+    event,
+    withChanges({id: 'unmapped-policy', lat: null, lon: null, location_role: 'announcement_city_only'}),
+    withChanges({id: 'pending-site', review_status: 'pending'})
+  ], () => {});
+  assert.equal(valid.length, 1);
+  assert.equal(list.children.length, 1);
+  const [button, context] = list.children[0].children;
+  assert.equal(button.getAttribute('aria-describedby'), context.id);
+  assert.match(context.textContent, /Displayed map point: 37\.7° latitude, -122\.4° longitude/);
+  assert.ok(context.textContent.includes(event.location_note));
+  const panel = element('div');
+  showReviewedMapSource(document, panel, valid[0]);
+  assert.match(panel.children[3].textContent, /Displayed map point: 37\.7° latitude, -122\.4° longitude/);
+});
