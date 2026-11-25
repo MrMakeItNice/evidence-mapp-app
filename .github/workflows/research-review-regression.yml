@@ -1,0 +1,32 @@
+name: Offline research review regression
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-*.mjs'
+      - 'scripts/review-*.mjs'
+      - 'scripts/classify-feed-response.mjs'
+      - 'scripts/suggest-*.mjs'
+      - 'tests/*.test.mjs'
+      - '.github/workflows/research-review-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-research-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check offline review script syntax
+        run: |
+          for f in scripts/*.mjs tests/*.test.mjs; do
+            node --check "$f"
+          done
+      - name: Test offline research audits and privacy guards
+        run: node --test tests/*.test.mjs
