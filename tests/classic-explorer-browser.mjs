@@ -14,7 +14,7 @@ try {
     const page=await browser.newPage({viewport:{width:1280,height:900}});
     const errors=[],unexpected=[];
     page.on('pageerror',e=>errors.push(e.message));
-    const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"'):original;
+    const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
     await page.route('**/*',route=>{
       const u=new URL(route.request().url());
       if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:html});
@@ -32,6 +32,9 @@ try {
       assert.equal(exposed.includes(name),true, name+' native accessibility-tree exposure');
     if(baseline) {
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='image'&&n.name?.value==='Interactive case and source connection diagram'));
+      assert.equal(await page.locator('#draftForm').evaluate(el=>el.hidden),true);
+      assert.equal(await page.locator('#draftForm').isVisible(),true,'old inline display:grid overrides hidden');
+      console.log('PASS: old inline grid reproduces a visible draft form despite its hidden attribute.');
       console.log('PASS: baseline reproduces image wrapper; Chromium retains focusable card buttons despite the image role.');
     } else {
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='group'&&n.name?.value==='Interactive case and source connection diagram'));
@@ -64,6 +67,37 @@ try {
         assert.equal(await page.locator('#detail a').evaluate(el=>el===document.activeElement),true);
         assert.equal(await page.locator('#graph .node').count(),3);
       }
+      assert.equal(await page.locator('#draftForm').isVisible(),false,'draft form starts hidden');
+      assert.equal(await page.getByRole('textbox',{name:'Title',exact:true}).count(),0,'closed form is outside accessible controls');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const [trigger,title,required] of [['newCase','New case draft',false],['newTrail','New paper trail draft',true]]) {
+          await page.locator('#'+trigger).focus();await page.keyboard.press('Enter');
+          assert.equal(await page.locator('#draftForm').isVisible(),true);
+          assert.equal(await page.locator('#draftForm').evaluate(el=>getComputedStyle(el).display),'grid');
+          assert.equal(await page.locator('#formHeading').textContent(),title);
+          assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true);
+          assert.equal(await page.locator('#draftUrl').evaluate(el=>el.required),required);
+          await page.locator('#draftTitle').fill('Unsaved fixture');
+          await page.locator('#cancelDraft').focus();await page.keyboard.press('Enter');
+          assert.equal(await page.locator('#draftForm').isVisible(),false);
+          assert.equal(await page.getByRole('textbox',{name:'Title',exact:true}).count(),0);
+          assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true);
+          assert.equal(await page.evaluate(()=>localStorage.length),0,'Cancel does not save a draft');
+        }
+      }
+      await page.locator('#newCase').click();
+      assert.equal(await page.locator('#draftTitle').inputValue(),'Unsaved fixture','Cancel preserves unsubmitted text');
+      await page.getByRole('button',{name:'Save private draft',exact:true}).click();
+      assert.equal(await page.locator('#draftForm').isVisible(),false);
+      assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true);
+      assert.match(await page.locator('#draftStatus').textContent(),/saved in this browser only/);
+      assert.match(await page.locator('#draftList').textContent(),/Unsaved fixture/);
+      assert.equal(await page.evaluate(()=>localStorage.length),1);
+      await page.locator('#newTrail').click();
+      assert.equal(await page.locator('#draftTitle').inputValue(),'');
+      await page.locator('#cancelDraft').click();
+      console.log('PASS: draft form starts outside layout/accessibility controls; case/trail opening, keyboard Cancel and focus return work at 320/768/1280px without saving; fixture-only successful Save closes and resets the form.');
       await page.locator('#search').focus();
       await page.locator('#graph .node').nth(1).click();
       assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),false,'pointer inspection does not focus heading');
