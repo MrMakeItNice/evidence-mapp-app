@@ -144,6 +144,33 @@ try {
       await page.locator('#graph .node').first().press('Enter');
       assert.equal(await page.locator('#detail .indexed-url').count(),0,'case card has no invented citation URL');
       console.log('PASS: full indexed destination preserves long query/fragment, wraps at 320/768/1280px and labels host/new tab; script/file/credential citations render no link and retain keyboard return.');
+      cases.push({id:2,title:'Related fixture investigation',summary:'Second fixture summary'});
+      references.push({case_id:2,title:'Shared fixture citation',url:references[0].url});
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.goto('https://classic.example/connection-explorer.html#case=1');
+        await page.reload();
+        await page.waitForFunction(()=>document.querySelector('#graph .node')?.getAttribute('aria-label')==='Fixture investigation');
+        const oldSource=await page.locator('#graph .node').nth(1).elementHandle();
+        await page.locator('#graph .node').nth(1).press('Enter');
+        await page.keyboard.press('Tab');await page.keyboard.press('Tab');
+        const related=page.getByRole('button',{name:'Related fixture investigation',exact:true});
+        assert.equal(await related.evaluate(el=>el===document.activeElement),true);
+        await page.keyboard.press('Enter');
+        assert.equal(new URL(page.url()).hash,'#case=2');
+        assert.equal(await oldSource.evaluate(el=>el.isConnected),false,'old graph card was replaced');
+        assert.equal(await page.locator('#detail h2').textContent(),'Related fixture investigation');
+        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#detail h2').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#graph .node').first().getAttribute('aria-label'),'Related fixture investigation');
+        await page.keyboard.press('Enter');await page.keyboard.press('Tab');
+        assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'Tab can leave current-case details');
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'Escape outside inspector is untouched');
+      }
+      console.log('PASS: shared-citation case navigation focuses the new investigation heading, Escape reaches its live case card, and Tab leaves details at 320/768/1280px without returning to removed cards.');
       console.log('PASS: named group exposes all case/source buttons; native Tab, Enter/Space inspection and Tab exit work at 320/768/1280px.');
     }
     assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
