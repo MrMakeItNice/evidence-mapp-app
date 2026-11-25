@@ -390,6 +390,29 @@ try {
   assert.equal(await secondRecord.count(),1);
   assert.equal(await page.getByRole('button',{name:'Unique investigation',exact:true}).count(),1);
   console.log('PASS: repeated titles have distinct visible/accessible Case ID labels at 320/768/1280px; keyboard selection opens the exact record and inspector, filtering/Clear keep stable labels and unique titles remain unchanged.');
+  const beforeIdFilter=await page.locator('.tile').allTextContents();
+  await page.locator('#search').fill('#32');
+  assert.equal(await page.locator('#cases button').count(),1);
+  assert.equal(await secondRecord.count(),1);
+  assert.deepEqual(await page.locator('.tile').allTextContents(),beforeIdFilter);
+  assert.match(await page.locator('#search').getAttribute('aria-describedby'),/case-search-help/);
+  assert.match(await page.locator('#case-search-help').textContent(),/exact Case ID.*#32/);
+  for(const width of [320,768,1280]) {
+    await page.setViewportSize({width,height:800});
+    assert.ok(await page.locator('#case-search-help').evaluate(el=>el.scrollWidth<=el.clientWidth && el.getBoundingClientRect().right<=innerWidth));
+  }
+  await page.locator('#search').fill('#1');
+  const firstRecord=page.getByRole('button',{name:'Project BLUEBIRD · Case ID 1',exact:true});
+  await firstRecord.focus();await page.keyboard.press('Enter');
+  assert.equal(new URL(page.url()).hash,'#case=1');
+  await page.locator('#search').fill('#999');
+  assert.equal(await page.locator('#cases button').count(),0);
+  assert.match(await page.locator('#case-search-status').textContent(),/exact #Case ID/);
+  assert.equal(new URL(page.url()).hash,'#case=1');
+  await page.getByRole('button',{name:'Clear search',exact:true}).click();
+  assert.equal(await page.locator('#cases button').count(),3);
+  assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
+  console.log('PASS: exact #ID lookup filters repeated titles without changing the board, supports native keyboard selection, explains syntax at 320/768/1280px and recovers from unknown IDs with Clear.');
   assert.deepEqual(errors, [], 'no uncaught frontend exceptions');
   assert.deepEqual(unexpected, [], 'all requests use fixtures; no production data or outgoing source requests');
   console.log('PASS: no uncaught page errors or unexpected requests.');

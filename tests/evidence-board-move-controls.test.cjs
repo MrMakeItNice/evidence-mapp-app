@@ -430,7 +430,7 @@ test('case identity stays aligned in the tab and named board group without follo
 });
 
 test('case search announces the display cap, whitespace-normalized matches and empty results without losing selection', async () => {
-  assert.match(html, /id="search"[^>]*aria-describedby="case-search-status" disabled/);
+  assert.match(html, /id="search"[^>]*aria-describedby="case-search-help case-search-status" disabled/);
   assert.match(html, /id="case-search-status"[^>]*role="status" aria-atomic="true"/);
   const published = Array.from({ length: 25 }, (_, i) => ({ id: String(i + 1), title: 'Case ' + (i + 1) }));
   const { get } = await createBoard(published, []);
@@ -1549,4 +1549,23 @@ test('shared citation navigation uses the same repeated-title labels and literal
   link.listeners.click();
   assert.equal(location.hash,'#case='+encodeURIComponent(id));
   assert.equal(get('details').children[1].textContent,'Published case · Case ID <record&2>');
+});
+
+
+test('exact #Case ID search separates same-title records without changing the open board', async () => {
+  const {get,location,stored}=await createBoard([{id:3,title:'Project BLUEBIRD'},{id:32,title:'Project BLUEBIRD'},{id:'record-Ab',title:'Other'},{id:132,title:'Case 32'}],[]);
+  const card=get('cards').children[0], details=get('details').children[0];
+  const search=get('search'), list=get('cases');
+  for (const [query,expected] of [[' #32 ',['32']],['#3',['3']],['# 32',['32']],['#record-Ab',['record-Ab']],['#record-ab',[]],['#032',[]],['#',[]],['#999',[]],['32',['132']],['BLUEBIRD',['3','32']]]) {
+    search.value=query;search.listeners.input({target:search});
+    assert.deepEqual(list.children.map(n=>n.dataset.caseId),expected,query);
+    assert.equal(get('cards').children[0],card);
+    assert.equal(get('details').children[0],details);
+    assert.equal(stored.size,0);
+  }
+  search.value='#32';search.listeners.input({target:search});list.children[0].listeners.click();
+  assert.equal(location.hash,'#case=32');
+  assert.equal(get('details').children[1].textContent,'Published case · Case ID 32');
+  get('clear-cases').listeners.click();assert.equal(list.children.length,4);
+  assert.match(html,/id="case-search-help"[^>]*>Search by title, or enter # followed by an exact Case ID/);
 });
