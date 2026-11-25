@@ -17,7 +17,9 @@ export function reviewedEventsFromFeed(feed) {
         validSource = parsed.protocol === 'https:' && !parsed.username && !parsed.password && !!parsed.hostname;
       } catch (_) { /* No public link for malformed URLs. */ }
     }
-    if (typeof event.id !== 'string' || !event.id.trim() || seen.has(event.id) ||
+    // Compare stable IDs canonically so whitespace cannot inflate published counts.
+    const id = typeof event.id === 'string' ? event.id.trim() : '';
+    if (!id || seen.has(id) ||
         typeof event.title !== 'string' || !event.title.trim() ||
         !['positive', 'negative', 'neutral'].includes(event.category) ||
         !validDate || !validSource ||
@@ -25,8 +27,8 @@ export function reviewedEventsFromFeed(feed) {
         !Number.isFinite(event.lon) || Math.abs(event.lon) > 180) {
       throw new Error('Invalid or duplicate verified event');
     }
-    seen.add(event.id);
-    reviewed.push(event);
+    seen.add(id);
+    reviewed.push({...event, id});
   }
   return reviewed;
 }
