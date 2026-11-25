@@ -9,7 +9,7 @@ const references=[{case_id:1,title:'Fixture source A',publisher:'Fixture archive
   {case_id:1,title:'Fixture source B',publisher:'Fixture archive',url:'https://records.example/b'}];
 const browser=await chromium.launch();
 try {
-  // Run the actual page twice: reproduce the old img semantics, then verify the group fix.
+  // Compare the static-image wrapper with the named interactive group using native AX data.
   for(const baseline of [true,false]) {
     const page=await browser.newPage({viewport:{width:1280,height:900}});
     const errors=[],unexpected=[];
@@ -29,9 +29,10 @@ try {
     const {nodes}=await cdp.send('Accessibility.getFullAXTree');
     const exposed=nodes.filter(n=>!n.ignored&&n.role?.value==='button').map(n=>n.name?.value);
     for(const name of [cases[0].title,...references.map(r=>r.title)])
-      assert.equal(exposed.includes(name),!baseline, name+' native accessibility-tree exposure');
+      assert.equal(exposed.includes(name),true, name+' native accessibility-tree exposure');
     if(baseline) {
-      console.log('PASS: previous img role reproduces hidden case/source buttons in Chromium accessibility tree.');
+      assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='image'&&n.name?.value==='Interactive case and source connection diagram'));
+      console.log('PASS: baseline reproduces image wrapper; Chromium retains focusable card buttons despite the image role.');
     } else {
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='group'&&n.name?.value==='Interactive case and source connection diagram'));
       for(const width of [320,768,1280]) {
