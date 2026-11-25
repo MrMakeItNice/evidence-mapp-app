@@ -1,4 +1,4 @@
-import {readMediaFeed,selectMedia} from './media-tracker.mjs';
+import {validatePublicMediaExport,selectMedia} from './media-tracker.mjs';
 // Never query pending/private Supabase records. Only a separately cleared, same-origin export may be consumed.
 export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new Date()}={}){
   const $=id=>document.getElementById(id);
@@ -71,7 +71,9 @@ export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new
     try{
       const response=await fetcher('./public-media-reports.json',{cache:'no-store',credentials:'omit',redirect:'error'});
       if(!response.ok)throw Error('Public media export unavailable');
-      const next=readMediaFeed(await response.json());
+      // Refuse malformed or uncleared raw exports rather than showing a partial, misleading sample.
+      // Producer-side clearance is still required; browser checks cannot undo an exposure.
+      const next=validatePublicMediaExport(await response.json());
       if(request!==generation)return;
       feed=next;populate(country,feed.reports.map(r=>r.publisher_country),'All countries');populate(language,feed.reports.map(r=>r.language),'All languages');populate(outlet,feed.reports.map(r=>r.outlet),'All outlets');render();
     }catch(error){if(request!==generation)return;feed=null;render();status.textContent='Public reporting feed unavailable. No global or outlet counts can be calculated. Private/pending review queues are not a fallback.';}
