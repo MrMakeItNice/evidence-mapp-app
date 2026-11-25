@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readMediaFeed,selectMedia,pacificDay,validatePublicMediaExport} from '../media-tracker.mjs';
+import {readMediaFeed,selectMedia,pacificDay,validatePublicMediaExport,pacificRefreshWindow,mediaFeedFreshness} from '../media-tracker.mjs';
 // Synthetic fixtures only. Coordinates and publishers are NOT real geographic evidence.
 const loc=(kind='publisher')=>({kind,lat:12,lon:34,label:'Fixture City',basis:'Synthetic test only',source_url:'https://example.invalid/location',review_status:'verified'});
 const row=(id,extra={})=>({id,original_url:'https://example.invalid/'+id,outlet:'Fixture A',headline_original:'Water project',language:'en',attribution_url:'https://example.invalid/terms',publication_status:'published',editorial_status:'cleared_for_public_index',published_at:'2026-11-25T09:00:00Z',tone:'positive',tone_rationale:'Fixture only',publisher_location:loc(),coverage_group:'water',...extra});
@@ -109,4 +109,22 @@ test('publisher-reported date only is searchable without inventing Pacific day o
   assert.equal(found.undated.length,1);
   for(const invalid of ['2026-02-30','2026-11-25T00:00:00Z','2026-11-5',123])
     assert.throws(()=>validatePublicMediaExport(rawExport([row('bad',{published_at:null,published_date_reported:invalid})])),/Invalid/);
+});
+
+test('Pacific briefing freshness changes at local 06:00 and 18:00, including DST',()=>{
+  for(const [instant,expected] of [
+    ['2026-11-25T08:00:00Z','2026-11-24 18:00'],
+    ['2026-11-25T13:59:59Z','2026-11-24 18:00'],
+    ['2026-11-25T14:00:00Z','2026-11-25 06:00'],
+    ['2026-11-26T01:59:59Z','2026-11-25 06:00'],
+    ['2026-11-26T02:00:00Z','2026-11-25 18:00'],
+    ['2026-07-01T13:00:00Z','2026-07-01 06:00'],
+    ['2026-03-08T13:00:00Z','2026-03-08 06:00'],
+    ['2026-11-01T14:00:00Z','2026-11-01 06:00']
+  ])assert.equal(pacificRefreshWindow(instant),expected);
+  const now=new Date('2026-11-25T15:00:00Z');
+  assert.deepEqual(mediaFeedFreshness('2026-11-25T13:59:59Z',now),{window:'2026-11-25 06:00',state:'stale'});
+  assert.equal(mediaFeedFreshness('2026-11-25T14:00:00Z',now).state,'checked');
+  assert.equal(mediaFeedFreshness('2026-11-25T16:00:00Z',now).state,'unconfirmed');
+  assert.equal(mediaFeedFreshness(null,now).state,'unconfirmed');
 });
