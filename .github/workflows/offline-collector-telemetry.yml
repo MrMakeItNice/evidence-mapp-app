@@ -1,0 +1,27 @@
+name: Offline collector telemetry audit regression
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit-collector-telemetry.mjs'
+      - 'tests/audit-collector-telemetry.test.mjs'
+      - '.github/workflows/offline-collector-telemetry.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collector-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check script syntax
+        run: node --check scripts/audit-collector-telemetry.mjs
+      - name: Run offline regression tests
+        run: node --test tests/audit-collector-telemetry.test.mjs
