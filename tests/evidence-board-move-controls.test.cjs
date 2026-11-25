@@ -455,6 +455,49 @@ test('case search announces the display cap, whitespace-normalized matches and e
   assert.ok(list.children.every(button => button.attributes['aria-pressed'] === 'false'));
   assert.equal(get('case-search-status'), status);
 });
+test('case search can reveal later matches in bounded batches without losing selection or focus', async () => {
+  const published = Array.from({length: 40}, (_, i) => ({id: String(i+1), title: 'Case '+(i+1)}));
+  const {get, document} = await createBoard(published, []);
+  const list=get('cases'), more=get('more-cases'), search=get('search');
+  assert.equal(list.children.length,18);
+  assert.equal(more.hidden,false);
+  assert.equal(more.textContent,'Show 18 more cases');
+  const original=list.children[0];
+  more.listeners.click();
+  assert.equal(list.children.length,36);
+  assert.equal(list.children[0],original);
+  assert.equal(document.activeElement,list.children[18]);
+  assert.match(get('case-search-status').textContent,/36 of 40/);
+  assert.equal(more.textContent,'Show 4 more cases');
+  more.listeners.click();
+  assert.equal(list.children.length,40);
+  assert.equal(document.activeElement,list.children[36]);
+  assert.equal(more.hidden,true);
+  more.listeners.click();
+  assert.equal(list.children.length,40);
+  list.children[39].listeners.click();
+  assert.equal(get('heading').textContent,'Case 40');
+  assert.equal(list.children[39].attributes['aria-pressed'],'true');
+  search.value='Case 40';
+  search.listeners.input({target:search});
+  assert.equal(list.children.length,1);
+  assert.equal(list.children[0].attributes['aria-pressed'],'true');
+  assert.equal(more.hidden,true);
+  get('clear-cases').listeners.click();
+  assert.equal(list.children.length,18);
+  assert.equal(more.hidden,false);
+  assert.equal(document.activeElement,search);
+  assert.equal(get('heading').textContent,'Case 40');
+});
+test('case pagination stays unavailable on empty or failed case indexes', async () => {
+  for (const fail of [false,true]) {
+    const {get}=await createBoard([],[],fail);
+    const more=get('more-cases');
+    assert.equal(more.hidden,true);
+    more.listeners.click();
+    assert.equal(get('cases').children.length,0);
+  }
+});
 test('case search distinguishes a genuinely empty index from a failed public-record request', async () => {
   const empty = await createBoard([], []);
   assert.equal(empty.get('search').disabled, false);
