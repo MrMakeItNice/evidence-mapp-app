@@ -11,10 +11,10 @@ const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use
 try{
  for(const mobile of [false,true]){
   const context=await browser.newContext(mobile?{viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1}:{viewport:{width:1360,height:900}});
-  const page=await context.newPage();let unavailable=false,invalid=false;
+  const page=await context.newPage();let unavailable=false,invalid=false,stale=false;
   await page.route('**/*',async route=>{
     const url=route.request().url();
-    if(url===base+'/public-media-reports.json')return route.fulfill({status:unavailable?503:200,contentType:'application/json',body:JSON.stringify(invalid?{...feed,reports:[...feed.reports,story('d',{editorial_status:'pending',headline_original:'Private fixture never visible'})]}:feed)});
+    if(url===base+'/public-media-reports.json')return route.fulfill({status:unavailable?503:200,contentType:'application/json',body:JSON.stringify(invalid?{...feed,reports:[...feed.reports,story('d',{editorial_status:'pending',headline_original:'Private fixture never visible'})]}:stale?{...feed,checked_at:'2000-01-01T00:00:00Z'}:feed)});
     if(url.includes('cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js'))return route.fulfill({status:200,contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:readFileSync('node_modules/three/build/three.module.js','utf8')});
     if(url.startsWith(base+'/'))return route.continue();
     return route.abort();
@@ -22,6 +22,7 @@ try{
   await page.goto(base+'/index.html');
   if(await page.locator('#ea-opening-skip').isVisible())await page.locator('#ea-opening-skip').click();
   await page.locator('#media-status').filter({hasText:'3 indexed reports'}).waitFor();
+  assert.match(await page.locator('#media-status').textContent(),/Feed freshness: Checked in latest briefing window/);
   assert.equal(await page.locator('[data-tone="positive"] strong').textContent(),'1');
   assert.equal(await page.locator('[data-tone="negative"] strong').textContent(),'1');
   assert.equal(await page.locator('[data-tone="neutral"] strong').textContent(),'1');
@@ -51,6 +52,11 @@ try{
   assert.equal(await page.locator('#media-clusters button').count(),0);
   await page.locator('#media-clear').click();
   await page.locator('#media-status').filter({hasText:'3 indexed reports'}).waitFor();
+  stale=true;await page.locator('#media-refresh').click();
+  await page.locator('#media-status').filter({hasText:'Not checked since latest briefing window'}).waitFor();
+  assert.equal(await page.locator('[data-tone="positive"] strong').textContent(),'1');
+  stale=false;await page.locator('#media-refresh').click();
+  await page.locator('#media-status').filter({hasText:'Checked in latest briefing window'}).waitFor();
   invalid=true;await page.locator('#media-refresh').click();
   await page.locator('#media-status').filter({hasText:'Public reporting feed unavailable'}).waitFor();
   assert.equal(await page.locator('[data-tone="positive"] strong').textContent(),'—');
