@@ -1,0 +1,1156 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { auditNewsIngestion } from '../scripts/audit-news-ingestion.mjs';
+
+function sample() {
+  const x = {
+    as_of: '2026-11-23T02:20:00Z',
+    news_items: [
+      {id:1,topic_id:1,source_url:'https://news.google.com/rss/articles/ABC?oc=5',publisher:'Google News',published_at:null,discovered_at:'2026-11-23T01:20:00Z',review_status:'pending',headline:'SECRET HEADLINE'},
+      {id:2,topic_id:1,source_url:'https://agency.gov/document?id=2',publisher:'Agency',published_at:'2026-11-23T00:49:22+00:00',discovered_at:'2026-11-23T01:00:00Z',review_status:'pending'}
+    ],
+    research_inbox:[{id:10,source_url:'https://news.google.com/rss/articles/ABC?oc=5',published_at:null,review_status:'pending',watch_topic_id:null,related_case_id:null,notes:'SECRET NOTE'}],
+    sources:[{id:20,url:'https://agency.gov/document?id=2',published:true,publication_date:null}],
+    news_topics:[{id:1,active:true},{id:2,active:true}],
+    research_watch_topics:[{id:1,active:true,last_checked_at:null}],
+    news_watch_topics:[{id:1,active:true,last_collected_at:'2026-11-20T00:00:00Z'}],
+    agent_control_feeds:[{feed_id:1,active:true,last_success_at:'2026-11-23T01:00:00Z'}]
+  };
+  x.expected_counts = Object.fromEntries(Object.entries(x)
+    .filter(([,value])=>Array.isArray(value)).map(([name,value])=>[name,value.length]));
+  return x;
+}
+
+test('audits ingestion and does not treat UTC midnight as a future timestamp',()=>{
+  const x=auditNewsIngestion(sample());
+  assert.equal(x.news.total,2);
+  assert.equal(x.news.missing_publication_timestamp,1);
+  assert.equal(x.news.missing_publication_timestamp_google_proxies,1);
+  assert.equal(x.news.publication_timestamps_after_snapshot_time,0);
+  assert.equal(x.news.discovered_last_24h,2);
+  assert.equal(x.news.active_topics_without_direct_items,1);
+  assert.equal(x.inbox.without_watch_topic,1);
+  assert.equal(x.inbox.without_related_case,1);
+  assert.equal(x.overlap.news_inbox_exact_url_rows,1);
+  assert.equal(x.overlap.news_source_exact_url_rows,1);
+  assert.equal(x.sources.published_marked_missing_date,1);
+  assert.equal(x.watches.stale_research_timestamp_fields,1);
+  assert.equal(x.watches.stale_news_timestamp_fields,1);
+  assert.equal(x.watches.collectors_without_success_in_24h,0);
+});
+
+test('future publication timestamps use exact instants and produce IDs only',()=>{
+  const s=sample();s.news_items[1].published_at='2026-11-23T02:30:00Z';
+  const x=auditNewsIngestion(s);
+  assert.deepEqual(x.news.future_published_item_ids,[2]);
+  assert.equal(x.news.publication_timestamps_after_snapshot_time,1);
+  assert.ok(!JSON.stringify(x).includes('SECRET'));
+  assert.ok(!JSON.stringify(x).includes('https://'));
+});
+
+test('query parameters distinguish separate documents in deduplication',()=>{
+  const s=sample();s.news_items[1].source_url='https://agency.gov/document?id=1';
+  s.news_items.push({id:3,topic_id:2,source_url:'https://agency.gov/document?id=2',published_at:null});
+  s.expected_counts.news_items=3;
+  assert.equal(auditNewsIngestion(s).news.exact_url_duplicate_groups,0);
+});
+
+test('exact same-table duplicate groups are separate from cross-table overlaps',()=>{
+  const s=sample();
+  s.news_items.push({id:3,topic_id:1,source_url:s.news_items[0].source_url,published_at:null});
+  s.expected_counts.news_items=3;
+  const x=auditNewsIngestion(s);
+  assert.equal(x.news.exact_url_duplicate_groups,1);
+  assert.equal(x.overlap.news_inbox_exact_url_rows,2);
+});
+
+test('refuses incomplete snapshots and duplicate record IDs',()=>{
+  const s=sample();s.expected_counts.news_items=3;
+  assert.throws(()=>auditNewsIngestion(s),/Incomplete news_items/);
+  s.expected_counts.news_items=2;s.news_items[1].id=1;
+  assert.throws(()=>auditNewsIngestion(s),/Invalid news_items ID/);
+});
+
+test('stale watch fields do not automatically imply a stalled collector',()=>{
+  const s=sample();s.agent_control_feeds[0].last_success_at='2026-11-19T01:00:00Z';
+  const x=auditNewsIngestion(s);
+  assert.equal(x.watches.stale_research_timestamp_fields,1);
+  assert.equal(x.watches.collectors_without_success_in_24h,1);
+});
+
+test('invalid dates fail rather than silently misclassifying the source',()=>{
+  const s=sample();s.news_items[1].published_at='not a date';
+  assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp/);
+});
+
+
+test('separates non-Google undated records for targeted review without leaking titles',()=>{
+  const s=sample();
+  s.news_items.push({id:3,topic_id:2,source_url:'https://agency.gov/article?id=3',publisher:'Agency',
+    published_at:null,headline:'SECRET PRIVATE STORY',review_status:'pending'});
+  s.expected_counts.news_items=3;
+  const a=auditNewsIngestion(s);
+  assert.equal(a.news.missing_publication_timestamp_other,1);
+  assert.deepEqual(a.news.undated_other_item_ids,[3]);
+  assert.deepEqual(a.news.empty_active_topic_ids,[]);
+  assert.ok(!JSON.stringify(a).includes('SECRET PRIVATE STORY'));
+  assert.ok(!JSON.stringify(a).includes('agency.gov'));
+});
+
+test('caps non-Google undated IDs and keeps deterministic ascending order',()=>{
+  const s=sample();
+  for(let id=32;id>=3;id--) s.news_items.push({id,topic_id:1,source_url:'https://agency.gov/item?id='+id,
+    publisher:'Agency',published_at:null});
+  s.expected_counts.news_items=32;
+  const a=auditNewsIngestion(s);
+  assert.equal(a.news.missing_publication_timestamp_other,30);
+  assert.equal(a.news.undated_other_item_ids.length,25);
+  assert.equal(a.news.undated_other_item_ids[0],3);
+  assert.equal(a.news.omitted_undated_other_item_ids,5);
+  assert.deepEqual(a.news.empty_active_topic_ids,[2]);
+});
+
+test('refuses an unknown research inbox watch-topic reference',()=>{
+  const s=sample();s.research_inbox[0].watch_topic_id=999;
+  assert.throws(()=>auditNewsIngestion(s),/Unknown inbox watch topic/);
+  s.research_inbox[0].watch_topic_id=1;
+  assert.equal(auditNewsIngestion(s).inbox.without_watch_topic,0);
+});
+
+test('counts missing published-source publisher independently of missing date',()=>{
+  const s=sample();
+  assert.equal(auditNewsIngestion(s).sources.published_marked_missing_publisher,1);
+  s.sources[0].publisher='Agency';
+  assert.equal(auditNewsIngestion(s).sources.published_marked_missing_publisher,0);
+});
+
+test('triages aged inbox items with numeric IDs only',()=>{
+  const s=sample();
+  s.research_inbox[0].discovered_at='2026-10-01T00:00:00Z';
+  const report=auditNewsIngestion(s);
+  assert.equal(report.inbox.pending_over_14d,1);
+  assert.deepEqual(report.inbox.old_pending_item_ids,[10]);
+  assert.equal(report.inbox.omitted_old_pending_item_ids,0);
+  assert.ok(!JSON.stringify(report).includes('SECRET NOTE'));
+});
+
+test('does not count recent or non-pending inbox items as aged',()=>{
+  const s=sample();
+  s.research_inbox[0].discovered_at='2026-11-22T12:00:00Z';
+  assert.equal(auditNewsIngestion(s).inbox.pending_over_14d,0);
+  s.research_inbox[0].discovered_at='2026-10-01T00:00:00Z';
+  s.research_inbox[0].review_status='reviewed';
+  assert.equal(auditNewsIngestion(s).inbox.pending_over_14d,0);
+});
+
+test('flags malformed links but never prints raw URLs or credentials',()=>{
+  const s=sample();
+  s.news_items[0].source_url='ftp://agency.gov/NOT_PUBLIC';
+  s.news_items[1].source_url='https://user:secret@agency.gov/doc';
+  s.research_inbox[0].source_url='https://bad url.example';
+  s.sources[0].url=null;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.malformed_url,2);
+  assert.deepEqual(report.news.malformed_url_item_ids,[1,2]);
+  assert.equal(report.inbox.malformed_url,1);
+  assert.equal(report.sources.missing_url,1);
+  assert.equal(report.sources.malformed_url,0);
+  assert.ok(!JSON.stringify(report).includes('secret'));
+  assert.ok(!JSON.stringify(report).includes('NOT_PUBLIC'));
+});
+
+test('preserves document query strings and ignores unpublished source link problems',()=>{
+  const s=sample();
+  s.news_items[1].source_url='https://agency.gov/document?id=A%20B';
+  s.sources.push({id:21, published:false, url:'javascript:doSomething()'});
+  s.expected_counts.sources=2;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.malformed_url,0);
+  assert.equal(report.sources.malformed_url,0);
+  assert.equal(report.sources.missing_url,0);
+});
+
+
+test('classifies latest collector error with a recent earlier success as intermittent',()=>{
+  const s=sample();
+  s.agent_control_feeds[0].last_run_status='error';
+  s.agent_control_feeds[0].name='PRIVATE FEED NAME';
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_latest_error_with_recent_success,1);
+  assert.deepEqual(w.latest_error_recent_success_feed_ids,[1]);
+  assert.equal(w.collectors_latest_error_without_recent_success,0);
+  assert.ok(!JSON.stringify(w).includes('PRIVATE FEED NAME'));
+});
+
+test('classifies latest collector error with stale success separately',()=>{
+  const s=sample();
+  s.agent_control_feeds[0].last_run_status='failed';
+  s.agent_control_feeds[0].last_success_at='2026-11-19T01:00:00Z';
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_latest_error_with_recent_success,0);
+  assert.equal(w.collectors_latest_error_without_recent_success,1);
+  assert.deepEqual(w.latest_error_without_recent_success_feed_ids,[1]);
+  assert.equal(w.collectors_without_success_in_24h,1);
+});
+
+test('latest successful collector state clears error triage even when watch timestamp is stale',()=>{
+  const s=sample();
+  s.agent_control_feeds[0].last_run_status='ok';
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_latest_error_with_recent_success,0);
+  assert.equal(w.collectors_latest_error_without_recent_success,0);
+  assert.equal(w.stale_news_timestamp_fields,1);
+});
+
+
+test('returns numeric-only cross-collection candidates without exposing research content',()=>{
+  const report=auditNewsIngestion(sample());
+  assert.deepEqual(report.overlap.news_inbox_exact_url_id_pairs,[[1,10]]);
+  assert.deepEqual(report.overlap.news_source_exact_url_id_pairs,[[2,20]]);
+  assert.equal(report.overlap.news_inbox_omitted_id_pairs,0);
+  assert.equal(report.overlap.news_source_omitted_id_pairs,0);
+  assert.ok(!JSON.stringify(report).includes('SECRET HEADLINE'));
+  assert.ok(!JSON.stringify(report).includes('news.google.com'));
+  assert.ok(!JSON.stringify(report).includes('agency.gov'));
+});
+
+test('sorts cross-collection candidate IDs and preserves query-specific document identities',()=>{
+  const s=sample();
+  s.news_items.push({id:40,topic_id:2,source_url:s.news_items[0].source_url});
+  s.news_items.push({id:3,topic_id:2,source_url:s.news_items[1].source_url});
+  s.research_inbox.push({id:11,source_url:s.news_items[1].source_url});
+  s.sources.push({id:21,url:'https://agency.gov/document?id=3',published:true});
+  s.expected_counts.news_items=4;
+  s.expected_counts.research_inbox=2;
+  s.expected_counts.sources=2;
+  const overlap=auditNewsIngestion(s).overlap;
+  assert.deepEqual(overlap.news_inbox_exact_url_id_pairs,[[1,10],[2,11],[3,11],[40,10]]);
+  assert.deepEqual(overlap.news_source_exact_url_id_pairs,[[2,20],[3,20]]);
+  assert.equal(overlap.news_source_exact_url_rows,2);
+});
+
+test('caps numeric-only cross-collection candidate IDs with omission counts',()=>{
+  const s=sample();
+  for(let id=129;id>=100;id--) s.news_items.push({id,topic_id:1,source_url:s.news_items[0].source_url});
+  s.expected_counts.news_items=32;
+  const overlap=auditNewsIngestion(s).overlap;
+  assert.equal(overlap.news_inbox_exact_url_rows,31);
+  assert.equal(overlap.news_inbox_exact_url_id_pairs.length,25);
+  assert.deepEqual(overlap.news_inbox_exact_url_id_pairs[0],[1,10]);
+  assert.deepEqual(overlap.news_inbox_exact_url_id_pairs[24],[123,10]);
+  assert.equal(overlap.news_inbox_omitted_id_pairs,6);
+});
+
+
+test('flags exact-link publisher labels and publication times only as review candidates',()=> {
+  const s=sample();
+  s.news_items[0].published_at='2026-11-22T01:00:00Z';
+  s.research_inbox[0].publisher='Different outlet';
+  s.research_inbox[0].published_at='2026-11-23T02:00:00Z';
+  const review=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(review.publisher_label_difference_pairs,1);
+  assert.deepEqual(review.publisher_label_difference_id_pairs,[[1,10]]);
+  assert.equal(review.publication_times_over_24h_apart_pairs,1);
+  assert.deepEqual(review.publication_times_over_24h_apart_id_pairs,[[1,10]]);
+  assert.equal(review.omitted_publication_time_difference_id_pairs,0);
+  assert.ok(!JSON.stringify(review).includes('Different outlet'));
+  assert.ok(!JSON.stringify(review).includes('news.google.com'));
+});
+
+test('normalizes harmless publisher capitalization and spacing, uses exact instants, and excludes malformed links',()=> {
+  const s=sample();
+  s.news_items[0].published_at='2026-11-22T03:00:00Z';
+  s.research_inbox[0].publisher='  GOOGLE   NEWS ';
+  s.research_inbox[0].published_at='2026-11-23T02:00:00Z';
+  let review=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(review.publisher_label_difference_pairs,0);
+  assert.equal(review.publication_times_over_24h_apart_pairs,0);
+  s.news_items[0].source_url='ftp://not-credible.example/doc';
+  s.research_inbox[0].source_url='ftp://not-credible.example/doc';
+  s.research_inbox[0].publisher='Unrelated';
+  review=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(review.publisher_label_difference_pairs,0);
+  assert.equal(review.publication_times_over_24h_apart_pairs,0);
+});
+
+test('audits inbox/source identity as a third cross-collection path without automatic linking',()=> {
+  const s=sample();
+  s.research_inbox[0].source_url=s.sources[0].url;
+  const overlap=auditNewsIngestion(s).overlap;
+  assert.equal(overlap.inbox_source_exact_url_rows,1);
+  assert.deepEqual(overlap.inbox_source_exact_url_id_pairs,[[10,20]]);
+  assert.equal(overlap.inbox_source_omitted_id_pairs,0);
+});
+
+test('caps and sorts numeric-only metadata discrepancy pairs',()=> {
+  const s=sample();
+  s.news_items[0].published_at='2026-11-21T00:00:00Z';
+  for(let id=50;id>=21;id--) s.research_inbox.push({id,source_url:s.news_items[0].source_url,
+    publisher:'Different organization',published_at:'2026-11-23T01:00:00Z'});
+  s.expected_counts.research_inbox=s.research_inbox.length;
+  const review=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(review.publisher_label_difference_pairs,30);
+  assert.equal(review.publication_times_over_24h_apart_pairs,30);
+  assert.deepEqual(review.publisher_label_difference_id_pairs[0],[1,21]);
+  assert.deepEqual(review.publication_times_over_24h_apart_id_pairs[24],[1,45]);
+  assert.equal(review.omitted_publisher_label_difference_id_pairs,5);
+  assert.equal(review.omitted_publication_time_difference_id_pairs,5);
+  assert.ok(!JSON.stringify(review).includes('Different organization'));
+});
+
+
+test('one-sided news/source publication date identifies the missing side for human review',()=> {
+  const s=sample();
+  let review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.equal(review.source_missing_news_dated.count,1);
+  assert.deepEqual(review.source_missing_news_dated.id_pairs,[[2,20]]);
+  assert.equal(review.news_missing_source_dated.count,0);
+  s.sources[0].publication_date='2026-11-22';
+  review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.equal(review.source_missing_news_dated.count,0);
+  s.news_items[1].published_at=null;
+  review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.deepEqual(review.news_missing_source_dated.id_pairs,[[2,20]]);
+  assert.equal(review.source_missing_news_dated.count,0);
+});
+
+test('one-sided news/source publication date respects document queries and malformed URLs',()=> {
+  const s=sample();
+  s.news_items[1].published_at=null;
+  s.sources[0].publication_date='2026-11-22';
+  s.news_items[1].source_url='https://agency.gov/document?id=3';
+  let review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.equal(review.news_missing_source_dated.count,0);
+  s.news_items[1].source_url='ftp://agency.gov/document?id=2';
+  s.sources[0].url='ftp://agency.gov/document?id=2';
+  review=auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.equal(review.news_missing_source_dated.count,0);
+});
+
+test('one-sided date review emits sorted capped numeric IDs, not unpublished content or URLs',()=> {
+  const s=sample();
+  s.sources[0].publication_date='2026-11-22';
+  for(let id=34;id>=3;id--) s.news_items.push({
+    id, topic_id:1, source_url:s.sources[0].url, published_at:null,
+    headline:'PRIVATE RESEARCH ITEM', review_status:'pending'
+  });
+  s.expected_counts.news_items=s.news_items.length;
+  const x=auditNewsIngestion(s);
+  const review=x.overlap.news_source_publication_date_review;
+  assert.equal(review.news_missing_source_dated.count,32);
+  assert.equal(review.news_missing_source_dated.id_pairs.length,25);
+  assert.deepEqual(review.news_missing_source_dated.id_pairs[0],[3,20]);
+  assert.deepEqual(review.news_missing_source_dated.id_pairs[24],[27,20]);
+  assert.equal(review.news_missing_source_dated.omitted_id_pairs,7);
+  assert.ok(!JSON.stringify(x).includes('PRIVATE RESEARCH ITEM'));
+  assert.ok(!JSON.stringify(x).includes('agency.gov'));
+});
+
+
+test('identical malformed cross-collection URLs are not evidence of a shared source',()=> {
+  const s=sample();
+  s.news_items[0].source_url='ftp://not-a-source.example/PRIVATE';
+  s.research_inbox[0].source_url=s.news_items[0].source_url;
+  s.news_items[1].source_url='https://username:password@agency.gov/doc?item=2';
+  s.sources[0].url=s.news_items[1].source_url;
+  const result=auditNewsIngestion(s);
+  assert.equal(result.news.malformed_url,2);
+  assert.equal(result.inbox.malformed_url,1);
+  assert.equal(result.sources.malformed_url,1);
+  assert.equal(result.overlap.news_inbox_exact_url_rows,0);
+  assert.equal(result.overlap.news_source_exact_url_rows,0);
+  assert.deepEqual(result.overlap.news_inbox_exact_url_id_pairs,[]);
+  assert.deepEqual(result.overlap.news_source_exact_url_id_pairs,[]);
+  assert.equal(result.overlap.news_source_publication_date_review.source_missing_news_dated.count,0);
+  assert.ok(!JSON.stringify(result).includes('password'));
+  assert.ok(!JSON.stringify(result).includes('PRIVATE'));
+});
+
+test('identical invalid URLs are counted as malformed, not exact duplicate groups',()=> {
+  const s=sample();
+  s.news_items[0].source_url='javascript:NOT_PUBLIC';
+  s.news_items.push({id:3,topic_id:2,source_url:s.news_items[0].source_url,published_at:null});
+  s.expected_counts.news_items=3;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.malformed_url,2);
+  assert.equal(report.news.exact_url_duplicate_groups,0);
+  assert.equal(report.overlap.news_inbox_exact_url_rows,0);
+  assert.ok(!JSON.stringify(report).includes('NOT_PUBLIC'));
+});
+
+test('ages pending inbox records using added_at only when discovery time is missing',()=> {
+  const s=sample();
+  s.research_inbox[0].discovered_at=null;
+  s.research_inbox[0].added_at='2026-10-01T00:00:00Z';
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.pending_over_14d,1);
+  assert.deepEqual(report.old_pending_item_ids,[10]);
+  assert.equal(report.pending_with_added_at_fallback,1);
+  assert.deepEqual(report.fallback_age_item_ids,[10]);
+  assert.equal(report.pending_without_any_discovery_or_added_date,0);
+});
+
+test('uses discovered_at precedence over added_at rather than inflating aged inbox backlog',()=> {
+  const s=sample();
+  s.research_inbox[0].discovered_at='2026-11-22T00:00:00Z';
+  s.research_inbox[0].added_at='2026-10-01T00:00:00Z';
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.pending_over_14d,0);
+  assert.equal(report.pending_with_added_at_fallback,0);
+  assert.equal(report.pending_without_any_discovery_or_added_date,0);
+});
+
+test('reports undatable pending inbox records with only numeric IDs and validates added_at',()=> {
+  const s=sample();
+  s.research_inbox[0].discovered_at=null;
+  s.research_inbox[0].added_at=null;
+  let report=auditNewsIngestion(s).inbox;
+  assert.equal(report.pending_over_14d,0);
+  assert.equal(report.pending_without_any_discovery_or_added_date,1);
+  assert.deepEqual(report.unknown_age_item_ids,[10]);
+  assert.ok(!JSON.stringify(report).includes('SECRET NOTE'));
+  s.research_inbox[0].added_at='2026-99-99';
+  assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp in inbox.added_at/);
+});
+
+
+test('ranks aged pending news by numeric topic ID without revealing unpublished titles',()=>{
+  const s=sample();
+  for (const n of s.news_items) n.discovered_at='2026-10-01T00:00:00Z';
+  for (const id of [3,4,5]) s.news_items.push({
+    id,topic_id:2,source_url:'https://agency.gov/PRIVATE-'+id,
+    discovered_at:'2026-10-01T00:00:00Z',published_at:null,
+    review_status:'pending',headline:'SECRET STORY'
+  });
+  s.expected_counts.news_items=5;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_over_14d,5);
+  assert.deepEqual(report.news.aged_pending_topic_counts,[
+    {topic_id:2,count:3},{topic_id:1,count:2}
+  ]);
+  assert.equal(report.news.omitted_aged_pending_topics,0);
+  assert.ok(!JSON.stringify(report).includes('SECRET STORY'));
+  assert.ok(!JSON.stringify(report).includes('PRIVATE-'));
+});
+
+test('caps tied aged-topic rankings deterministically and excludes nonpending news',()=>{
+  const s=sample();
+  s.news_items[0].review_status='reviewed';
+  s.news_items[0].discovered_at='2026-10-01T00:00:00Z';
+  for (let id=12;id>=1;id--) {
+    if (id>2) s.news_topics.push({id,active:true});
+    s.news_items.push({id:id+100,topic_id:id,
+      source_url:'https://agency.gov/item/'+id,
+      discovered_at:'2026-10-01T00:00:00Z',review_status:'pending',published_at:null});
+  }
+  s.expected_counts.news_items=14;
+  s.expected_counts.news_topics=12;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_over_14d,12);
+  assert.deepEqual(report.news.aged_pending_topic_counts.map(r=>r.topic_id),
+    [1,2,3,4,5,6,7,8,9,10]);
+  assert.equal(report.news.omitted_aged_pending_topics,2);
+});
+
+
+test('pending news with no discovered_at is explicitly tracked without assuming its age',()=>{
+  const s=sample();
+  s.news_items[0].discovered_at=null;
+  s.news_items[0].headline='SECRET UNPUBLISHED HEADLINE';
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_without_discovery_timestamp,1);
+  assert.deepEqual(report.news.unknown_discovery_pending_item_ids,[1]);
+  assert.equal(report.news.pending_over_14d,0);
+  assert.equal(report.news.discovered_last_24h,1);
+  assert.ok(!JSON.stringify(report).includes('SECRET UNPUBLISHED HEADLINE'));
+});
+
+test('future intake timestamps are review flags, not new discoveries in the past 24 hours',()=>{
+  const s=sample();
+  s.news_items[0].review_status='reviewed';
+  s.news_items[0].discovered_at=null;
+  s.news_items[1].discovered_at='2026-11-23T02:30:00Z';
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_without_discovery_timestamp,0);
+  assert.equal(report.news.discovered_after_snapshot_time,1);
+  assert.deepEqual(report.news.future_discovered_item_ids,[2]);
+  assert.equal(report.news.discovered_last_24h,0);
+});
+
+test('unknown news discovery IDs are sorted and capped with omitted count',()=>{
+  const s=sample();
+  s.news_items[0].discovered_at=null;
+  for (let id=126;id>=100;id--) s.news_items.push({
+    id,topic_id:1,source_url:'https://agency.gov/SECRET/'+id,
+    discovered_at:null,published_at:null,review_status:'pending'
+  });
+  s.expected_counts.news_items=s.news_items.length;
+  const report=auditNewsIngestion(s);
+  assert.equal(report.news.pending_without_discovery_timestamp,28);
+  assert.deepEqual(report.news.unknown_discovery_pending_item_ids,[1,...Array.from({length:24},(_,i)=>100+i)]);
+  assert.equal(report.news.omitted_unknown_discovery_pending_item_ids,3);
+  assert.ok(!JSON.stringify(report).includes('/SECRET/'));
+});
+
+
+test('published-source provenance gap review returns numeric IDs for missing fields only',()=>{
+  const s=sample();
+  s.sources[0].title='UNPUBLISHED SENSITIVE SOURCE TITLE';
+  let report=auditNewsIngestion(s).sources;
+  assert.deepEqual(report.published_missing_date_source_ids,[20]);
+  assert.deepEqual(report.published_missing_publisher_source_ids,[20]);
+  assert.deepEqual(report.published_missing_url_source_ids,[]);
+  s.sources[0].url=null;
+  report=auditNewsIngestion(s).sources;
+  assert.deepEqual(report.published_missing_url_source_ids,[20]);
+  assert.equal(report.missing_url,1);
+  assert.ok(!JSON.stringify(report).includes('UNPUBLISHED'));
+  assert.ok(!JSON.stringify(report).includes('agency.gov'));
+});
+
+test('provenance gap IDs are sorted and capped without including unpublished sources',()=>{
+  const s=sample();
+  for (let id=60;id>=21;id--) {
+    s.sources.push({id,published:true,publication_date:null,publisher:null,url:null,
+      title:'PRIVATE SOURCE '+id});
+  }
+  s.sources.push({id:99,published:false,publication_date:null,publisher:null,url:null});
+  s.expected_counts.sources=s.sources.length;
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_missing_date,41);
+  assert.equal(report.published_marked_missing_publisher,41);
+  assert.deepEqual(report.published_missing_date_source_ids,
+    Array.from({length:25},(_,i)=>20+i));
+  assert.deepEqual(report.published_missing_publisher_source_ids,
+    Array.from({length:25},(_,i)=>20+i));
+  assert.deepEqual(report.published_missing_url_source_ids,
+    Array.from({length:25},(_,i)=>21+i));
+  assert.equal(report.omitted_published_missing_date_source_ids,16);
+  assert.equal(report.omitted_published_missing_publisher_source_ids,16);
+  assert.equal(report.omitted_published_missing_url_source_ids,15);
+  assert.ok(!JSON.stringify(report).includes('PRIVATE SOURCE'));
+});
+
+test('complete published-source metadata clears all review candidate IDs',()=>{
+  const s=sample();
+  s.sources[0].publication_date='2026-11-19';
+  s.sources[0].publisher='Official Publisher';
+  const report=auditNewsIngestion(s).sources;
+  assert.deepEqual(report.published_missing_date_source_ids,[]);
+  assert.deepEqual(report.published_missing_publisher_source_ids,[]);
+  assert.deepEqual(report.published_missing_url_source_ids,[]);
+  assert.equal(report.omitted_published_missing_date_source_ids,0);
+});
+
+test('archive-only published sources have a locator but no valid primary URL',()=>{
+  const s=sample();
+  s.sources[0].url=null;
+  s.sources[0].archive_url='https://archive.example.org/snapshot?doc=20';
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_archive_only,1);
+  assert.deepEqual(report.published_archive_only_source_ids,[20]);
+  assert.equal(report.published_marked_without_valid_url_or_archive,0);
+  assert.deepEqual(report.published_no_valid_locator_source_ids,[]);
+  assert.deepEqual(report.published_missing_url_source_ids,[20]);
+});
+
+test('malformed primary and archive URLs do not establish a verifiable locator',()=>{
+  const s=sample();
+  s.sources[0].url='ftp://agency.gov/20';
+  s.sources[0].archive_url='https://user:password@archive.example.org/20';
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_archive_only,0);
+  assert.equal(report.published_marked_without_valid_url_or_archive,1);
+  assert.deepEqual(report.published_no_valid_locator_source_ids,[20]);
+  assert.equal(report.published_marked_malformed_archive_url,1);
+  assert.deepEqual(report.published_malformed_archive_source_ids,[20]);
+  assert.ok(!JSON.stringify(report).includes('password'));
+  assert.ok(!JSON.stringify(report).includes('agency.gov'));
+});
+
+test('unlocatable published source IDs are sorted and capped, not leaked from unpublished records',()=>{
+  const s=sample();
+  for (let id=50; id>=21; id--) s.sources.push({
+    id, published:true, url:null, archive_url:null, title:'PRIVATE DOCUMENT '+id
+  });
+  s.sources.push({id:99,published:false,url:null,archive_url:null,title:'UNPUBLISHED PRIVATE'});
+  s.expected_counts.sources=s.sources.length;
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_without_valid_url_or_archive,30);
+  assert.deepEqual(report.published_no_valid_locator_source_ids,
+    Array.from({length:25},(_,i)=>21+i));
+  assert.equal(report.omitted_published_no_valid_locator_source_ids,5);
+  assert.ok(!JSON.stringify(report).includes('PRIVATE'));
+});
+
+test('missing archive column is unknown, not evidence of a missing archival link',()=>{
+  const s=sample();
+  s.sources[0].url=null;
+  delete s.sources[0].archive_url;
+  const report=auditNewsIngestion(s).sources;
+  assert.equal(report.published_marked_without_valid_url_or_archive,0);
+  assert.equal(report.published_marked_unknown_archive_field,1);
+  assert.deepEqual(report.published_unknown_archive_field_source_ids,[20]);
+});
+
+
+
+test('flags one-sided dates for exact news/inbox URLs without copying metadata',()=>{
+  const s=sample();
+  s.news_items[0].published_at='2026-11-20T02:00:00Z';
+  let r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.inbox_missing_news_dated_pairs,1);
+  assert.deepEqual(r.inbox_missing_news_dated_id_pairs,[[1,10]]);
+  assert.equal(r.news_missing_inbox_dated_pairs,0);
+  s.news_items[0].published_at=null;
+  s.research_inbox[0].published_at='2026-11-20T02:00:00Z';
+  r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.news_missing_inbox_dated_pairs,1);
+  assert.deepEqual(r.news_missing_inbox_dated_id_pairs,[[1,10]]);
+  assert.equal(r.inbox_missing_news_dated_pairs,0);
+  assert.ok(!JSON.stringify(r).includes('https://'));
+});
+
+test('both missing or both present are not one-sided date reconciliation candidates',()=>{
+  const s=sample();
+  let r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.news_missing_inbox_dated_pairs,0);
+  assert.equal(r.inbox_missing_news_dated_pairs,0);
+  s.news_items[0].published_at='2026-11-22T03:00:00Z';
+  s.research_inbox[0].published_at='2026-11-22T03:00:00Z';
+  r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.news_missing_inbox_dated_pairs,0);
+  assert.equal(r.inbox_missing_news_dated_pairs,0);
+});
+
+test('one-sided date candidates are numeric, sorted, capped and exclude invalid links',()=>{
+  const s=sample();
+  s.research_inbox[0].published_at='2026-11-22T03:00:00Z';
+  for(let id=35;id>=3;id--) s.news_items.push({
+    id,topic_id:1,source_url:s.news_items[0].source_url,published_at:null
+  });
+  s.news_items.push({id:50,topic_id:1,source_url:'https://person:secret@agency.gov/doc',
+    published_at:null});
+  s.research_inbox.push({id:20,source_url:'https://person:secret@agency.gov/doc',
+    published_at:'2026-11-22T03:00:00Z'});
+  s.expected_counts.news_items=s.news_items.length;
+  s.expected_counts.research_inbox=s.research_inbox.length;
+  const r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.news_missing_inbox_dated_pairs,34);
+  assert.deepEqual(r.news_missing_inbox_dated_id_pairs[0],[1,10]);
+  assert.deepEqual(r.news_missing_inbox_dated_id_pairs[24],[26,10]);
+  assert.equal(r.omitted_news_missing_inbox_dated_id_pairs,9);
+  assert.ok(!JSON.stringify(r).includes('person:secret'));
+});
+
+
+test('identifies active research watches without direct inbox records without inferring stalled polling',()=>{
+  const s=sample();
+  let w=auditNewsIngestion(s).watches;
+  assert.equal(w.active_research_without_direct_inbox,1);
+  assert.deepEqual(w.active_research_without_direct_inbox_ids,[1]);
+  s.research_inbox[0].watch_topic_id=1;
+  w=auditNewsIngestion(s).watches;
+  assert.equal(w.active_research_without_direct_inbox,0);
+  assert.deepEqual(w.active_research_without_direct_inbox_ids,[]);
+  assert.equal(w.stale_research_timestamp_fields,1);
+});
+
+test('keeps historical inbox assignments under inactive research watches separate',()=>{
+  const s=sample();
+  s.research_watch_topics[0].active=false;
+  s.research_inbox[0].watch_topic_id=1;
+  let w=auditNewsIngestion(s).watches;
+  assert.equal(w.active_research_without_direct_inbox,0);
+  assert.equal(w.inactive_research_with_inbox_records,1);
+  assert.deepEqual(w.inactive_research_with_inbox_ids,[1]);
+  s.research_inbox[0].watch_topic_id=null;
+  w=auditNewsIngestion(s).watches;
+  assert.equal(w.inactive_research_with_inbox_records,0);
+});
+
+test('caps and sorts watch assignment triage IDs without exposing private watch queries',()=>{
+  const s=sample();
+  s.research_watch_topics=[];
+  for(let id=30;id>=1;id--) s.research_watch_topics.push({
+    id,active:true,search_query:'PRIVATE WATCH QUERY '+id,last_checked_at:null
+  });
+  s.expected_counts.research_watch_topics=s.research_watch_topics.length;
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.active_research_without_direct_inbox,30);
+  assert.deepEqual(w.active_research_without_direct_inbox_ids,Array.from({length:25},(_,i)=>i+1));
+  assert.equal(w.omitted_active_research_without_inbox_ids,5);
+  assert.ok(!JSON.stringify(w).includes('PRIVATE WATCH QUERY'));
+});
+
+
+test('inbox dates compare exact instants and independently flag future publication/discovery',()=>{
+  const s=sample();
+  // UTC date can differ from Pacific date without being in the future.
+  s.research_inbox[0].published_at='2026-11-23T01:59:59Z';
+  s.research_inbox[0].discovered_at='2026-11-23T02:20:01Z';
+  let r=auditNewsIngestion(s).inbox;
+  assert.equal(r.publication_timestamps_after_snapshot_time,0);
+  assert.deepEqual(r.future_discovered_item_ids,[10]);
+  s.research_inbox[0].published_at='2026-11-23T02:20:01Z';
+  s.research_inbox[0].discovered_at='2026-11-23T02:19:59Z';
+  r=auditNewsIngestion(s).inbox;
+  assert.deepEqual(r.future_published_item_ids,[10]);
+  assert.equal(r.discovered_after_snapshot_time,0);
+});
+
+test('future inbox candidates are sorted, capped, numeric and protect unpublished content',()=>{
+  const s=sample();
+  for(let id=50;id>=11;id--) s.research_inbox.push({
+    id,source_url:'https://private.invalid/item?id='+id,title:'PRIVATE HEADLINE',
+    review_status:'pending', published_at:'2026-11-24T00:00:00Z',
+    discovered_at:'2026-11-24T00:00:00Z'
+  });
+  s.expected_counts.research_inbox=s.research_inbox.length;
+  const r=auditNewsIngestion(s).inbox;
+  assert.equal(r.publication_timestamps_after_snapshot_time,40);
+  assert.equal(r.discovered_after_snapshot_time,40);
+  assert.deepEqual(r.future_published_item_ids,Array.from({length:25},(_,i)=>i+11));
+  assert.deepEqual(r.future_discovered_item_ids,Array.from({length:25},(_,i)=>i+11));
+  assert.equal(r.omitted_future_published_item_ids,15);
+  assert.equal(r.omitted_future_discovered_item_ids,15);
+  assert.ok(!JSON.stringify(r).includes('PRIVATE'));
+  assert.ok(!JSON.stringify(r).includes('https://'));
+});
+
+test('invalid inbox publication date fails even on reviewed items',()=>{
+  const s=sample();
+  s.research_inbox[0].review_status='reviewed';
+  s.research_inbox[0].published_at='unclear date';
+  assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp in inbox.published_at/);
+});
+
+
+
+test('future inbox added_at is a review flag even after a record leaves the pending queue',()=>{
+  const s=sample();
+  s.research_inbox[0].review_status='reviewed';
+  s.research_inbox[0].added_at='2026-11-23T02:20:01Z';
+  s.research_inbox[0].title='PRIVATE INBOX TITLE';
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.added_after_snapshot_time,1);
+  assert.deepEqual(report.future_added_item_ids,[10]);
+  assert.equal(report.omitted_future_added_item_ids,0);
+  assert.equal(report.pending_over_14d,0);
+  assert.ok(!JSON.stringify(report).includes('PRIVATE INBOX TITLE'));
+});
+
+test('future inbox intake times are capped, sorted and separated from publication times',()=>{
+  const s=sample();
+  for (let id=50;id>=20;id--) {
+    s.research_inbox.push({id,added_at:'2026-11-23T02:21:00Z',
+      published_at:null,discovered_at:null,review_status:'reviewed',
+      title:'UNPUBLISHED LEAD '+id});
+  }
+  s.expected_counts.research_inbox=s.research_inbox.length;
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.added_after_snapshot_time,31);
+  assert.deepEqual(report.future_added_item_ids,Array.from({length:25},(_,i)=>i+20));
+  assert.equal(report.omitted_future_added_item_ids,6);
+  assert.equal(report.publication_timestamps_after_snapshot_time,0);
+  assert.equal(report.discovered_after_snapshot_time,0);
+  assert.ok(!JSON.stringify(report).includes('UNPUBLISHED LEAD'));
+});
+
+test('validates inbox added_at even on historical reviewed records',()=>{
+  const s=sample();
+  s.research_inbox[0].review_status='reviewed';
+  s.research_inbox[0].added_at='not-a-timestamp';
+  assert.throws(()=>auditNewsIngestion(s),/Invalid timestamp in inbox.added_at/);
+  s.research_inbox[0].added_at='2026-11-23T02:20:00Z';
+  const report=auditNewsIngestion(s).inbox;
+  assert.equal(report.added_after_snapshot_time,0);
+  assert.deepEqual(report.future_added_item_ids,[]);
+});
+
+
+test('flags future source publication dates using UTC calendar days, including unpublished records',()=>{
+  const s=sample();
+  s.as_of='2026-11-23T00:10:00Z';
+  s.sources[0].publication_date='2026-11-24';
+  s.sources[0].published=false;
+  const r=auditNewsIngestion(s).sources;
+  assert.equal(r.publication_dates_after_snapshot_utc_day,1);
+  assert.deepEqual(r.future_publication_date_source_ids,[20]);
+  s.sources[0].publication_date='2026-11-23';
+  assert.equal(auditNewsIngestion(s).sources.publication_dates_after_snapshot_utc_day,0);
+  s.sources[0].publication_date=null;
+  assert.equal(auditNewsIngestion(s).sources.publication_dates_after_snapshot_utc_day,0);
+});
+
+test('rejects malformed and impossible source publication calendar dates',()=>{
+  const s=sample();
+  for(const invalid of ['2026-02-30','2026-11-23T00:00:00Z','not a date']) {
+    s.sources[0].publication_date=invalid;
+    assert.throws(()=>auditNewsIngestion(s),/Invalid sources.publication_date/);
+  }
+});
+
+test('sorts and caps future publication source IDs without revealing private titles or URLs',()=>{
+  const s=sample();
+  s.sources[0].publication_date=null;
+  for(let id=60;id>=30;id--) {
+    s.sources.push({id,title:'SECRET UNPUBLISHED SOURCE',url:'https://private.example/doc?id='+id,
+      publication_date:'2026-11-24',published:false});
+  }
+  s.expected_counts.sources=s.sources.length;
+  const r=auditNewsIngestion(s).sources;
+  assert.equal(r.publication_dates_after_snapshot_utc_day,31);
+  assert.deepEqual(r.future_publication_date_source_ids,Array.from({length:25},(_,i)=>i+30));
+  assert.equal(r.omitted_future_publication_date_source_ids,6);
+  assert.ok(!JSON.stringify(r).includes('SECRET UNPUBLISHED SOURCE'));
+  assert.ok(!JSON.stringify(r).includes('private.example'));
+});
+
+
+test('future feed success cannot count as a recent completed poll',()=>{
+  const s=sample();
+  s.agent_control_feeds[0].last_success_at='2026-11-23T02:20:01Z';
+  s.agent_control_feeds[0].last_run_status='error';
+  let w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_without_success_in_24h,1);
+  assert.equal(w.collectors_latest_error_without_recent_success,1);
+  assert.deepEqual(w.future_success_feed_ids,[1]);
+  s.agent_control_feeds[0].last_success_at=s.as_of;
+  w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_without_success_in_24h,0);
+  assert.equal(w.collectors_latest_error_with_recent_success,1);
+  assert.deepEqual(w.future_success_feed_ids,[]);
+});
+
+test('future active collector IDs are sorted and capped; inactive feeds excluded',()=>{
+  const s=sample();
+  s.agent_control_feeds=Array.from({length:30},(_,i)=>({
+    feed_id:30-i,active:true,last_success_at:'2026-11-24T00:00:00Z',name:'PRIVATE FEED'
+  }));
+  s.agent_control_feeds.push({feed_id:99,active:false,last_success_at:'2026-11-24T00:00:00Z'});
+  s.expected_counts.agent_control_feeds=s.agent_control_feeds.length;
+  const w=auditNewsIngestion(s).watches;
+  assert.equal(w.collectors_future_success_timestamp,30);
+  assert.equal(w.collectors_without_success_in_24h,30);
+  assert.deepEqual(w.future_success_feed_ids,Array.from({length:25},(_,i)=>i+1));
+  assert.equal(w.omitted_future_success_feed_ids,5);
+  assert.ok(!JSON.stringify(w).includes('PRIVATE FEED'));
+});
+
+test('rejects a 1000-row truncated snapshot when independent count is 1001',()=>{
+  const s=sample();
+  for(let id=3;id<=1001;id++) s.news_items.push({
+    id,topic_id:1,source_url:'https://agency.gov/item?id='+id,
+    review_status:'pending',published_at:null
+  });
+  s.expected_counts.news_items=1001;
+  const last=s.news_items.pop();
+  assert.throws(()=>auditNewsIngestion(s),/Incomplete news_items snapshot/);
+  s.news_items.push(last);
+  assert.equal(auditNewsIngestion(s).news.total,1001);
+});
+
+
+test('rejects URL syntax that WHATWG parsing silently repairs and excludes false links',()=>{
+  const invalid=['https:agency.gov/doc','https:/agency.gov/doc','https:///agency.gov/doc',
+    'https://agency.gov\\doc','https://agency.gov/doc%zz','https://agency.gov/a\u0000b'];
+  for(const raw of invalid) {
+    const s=sample();
+    s.news_items[0].source_url=raw;
+    s.research_inbox[0].source_url=raw;
+    s.news_items[1].source_url=raw;
+    s.sources[0].url=raw;
+    const a=auditNewsIngestion(s);
+    assert.equal(a.news.malformed_url,2);
+    assert.equal(a.inbox.malformed_url,1);
+    assert.equal(a.sources.malformed_url,1);
+    assert.equal(a.news.exact_url_duplicate_groups,0);
+    assert.equal(a.overlap.news_inbox_exact_url_rows,0);
+    assert.equal(a.overlap.news_source_exact_url_rows,0);
+    assert.ok(!JSON.stringify(a).includes('agency.gov'));
+  }
+});
+
+test('retains valid escaped queries, Unicode hosts, IPv6, and case-insensitive HTTP scheme',()=>{
+  for(const raw of [' HTTPS://agency.gov/doc?id=1%20a#part ','https://例え.jp/a',
+    'https://[::1]:8080/a','http://agency.gov/doc?x=%25']) {
+    const s=sample();
+    s.news_items[0].source_url=raw;
+    s.research_inbox[0].source_url=raw.trim();
+    const a=auditNewsIngestion(s);
+    assert.equal(a.news.malformed_url,0);
+    assert.equal(a.inbox.malformed_url,0);
+    assert.equal(a.overlap.news_inbox_exact_url_rows,1);
+  }
+});
+
+
+test('classifies Google News proxy by exact validated hostname, not label or substring',()=>{
+  const s=sample();
+  s.news_items[0].source_url='https://NEWS.GOOGLE.COM/rss/articles/ABC?oc=5';
+  s.news_items[0].publisher='Unknown publisher';
+  const urls=[
+    'https://news.google.com.example.org/story',
+    'https://agency.gov/?ref=news.google.com',
+    'https://agency.gov/ordinary',
+    'https://news.google.com@agency.gov/story',
+    'https://news.google.com/%zz',
+    null
+  ];
+  urls.forEach((source_url,i)=>s.news_items.push({
+    id:i+3,topic_id:1,source_url,publisher:'Google News',published_at:null
+  }));
+  s.expected_counts.news_items=s.news_items.length;
+  const a=auditNewsIngestion(s);
+  assert.equal(a.news.missing_publication_timestamp_google_proxies,1);
+  assert.equal(a.news.missing_publication_timestamp_other,6);
+  assert.deepEqual(a.news.undated_other_item_ids,[3,4,5,6,7,8]);
+  assert.equal(a.news.malformed_url,2);
+  assert.ok(!JSON.stringify(a).includes('news.google.com'));
+  assert.ok(!JSON.stringify(a).includes('agency.gov'));
+});
+
+
+test('watch freshness separates missing, old, future and recent active timestamps',()=>{
+  const s=sample();
+  const rows=[
+    {id:9,active:true,value:'2026-11-23T02:20:01Z'},
+    {id:4,active:true,value:'2026-11-22T02:20:00Z'},
+    {id:3,active:true,value:'2026-11-22T02:19:59Z'},
+    {id:2,active:true,value:null},
+    {id:1,active:true,value:'2026-11-23T02:20:00Z'},
+    {id:5,active:false,value:null},
+    {id:7,active:true,value:'2026-11-23T02:21:00Z'}
+  ];
+  for(const [collection,field] of [
+    ['research_watch_topics','last_checked_at'],['news_watch_topics','last_collected_at']
+  ]) {
+    s[collection]=rows.map(({id,active,value})=>({id,active,[field]:value,name:'SECRET WATCH'}));
+    s.expected_counts[collection]=rows.length;
+  }
+  const w=auditNewsIngestion(s).watches;
+  for(const kind of ['research','news']) {
+    const f=w[kind+'_timestamp_freshness'];
+    assert.deepEqual(f.missing,{count:1,ids:[2],omitted_ids:0});
+    assert.deepEqual(f.old,{count:1,ids:[3],omitted_ids:0});
+    assert.deepEqual(f.future,{count:2,ids:[7,9],omitted_ids:0});
+    assert.deepEqual(f.recent,{count:2,ids:[1,4],omitted_ids:0});
+    assert.equal(w['stale_'+kind+'_timestamp_fields'],2);
+  }
+  assert.ok(!JSON.stringify(w).includes('SECRET WATCH'));
+  assert.equal(w.collectors_without_success_in_24h,0);
+});
+
+test('watch freshness caps numeric IDs while retaining complete counts',()=>{
+  const s=sample();
+  s.research_watch_topics=Array.from({length:30},(_,i)=>({id:30-i,active:true,last_checked_at:null}));
+  s.expected_counts.research_watch_topics=30;
+  const f=auditNewsIngestion(s).watches.research_timestamp_freshness.missing;
+  assert.equal(f.count,30);
+  assert.deepEqual(f.ids,Array.from({length:25},(_,i)=>i+1));
+  assert.equal(f.omitted_ids,5);
+});
+
+
+test('bounded exact URL overlap retains lexicographic prefix and exact omitted count', () => {
+  const s = sample();
+  const url = 'https://agency.gov/shared?document=1';
+  s.news_items = Array.from({length: 40}, (_, i) => ({id: 100+i, source_url: url, topic_id: 1, review_status: 'pending'})).reverse();
+  s.research_inbox = Array.from({length: 50}, (_, i) => ({id: 200+i, source_url: url, review_status: 'pending'})).reverse();
+  s.expected_counts.news_items = s.news_items.length;
+  s.expected_counts.research_inbox = s.research_inbox.length;
+  const a = auditNewsIngestion(s).overlap;
+  assert.equal(a.news_inbox_exact_url_rows, 2000);
+  assert.equal(a.news_inbox_omitted_id_pairs, 1975);
+  assert.deepEqual(a.news_inbox_exact_url_id_pairs, Array.from({length:25}, (_,i) => [100,200+i]));
+  s.news_items.reverse();
+  s.research_inbox.reverse();
+  assert.deepEqual(auditNewsIngestion(s).overlap, a);
+});
+
+test('bounded exact URL overlap sorts across distinct URL groups and retains document query identity', () => {
+  const s = sample();
+  s.news_items = [
+    {id: 9, source_url: 'https://agency.gov/doc?id=1'},
+    {id: 2, source_url: 'https://agency.gov/doc?id=2'},
+    {id: 1, source_url: 'https://agency.gov/doc?id=1'},
+    {id: 3, source_url: 'https://agency.gov/doc?id=3'}
+  ];
+  s.research_inbox = [
+    {id: 15, source_url: 'https://agency.gov/doc?id=1'},
+    {id: 12, source_url: 'https://agency.gov/doc?id=2'},
+    {id: 10, source_url: 'https://agency.gov/doc?id=1'}
+  ];
+  s.expected_counts.news_items = s.news_items.length;
+  s.expected_counts.research_inbox = s.research_inbox.length;
+  const a = auditNewsIngestion(s).overlap;
+  assert.equal(a.news_inbox_exact_url_rows, 5);
+  assert.equal(a.news_inbox_omitted_id_pairs, 0);
+  assert.deepEqual(a.news_inbox_exact_url_id_pairs, [[1,10],[1,15],[2,12],[9,10],[9,15]]);
+});
+
+
+test('bounded news/source reconciliation counts both date directions and keeps deterministic prefix', () => {
+  const s = sample();
+  const url = 'https://agency.gov/shared?document=9';
+  s.news_items = Array.from({length:40},(_,i)=>({
+    id:100+i,source_url:url,topic_id:1,review_status:'pending',
+    published_at:i%2===0?null:'2026-11-22T00:00:00Z'
+  })).reverse();
+  s.sources = Array.from({length:50},(_,i)=>({
+    id:200+i,url,published:true,publication_date:i%2===0?null:'2026-11-22'
+  })).reverse();
+  s.expected_counts.news_items=s.news_items.length;
+  s.expected_counts.sources=s.sources.length;
+  const r = auditNewsIngestion(s).overlap.news_source_publication_date_review;
+  assert.deepEqual(r.news_missing_source_dated,{
+    count:500,id_pairs:Array.from({length:25},(_,i)=>[100,201+2*i]),omitted_id_pairs:475
+  });
+  assert.deepEqual(r.source_missing_news_dated,{
+    count:500,id_pairs:Array.from({length:25},(_,i)=>[101,200+2*i]),omitted_id_pairs:475
+  });
+  s.news_items.reverse();
+  s.sources.reverse();
+  assert.deepEqual(auditNewsIngestion(s).overlap.news_source_publication_date_review,r);
+  assert.ok(!JSON.stringify(r).includes(url));
+});
+
+
+test('bounded inbox metadata review preserves four exact counts and sorted prefixes', () => {
+  const s=sample();
+  const url='https://agency.gov/shared?doc=55';
+  s.news_items=Array.from({length:40},(_,i)=>({
+    id:100+i,topic_id:1,source_url:url,publisher:'Agency A',
+    published_at:i%2===0?null:'2026-11-22T00:00:00Z'
+  })).reverse();
+  s.research_inbox=Array.from({length:50},(_,i)=>({
+    id:200+i,source_url:url,publisher:i%2===0?' agency   a ':'Agency B',
+    published_at:i%2===0?null:'2026-11-20T00:00:00Z'
+  })).reverse();
+  s.expected_counts.news_items=40;
+  s.expected_counts.research_inbox=50;
+  const r=auditNewsIngestion(s).overlap.news_inbox_metadata_review;
+  assert.equal(r.publisher_label_difference_pairs,1000);
+  assert.equal(r.omitted_publisher_label_difference_id_pairs,975);
+  assert.deepEqual(r.publisher_label_difference_id_pairs,Array.from({length:25},(_,i)=>[100,201+2*i]));
+  assert.equal(r.publication_times_over_24h_apart_pairs,500);
+  assert.equal(r.omitted_publication_time_difference_id_pairs,475);
+  assert.deepEqual(r.publication_times_over_24h_apart_id_pairs,Array.from({length:25},(_,i)=>[101,201+2*i]));
+  assert.equal(r.news_missing_inbox_dated_pairs,500);
+  assert.equal(r.omitted_news_missing_inbox_dated_id_pairs,475);
+  assert.deepEqual(r.news_missing_inbox_dated_id_pairs,Array.from({length:25},(_,i)=>[100,201+2*i]));
+  assert.equal(r.inbox_missing_news_dated_pairs,500);
+  assert.equal(r.omitted_inbox_missing_news_dated_id_pairs,475);
+  assert.deepEqual(r.inbox_missing_news_dated_id_pairs,Array.from({length:25},(_,i)=>[101,200+2*i]));
+  s.news_items.reverse();
+  s.research_inbox.reverse();
+  assert.deepEqual(auditNewsIngestion(s).overlap.news_inbox_metadata_review,r);
+  assert.ok(!JSON.stringify(r).includes(url));
+  assert.ok(!JSON.stringify(r).includes('Agency'));
+});
+
+
+test('publication chronology review tolerates 24 hours and requires actual discovery',()=>{
+  const s=sample();
+  const early='2026-11-20T00:00:00Z';
+  const boundary='2026-11-21T00:00:00Z';
+  const late='2026-11-21T00:00:01Z';
+  Object.assign(s.news_items[0],{discovered_at:early,published_at:boundary});
+  Object.assign(s.news_items[1],{discovered_at:early,published_at:late});
+  Object.assign(s.research_inbox[0],{discovered_at:null,added_at:early,published_at:late});
+  s.research_inbox.push({...s.research_inbox[0],id:11,discovered_at:early,published_at:late});
+  s.expected_counts.research_inbox=2;
+  const x=auditNewsIngestion(s);
+  assert.equal(x.news.publication_more_than_24h_after_discovery,1);
+  assert.deepEqual(x.news.publication_after_discovery_item_ids,[2]);
+  assert.equal(x.inbox.publication_more_than_24h_after_discovery,1);
+  assert.deepEqual(x.inbox.publication_after_discovery_item_ids,[11]);
+  assert.equal(x.inbox.omitted_publication_after_discovery_item_ids,0);
+  assert.ok(!JSON.stringify(x).includes('SECRET'));
+});
+
+
+test('recent date-quality cohort uses inclusive window and separate unassigned counts',()=>{
+  const s=sample();
+  s.news_items.push(
+    {id:3,topic_id:2,published_at:null,discovered_at:'2026-11-22T02:20:00Z'},
+    {id:4,topic_id:2,published_at:null,discovered_at:'2026-11-22T02:19:59Z'},
+    {id:5,topic_id:2,published_at:null,discovered_at:'2026-11-23T02:20:01Z'},
+    {id:6,topic_id:null,published_at:null,discovered_at:s.as_of},
+    {id:7,topic_id:2,published_at:null,discovered_at:null});
+  s.expected_counts.news_items=s.news_items.length;
+  const n=auditNewsIngestion(s).news;
+  assert.equal(n.discovered_last_24h,4);
+  assert.equal(n.undated_discovered_last_24h,3);
+  assert.equal(n.recent_without_topic,1);
+  assert.equal(n.recent_undated_without_topic,1);
+  assert.deepEqual(n.recent_publication_date_by_topic,[
+    {topic_id:1,recent_count:2,undated_count:1,recent_google_proxy_count:1,recent_google_proxy_undated_count:1},
+    {topic_id:2,recent_count:1,undated_count:1,recent_google_proxy_count:0,recent_google_proxy_undated_count:0}
+  ]);
+});
+
+test('recent topic cohort caps output deterministically without dropping global counts',()=>{
+  const s=sample();
+  s.news_topics=Array.from({length:12},(_,i)=>({id:i+1,active:true,title:'SECRET TOPIC'}));
+  s.news_items=Array.from({length:12},(_,i)=>({
+    id:i+1,topic_id:i+1,published_at:null,discovered_at:s.as_of
+  })).reverse();
+  s.expected_counts.news_topics=12;
+  s.expected_counts.news_items=12;
+  const n=auditNewsIngestion(s).news;
+  assert.equal(n.undated_discovered_last_24h,12);
+  assert.equal(n.omitted_recent_publication_date_topics,2);
+  assert.deepEqual(n.recent_publication_date_by_topic.map(x=>x.topic_id),[1,2,3,4,5,6,7,8,9,10]);
+  s.news_items.reverse();
+  assert.deepEqual(auditNewsIngestion(s).news.recent_publication_date_by_topic,n.recent_publication_date_by_topic);
+  assert.ok(!JSON.stringify(n).includes('SECRET'));
+});
+
+
+test('recent proxy cohort classifies validated hostname only and retains unassigned totals',()=>{
+  const s=sample();
+  const add=(id,topic_id,source_url,published_at=null,discovered_at=s.as_of)=>({
+    id,topic_id,source_url,published_at,discovered_at,publisher:'Google News',headline:'SECRET'
+  });
+  s.news_items.push(
+    add(3,1,'https://NEWS.GOOGLE.COM/rss/a','2026-11-22T02:20:00Z','2026-11-22T02:20:00Z'),
+    add(4,1,'https://news.google.com.evil.example/rss/a'),
+    add(5,1,'https://user:pass@news.google.com/rss/a'),
+    add(6,1,'https://agency.gov/news.google.com'),
+    add(7,null,'https://news.google.com/rss/b'),
+    add(8,null,'https://news.google.com/rss/c','2026-11-22T03:00:00Z'),
+    add(9,2,'https://news.google.com/rss/d',null,'2026-11-22T02:19:59Z'),
+    add(10,2,'https://news.google.com/rss/e',null,'2026-11-23T02:20:01Z'),
+    add(11,1,'https://news.google.com/%zz')
+  );
+  s.expected_counts.news_items=s.news_items.length;
+  const n=auditNewsIngestion(s).news;
+  assert.equal(n.discovered_last_24h,9);
+  assert.equal(n.google_proxy_discovered_last_24h,4);
+  assert.equal(n.google_proxy_undated_discovered_last_24h,2);
+  assert.equal(n.recent_google_proxy_without_topic,2);
+  assert.equal(n.recent_google_proxy_undated_without_topic,1);
+  assert.deepEqual(n.recent_publication_date_by_topic,[
+    {topic_id:1,recent_count:7,undated_count:5,recent_google_proxy_count:2,recent_google_proxy_undated_count:1}
+  ]);
+  assert.ok(!JSON.stringify(n).includes('https://'));
+  assert.ok(!JSON.stringify(n).includes('SECRET'));
+});
+
+test('recent proxy totals include omitted topics without exposing source links',()=>{
+  const s=sample();
+  s.news_topics=Array.from({length:12},(_,i)=>({id:i+1,active:true}));
+  s.news_items=s.news_topics.map(({id})=>({
+    id,topic_id:id,source_url:'https://news.google.com/rss/'+id,published_at:null,discovered_at:s.as_of
+  })).reverse();
+  s.expected_counts.news_topics=12;
+  s.expected_counts.news_items=12;
+  const n=auditNewsIngestion(s).news;
+  assert.equal(n.google_proxy_discovered_last_24h,12);
+  assert.equal(n.google_proxy_undated_discovered_last_24h,12);
+  assert.equal(n.omitted_recent_publication_date_topics,2);
+  assert.equal(n.recent_publication_date_by_topic.reduce((sum,x)=>sum+x.recent_google_proxy_count,0),10);
+  assert.ok(!JSON.stringify(n).includes('https://'));
+});
