@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readMediaFeed,selectMedia,pacificDay} from '../media-tracker.mjs';
+import {readMediaFeed,selectMedia,pacificDay,validatePublicMediaExport} from '../media-tracker.mjs';
 // Synthetic fixtures only. Coordinates and publishers are NOT real geographic evidence.
 const loc=(kind='publisher')=>({kind,lat:12,lon:34,label:'Fixture City',basis:'Synthetic test only',source_url:'https://example.invalid/location',review_status:'verified'});
 const row=(id,extra={})=>({id,original_url:'https://example.invalid/'+id,outlet:'Fixture A',headline_original:'Water project',language:'en',attribution_url:'https://example.invalid/terms',publication_status:'published',editorial_status:'cleared_for_public_index',published_at:'2026-11-25T09:00:00Z',tone:'positive',tone_rationale:'Fixture only',publisher_location:loc(),coverage_group:'water',...extra});
@@ -42,4 +42,25 @@ test('unavailable feed, unsafe URL, invalid timestamp and uncertain tone',()=>{
   assert.throws(()=>feed([row('a',{original_url:'https://user:pass@example.invalid/'})]),/Invalid/);
   const v=view([row('a',{published_at:'2026-02-30T12:00:00Z',tone_rationale:''})],{query:'water'});
   assert.equal(v.undated.length,1);assert.equal(v.counts.uncertain,1);
+});
+
+const rawExport=reports=>({schema_version:1,kind:'public_media_reports',checked_at:'2026-11-25T10:00:00Z',coverage_note:'Synthetic staging sample',reports});
+test('producer preflight rejects uncleared raw bytes even though browser filters them',()=>{
+  for(const r of [row('a',{editorial_status:'pending'}),row('a',{publication_status:'private'}),row('a',{human_notes:'private fixture'})])
+    assert.throws(()=>validatePublicMediaExport(rawExport([r])),/Non-cleared|Unexpected/);
+  assert.throws(()=>validatePublicMediaExport({...rawExport([]),internal_queue:[]}),/Unexpected/);
+  assert.throws(()=>validatePublicMediaExport(rawExport([row('a',{publisher_location:{...loc(),private_note:'fixture'}})])),/Unexpected/);
+});
+test('producer preflight rejects invalid optional provenance and duplicate rows',()=>{
+  for(const r of [row('a',{publisher_location:{...loc(),review_status:'pending'}}),row('a',{event_location:loc()}),row('a',{published_at:'2026-02-30T12:00:00Z'}),row('a',{correction_url:'http://example.invalid'}),row('a',{headline_translated:'Agua'}),row('a',{tone_rationale:''}),row('a',{topics:[{private:'fixture'}]})])
+    assert.throws(()=>validatePublicMediaExport(rawExport([r])));
+  assert.throws(()=>validatePublicMediaExport(rawExport([row('a'),row('a')])),/Duplicate/);
+});
+test('producer preflight retains cleared distinct perspectives and honest missing fields',()=>{
+  const a=row('a',{syndication_id:'fixture-wire'});
+  const b=row('b',{syndication_id:'fixture-wire',outlet:'Fixture B',tone:'mixed',publisher_location:null,published_at:null});
+  const f=validatePublicMediaExport(rawExport([a,b]));
+  assert.equal(f.reports.length,2);
+  assert.equal(f.reports[1].publisher_location,null);
+  assert.equal(f.reports[1].published_at,null);
 });
