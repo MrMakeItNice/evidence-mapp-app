@@ -881,7 +881,7 @@ test('selecting an unmarked globe point clears stale event provenance and expand
   const end = html.indexOf(' function bindGlobeGestures', start);
   assert.ok(start >= 0 && end > start);
   const createInspect = new Function('canvas', 'mouse', 'raycaster', 'camera', 'markerMeshes',
-    'earth', 'globe', 'geoPanel', 'document', 'mapList', 'mapRecords', 'showReviewedMapSource',
+    'earth', 'globe', 'geoPanel', 'document', 'mapList', 'mapRecords', 'showReviewedMapSource', 'mapFeedAvailable',
     html.slice(start, end) + '\nreturn inspectLocation;');
   const detail = element('div');
   detail.hidden = false;
@@ -899,7 +899,7 @@ test('selecting an unmarked globe point clears stale event provenance and expand
   const globe = {worldToLocal: () => ({normalize: () => ({x: 1, y: 0, z: 0})})};
   const inspect = createInspect(canvas, {set() {}}, raycaster, {}, [], {}, globe, geoPanel,
     {getElementById: id => {assert.equal(id, 'reviewed-globe-detail'); return detail;}},
-    mapList, [event], () => assert.fail('unmarked point has no reviewed source'));
+    mapList, [event], () => assert.fail('unmarked point has no reviewed source'), true);
   // A tap outside the Earth is not a location selection.
   inspect({clientX: 50, clientY: 50});
   assert.equal(detail.hidden, false);
