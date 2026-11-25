@@ -6,6 +6,8 @@ on:
       - media-tracker.mjs
       - media-tracker-ui.mjs
       - tests/media-tracker-browser.mjs
+      - tests/media-tracker.test.mjs
+      - scripts/check-public-media-export.mjs
       - .github/workflows/media-tracker-browser.yml
   workflow_dispatch:
 permissions:
@@ -21,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check media-tracker-ui.mjs
+      - run: node --check media-tracker-ui.mjs && node --check scripts/check-public-media-export.mjs
       - run: node --test tests/media-tracker.test.mjs tests/pulse-event-integrity.test.mjs tests/globe-reviewed-events.test.mjs tests/globe-discovery.test.cjs tests/global-search-query-privacy.test.cjs
       - run: node tests/globe-controls.mjs
       - run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.51.1 three@0.160.1
