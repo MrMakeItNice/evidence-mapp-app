@@ -332,7 +332,9 @@ try {
     maximum: innerHeight * .55, client: el.clientHeight, content: el.scrollHeight }));
   assert.ok(bounded.height <= bounded.maximum + 1 && bounded.content > bounded.client,
     'phone case list is a bounded scroll area');
-  await caseRegion.focus();
+  await page.getByRole('link', { name: 'Board controls ↓', exact: true }).focus();
+  await page.keyboard.press('Tab');
+  assert.equal(await caseRegion.evaluate(el => el === document.activeElement), true);
   assert.equal(await caseRegion.evaluate(el => getComputedStyle(el).outlineStyle), 'solid');
   await page.keyboard.press('End');
   await page.waitForFunction(() => document.getElementById('cases').scrollTop > 0);
