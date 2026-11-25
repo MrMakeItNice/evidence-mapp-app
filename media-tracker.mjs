@@ -22,6 +22,20 @@ export function pacificDay(v) {
   const get = type => parts.find(p=>p.type===type).value;
   return get('year')+'-'+get('month')+'-'+get('day');
 }
+// Pacific briefing windows are calendar-based, including DST changes; no UTC offset assumptions.
+export function pacificRefreshWindow(value) {
+  const date=new Date(value), day=pacificDay(date);
+  const hour=Number(new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',hour:'2-digit',hourCycle:'h23'}).format(date));
+  if(hour>=18)return day+' 18:00';
+  if(hour>=6)return day+' 06:00';
+  const prior=new Date(day+'T00:00:00Z');prior.setUTCDate(prior.getUTCDate()-1);
+  return prior.toISOString().slice(0,10)+' 18:00';
+}
+export function mediaFeedFreshness(checkedAt, now=new Date()) {
+  const window=pacificRefreshWindow(now);
+  if(!timestamp(checkedAt)||Date.parse(checkedAt)>+new Date(now))return {window,state:'unconfirmed'};
+  return {window,state:pacificRefreshWindow(checkedAt)===window?'checked':'stale'};
+}
 function location(v,kind) {
   if (!v || v.review_status!=='verified' || v.kind!==kind ||
       !Number.isFinite(v.lat) || Math.abs(v.lat)>90 || !Number.isFinite(v.lon) || Math.abs(v.lon)>180 ||
