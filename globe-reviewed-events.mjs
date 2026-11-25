@@ -401,6 +401,7 @@ export function renderReviewedMapList(doc, list, events, onInspect) {
     // These hosts may coincide; they are not independent corroboration.
     context.id = 'reviewed-globe-event-context-' + buttons.length;
     context.textContent = 'Event ID: ' + event.id + ' · Indexed date: ' + event.event_date +
+      ' · Displayed map point: ' + event.lat + '° latitude, ' + event.lon + '° longitude' +
       ' · Location role: ' + event.location_role_label + ' · Map placement: ' + event.location_note + ' · Event source: ' + event.source_host +
       ' · Location evidence: ' + event.location_source_host + ' · ' + event.category +
       (event.location_cites_same_document ?
