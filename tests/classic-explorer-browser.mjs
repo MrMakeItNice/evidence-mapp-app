@@ -214,6 +214,34 @@ try {
       assert.equal(new URL(page.url()).hash,'#case=22');
       assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: SearchMatch 20. Search again to find another case.');
       assert.equal(await page.locator('#results button').count(),0);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const key of ['Enter','Space']) {
+          await page.locator('#search').fill('SearchMatch 20');
+          await page.locator('#search').press('Tab');
+          const result=page.locator('#results button');
+          assert.equal(await result.evaluate(el=>el===document.activeElement),true);
+          const removed=await result.elementHandle();
+          await page.keyboard.press(key);
+          assert.equal(await removed.evaluate(el=>el.isConnected),false);
+          assert.equal(new URL(page.url()).hash,'#case=22');
+          assert.equal(await page.locator('#detail h2').textContent(),'SearchMatch 20');
+          assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+          assert.equal(await page.locator('#detail h2').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
+          assert.ok(await page.locator('#detail h2').evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight}),'focused details scroll into view');
+          await page.keyboard.press('Escape');
+          assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press('Enter');await page.keyboard.press('Tab');
+          assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'Tab leaves selected-case details');
+        }
+        await page.locator('#search').fill('Fixture investigation');
+        await page.locator('#results button').first().click();
+        assert.equal(await page.locator('#detail h2').textContent(),'Fixture investigation');
+        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'pointer selection also avoids removed-control focus');
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+      }
+      console.log('PASS: search-result Enter/Space and pointer selection focus the opened investigation heading; removed result is detached, heading is visible with keyboard outline, Escape reaches the live case card and Tab can leave details at 320/768/1280px.');
       rejectCases=true;await page.reload();
       await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('unavailable'));
       assert.equal(await page.locator('#search').isDisabled(),true);
