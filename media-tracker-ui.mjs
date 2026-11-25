@@ -1,4 +1,4 @@
-import {validatePublicMediaExport,selectMedia} from './media-tracker.mjs';
+import {validatePublicMediaExport,selectMedia,pacificDay,pacificRefreshWindow,mediaFeedFreshness} from './media-tracker.mjs';
 // Never query pending/private Supabase records. Only a separately cleared, same-origin export may be consumed.
 export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new Date()}={}){
   const $=id=>document.getElementById(id);
@@ -6,6 +6,8 @@ export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new
   const status=$('media-status'),detail=$('media-detail'),results=$('media-results'),clusters=$('media-clusters'),outlets=$('media-outlet-list');
   let feed=null,view=null,submitted='',generation=0,focusHandler=()=>{},viewHandler=()=>{};
   const mode=()=>mapMode.value;
+  const refreshKey=()=>pacificDay(now())+'|'+pacificRefreshWindow(now());
+  let lastRefresh=0,lastRefreshKey='';
   const make=(tag,content)=>{const el=document.createElement(tag);if(content!==undefined)el.textContent=content;return el;};
   const link=(url,label)=>{const el=make('a',label);el.href=url;el.target='_blank';el.rel='noopener noreferrer';return el;};
   const button=(label,fn)=>{const el=make('button',label);el.type='button';el.addEventListener('click',fn);return el;};
@@ -48,7 +50,9 @@ export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new
     if(!feed){view=null;for(const row of tallies)row.querySelector('strong').textContent='—';$('media-result-total').textContent='';viewHandler(null,mode());return;}
     view=selectMedia(feed,{query:submitted,country:country.value,language:language.value,outlet:outlet.value,mode:mode()==='event'?'event':'publisher',now:now()});
     for(const row of tallies)row.querySelector('strong').textContent=String(view.counts[row.dataset.tone]);
-    status.textContent=(view.searching?'Search results across indexed dates':'Today: '+view.day+' (Pacific)')+' · '+view.reports.length+' indexed reports · '+view.unlocated.length+' without mapped location · '+view.undated.length+' without publication timestamp ('+view.dateOnly.length+' publisher-date-only). Feed checked: '+feed.checked_at+'. '+feed.coverage_note;
+    const freshness=mediaFeedFreshness(feed.checked_at,now());
+    const freshnessText=freshness.state==='checked'?'Checked in latest briefing window':freshness.state==='stale'?'Not checked since latest briefing window':'Feed check time unconfirmed';
+    status.textContent=(view.searching?'Search results across indexed dates':'Today: '+view.day+' (Pacific)')+' · '+view.reports.length+' indexed reports · '+view.unlocated.length+' without mapped location · '+view.undated.length+' without publication timestamp ('+view.dateOnly.length+' publisher-date-only). Feed checked: '+feed.checked_at+'. Feed freshness: '+freshnessText+' ('+freshness.window+' Pacific); this does not establish coverage completeness. '+feed.coverage_note;
     $('media-result-total').textContent='('+view.reports.length+')';
     for(const [name,count] of view.outlets)outlets.append(make('li',name+': '+count));
     for(const cluster of view.clusters){
@@ -67,6 +71,7 @@ export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new
     viewHandler(view,mode());
   }
   async function refresh(){
+    lastRefresh=Date.now();lastRefreshKey=refreshKey();
     const request=++generation;feed=null;render();status.textContent='Loading public reporting feed; counts unavailable.';
     try{
       const response=await fetcher('./public-media-reports.json',{cache:'no-store',credentials:'omit',redirect:'error'});
@@ -82,8 +87,11 @@ export function mountMediaTracker(document,{fetcher=globalThis.fetch,now=()=>new
   for(const control of [country,language,outlet,mapMode,headlines])control.addEventListener('change',render);
   $('media-clear').addEventListener('click',()=>{query.value='';submitted='';country.value=language.value=outlet.value='';mapMode.value='publisher';render();focusHandler(null);query.focus();});
   $('media-refresh').addEventListener('click',refresh);
-  // Re-fetch on returning to the page after a briefing window, without implying that a briefing itself populates the public export.
-  let lastRefresh=Date.now();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastRefresh>15*60*1000){lastRefresh=Date.now();refresh();}});
+  // Re-fetch the cleared export at Pacific midnight or a 06:00/18:00 boundary while visible.
+  // A briefing window is a refresh opportunity, not evidence that a new export exists.
+  const refreshIfDue=(returning=false)=>{if(!document.hidden&&(refreshKey()!==lastRefreshKey||(returning&&Date.now()-lastRefresh>15*60*1000)))refresh();};
+  document.addEventListener('visibilitychange',()=>refreshIfDue(true));
+  document.defaultView?.setInterval(()=>refreshIfDue(),60*1000);
   refresh();
   return {mode,available:()=>!!feed,inspectClusters,subscribe(fn){viewHandler=fn;fn(view,mode());},onFocus(fn){focusHandler=fn;}};
 }
