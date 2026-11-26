@@ -392,7 +392,7 @@ try {
       references.push({case_id:25,title:longSourceTitle,publisher:longPublisher,url:'https://records.example/long-record'});
       const pageWidth=()=>page.evaluate(()=>({viewport:document.documentElement.clientWidth,content:document.documentElement.scrollWidth}));
       unwrappedDetails=true;await page.setViewportSize({width:320,height:900});
-      await page.goto('https://classic.example/connection-explorer.html#case=25');
+      await page.goto('https://classic.example/connection-explorer.html#case=25');await page.reload();
       await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===2);
       const before=await pageWidth();
       assert.ok(before.content>before.viewport,'unwrapped long inspector text reproduces page-wide overflow');
