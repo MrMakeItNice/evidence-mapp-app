@@ -475,6 +475,46 @@ try {
       }
       assert.equal(draftDownloads,0,'failed reads never produce a download');
       console.log('PASS: blocked draft reads, invalid JSON and non-array storage show unavailable rather than empty at 320/768/1280px; export is withheld, Save cannot overwrite bytes, Retry preserves text/focus and recovers existing drafts without public refetch or empty downloads.');
+      for(const width of [320,768,1280])for(const [trigger,type] of [['newCase','case'],['newTrail','trail']]) {
+        await page.setViewportSize({width,height:900});
+        const before=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),requests=caseRequests,hash=new URL(page.url()).hash;
+        assert.equal(await page.locator('#downloadUnsavedDraft').isVisible(),false);
+        await page.locator('#'+trigger).click();
+        await page.locator('#draftTitle').fill('Unsaved recovery fixture');await page.locator('#draftRelated').fill('Case #1');
+        await page.locator('#draftUrl').fill('https://records.example/unsaved?version=1#notes');await page.locator('#draftNotes').fill('Original recovery notes');
+        await page.evaluate(()=>{window.fixtureSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new DOMException('Fixture write quota','QuotaExceededError')}});
+        await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
+        assert.equal(await page.locator('#draftForm').isVisible(),true);assert.equal(await page.locator('#downloadUnsavedDraft').isVisible(),true);
+        assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),before);
+        await page.locator('#draftTitle').fill('Edited recovery fixture');await page.locator('#draftNotes').fill('Updated notes after failed Save');
+        const recovery=page.getByRole('button',{name:'Download unsaved draft',exact:true});
+        assert.ok(await recovery.evaluate(el=>el.getBoundingClientRect().right<=innerWidth),'recovery action fits phone/tablet/desktop');
+        const downloadCount=draftDownloads;
+        await page.locator('#draftTitle').fill('   ');await recovery.press('Enter');
+        assert.equal(draftDownloads,downloadCount);assert.equal(await page.locator('#draftTitle').getAttribute('aria-invalid'),'true');
+        await page.locator('#draftTitle').fill('Edited recovery fixture');
+        if(type==='trail') {
+          await page.locator('#draftUrl').fill('');await recovery.press('Enter');
+          assert.equal(draftDownloads,downloadCount);assert.equal(await page.locator('#draftUrl').evaluate(el=>el===document.activeElement),true);
+          await page.locator('#draftUrl').fill('https://records.example/unsaved?version=1#notes');
+        }
+        const pending=page.waitForEvent('download');await recovery.press('Enter');const download=await pending;
+        assert.equal(download.suggestedFilename(),'evidence-atlas-unsaved-draft.json');
+        const data=JSON.parse(await readFile(await download.path(),'utf8'));
+        assert.equal(data.format,'evidence-atlas-drafts-v1');assert.equal(data.drafts.length,1,'recovery downloads only current form, not saved drafts');
+        const d=data.drafts[0];assert.equal(d.type,type);assert.equal(d.title,'Edited recovery fixture');assert.equal(d.related,'Case #1');assert.equal(d.url,'https://records.example/unsaved?version=1#notes');assert.equal(d.notes,'Updated notes after failed Save');assert.equal(d.review_status,'unsubmitted');assert.ok(Number.isFinite(Date.parse(d.created_at)));
+        assert.equal(await recovery.evaluate(el=>el===document.activeElement),true);assert.equal(await page.locator('#draftForm').isVisible(),true);
+        assert.equal(await page.locator('#draftNotes').inputValue(),d.notes);assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),before);
+        assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests,'recovery does not refetch or publish');
+        assert.match(await page.locator('#draftStatus').textContent(),/not saved in this browser or published/);
+        await page.evaluate(()=>{Storage.prototype.setItem=window.fixtureSetItem;delete window.fixtureSetItem});
+        await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
+        assert.equal(await page.locator('#draftForm').isVisible(),false);assert.equal(await recovery.isVisible(),false);
+        assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true);
+        const saved=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),draftStorageKey);assert.equal(saved.length,JSON.parse(before).length+1);assert.equal(saved.at(-1).title,d.title);
+        await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:before});await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      }
+      console.log('PASS: failed Save exposes keyboard unsaved-draft download at 320/768/1280px for case/trail forms; parsed JSON contains current edited fields only, with unchanged stored bytes/form/focus/case and no public requests; later successful Save hides recovery and returns focus.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         for(const [trigger,type] of [['newCase','case'],['newTrail','trail']]) {
