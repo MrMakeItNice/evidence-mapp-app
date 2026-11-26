@@ -43,6 +43,41 @@ try {
       console.log('PASS: baseline reproduces image wrapper; Chromium retains focusable card buttons despite the image role.');
     } else {
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='group'&&n.name?.value==='Interactive case and source connection diagram'));
+      assert.equal(await page.locator('#zoomStatus').getAttribute('role'),'status');
+      assert.equal(await page.locator('#zoomStatus').getAttribute('aria-atomic'),'true');
+      for(const id of ['zoomIn','zoomOut','resetView'])assert.equal(await page.locator('#'+id).getAttribute('aria-describedby'),'zoomStatus');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.locator('#resetView').press('Enter');
+        const caseHash=new URL(page.url()).hash,title=await page.locator('#detail h2').textContent();
+        assert.equal(await page.locator('#zoomStatus').textContent(),'Diagram zoom: 100%.');
+        await page.locator('#zoomIn').press('Enter');
+        assert.equal(await page.locator('#zoomStatus').textContent(),'Diagram zoom: 125%.');
+        assert.equal(await page.locator('#zoomIn').evaluate(el=>el===document.activeElement),true);
+        await page.locator('#zoomOut').press('Space');
+        assert.equal(await page.locator('#zoomStatus').textContent(),'Diagram zoom: 100%.');
+        for(let i=0;i<10;i++)await page.locator('#zoomIn').press('Enter');
+        assert.equal(await page.locator('#zoomStatus').textContent(),'Diagram zoom: 304% (maximum).');
+        const capped=await page.locator('#graph').getAttribute('viewBox');
+        await page.locator('#zoomIn').press('Space');
+        assert.equal(await page.locator('#graph').getAttribute('viewBox'),capped);
+        assert.equal(await page.locator('#zoomIn').evaluate(el=>el===document.activeElement),true);
+        for(let i=0;i<12;i++)await page.locator('#zoomOut').press('Enter');
+        assert.equal(await page.locator('#zoomStatus').textContent(),'Diagram zoom: 54% (minimum).');
+        assert.ok(await page.locator('#zoomStatus').evaluate(el=>el.getBoundingClientRect().left>=0&&el.getBoundingClientRect().right<=innerWidth));
+        await page.locator('#resetView').press('Enter');
+        assert.equal(await page.locator('#zoomStatus').textContent(),'Diagram zoom: 100%.');
+        assert.equal(await page.locator('#graph').getAttribute('viewBox'),'0 0 760 520');
+        await page.locator('#graph').hover();await page.mouse.wheel(0,100);
+        await page.waitForFunction(()=>document.querySelector('#zoomStatus').textContent==='Diagram zoom: 89%.');
+        await page.locator('#resetView').click();
+        assert.equal(await page.locator('#zoomStatus').textContent(),'Diagram zoom: 100%.');
+        assert.equal(new URL(page.url()).hash,caseHash);
+        assert.equal(await page.locator('#detail h2').textContent(),title);
+        assert.equal(await page.locator('#graph .node').count(),3);
+      }
+      console.log('PASS: diagram zoom status tracks native Enter/Space, wheel, existing minimum/maximum and Reset at 320/768/1280px without moving keyboard focus or changing the case/source cards.');
+
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         await page.locator('#resetView').focus();
