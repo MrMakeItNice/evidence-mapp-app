@@ -539,10 +539,10 @@ try {
       assert.equal(await page.locator('#results button').count(),0);
       pauseCases=false;releaseCases();
       await page.waitForFunction(()=>!document.querySelector('#search').disabled);
-      assert.equal(await page.locator('#search-status').textContent(),'Type a title to search 2 published cases.');
+      assert.equal(await page.locator('#search-status').textContent(),'Type a title or case ID to search 2 published cases.');
       cases.push(...Array.from({length:20},(_,i)=>({id:i+3,title:'SearchMatch '+(i+1)})));
       await page.reload();await page.waitForFunction(()=>!document.querySelector('#search').disabled);
-      assert.equal(await page.locator('#search').getAttribute('aria-describedby'),'search-status');
+      assert.equal(await page.locator('#search').getAttribute('aria-describedby'),'searchHelp search-status');
       assert.equal(await page.locator('#search-status').getAttribute('role'),'status');
       assert.equal(await page.locator('#search-status').getAttribute('aria-atomic'),'true');
       for(const width of [320,768,1280]) {
@@ -555,10 +555,10 @@ try {
         assert.ok(await page.locator('#search-status').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth));
         await page.locator('#search').fill('NoMatchingFixture');
         assert.equal(await page.locator('#results button').count(),0);
-        assert.equal(await page.locator('#search-status').textContent(),'No matching published cases. Try another title.');
+        assert.equal(await page.locator('#search-status').textContent(),'No matching published cases. Try another title or case ID.');
         await page.locator('#search').fill('');
         assert.equal(await page.locator('#results button').count(),0);
-        assert.equal(await page.locator('#search-status').textContent(),'Type a title to search 22 published cases.');
+        assert.equal(await page.locator('#search-status').textContent(),'Type a title or case ID to search 22 published cases.');
         assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
         assert.equal(await page.locator('#detail h2').textContent(),caseTitle);
         assert.equal(new URL(page.url()).hash,caseHash,'query updates do not navigate');
@@ -695,6 +695,42 @@ try {
       console.log('PASS: long case/source headings, summaries, publishers and search confirmations reflow without page overflow at 320/768/1280px; full text, indexed URL, keyboard focus, Tab and Escape are preserved.');
       await page.goto('https://classic.example/connection-explorer.html#case=24');
       await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===2);
+      const idSearchRequests=caseRequests;
+      assert.equal(await page.locator('#searchHelp').textContent(),'Search by title or exact case ID, such as #42.');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        assert.ok(await page.locator('#searchHelp').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'persistent search instructions wrap');
+        for(const query of ['24','#24','Case #24','case 24']) {
+          await page.locator('#search').fill(query);
+          const result=page.locator('#results').getByRole('button',{name:duplicateTitle+' · Case #24',exact:true});
+          assert.equal(await page.locator('#results button').count(),1,'exact ID distinguishes equal-title records');
+          assert.equal(await page.locator('#search-status').textContent(),'1 matching published case.');
+          await page.locator('#search').press('Tab');
+          assert.equal(await result.evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press('Enter');
+          await page.waitForFunction(()=>location.hash==='#case=24');
+          assert.equal(await page.locator('#detail p').textContent(),'Second distinct record');
+          assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),'Second distinct source');
+          assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press('Escape');
+          assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+        }
+        await page.locator('#search').fill('#2');
+        assert.equal(await page.locator('#results button').count(),1,'ID prefixes do not match unrelated IDs');
+        assert.equal(await page.locator('#results button').textContent(),'Related fixture investigation · Case #2');
+        await page.locator('#search').fill('#240');
+        assert.equal(await page.locator('#results button').count(),0,'partial or unknown IDs do not fetch or fabricate a case');
+        assert.equal(await page.locator('#search-status').textContent(),'No matching published cases. Try another title or case ID.');
+        await page.locator('#search').fill('2');
+        assert.equal(await page.locator('#results').getByRole('button',{name:'Related fixture investigation · Case #2',exact:true}).count(),1);
+        assert.equal(await page.locator('#results').getByRole('button',{name:'SearchMatch 2 · Case #4',exact:true}).count(),1,'numeric text retains existing title matches');
+        await page.locator('#search').fill('Duplicate investigation');
+        assert.equal(await page.locator('#results button').count(),2,'title matching still keeps equal-title records separate');
+        assert.equal(await page.locator('#detail p').textContent(),'Second distinct record','query changes do not navigate');
+        assert.equal(new URL(page.url()).hash,'#case=24');
+      }
+      assert.equal(caseRequests,idSearchRequests,'ID queries only search the loaded public index');
+      console.log('PASS: exact bare/#/Case-ID queries find and keyboard-open the correct equal-title record at 320/768/1280px with heading focus and Escape return; persistent instructions wrap, ID prefixes do not match other IDs, numeric title matches and existing title/selection behavior remain intact.');
       rejectCases=true;await page.reload();
       await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('unavailable'));
       assert.equal(await page.locator('#search').isDisabled(),true);
