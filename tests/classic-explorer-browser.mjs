@@ -568,6 +568,35 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('#graph .node').nth(0).evaluate(el=>el===document.activeElement),true);
       console.log('PASS: keyboard inspection focuses visible details heading, Tab reaches source link, Escape returns to originating case/source, pointer focus and modified keys remain unchanged.');
+      const exactRefsStart=references.length,exactCasesStart=cases.length;
+      const exactFixtures=[
+        [90,'Record one','https://records.example/document?id=1#page=2'],
+        [91,'Record two','https://records.example/document?id=2#page=2'],
+        [92,'Record fragment','https://records.example/document?id=1#page=3']
+      ];
+      for(const [id,title,url] of exactFixtures){cases.push({id,title:'Exact URL case '+id});references.push({case_id:1,title,url},{case_id:id,title:'Shared '+title,url})}
+      references.push({case_id:1,title:'Repeated record one',url:exactFixtures[0][2]});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===6);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        assert.equal(await page.getByRole('button',{name:'Repeated record one',exact:true}).count(),0,'identical serialized URL still deduplicates within a case');
+        for(const [id,title,url] of exactFixtures) {
+          const card=page.locator('#graph').getByRole('button',{name:title,exact:true});await card.press('Enter');
+          assert.equal(await page.locator('#detail .indexed-url').textContent(),'Indexed URL: '+url);
+          assert.equal(await page.locator('#detail a').getAttribute('href'),url);
+          assert.equal(await page.locator('#detail h3').textContent(),'Other cases citing this exact URL');
+          assert.equal(await page.locator('#detail li button').count(),1,'same path with a different query or fragment is not a shared citation');
+          const related=page.locator('#detail').getByRole('button',{name:'Exact URL case '+id+' · Case #'+id,exact:true});
+          await related.press('Enter');await page.waitForFunction(id=>location.hash==='#case='+id,id);
+          assert.equal(await page.locator('#detail h2').textContent(),'Exact URL case '+id);
+          assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),'Shared '+title);
+          await page.keyboard.press('Escape');assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+          await page.goto('https://classic.example/connection-explorer.html#case=1');await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===6);
+        }
+      }
+      references.splice(exactRefsStart);cases.splice(exactCasesStart);
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      console.log('PASS: distinct query/fragment source URLs retain separate cards and exact preview links; related-case navigation excludes same-path different destinations at 320/768/1280px, while true duplicates still deduplicate and Enter/Escape retain exact case identity.');
       const destination='https://records.example/long?record='+ 'x'.repeat(300)+'&id=42#page=7';
       const unsafe=[{title:'Script citation',url:'javascript:alert(1)'},
         {title:'Credential citation',url:'https://user:password@records.example/private'},

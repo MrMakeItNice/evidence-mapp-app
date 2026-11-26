@@ -30,3 +30,12 @@ test('classic inspector exposes validated full destination and new-tab scope wit
   assert.ok(!panel.children.some(n=>n.tag==='a'));assert.match(panel.children[2].textContent,/No safe HTTP\(S\) destination/);
   detail('Case','Summary');assert.equal(panel.children.length,2);
 });
+
+test('classic citation matching keeps distinct full destinations separate',()=>{
+  const start=html.indexOf('function urlKey('),end=html.indexOf('function safeSourceUrl(',start);
+  const key=vm.runInNewContext(html.slice(start,end)+';urlKey',{URL});
+  const variants=['https://records.example/doc?id=1#page=2','https://records.example/doc?id=2#page=2','https://records.example/doc?id=1#page=3','http://records.example/doc?id=1#page=2','https://records.example:8443/doc?id=1#page=2','https://records.example/doc/?id=1#page=2'];
+  assert.equal(new Set(variants.map(key)).size,variants.length);
+  assert.equal(key('https://RECORDS.example:443/doc?id=1#page=2'),variants[0],'browser normalization still deduplicates the same serialized URL');
+  assert.equal(key('/relative'),'/relative','unparseable metadata retains its own identity');
+});
