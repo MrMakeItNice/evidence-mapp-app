@@ -939,7 +939,7 @@ try {
   await touch.locator('#graph').scrollIntoViewIfNeeded();
   const touchBox=await touch.locator('#graph').boundingBox(),tx=touchBox.x+12,ty=touchBox.y+12;
   const touchSession=await touch.context().newCDPSession(touch);
-  const sendTouches=(type,points)=>touchSession.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([id,x,y])=>({id,x,y}))});
+  const sendTouches=async(type,points)=>{await touchSession.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([id,x,y])=>({id,x,y}))});await touch.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))))};
   await sendTouches('touchStart',[[1,tx,ty]]);
   await sendTouches('touchMove',[[1,tx+10,ty+5]]);
   const primaryView=(await touch.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
@@ -949,7 +949,7 @@ try {
   assert.deepEqual((await touch.locator('#graph').getAttribute('viewBox')).split(' ').map(Number),primaryView,'second touch does not take over active pan');
   await sendTouches('touchMove',[[1,tx+20,ty+10],[2,tx+80,ty+40]]);
   const continued=(await touch.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
-  assert.ok(Math.abs(continued[0]-2*primaryView[0])<1e-8,'original primary touch keeps its pan origin');
+  assert.ok(Math.abs(continued[0]-2*primaryView[0])<1e-8,'original primary touch keeps its pan origin: '+JSON.stringify({primaryView,continued}));
   await sendTouches('touchEnd',[]);
   assert.equal(await touch.locator('#graph').innerHTML(),touchCards);assert.equal(new URL(touch.url()).hash,touchHash);
   await touch.locator('#resetView').tap();
