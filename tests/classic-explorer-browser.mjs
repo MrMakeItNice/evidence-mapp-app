@@ -304,6 +304,10 @@ try {
         await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('No published investigation matches'));
         assert.equal(await page.locator('#detail h2').textContent(),'Fixture investigation');
         assert.equal(await page.locator('#graph').getAttribute('viewBox'),view,'unknown case preserves the current graph');
+        await page.goBack();
+        await page.waitForFunction(()=>document.querySelector('#search-status').textContent.startsWith('Opened investigation: Fixture investigation · Case #1.'));
+        assert.equal(await page.locator('#graph').getAttribute('viewBox'),view,'returning to the already open case preserves its view');
+        assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true);
         assert.equal(await page.locator('#draftTitle').inputValue(),'Keep navigation draft');
         assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),saved);
         assert.equal(caseRequests,requests,'same-document navigation does not reload public data');
