@@ -43,6 +43,39 @@ try {
       console.log('PASS: baseline reproduces image wrapper; Chromium retains focusable card buttons despite the image role.');
     } else {
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='group'&&n.name?.value==='Interactive case and source connection diagram'));
+      assert.equal(await page.locator('#graph').getAttribute('aria-describedby'),'diagramKeys');
+      assert.match(await page.locator('#diagramKeys').textContent(),/arrow keys to pan the view/);
+      const readView=async()=> (await page.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const cardIndex of [0,1])for(const zoomed of [false,true]) {
+          await page.locator('#resetView').click();
+          if(zoomed)await page.locator('#zoomIn').click();
+          const card=page.locator('#graph .node').nth(cardIndex);
+          await card.focus();
+          const initial=await readView(),cards=await page.locator('#graph .node').evaluateAll(els=>els.map(el=>el.outerHTML)),hash=new URL(page.url()).hash;
+          const scroll=await page.evaluate(()=>scrollY),zoomText=await page.locator('#zoomStatus').textContent();
+          for(const [key,dx,dy] of [['ArrowRight',1,0],['ArrowDown',0,1],['ArrowLeft',-1,0],['ArrowUp',0,-1]]) {
+            const before=await readView();await page.keyboard.press(key);const after=await readView();
+            assert.ok(Math.abs(after[0]-before[0]-dx*before[2]/10)<1e-8);
+            assert.ok(Math.abs(after[1]-before[1]-dy*before[3]/10)<1e-8);
+            assert.deepEqual(after.slice(2),before.slice(2),'panning preserves zoom');
+            assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+            assert.equal(await page.evaluate(()=>scrollY),scroll,'diagram arrows do not scroll the page');
+          }
+          const restored=await readView();initial.forEach((n,i)=>assert.ok(Math.abs(restored[i]-n)<1e-8));
+          assert.deepEqual(await page.locator('#graph .node').evaluateAll(els=>els.map(el=>el.outerHTML)),cards,'pan does not move or rebuild evidence cards');
+          assert.equal(new URL(page.url()).hash,hash);
+          assert.equal(await page.locator('#zoomStatus').textContent(),zoomText);
+          await page.keyboard.press('Shift+ArrowRight');assert.deepEqual(await readView(),restored,'modified arrows untouched');
+          await page.keyboard.press('Enter');assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press('Escape');assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+          await page.locator('#search').fill('Fixture');await page.locator('#search').press('ArrowLeft');
+          assert.deepEqual(await readView(),restored,'arrow in text input does not pan');
+        }
+      }
+      await page.locator('#search').fill('');await page.locator('#resetView').click();
+      console.log('PASS: all four native arrow keys pan the diagram from case/source cards at 100%/125% and 320/768/1280px; focus, zoom, evidence coordinates and case hash stay intact, page scrolling is prevented, and modified/text-input arrows plus Enter/Escape keep their behavior.');
       assert.equal(await page.locator('#zoomStatus').getAttribute('role'),'status');
       assert.equal(await page.locator('#zoomStatus').getAttribute('aria-atomic'),'true');
       for(const id of ['zoomIn','zoomOut','resetView'])assert.equal(await page.locator('#'+id).getAttribute('aria-describedby'),'zoomStatus');
