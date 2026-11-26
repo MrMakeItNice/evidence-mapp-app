@@ -582,6 +582,7 @@ try {
           if(i)await page.keyboard.press('Tab');
           assert.equal(await result.evaluate(el=>el===document.activeElement),true);
           await page.keyboard.press(i?'Space':'Enter');
+          await page.waitForFunction(id=>location.hash==='#case='+id,id);
           assert.equal(new URL(page.url()).hash,'#case='+id);
           assert.equal(await page.locator('#detail h2').textContent(),duplicateTitle);
           assert.equal(await page.locator('#detail p').textContent(),summary);
