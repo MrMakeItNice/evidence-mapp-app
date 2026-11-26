@@ -231,6 +231,12 @@ try {
       for(const id of ['zoomIn','zoomOut','resetView'])assert.equal(await page.locator('#'+id).getAttribute('aria-describedby'),'zoomStatus');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
+        const targets=await page.locator('#zoomIn, #zoomOut, #resetView').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {id:el.id,width:r.width,height:r.height,left:r.left,right:r.right,viewport:innerWidth}}));
+        for(const target of targets) {
+          assert.ok(target.width>=44&&target.height>=44,target.id+' has a 44px minimum pointer target');
+          assert.ok(target.left>=0&&target.right<=target.viewport,target.id+' fits the viewport');
+        }
+        for(let i=1;i<targets.length;i++)assert.ok(targets[i].left>=targets[i-1].right,'zoom targets do not overlap');
         await page.locator('#resetView').press('Enter');
         const caseHash=new URL(page.url()).hash,title=await page.locator('#detail h2').textContent();
         assert.equal(await page.locator('#zoomStatus').textContent(),'Diagram zoom: 100%.');
@@ -259,7 +265,7 @@ try {
         assert.equal(await page.locator('#detail h2').textContent(),title);
         assert.equal(await page.locator('#graph .node').count(),3);
       }
-      console.log('PASS: diagram zoom status tracks native Enter/Space, wheel, existing minimum/maximum and Reset at 320/768/1280px without moving keyboard focus or changing the case/source cards.');
+      console.log('PASS: zoom in/out/reset have non-overlapping 44px minimum targets within 320/768/1280px viewports; native diagram zoom status tracks native Enter/Space, wheel, existing minimum/maximum and Reset at 320/768/1280px without moving keyboard focus or changing the case/source cards.');
 
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
@@ -895,6 +901,13 @@ try {
     touchUnexpected.push(u.href);return route.abort();
   });
   await touch.goto('https://classic.example/connection-explorer.html');await touch.waitForFunction(()=>document.querySelectorAll('#graph .node').length===1);
+  const touchCards=await touch.locator('#graph').innerHTML(),touchHash=new URL(touch.url()).hash;
+  for(const [id,expected] of [['zoomIn','76 52 608 416'],['zoomOut','0 0 760 520'],['zoomIn','76 52 608 416'],['resetView','0 0 760 520']]) {
+    await touch.locator('#'+id).tap();
+    assert.equal(await touch.locator('#graph').getAttribute('viewBox'),expected,'touch '+id+' changes only the view');
+    assert.equal(await touch.locator('#graph').innerHTML(),touchCards);assert.equal(new URL(touch.url()).hash,touchHash);
+  }
+  console.log('PASS: phone emulated touch activates enlarged Zoom in/out and Reset controls with exact view changes, retaining case identity and card coordinates/content.');
   await touch.locator('#panTools summary').tap();
   for(const [id,x,y] of [['panRight',76,0],['panDown',76,52],['panLeft',0,52],['panUp',0,0]]) {
     await touch.locator('#'+id).tap();
