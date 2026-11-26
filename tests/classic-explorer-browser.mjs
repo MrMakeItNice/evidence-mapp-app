@@ -67,6 +67,38 @@ try {
         assert.equal(await page.locator('#graph .node').count(),3);
       }
       console.log('PASS: first-Tab skip link appears on focus, Enter focuses and reveals the evidence diagram, Tab reaches its first card, Enter/Escape still work, and case hash/zoom remain unchanged at 320/768/1280px.');
+      for(const forced of [false,true]) {
+        await page.emulateMedia({forcedColors:forced?'active':'none'});
+        for(const width of [320,768,1280]) {
+          await page.setViewportSize({width,height:900});
+          for(const zoomed of [false,true]) {
+            await page.locator('#resetView').click();if(zoomed)await page.locator('#zoomIn').click();
+            const hash=new URL(page.url()).hash;
+            await page.locator('#resetView').press('Tab');
+            for(const i of [0,1,2]) {
+              const card=page.locator('#graph .node').nth(i);
+              assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+              const ring=await card.locator('rect').first().evaluate(el=>{const s=getComputedStyle(el);return {width:s.strokeWidth,stroke:s.stroke,vector:s.vectorEffect}});
+              assert.equal(ring.width,'3px','focus is drawn on the full card border');
+              assert.equal(ring.vector,'non-scaling-stroke','focus thickness does not shrink with diagram scale');
+              assert.notEqual(ring.stroke,'none');if(!forced)assert.equal(ring.stroke,'rgb(255, 255, 255)');
+              if(i)assert.equal(await card.locator('circle').count(),0,'source card indicator does not depend on a circular icon');
+              if(i<2)await page.keyboard.press('Tab');
+            }
+            await page.keyboard.press('Shift+Tab');
+            assert.equal(await page.locator('#graph .node').nth(1).evaluate(el=>el===document.activeElement),true);
+            await page.keyboard.press('Enter');
+            assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+            assert.equal(await page.locator('#graph .node').nth(1).locator('rect').first().evaluate(el=>getComputedStyle(el).strokeWidth),'1.2px','card reverts after focus moves to inspected details');
+            await page.keyboard.press('Escape');
+            assert.equal(await page.locator('#graph .node').nth(1).evaluate(el=>el===document.activeElement),true);
+            assert.equal(await page.locator('#graph .node').nth(1).locator('rect').first().evaluate(el=>getComputedStyle(el).strokeWidth),'3px');
+            assert.equal(new URL(page.url()).hash,hash);
+          }
+        }
+      }
+      await page.emulateMedia({forcedColors:'none'});await page.locator('#resetView').click();
+      console.log('PASS: native Tab/Shift+Tab exposes a 3px non-scaling full-card focus stroke on case/source cards at 320/768/1280px and 100%/125% diagram zoom, including forced colors; Enter moves focus to details, Escape restores the card ring, blur restores the normal source border and case identity is unchanged.');
       assert.equal(await page.locator('#graph').getAttribute('aria-describedby'),'diagramKeys');
       assert.match(await page.locator('#diagramKeys').textContent(),/arrow keys to pan the view/);
       const readView=async()=> (await page.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
