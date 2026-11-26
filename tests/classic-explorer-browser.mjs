@@ -43,6 +43,28 @@ try {
       console.log('PASS: baseline reproduces image wrapper; Chromium retains focusable card buttons despite the image role.');
     } else {
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='group'&&n.name?.value==='Interactive case and source connection diagram'));
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});await page.reload();
+        await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+        assert.ok(await page.locator('#skipDiagram').evaluate(el=>el.getBoundingClientRect().bottom<0),'skip link initially offscreen');
+        await page.keyboard.press('Tab');
+        assert.equal(await page.locator('#skipDiagram').evaluate(el=>el===document.activeElement),true,'skip link is first keyboard stop');
+        assert.ok(await page.locator('#skipDiagram').evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.right<=innerWidth}),'focused skip link is visible');
+        const hash=new URL(page.url()).hash,view=await page.locator('#graph').getAttribute('viewBox');
+        await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#graph').evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#graph').getAttribute('tabindex'),'-1');
+        assert.equal(await page.locator('#graph').evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
+        assert.ok(await page.locator('#graph').evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight}),'diagram brought into view');
+        assert.equal(new URL(page.url()).hash,hash,'skip does not replace the case hash');
+        assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);
+        await page.keyboard.press('Tab');
+        assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true,'Tab enters first evidence card');
+        await page.keyboard.press('Enter');await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#graph .node').count(),3);
+      }
+      console.log('PASS: first-Tab skip link appears on focus, Enter focuses and reveals the evidence diagram, Tab reaches its first card, Enter/Escape still work, and case hash/zoom remain unchanged at 320/768/1280px.');
       assert.equal(await page.locator('#graph').getAttribute('aria-describedby'),'diagramKeys');
       assert.match(await page.locator('#diagramKeys').textContent(),/arrow keys to pan the view/);
       const readView=async()=> (await page.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
