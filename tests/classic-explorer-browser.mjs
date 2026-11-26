@@ -277,7 +277,7 @@ try {
         const oldSource=await page.locator('#graph .node').nth(1).elementHandle();
         await page.locator('#graph .node').nth(1).press('Enter');
         await page.keyboard.press('Tab');await page.keyboard.press('Tab');
-        const related=page.getByRole('button',{name:'Related fixture investigation',exact:true});
+        const related=page.getByRole('button',{name:'Related fixture investigation · Case #2',exact:true});
         assert.equal(await related.evaluate(el=>el===document.activeElement),true);
         await page.keyboard.press('Enter');
         assert.equal(new URL(page.url()).hash,'#case=2');
@@ -386,6 +386,40 @@ try {
         }
       }
       console.log('PASS: same-title search results have distinct visible/accessibility case IDs, wrap long labels, and native Tab/Enter/Space open the exact record, summary, source and confirmation at 320/768/1280px without merging records.');
+      // Equal titles in the source inspector must remain distinguishable, just like search results.
+      const identityRefsStart=references.length;
+      references.push({case_id:23,title:'Shared identity fixture',url:'https://records.example/identity'},
+        {case_id:24,title:'Shared identity fixture',url:'https://records.example/identity'},
+        {case_id:1,title:'Shared identity fixture',url:'https://records.example/identity'},
+        {case_id:23,title:'Repeated shared reference',url:'https://records.example/identity'});
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const [id,summary,key] of [[23,'First distinct record','Enter'],[24,'Second distinct record','Space']]) {
+          await page.goto('https://classic.example/connection-explorer.html#case=1');await page.reload();
+          await page.waitForFunction(()=>document.querySelector('#graph .node')?.getAttribute('aria-label')==='Fixture investigation');
+          await page.getByRole('button',{name:'Shared identity fixture',exact:true}).press('Enter');
+          assert.equal(await page.locator('#detail li button').count(),2,'repeated citations do not duplicate related cases');
+          for(const relatedId of [23,24]) {
+            const label=duplicateTitle+' · Case #'+relatedId;
+            const button=page.locator('#detail').getByRole('button',{name:label,exact:true});
+            assert.equal(await button.textContent(),label,'visible label includes the same ID as the accessible name');
+            assert.ok(await button.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'long related-case label wraps');
+          }
+          const target=page.locator('#detail').getByRole('button',{name:duplicateTitle+' · Case #'+id,exact:true});
+          await page.keyboard.press('Tab');await page.keyboard.press('Tab');
+          if(id===24)await page.keyboard.press('Tab');
+          assert.equal(await target.evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press(key);
+          assert.equal(new URL(page.url()).hash,'#case='+id);
+          assert.equal(await page.locator('#detail p').textContent(),summary);
+          assert.equal(await page.locator('#detail h2').textContent(),duplicateTitle);
+          assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press('Escape');
+          assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+        }
+      }
+      console.log('PASS: same-title related-case buttons expose distinct visible/accessibility IDs, deduplicate repeated citations, wrap at 320/768/1280px and native Tab/Enter/Space open the exact record with heading focus and Escape return.');
+      references.splice(identityRefsStart);
       const longCaseTitle='Long investigation '+ 'X'.repeat(120),longSummary='Document identifier: '+ 'ABC123'.repeat(35);
       const longSourceTitle='Long source '+ 'Y'.repeat(120),longPublisher='Archive'+ 'Z'.repeat(100);
       cases.push({id:25,title:longCaseTitle,summary:longSummary});
