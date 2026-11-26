@@ -296,6 +296,51 @@ try {
       await page.evaluate(({key,value})=>{Storage.prototype.setItem=window.fixtureSetItem;delete window.fixtureSetItem;localStorage.setItem(key,value)},{key:draftStorageKey,value:previousDrafts});
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       console.log('PASS: native Enter/Space draft deletion retains named next/previous focus and visible outline at 320/768/1280px; last removal focuses Add case with normal Tab continuation and accurate status; storage failure preserves all drafts, row controls and focus without page errors.');
+      let draftDownloads=0;page.on('download',()=>draftDownloads++);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        const requests=caseRequests;
+        await page.evaluate(key=>{window.fixtureGetItem=Storage.prototype.getItem;Storage.prototype.getItem=function(k){if(k===key)throw new DOMException('Fixture blocked read','SecurityError');return window.fixtureGetItem.call(this,k)}},draftStorageKey);
+        await page.locator('#exportDrafts').press('Enter');
+        assert.equal(await page.locator('#exportDrafts').isDisabled(),true,'unreadable drafts cannot be exported as an empty archive');
+        assert.match(await page.locator('#draftList').textContent(),/Saved drafts cannot be read/);
+        assert.doesNotMatch(await page.locator('#draftList').textContent(),/No private drafts saved yet/);
+        assert.equal(await page.locator('#retryDrafts').evaluate(el=>el===document.activeElement),true);
+        await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#retryDrafts').evaluate(el=>el===document.activeElement),true,'failed retry keeps a live retry control focused');
+        await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Preserve unreadable-store draft');
+        await page.getByRole('button',{name:'Save private draft',exact:true}).click();
+        assert.equal(await page.locator('#draftForm').isVisible(),true);
+        assert.equal(await page.locator('#draftTitle').inputValue(),'Preserve unreadable-store draft');
+        assert.equal(await page.evaluate(key=>window.fixtureGetItem.call(localStorage,key),draftStorageKey),previousDrafts,'blocked read cannot overwrite existing stored drafts');
+        await page.evaluate(()=>{Storage.prototype.getItem=window.fixtureGetItem;delete window.fixtureGetItem});
+        await page.locator('#retryDrafts').press('Enter');
+        assert.equal(await page.locator('#exportDrafts').isDisabled(),false);
+        assert.equal(await page.locator('#exportDrafts').evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#draftStatus').textContent(),'Saved drafts are available again.');
+        assert.match(await page.locator('#draftList').textContent(),/Unsaved fixture/);
+        assert.equal(await page.locator('#draftTitle').inputValue(),'Preserve unreadable-store draft');
+        assert.equal(caseRequests,requests,'draft retry does not reload public data or the page');
+        await page.locator('#cancelDraft').click();
+        for(const unreadable of ['', '{broken','{"unexpected":"object"}']) {
+          await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:unreadable});
+          await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+          assert.equal(await page.locator('#exportDrafts').isDisabled(),true);
+          assert.match(await page.locator('#draftList').textContent(),/Saved drafts cannot be read/);
+          await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Do not overwrite unreadable JSON');
+          await page.getByRole('button',{name:'Save private draft',exact:true}).click();
+          assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),unreadable);
+          assert.equal(await page.locator('#draftTitle').inputValue(),'Do not overwrite unreadable JSON');
+          await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:previousDrafts});
+          await page.locator('#retryDrafts').press('Space');
+          assert.equal(await page.locator('#exportDrafts').isDisabled(),false);
+          assert.equal(await page.locator('#exportDrafts').evaluate(el=>el===document.activeElement),true);
+          assert.match(await page.locator('#draftList').textContent(),/Unsaved fixture/);
+          await page.locator('#cancelDraft').click();
+        }
+      }
+      assert.equal(draftDownloads,0,'failed reads never produce a download');
+      console.log('PASS: blocked draft reads, invalid JSON and non-array storage show unavailable rather than empty at 320/768/1280px; export is withheld, Save cannot overwrite bytes, Retry preserves text/focus and recovers existing drafts without public refetch or empty downloads.');
       await page.locator('#search').focus();
       await page.locator('#graph .node').nth(1).click();
       assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),false,'pointer inspection does not focus heading');
