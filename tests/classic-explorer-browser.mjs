@@ -13,7 +13,7 @@ try {
   for(const baseline of [true,false]) {
     const page=await browser.newPage({viewport:{width:1280,height:900}});
     const errors=[],unexpected=[];
-    let pauseCases=false,releaseCases,casesPaused,rejectCases=false;
+    let pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0;
     page.on('pageerror',e=>errors.push(e.message));
     const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
     await page.route('**/*',async route=>{
@@ -21,6 +21,7 @@ try {
       if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:html});
       if(u.origin==='https://classic.example'&&u.pathname==='/paper-trails-data.json')return route.fulfill({json:{references}});
       if(u.hostname==='nxlffnplqdobfqxogmxo.supabase.co'&&u.pathname==='/functions/v1/evidence-atlas/api/cases'){
+        caseRequests++;
         if(pauseCases)await new Promise(resolve=>{releaseCases=resolve;casesPaused()});
         if(rejectCases)return route.fulfill({status:503,json:{error:'Fixture service unavailable'},headers:{'access-control-allow-origin':'*'}});
         return route.fulfill({json:cases,headers:{'access-control-allow-origin':'*'}});
@@ -388,10 +389,43 @@ try {
       rejectCases=true;await page.reload();
       await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('unavailable'));
       assert.equal(await page.locator('#search').isDisabled(),true);
-      assert.equal(await page.locator('#search-status').textContent(),'Published case search is unavailable. Please retry later.');
+      assert.equal(await page.locator('#search-status').textContent(),'Published case search is unavailable. Retry loading investigations.');
       assert.equal(await page.locator('#results button').count(),0);
       assert.equal(await page.locator('#graph .node').count(),0,'failure does not fabricate records');
       assert.match(await page.locator('#status').textContent(),/Could not load the public investigation data/);
+      assert.equal(await page.locator('#retryLoad').isVisible(),true);
+      const failedRequests=caseRequests;
+      await page.locator('#retryLoad').press('Enter');
+      await page.waitForFunction(()=>document.querySelector('#retryLoad').getAttribute('aria-disabled')===null);
+      assert.equal(caseRequests,failedRequests+1);
+      assert.equal(await page.locator('#retryLoad').isVisible(),true,'failed retry remains actionable');
+      assert.equal(await page.locator('#retryLoad').evaluate(el=>el===document.activeElement),true);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        rejectCases=true;await page.reload();
+        await page.waitForFunction(()=>document.querySelector('#retryLoad').hidden===false);
+        await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Preserve unfinished retry draft');
+        const draftStorage=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
+        rejectCases=false;pauseCases=true;
+        const retryPaused=new Promise(resolve=>casesPaused=resolve),beforeRequests=caseRequests;
+        await page.locator('#retryLoad').press('Enter');await retryPaused;
+        assert.equal(await page.locator('#retryLoad').getAttribute('aria-disabled'),'true');
+        assert.equal(await page.locator('#retryLoad').textContent(),'Retrying…');
+        assert.equal(await page.locator('#retryLoad').evaluate(el=>el===document.activeElement),true);
+        await page.keyboard.press('Enter');assert.equal(caseRequests,beforeRequests+1,'busy retries do not duplicate requests');
+        pauseCases=false;releaseCases();
+        await page.waitForFunction(()=>!document.querySelector('#search').disabled);
+        assert.equal(await page.locator('#retryLoad').isVisible(),false);
+        assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
+        assert.equal(new URL(page.url()).hash,'#case=24');
+        assert.equal(await page.locator('#graph .node').count(),2,'recovery restores actual indexed case/source only');
+        assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),'Second distinct source');
+        assert.equal(await page.locator('#draftTitle').inputValue(),'Preserve unfinished retry draft');
+        assert.equal(await page.locator('#draftForm').isVisible(),true);
+        assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),draftStorage);
+        await page.locator('#cancelDraft').click();
+      }
+      console.log('PASS: failed retry remains actionable; native keyboard recovery, busy request guard and exact case/source restoration work at 320/768/1280px without page reload or changing unfinished/private draft storage.');
       rejectCases=false;cases.splice(0);await page.reload();
       await page.waitForFunction(()=>!document.querySelector('#search').disabled);
       assert.equal(await page.locator('#search-status').textContent(),'No published cases available.');
