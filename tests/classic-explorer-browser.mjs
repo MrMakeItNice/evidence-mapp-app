@@ -13,12 +13,12 @@ try {
   for(const baseline of [true,false]) {
     const page=await browser.newPage({viewport:{width:1280,height:900}});
     const errors=[],unexpected=[];
-    let pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0,unwrappedDetails=false;
+    let pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0,unwrappedDetails=false,ignoreHashNavigation=false;
     page.on('pageerror',e=>errors.push(e.message));
     const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
     await page.route('**/*',async route=>{
       const u=new URL(route.request().url());
-      if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:unwrappedDetails?html.replace('.detail,#search-status{min-width:0;overflow-wrap:anywhere}',''):html});
+      if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:ignoreHashNavigation?html.replace("window.addEventListener('hashchange',navigateFromHash);",''):unwrappedDetails?html.replace('.detail,#search-status{min-width:0;overflow-wrap:anywhere}',''):html});
       if(u.origin==='https://classic.example'&&u.pathname==='/paper-trails-data.json')return route.fulfill({json:{references}});
       if(u.hostname==='nxlffnplqdobfqxogmxo.supabase.co'&&u.pathname==='/functions/v1/evidence-atlas/api/cases'){
         caseRequests++;
@@ -269,6 +269,47 @@ try {
       console.log('PASS: full indexed destination preserves long query/fragment, wraps at 320/768/1280px and labels host/new tab; script/file/credential citations render no link and retain keyboard return.');
       cases.push({id:2,title:'Related fixture investigation',summary:'Second fixture summary'});
       references.push({case_id:2,title:'Shared fixture citation',url:references[0].url});
+      ignoreHashNavigation=true;
+      await page.goto('https://classic.example/connection-explorer.html#case=1');await page.reload();
+      await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===7);
+      await page.goto('https://classic.example/connection-explorer.html#case=2');
+      assert.equal(new URL(page.url()).hash,'#case=2');
+      assert.equal(await page.locator('#detail h2').textContent(),'Fixture investigation','baseline changes URL but retains the previous investigation');
+      console.log('PASS: baseline fragment navigation reproduces a case URL/diagram mismatch without a hash listener.');
+      ignoreHashNavigation=false;
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.goto('https://classic.example/connection-explorer.html#case=1');await page.reload();
+        await page.waitForFunction(()=>document.querySelector('#graph .node')?.getAttribute('aria-label')==='Fixture investigation');
+        await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Keep navigation draft');
+        const saved=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),requests=caseRequests;
+        await page.locator('#graph .node').nth(1).press('Enter');
+        await page.goto('https://classic.example/connection-explorer.html#case=2');
+        await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Related fixture investigation');
+        assert.equal(await page.locator('#graph .node').first().getAttribute('aria-label'),'Related fixture investigation');
+        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'replaced explorer focus reaches the new heading');
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+        await page.goBack();
+        await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Fixture investigation');
+        await page.goForward();
+        await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Related fixture investigation');
+        assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: Related fixture investigation · Case #2. Search again to find another case.');
+        await page.locator('#draftTitle').click();
+        await page.goto('https://classic.example/connection-explorer.html#case=1');
+        await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Fixture investigation');
+        assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true,'navigation does not steal focus from draft editing');
+        const view=await page.locator('#graph').getAttribute('viewBox');
+        await page.goto('https://classic.example/connection-explorer.html#case=999999');
+        await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('No published investigation matches'));
+        assert.equal(await page.locator('#detail h2').textContent(),'Fixture investigation');
+        assert.equal(await page.locator('#graph').getAttribute('viewBox'),view,'unknown case preserves the current graph');
+        assert.equal(await page.locator('#draftTitle').inputValue(),'Keep navigation draft');
+        assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),saved);
+        assert.equal(caseRequests,requests,'same-document navigation does not reload public data');
+        await page.locator('#cancelDraft').click();
+      }
+      console.log('PASS: hash links and browser Back/Forward restore the matching investigation at 320/768/1280px without data refetch or changing private drafts; explorer focus/Escape recover, draft focus is retained, and unknown case links are explained without fabricated records.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         await page.goto('https://classic.example/connection-explorer.html#case=1');
