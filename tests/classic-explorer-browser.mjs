@@ -188,6 +188,41 @@ try {
           assert.deepEqual(await readView(),restored,'arrow in text input does not pan');
         }
       }
+      assert.match(await page.locator('#diagramKeys').textContent(),/Home centers the focused card without changing zoom/);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const cardIndex of [0,1])for(const zoomed of [false,true]) {
+          await page.locator('#resetView').click();if(zoomed)await page.locator('#zoomIn').click();
+          const card=page.locator('#graph .node').nth(cardIndex);
+          await card.focus();
+          const point=await card.locator('rect').first().evaluate(el=>({x:Number(el.getAttribute('x'))+Number(el.getAttribute('width'))/2,y:Number(el.getAttribute('y'))+Number(el.getAttribute('height'))/2}));
+          const cards=await page.locator('#graph .node').evaluateAll(els=>els.map(el=>el.outerHTML)),hash=new URL(page.url()).hash;
+          for(let i=0;i<8;i++)await page.keyboard.press('ArrowRight');
+          const before=await readView(),zoomText=await page.locator('#zoomStatus').textContent(),scroll=await page.evaluate(()=>scrollY);
+          assert.ok(point.x<before[0],'fixture pans the focused card out of the diagram view');
+          await page.keyboard.press('Home');
+          const centered=await readView();
+          assert.ok(Math.abs(centered[0]+centered[2]/2-point.x)<1e-8);
+          assert.ok(Math.abs(centered[1]+centered[3]/2-point.y)<1e-8);
+          assert.deepEqual(centered.slice(2),before.slice(2),'Home preserves diagram scale');
+          assert.equal(await page.locator('#zoomStatus').textContent(),zoomText);
+          assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+          assert.equal(await page.evaluate(()=>scrollY),scroll,'card Home does not scroll the whole page');
+          assert.ok(await card.locator('rect').first().evaluate(el=>{const c=el.getBoundingClientRect(),g=el.closest('svg').getBoundingClientRect();return c.left>=g.left&&c.right<=g.right&&c.top>=g.top&&c.bottom<=g.bottom}),'centered evidence card is fully in view');
+          assert.deepEqual(await page.locator('#graph .node').evaluateAll(els=>els.map(el=>el.outerHTML)),cards,'evidence coordinates/content are unchanged');
+          assert.equal(new URL(page.url()).hash,hash);
+          await page.keyboard.press('Home');assert.deepEqual(await readView(),centered,'centering is repeatable');
+          await page.keyboard.press('ArrowRight');const modified=await readView();
+          await page.keyboard.press('Control+Home');assert.deepEqual(await readView(),modified,'modified Home is not intercepted');
+          await page.keyboard.press('Home');
+          await page.keyboard.press('Enter');await page.keyboard.press('Escape');
+          assert.equal(await card.evaluate(el=>el===document.activeElement),true,'inspection and Escape retain the recovered card');
+          const view=await readView();await page.locator('#search').fill('Fixture');await page.locator('#search').press('Home');
+          assert.deepEqual(await readView(),view,'text-field Home does not pan the diagram');
+          assert.equal(await page.locator('#search').evaluate(el=>el.selectionStart),0,'native text-field Home still moves the caret');
+        }
+      }
+      console.log('PASS: native Home recovers an off-view focused case/source card at 320/768/1280px and 100%/125% diagram scale, preserving zoom/focus/hash/card data/page scroll; centering repeats, Enter/Escape still work and modified/text-field Home retain native behavior.');
       await page.locator('#search').fill('');await page.locator('#resetView').click();
       console.log('PASS: all four native arrow keys pan the diagram from case/source cards at 100%/125% and 320/768/1280px; focus, zoom, evidence coordinates and case hash stay intact, page scrolling is prevented, and modified/text-input arrows plus Enter/Escape keep their behavior.');
       assert.equal(await page.locator('#zoomStatus').getAttribute('role'),'status');
