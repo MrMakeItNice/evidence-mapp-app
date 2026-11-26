@@ -75,6 +75,30 @@ try {
         assert.ok(await searchRegion.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'landmark preserves page reflow');
       }
       console.log('PASS: native AX exposes the single Published investigations search landmark with field/instructions/status/retry/quick suggestions, excluding diagram/private editor; no new Tab stop, filtering/Enter retain focus and case/zoom/cards at 320/768/1280px.');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Unfinished clear-search fixture');
+        const cards=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox'),hash=new URL(page.url()).hash,heading=await page.locator('#detail h2').textContent(),requests=caseRequests,stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
+        const field=page.getByRole('searchbox',{name:'Find an investigation',exact:true}),clear=page.getByRole('button',{name:'Clear search',exact:true});
+        assert.equal(await clear.isVisible(),false);
+        for(const [query,key] of [['Fixture','Enter'],['No matching clear fixture','Space'],['   ','Enter']]) {
+          await field.fill(query);assert.equal(await clear.isVisible(),true);
+          assert.equal(await page.getByRole('search',{name:'Published investigations'}).getByRole('button',{name:'Clear search',exact:true}).count(),1);
+          const count=await page.locator('#results button').count();
+          await field.press('Tab');for(let i=0;i<count;i++)await page.keyboard.press('Tab');
+          assert.equal(await clear.evaluate(el=>el===document.activeElement),true,'Clear follows suggestions in native Tab order');
+          assert.ok(await clear.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.right<=innerWidth}));
+          await page.keyboard.press(key);
+          assert.equal(await field.inputValue(),'');assert.equal(await field.evaluate(el=>el===document.activeElement),true);
+          assert.equal(await clear.isVisible(),false);assert.equal(await page.locator('#results button').count(),0);
+          assert.match(await page.locator('#search-status').textContent(),/^Type a title or case ID to search/);
+          assert.equal(await page.locator('#graph').innerHTML(),cards);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(new URL(page.url()).hash,hash);assert.equal(await page.locator('#detail h2').textContent(),heading);
+          assert.equal(await page.locator('#draftTitle').inputValue(),'Unfinished clear-search fixture');assert.equal(await page.locator('#draftForm').isVisible(),true);assert.equal(caseRequests,requests);assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);
+        }
+        await field.fill('Fixture');assert.equal(await page.locator('#results button').count(),1,'filtering works again after clearing');await field.fill('');
+        await page.locator('#draftTitle').fill('');await page.locator('#cancelDraft').click();
+      }
+      console.log('PASS: named Clear search follows suggestions, supports native Enter/Space at 320/768/1280px, clears matches/no-match/whitespace and returns input focus without changing investigation/view/evidence/private form/storage or refetching.');
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='group'&&n.name?.value==='Interactive case and source connection diagram'));
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});await page.reload();
@@ -999,6 +1023,9 @@ try {
   });
   await touch.goto('https://classic.example/connection-explorer.html');await touch.waitForFunction(()=>document.querySelectorAll('#graph .node').length===1);
   const touchCards=await touch.locator('#graph').innerHTML(),touchHash=new URL(touch.url()).hash;
+  await touch.locator('#search').fill('Touch');await touch.getByRole('button',{name:'Clear search',exact:true}).tap();
+  assert.equal(await touch.locator('#search').inputValue(),'');assert.equal(await touch.locator('#search').evaluate(el=>el===document.activeElement),true);assert.equal(await touch.locator('#graph').innerHTML(),touchCards);assert.equal(new URL(touch.url()).hash,touchHash);
+  console.log('PASS: phone emulated touch Clear search resets input with focus return while preserving the current graph/case.');
   for(const [id,expected] of [['zoomIn','76 52 608 416'],['zoomOut','0 0 760 520'],['zoomIn','76 52 608 416'],['resetView','0 0 760 520']]) {
     await touch.locator('#'+id).tap();
     assert.equal(await touch.locator('#graph').getAttribute('viewBox'),expected,'touch '+id+' changes only the view');
