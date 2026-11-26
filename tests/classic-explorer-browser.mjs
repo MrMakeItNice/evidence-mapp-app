@@ -207,13 +207,14 @@ try {
           assert.deepEqual(centered.slice(2),before.slice(2),'Home preserves diagram scale');
           assert.equal(await page.locator('#zoomStatus').textContent(),zoomText);
           assert.equal(await card.evaluate(el=>el===document.activeElement),true);
-          assert.equal(await page.evaluate(()=>scrollY),scroll,'card Home does not scroll the whole page');
+          assert.equal(await page.evaluate(()=>scrollY),scroll,`card Home does not scroll the whole page at ${width}px, card ${cardIndex}, zoomed=${zoomed}`);
           assert.ok(await card.locator('rect').first().evaluate(el=>{const c=el.getBoundingClientRect(),g=el.closest('svg').getBoundingClientRect();return c.left>=g.left&&c.right<=g.right&&c.top>=g.top&&c.bottom<=g.bottom}),'centered evidence card is fully in view');
           assert.deepEqual(await page.locator('#graph .node').evaluateAll(els=>els.map(el=>el.outerHTML)),cards,'evidence coordinates/content are unchanged');
           assert.equal(new URL(page.url()).hash,hash);
           await page.keyboard.press('Home');assert.deepEqual(await readView(),centered,'centering is repeatable');
           await page.keyboard.press('ArrowRight');const modified=await readView();
           await page.keyboard.press('Control+Home');assert.deepEqual(await readView(),modified,'modified Home is not intercepted');
+          await page.waitForFunction(()=>scrollY===0); // Let native page scrolling finish before the next card-recovery interaction.
           await page.keyboard.press('Home');
           await page.keyboard.press('Enter');await page.keyboard.press('Escape');
           assert.equal(await card.evaluate(el=>el===document.activeElement),true,'inspection and Escape retain the recovered card');
