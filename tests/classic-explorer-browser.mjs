@@ -13,12 +13,12 @@ try {
   for(const baseline of [true,false]) {
     const page=await browser.newPage({viewport:{width:1280,height:900}});
     const errors=[],unexpected=[];
-    let pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0;
+    let pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0,unwrappedDetails=false;
     page.on('pageerror',e=>errors.push(e.message));
     const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
     await page.route('**/*',async route=>{
       const u=new URL(route.request().url());
-      if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:html});
+      if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:unwrappedDetails?html.replace('.detail,#search-status{min-width:0;overflow-wrap:anywhere}',''):html});
       if(u.origin==='https://classic.example'&&u.pathname==='/paper-trails-data.json')return route.fulfill({json:{references}});
       if(u.hostname==='nxlffnplqdobfqxogmxo.supabase.co'&&u.pathname==='/functions/v1/evidence-atlas/api/cases'){
         caseRequests++;
@@ -386,6 +386,42 @@ try {
         }
       }
       console.log('PASS: same-title search results have distinct visible/accessibility case IDs, wrap long labels, and native Tab/Enter/Space open the exact record, summary, source and confirmation at 320/768/1280px without merging records.');
+      const longCaseTitle='Long investigation '+ 'X'.repeat(120),longSummary='Document identifier: '+ 'ABC123'.repeat(35);
+      const longSourceTitle='Long source '+ 'Y'.repeat(120),longPublisher='Archive'+ 'Z'.repeat(100);
+      cases.push({id:25,title:longCaseTitle,summary:longSummary});
+      references.push({case_id:25,title:longSourceTitle,publisher:longPublisher,url:'https://records.example/long-record'});
+      const pageWidth=()=>page.evaluate(()=>({viewport:document.documentElement.clientWidth,content:document.documentElement.scrollWidth}));
+      unwrappedDetails=true;await page.setViewportSize({width:320,height:900});
+      await page.goto('https://classic.example/connection-explorer.html#case=25');
+      await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===2);
+      const before=await pageWidth();
+      assert.ok(before.content>before.viewport,'unwrapped long inspector text reproduces page-wide overflow');
+      console.log('PASS: unwrapped inspector baseline reproduces horizontal page overflow at 320px: '+before.content+'px content.');
+      unwrappedDetails=false;
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});await page.reload();
+        await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===2);
+        await page.locator('#search').fill('Long investigation');
+        await page.locator('#search').press('Tab');await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#detail h2').textContent(),longCaseTitle);
+        assert.equal(await page.locator('#detail p').textContent(),longSummary);
+        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+        assert.ok(await page.locator('#detail').evaluate(el=>el.scrollWidth<=el.clientWidth),'complete case title and summary wrap without clipping');
+        let size=await pageWidth();assert.ok(size.content<=size.viewport,'case selection confirmation fits the page');
+        await page.keyboard.press('Escape');await page.keyboard.press('Tab');await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#detail h2').textContent(),longSourceTitle);
+        assert.ok((await page.locator('#detail p').first().textContent()).includes(longPublisher));
+        assert.ok(await page.locator('#detail').evaluate(el=>el.scrollWidth<=el.clientWidth),'complete source title and publisher wrap');
+        size=await pageWidth();assert.ok(size.content<=size.viewport,'source inspector fits the page');
+        await page.keyboard.press('Tab');
+        assert.equal(await page.locator('#detail a').evaluate(el=>el===document.activeElement),true,'source URL remains the next keyboard stop');
+        assert.equal(await page.locator('#detail a').getAttribute('href'),'https://records.example/long-record');
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#graph .node').nth(1).evaluate(el=>el===document.activeElement),true,'Escape returns to the source card');
+      }
+      console.log('PASS: long case/source headings, summaries, publishers and search confirmations reflow without page overflow at 320/768/1280px; full text, indexed URL, keyboard focus, Tab and Escape are preserved.');
+      await page.goto('https://classic.example/connection-explorer.html#case=24');
+      await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===2);
       rejectCases=true;await page.reload();
       await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('unavailable'));
       assert.equal(await page.locator('#search').isDisabled(),true);
