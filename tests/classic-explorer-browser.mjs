@@ -341,6 +341,45 @@ try {
       }
       assert.equal(draftDownloads,0,'failed reads never produce a download');
       console.log('PASS: blocked draft reads, invalid JSON and non-array storage show unavailable rather than empty at 320/768/1280px; export is withheld, Save cannot overwrite bytes, Retry preserves text/focus and recovers existing drafts without public refetch or empty downloads.');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const [trigger,type] of [['newCase','case'],['newTrail','trail']]) {
+          await page.locator('#'+trigger).click();
+          await page.locator('#draftTitle').fill('   ');
+          await page.locator('#draftUrl').fill('https://records.example/title-check?id=42#page=7');
+          await page.locator('#draftRelated').fill('Keep related context');
+          await page.locator('#draftNotes').fill('Keep unfinished evidence notes');
+          const before=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);
+          await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
+          assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true,'blank-title rejection focuses the labeled field');
+          assert.equal(await page.locator('#draftTitle').getAttribute('aria-invalid'),'true');
+          assert.equal(await page.locator('#draftTitle').getAttribute('aria-describedby'),'draftTitleError');
+          assert.equal(await page.locator('#draftTitleError').isVisible(),true);
+          assert.equal(await page.locator('#draftTitle').evaluate(el=>el.validationMessage),'Enter a title with at least one non-space character.');
+          assert.ok(await page.locator('#draftTitleError').evaluate(el=>{const r=el.getBoundingClientRect();return r.right<=innerWidth&&el.scrollWidth<=el.clientWidth}),'specific error fits the viewport');
+          assert.equal(await page.locator('#draftNotes').inputValue(),'Keep unfinished evidence notes');
+          assert.equal(await page.locator('#draftRelated').inputValue(),'Keep related context');
+          assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),before,'invalid submission does not save');
+          await page.locator('#draftTitle').fill('  Corrected title fixture  ');
+          assert.equal(await page.locator('#draftTitle').getAttribute('aria-invalid'),null);
+          assert.equal(await page.locator('#draftTitle').getAttribute('aria-describedby'),null);
+          assert.equal(await page.locator('#draftTitleError').isVisible(),false);
+          assert.equal(await page.locator('#draftTitle').evaluate(el=>el.validationMessage),'','editing clears stale custom validity');
+          await page.getByRole('button',{name:'Save private draft',exact:true}).press('Space');
+          assert.equal(await page.locator('#draftForm').isVisible(),false);
+          assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true);
+          const stored=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),draftStorageKey);
+          assert.equal(stored.length,JSON.parse(before).length+1);
+          assert.equal(stored.at(-1).type,type);assert.equal(stored.at(-1).title,'Corrected title fixture');
+          assert.equal(stored.at(-1).notes,'Keep unfinished evidence notes');
+          assert.equal(stored.at(-1).related,'Keep related context');
+          assert.equal(stored.at(-1).url,'https://records.example/title-check?id=42#page=7');
+          assert.equal(await page.locator('#draftTitleError').isVisible(),false,'successful reset clears error state');
+          await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:before});
+          await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+        }
+      }
+      console.log('PASS: native Enter rejects whitespace-only case/trail titles with a visible linked error and field focus at 320/768/1280px without saving or losing notes/context; editing clears custom validity and Space saves exactly one corrected draft with normal reset/focus return.');
       await page.locator('#search').focus();
       await page.locator('#graph .node').nth(1).click();
       assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),false,'pointer inspection does not focus heading');
