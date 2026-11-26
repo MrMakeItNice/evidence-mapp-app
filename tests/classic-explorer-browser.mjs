@@ -141,6 +141,11 @@ try {
           await page.locator('#graph').scrollIntoViewIfNeeded();
           const box=await page.locator('#graph').boundingBox(),x=box.x+12,y=box.y+12;
           const start=await readView(),cards=await page.locator('#graph').innerHTML(),hash=new URL(page.url()).hash;
+          for(const button of ['right','middle']) {
+            await page.mouse.move(x,y);await page.mouse.down({button});await page.mouse.move(x+20,y+10,{steps:2});await page.mouse.up({button});
+            await page.keyboard.press('Escape');
+            assert.deepEqual(await readView(),start,button+' button does not initiate diagram panning');
+          }
           await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+20,y+10,{steps:2});
           const moved=await readView(),focus=await page.evaluate(()=>document.activeElement?.id);assert.notDeepEqual(moved,start,'native held drag pans before cancellation');
           assert.deepEqual(moved.slice(2),start.slice(2));
@@ -155,7 +160,7 @@ try {
           await page.locator('#resetView').click();
         }
       }
-      console.log('PASS: native held mouse drag pans then Escape stops further movement at 320/768/1280px and 100%/125% scale; zoom/cards/hash/focus stay intact and a fresh drag works.');
+      console.log('PASS: native right/middle drags leave diagram view unchanged; native held main-button mouse drag pans then Escape stops further movement at 320/768/1280px and 100%/125% scale; zoom/cards/hash/focus stay intact and a fresh drag works.');
       assert.equal(await page.locator('#panTools').getAttribute('open'),null);
       assert.equal(await page.getByRole('button',{name:'Move view left',exact:true}).count(),0,'collapsed controls are outside accessible buttons');
       for(const width of [320,768,1280]) {
@@ -931,6 +936,24 @@ try {
     assert.equal(await touch.locator('#graph').innerHTML(),touchCards);assert.equal(new URL(touch.url()).hash,touchHash);
   }
   console.log('PASS: phone emulated touch activates enlarged Zoom in/out and Reset controls with exact view changes, retaining case identity and card coordinates/content.');
+  await touch.locator('#graph').scrollIntoViewIfNeeded();
+  const touchBox=await touch.locator('#graph').boundingBox(),tx=touchBox.x+12,ty=touchBox.y+12;
+  const touchSession=await touch.context().newCDPSession(touch);
+  const sendTouches=(type,points)=>touchSession.send('Input.dispatchTouchEvent',{type,touchPoints:points.map(([id,x,y])=>({id,x,y}))});
+  await sendTouches('touchStart',[[1,tx,ty]]);
+  await sendTouches('touchMove',[[1,tx+10,ty+5]]);
+  const primaryView=(await touch.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
+  assert.notEqual(primaryView[0],0,'single primary touch pans');
+  await sendTouches('touchStart',[[1,tx+10,ty+5],[2,tx+60,ty+30]]);
+  await sendTouches('touchMove',[[1,tx+10,ty+5],[2,tx+80,ty+40]]);
+  assert.deepEqual((await touch.locator('#graph').getAttribute('viewBox')).split(' ').map(Number),primaryView,'second touch does not take over active pan');
+  await sendTouches('touchMove',[[1,tx+20,ty+10],[2,tx+80,ty+40]]);
+  const continued=(await touch.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
+  assert.ok(Math.abs(continued[0]-2*primaryView[0])<1e-8,'original primary touch keeps its pan origin');
+  await sendTouches('touchEnd',[]);
+  assert.equal(await touch.locator('#graph').innerHTML(),touchCards);assert.equal(new URL(touch.url()).hash,touchHash);
+  await touch.locator('#resetView').tap();
+  console.log('PASS: browser-injected primary touch pans; a second touch cannot take over and the original touch continues from its own origin, retaining evidence/case identity.');
   await touch.locator('#panTools summary').tap();
   for(const [id,x,y] of [['panRight',76,0],['panDown',76,52],['panLeft',0,52],['panUp',0,0]]) {
     await touch.locator('#'+id).tap();
