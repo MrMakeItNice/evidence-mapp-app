@@ -15,7 +15,7 @@ try {
     const errors=[],unexpected=[];
     let pauseRefs=false,releaseRefs,refsPaused,pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0,unwrappedDetails=false,ignoreHashNavigation=false;
     page.on('pageerror',e=>errors.push(e.message));
-    const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
+    const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('<search aria-label="Published investigations">','<div>').replace('</search>','</div>').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
     await page.route('**/*',async route=>{
       const u=new URL(route.request().url());
       if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:ignoreHashNavigation?html.replace("window.addEventListener('hashchange',navigateFromHash);",''):unwrappedDetails?html.replace('.detail,#search-status{min-width:0;overflow-wrap:anywhere}',''):html});
@@ -38,12 +38,43 @@ try {
     for(const name of [cases[0].title,...references.map(r=>r.title)])
       assert.equal(exposed.includes(name),true, name+' native accessibility-tree exposure');
     if(baseline) {
+      assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='search'),false,'baseline search input alone is not a search landmark');
+      console.log('PASS: baseline has a search field but no native search landmark.');
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='image'&&n.name?.value==='Interactive case and source connection diagram'));
       assert.equal(await page.locator('#draftForm').evaluate(el=>el.hidden),true);
       assert.equal(await page.locator('#draftForm').isVisible(),true,'old inline display:grid overrides hidden');
       console.log('PASS: old inline grid reproduces a visible draft form despite its hidden attribute.');
       console.log('PASS: baseline reproduces image wrapper; Chromium retains focusable card buttons despite the image role.');
     } else {
+      assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='search'&&n.name?.value==='Published investigations'),'native accessibility tree exposes the named search landmark');
+      const searchRegion=page.getByRole('search',{name:'Published investigations',exact:true});
+      assert.equal(await page.getByRole('search').count(),1,'one focused search landmark, not a landmark for every control');
+      assert.equal(await searchRegion.evaluate(el=>el.tagName),'SEARCH');
+      assert.equal(await searchRegion.getAttribute('tabindex'),null,'landmark adds no artificial keyboard stop');
+      assert.equal(await searchRegion.locator('#searchHelp').count(),1);
+      assert.equal(await searchRegion.locator('#search-status').count(),1);
+      assert.equal(await searchRegion.locator('#retryLoad').count(),1);
+      assert.equal(await searchRegion.locator('#results').count(),1,'quick investigation navigation stays with search');
+      assert.equal(await searchRegion.locator('#graph').count(),0,'evidence diagram remains main content outside search');
+      assert.equal(await searchRegion.locator('#draftForm').count(),0,'private draft editor is not part of public search');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        const hash=new URL(page.url()).hash,cards=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox');
+        const field=searchRegion.getByRole('searchbox',{name:'Find an investigation',exact:true});
+        await field.fill('No matching landmark fixture');
+        assert.equal(await searchRegion.locator('#results button').count(),0);
+        assert.equal(await searchRegion.getByRole('status').textContent(),'No matching published cases. Try another title or case ID.');
+        await field.press('Enter');
+        assert.equal(new URL(page.url()).hash,hash,'Enter in the search field does not submit or navigate');
+        assert.equal(await field.evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#graph').innerHTML(),cards);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);
+        await field.fill('Fixture investigation');
+        assert.equal(await searchRegion.getByRole('button',{name:'Fixture investigation · Case #1',exact:true}).count(),1);
+        await field.fill('');
+        assert.equal(await searchRegion.locator('#results button').count(),0);
+        assert.ok(await searchRegion.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'landmark preserves page reflow');
+      }
+      console.log('PASS: native AX exposes the single Published investigations search landmark with field/instructions/status/retry/quick suggestions, excluding diagram/private editor; no new Tab stop, filtering/Enter retain focus and case/zoom/cards at 320/768/1280px.');
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='group'&&n.name?.value==='Interactive case and source connection diagram'));
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});await page.reload();
