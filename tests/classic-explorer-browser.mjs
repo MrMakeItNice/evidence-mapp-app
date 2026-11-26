@@ -133,6 +133,29 @@ try {
       assert.equal(await page.locator('#graph').getAttribute('aria-describedby'),'diagramKeys');
       assert.match(await page.locator('#diagramKeys').textContent(),/arrow keys to pan the view/);
       const readView=async()=> (await page.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
+      assert.match(await page.locator('#diagramKeys').textContent(),/Escape stops an active drag/);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const zoomed of [false,true]) {
+          await page.locator('#resetView').click();if(zoomed)await page.locator('#zoomIn').click();
+          await page.locator('#graph').scrollIntoViewIfNeeded();
+          const box=await page.locator('#graph').boundingBox(),x=box.x+12,y=box.y+12;
+          const start=await readView(),cards=await page.locator('#graph').innerHTML(),hash=new URL(page.url()).hash;
+          await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+20,y+10,{steps:2});
+          const moved=await readView(),focus=await page.evaluate(()=>document.activeElement?.id);assert.notDeepEqual(moved,start,'native held drag pans before cancellation');
+          assert.deepEqual(moved.slice(2),start.slice(2));
+          await page.keyboard.press('Escape');
+          await page.mouse.move(x+40,y+20,{steps:2});
+          assert.deepEqual(await readView(),moved,'Escape stops held-pointer movement at the current view');
+          await page.mouse.up();await page.mouse.move(x+50,y+25);assert.deepEqual(await readView(),moved,'released pointer does not resume cancelled pan');
+          assert.equal(await page.evaluate(()=>document.activeElement?.id),focus,'cancelling does not steal focus');
+          assert.equal(await page.locator('#graph').innerHTML(),cards);assert.equal(new URL(page.url()).hash,hash);
+          await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+10,y+5);await page.mouse.up();
+          assert.notDeepEqual(await readView(),moved,'a fresh drag works after Escape');
+          await page.locator('#resetView').click();
+        }
+      }
+      console.log('PASS: native held mouse drag pans then Escape stops further movement at 320/768/1280px and 100%/125% scale; zoom/cards/hash/focus stay intact and a fresh drag works.');
       assert.equal(await page.locator('#panTools').getAttribute('open'),null);
       assert.equal(await page.getByRole('button',{name:'Move view left',exact:true}).count(),0,'collapsed controls are outside accessible buttons');
       for(const width of [320,768,1280]) {
