@@ -13,16 +13,17 @@ try {
   for(const baseline of [true,false]) {
     const page=await browser.newPage({viewport:{width:1280,height:900}});
     const errors=[],unexpected=[];
-    let pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0,unwrappedDetails=false,ignoreHashNavigation=false;
+    let pauseRefs=false,releaseRefs,refsPaused,pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0,unwrappedDetails=false,ignoreHashNavigation=false;
     page.on('pageerror',e=>errors.push(e.message));
     const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
     await page.route('**/*',async route=>{
       const u=new URL(route.request().url());
       if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:ignoreHashNavigation?html.replace("window.addEventListener('hashchange',navigateFromHash);",''):unwrappedDetails?html.replace('.detail,#search-status{min-width:0;overflow-wrap:anywhere}',''):html});
-      if(u.origin==='https://classic.example'&&u.pathname==='/paper-trails-data.json')return route.fulfill({json:{references}});
+      if(u.origin==='https://classic.example'&&u.pathname==='/paper-trails-data.json'){if(pauseRefs)await new Promise(resolve=>{releaseRefs=resolve;refsPaused()});if(route.request().failure())return;return route.fulfill({json:{references}})}
       if(u.hostname==='nxlffnplqdobfqxogmxo.supabase.co'&&u.pathname==='/functions/v1/evidence-atlas/api/cases'){
         caseRequests++;
         if(pauseCases)await new Promise(resolve=>{releaseCases=resolve;casesPaused()});
+        if(route.request().failure())return;
         if(rejectCases)return route.fulfill({status:503,json:{error:'Fixture service unavailable'},headers:{'access-control-allow-origin':'*'}});
         return route.fulfill({json:cases,headers:{'access-control-allow-origin':'*'}});
       }
@@ -700,6 +701,42 @@ try {
         await page.locator('#cancelDraft').click();
       }
       console.log('PASS: failed retry remains actionable; native keyboard recovery, busy request guard and exact case/source restoration work at 320/768/1280px without page reload or changing unfinished/private draft storage.');
+      await page.clock.install();
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const stalled of ['cases','references']) {
+          const failed=page.waitForEvent('requestfailed',{predicate:r=>stalled==='cases'?r.url().includes('/api/cases'):r.url().endsWith('/paper-trails-data.json')});
+          let waiting;
+          if(stalled==='cases'){pauseCases=true;waiting=new Promise(resolve=>casesPaused=resolve)}
+          else{pauseRefs=true;waiting=new Promise(resolve=>refsPaused=resolve)}
+          await page.reload();await waiting;
+          await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Keep stalled-load draft');
+          const stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
+          await page.clock.fastForward(15001);await failed;
+          await page.waitForFunction(()=>!document.querySelector('#retryLoad').hidden);
+          assert.match(await page.locator('#status').textContent(),/did not respond within 15 seconds/);
+          assert.equal(await page.locator('#search').isDisabled(),true);
+          assert.equal(await page.locator('#graph .node').count(),0,'timeout does not expose stale or invented records');
+          assert.equal(await page.locator('#retryLoad').getAttribute('aria-disabled'),null,'timeout releases the in-flight guard');
+          assert.equal(await page.locator('#draftTitle').inputValue(),'Keep stalled-load draft');
+          assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true,'timeout does not steal focus from unfinished draft');
+          if(stalled==='cases'){pauseCases=false;releaseCases()}
+          else{pauseRefs=false;releaseRefs()}
+          await page.locator('#retryLoad').press('Enter');
+          await page.waitForFunction(()=>!document.querySelector('#search').disabled);
+          assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
+          assert.equal(new URL(page.url()).hash,'#case=24');
+          assert.equal(await page.locator('#graph .node').count(),2);
+          assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),'Second distinct source');
+          assert.equal(await page.locator('#draftTitle').inputValue(),'Keep stalled-load draft');
+          assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);
+          await page.clock.fastForward(15001);
+          assert.equal(await page.locator('#search').isDisabled(),false,'completed attempt clears its deadline');
+          assert.equal(await page.locator('#retryLoad').isVisible(),false);
+          await page.locator('#cancelDraft').click();
+        }
+      }
+      console.log('PASS: stalled case and citation requests abort after the 15-second deadline at 320/768/1280px (virtual browser clock), expose Retry without stale records, retain draft text/storage/focus, and native Enter restores the exact case/source with search focus; successful-load deadlines are cleared.');
       rejectCases=false;cases.splice(0);await page.reload();
       await page.waitForFunction(()=>!document.querySelector('#search').disabled);
       assert.equal(await page.locator('#search-status').textContent(),'No published cases available.');
