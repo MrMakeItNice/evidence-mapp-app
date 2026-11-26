@@ -255,6 +255,47 @@ try {
       await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:previousDrafts});
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       console.log('PASS: private trail form Save and native Tab expose exact host/new-tab draft destinations with query/fragment and wrapping at 320/768/1280px; unsafe/relative/credential legacy URLs are non-actionable without credential echoes or stored-draft rewrites.');
+      const deleteFixtures=[{type:'case',title:'First deletion fixture',notes:'Keep first'},
+        {type:'trail',title:'Middle deletion fixture',notes:'Keep middle',url:'https://records.example/keep'},
+        {type:'case',title:'Last deletion fixture',notes:'Keep last'}];
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.evaluate(({key,drafts})=>localStorage.setItem(key,JSON.stringify(drafts)),{key:draftStorageKey,drafts:deleteFixtures});
+        await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+        const form=await page.locator('#draftForm').getAttribute('hidden');
+        const firstDelete=page.getByRole('button',{name:'Delete draft: First deletion fixture',exact:true});
+        await firstDelete.focus();await page.keyboard.press('Enter');
+        const middleDelete=page.getByRole('button',{name:'Delete draft: Middle deletion fixture',exact:true});
+        assert.equal(await middleDelete.evaluate(el=>el===document.activeElement),true,'deleting the first row focuses the next draft');
+        assert.equal(await middleDelete.evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
+        assert.equal(await page.locator('#draftStatus').textContent(),'Draft deleted from this browser. 2 private drafts remain.');
+        assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),draftStorageKey),deleteFixtures.slice(1),'only the activated draft is removed');
+        const lastDelete=page.getByRole('button',{name:'Delete draft: Last deletion fixture',exact:true});
+        await lastDelete.focus();await page.keyboard.press('Space');
+        assert.equal(await middleDelete.evaluate(el=>el===document.activeElement),true,'deleting the last row focuses the previous draft');
+        assert.equal(await page.locator('#draftStatus').textContent(),'Draft deleted from this browser. 1 private draft remains.');
+        await page.keyboard.press('Enter');
+        assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'deleting the final draft reaches Add case');
+        assert.equal(await page.locator('#draftList button').count(),0);
+        assert.match(await page.locator('#draftList').textContent(),/No private drafts saved yet/);
+        assert.equal(await page.locator('#draftStatus').textContent(),'Draft deleted from this browser. 0 private drafts remain.');
+        assert.equal(await page.locator('#draftForm').getAttribute('hidden'),form,'deletion does not open the contribution form');
+        assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),draftStorageKey),[]);
+        await page.keyboard.press('Tab');
+        assert.equal(await page.locator('#newTrail').evaluate(el=>el===document.activeElement),true,'Tab continues normally after deleting the final draft');
+      }
+      await page.evaluate(({key,drafts})=>localStorage.setItem(key,JSON.stringify(drafts)),{key:draftStorageKey,drafts:deleteFixtures});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      await page.evaluate(()=>{window.fixtureSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new DOMException('Fixture storage blocked','QuotaExceededError')}});
+      const blockedDelete=page.getByRole('button',{name:'Delete draft: Middle deletion fixture',exact:true});
+      await blockedDelete.focus();await page.keyboard.press('Enter');
+      assert.equal(await blockedDelete.evaluate(el=>el===document.activeElement),true,'storage failure retains focus on the existing control');
+      assert.equal(await page.locator('#draftList button').count(),3);
+      assert.equal(await page.locator('#draftStatus').textContent(),'Could not delete draft. Browser storage unavailable; your draft remains listed.');
+      assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),draftStorageKey),deleteFixtures,'failed delete preserves every draft');
+      await page.evaluate(({key,value})=>{Storage.prototype.setItem=window.fixtureSetItem;delete window.fixtureSetItem;localStorage.setItem(key,value)},{key:draftStorageKey,value:previousDrafts});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      console.log('PASS: native Enter/Space draft deletion retains named next/previous focus and visible outline at 320/768/1280px; last removal focuses Add case with normal Tab continuation and accurate status; storage failure preserves all drafts, row controls and focus without page errors.');
       await page.locator('#search').focus();
       await page.locator('#graph .node').nth(1).click();
       assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),false,'pointer inspection does not focus heading');
