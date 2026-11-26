@@ -46,6 +46,33 @@ try {
       assert.equal(await page.locator('#graph').getAttribute('aria-describedby'),'diagramKeys');
       assert.match(await page.locator('#diagramKeys').textContent(),/arrow keys to pan the view/);
       const readView=async()=> (await page.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
+      assert.equal(await page.locator('#panTools').getAttribute('open'),null);
+      assert.equal(await page.getByRole('button',{name:'Move view left',exact:true}).count(),0,'collapsed controls are outside accessible buttons');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.locator('#panTools summary').press('Enter');
+        assert.equal(await page.locator('#panLeft').isVisible(),true);
+        for(const zoomed of [false,true]) {
+          await page.locator('#resetView').click();if(zoomed)await page.locator('#zoomIn').click();
+          const initial=await readView(),cards=await page.locator('#graph .node').evaluateAll(els=>els.map(el=>el.outerHTML)),hash=new URL(page.url()).hash;
+          for(const [id,dx,dy] of [['panRight',1,0],['panDown',0,1],['panLeft',-1,0],['panUp',0,-1]]) {
+            const before=await readView(),button=page.locator('#'+id);await button.click();const after=await readView();
+            assert.ok(Math.abs(after[0]-before[0]-dx*before[2]/10)<1e-8);
+            assert.ok(Math.abs(after[1]-before[1]-dy*before[3]/10)<1e-8);
+            assert.deepEqual(after.slice(2),before.slice(2));
+            assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.left>=0&&r.right<=innerWidth}));
+          }
+          const restored=await readView();initial.forEach((n,i)=>assert.ok(Math.abs(restored[i]-n)<1e-8));
+          assert.deepEqual(await page.locator('#graph .node').evaluateAll(els=>els.map(el=>el.outerHTML)),cards);
+          assert.equal(new URL(page.url()).hash,hash);
+          await page.locator('#panLeft').press('Space');assert.ok((await readView())[0]<initial[0]);
+          await page.locator('#resetView').click();assert.deepEqual(await readView(),[0,0,760,520]);
+        }
+        await page.locator('#panTools summary').press('Enter');
+        assert.equal(await page.locator('#panLeft').isVisible(),false);
+      }
+      console.log('PASS: compact movement disclosure opens/closes by keyboard; four single-click pan buttons preserve zoom/cards/hash at 100%/125% and 320/768/1280px, have 44px targets, support Space, and Reset restores the view.');
+
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         for(const cardIndex of [0,1])for(const zoomed of [false,true]) {
@@ -353,5 +380,26 @@ try {
     assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
     await page.close();
   }
+  const touch=await browser.newPage({viewport:{width:320,height:900},hasTouch:true});
+  const touchUnexpected=[],touchErrors=[];touch.on('pageerror',e=>touchErrors.push(e.message));
+  await touch.route('**/*',route=>{
+    const u=new URL(route.request().url());
+    if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:original});
+    if(u.origin==='https://classic.example'&&u.pathname==='/paper-trails-data.json')return route.fulfill({json:{references:[]}});
+    if(u.hostname==='nxlffnplqdobfqxogmxo.supabase.co'&&u.pathname==='/functions/v1/evidence-atlas/api/cases')return route.fulfill({json:[{id:1,title:'Touch fixture'}],headers:{'access-control-allow-origin':'*'}});
+    if(u.pathname==='/favicon.ico')return route.fulfill({status:204});
+    touchUnexpected.push(u.href);return route.abort();
+  });
+  await touch.goto('https://classic.example/connection-explorer.html');await touch.waitForFunction(()=>document.querySelectorAll('#graph .node').length===1);
+  await touch.locator('#panTools summary').tap();
+  for(const [id,x,y] of [['panRight',76,0],['panDown',76,52],['panLeft',0,52],['panUp',0,0]]) {
+    await touch.locator('#'+id).tap();
+    const v=(await touch.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
+    assert.deepEqual(v,[x,y,760,520]);
+  }
+  await touch.locator('#panLeft').tap();await touch.locator('#resetView').tap();assert.equal(await touch.locator('#graph').getAttribute('viewBox'),'0 0 760 520');
+  await touch.locator('#panTools summary').tap();assert.equal(await touch.locator('#panLeft').isVisible(),false);
+  assert.deepEqual(touchUnexpected,[]);assert.deepEqual(touchErrors,[]);await touch.close();
+  console.log('PASS: emulated touch taps open movement controls, pan in four directions without dragging, Reset and collapse at phone width; no production requests or page errors.');
   console.log('PASS: no uncaught page errors or requests outside intercepted public fixtures.');
 } finally {await browser.close();}
