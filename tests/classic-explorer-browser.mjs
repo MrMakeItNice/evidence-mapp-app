@@ -1367,10 +1367,44 @@ try {
         }
       }
       console.log('PASS: stalled case and citation requests abort after the 15-second deadline at 320/768/1280px (virtual browser clock), expose Retry without stale records, retain draft text/storage/focus, and native Enter restores the exact case/source with search focus; successful-load deadlines are cleared.');
-      rejectCases=false;cases.splice(0);await page.reload();
-      await page.waitForFunction(()=>!document.querySelector('#search').disabled);
-      assert.equal(await page.locator('#search-status').textContent(),'No published cases available.');
-      assert.equal(await page.locator('#results button').count(),0);
+      rejectCases=false;const emptyCaseSnapshot=cases.splice(0);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});await page.reload();
+        await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='No published investigations');
+        assert.equal(await page.locator('#search').isDisabled(),true,'empty index cannot offer misleading searches');
+        assert.equal(await page.locator('#search-status').textContent(),'No published cases available. Retry loading investigations.');
+        assert.equal(await page.locator('#search-status').getAttribute('role'),'status');
+        assert.equal(await page.locator('#status').textContent(),'No published cases available.');
+        assert.equal(await page.locator('#results button').count(),0);assert.equal(await page.locator('#graph .node').count(),0);
+        assert.equal(await page.locator('#allSources').isVisible(),false);assert.equal(await page.locator('#citationContext').count(),0);
+        assert.match(await page.locator('#detail').textContent(),/private drafts remain available/);
+        assert.doesNotMatch(await page.locator('#detail').textContent(),/Connection unavailable|How to explore/);
+        assert.ok(await page.locator('#detail').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'empty guidance wraps');
+        const retry=page.locator('#retryLoad'),hash=new URL(page.url()).hash;
+        assert.equal(await retry.isVisible(),true);
+        await page.getByRole('link',{name:'New Evidence Board',exact:true}).press('Tab');assert.equal(await retry.evaluate(el=>el===document.activeElement),true,'native Tab skips disabled search and reaches empty-index retry');
+        pauseCases=true;const emptyRetryPaused=new Promise(resolve=>casesPaused=resolve),before=caseRequests;
+        await retry.press('Space');await emptyRetryPaused;await page.keyboard.press('Space');
+        assert.equal(caseRequests,before+1,'busy empty-index retry does not duplicate requests');
+        pauseCases=false;releaseCases();
+        await page.waitForFunction(()=>document.querySelector('#retryLoad').getAttribute('aria-disabled')===null);
+        assert.equal(await page.locator('#detail h2').textContent(),'No published investigations');assert.equal(await retry.evaluate(el=>el===document.activeElement),true,'repeated empty result retains actionable retry focus');
+        assert.equal(await page.locator('#search').isDisabled(),true);
+        await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Keep empty-index draft');await page.locator('#draftNotes').fill('Keep unfinished research notes');
+        const stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
+        cases.push(...emptyCaseSnapshot);pauseCases=true;const recoveryPaused=new Promise(resolve=>casesPaused=resolve),beforeRecovery=caseRequests;
+        await retry.press('Enter');await recoveryPaused;
+        assert.equal(await retry.getAttribute('aria-disabled'),'true');assert.equal(await page.locator('#draftTitle').inputValue(),'Keep empty-index draft');
+        pauseCases=false;releaseCases();await page.waitForFunction(()=>!document.querySelector('#search').disabled);
+        assert.equal(caseRequests,beforeRecovery+1);assert.equal(await retry.isVisible(),false);assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
+        assert.equal(new URL(page.url()).hash,hash);assert.equal(hash,'#case=24');assert.equal(await page.locator('#graph .node').count(),2,'recovery restores exact requested published case/source');
+        assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),'Second distinct source');
+        assert.equal(await page.locator('#draftTitle').inputValue(),'Keep empty-index draft');assert.equal(await page.locator('#draftNotes').inputValue(),'Keep unfinished research notes');assert.equal(await page.locator('#draftForm').isVisible(),true);
+        assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored,'empty-index recovery never writes private drafts');
+        await page.locator('#cancelDraft').click();cases.splice(0);
+      }
+      cases.push(...emptyCaseSnapshot);
+      console.log('PASS: successful empty index has explicit non-error guidance, disabled search and native Tab/Space/Enter retry at 320/768/1280px; repeated empty results keep retry focus, busy retries deduplicate, and later recovery restores exact case/source/search focus without reload or lost draft text/storage.');
       console.log('PASS: loading, unavailable and empty published-data states stay distinct; search counts, 15-of-20 truncation, no-match and selected-case feedback work at 320/768/1280px without query updates stealing focus or changing the case.');
       console.log('PASS: named group exposes all case/source buttons; native Tab, Enter/Space inspection and Tab exit work at 320/768/1280px.');
     }
