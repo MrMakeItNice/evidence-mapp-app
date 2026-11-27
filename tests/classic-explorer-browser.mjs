@@ -723,9 +723,10 @@ try {
       console.log('PASS: failed Save exposes keyboard unsaved-draft download at 320/768/1280px for case/trail forms; parsed JSON contains current edited fields only, with unchanged stored bytes/form/focus/case and no public requests; later successful Save hides recovery and returns focus.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
-        for(const [trigger,type] of [['newCase','case'],['newTrail','trail']]) {
+        for(const [trigger,type] of [['newCase','case'],['newTrail','trail']]) for(const title of ['', '   ']) {
           await page.locator('#'+trigger).click();
-          await page.locator('#draftTitle').fill('   ');
+          assert.equal(await page.locator('#draftTitle').getAttribute('aria-invalid'),null,'required title is not marked invalid before submission');
+          await page.locator('#draftTitle').fill(title);
           await page.locator('#draftUrl').fill('https://records.example/title-check?id=42#page=7');
           await page.locator('#draftRelated').fill('Keep related context');
           await page.locator('#draftNotes').fill('Keep unfinished evidence notes');
@@ -737,6 +738,7 @@ try {
           assert.equal(await page.locator('#draftTitleError').isVisible(),true);
           assert.equal(await page.locator('#draftTitle').evaluate(el=>el.validationMessage),'Enter a title with at least one non-space character.');
           assert.ok(await page.locator('#draftTitleError').evaluate(el=>{const r=el.getBoundingClientRect();return r.right<=innerWidth&&el.scrollWidth<=el.clientWidth}),'specific error fits the viewport');
+          await page.locator('#draftTitle').press('Tab');assert.equal(await page.locator('#draftTitleError').isVisible(),true,'title feedback persists after leaving the field');
           assert.equal(await page.locator('#draftNotes').inputValue(),'Keep unfinished evidence notes');
           assert.equal(await page.locator('#draftRelated').inputValue(),'Keep related context');
           assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),before,'invalid submission does not save');
@@ -759,7 +761,7 @@ try {
           await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
         }
       }
-      console.log('PASS: native Enter rejects whitespace-only case/trail titles with a visible linked error and field focus at 320/768/1280px without saving or losing notes/context; editing clears custom validity and Space saves exactly one corrected draft with normal reset/focus return.');
+      console.log('PASS: native Enter rejects empty and whitespace-only case/trail titles with a visible linked error and field focus at 320/768/1280px without saving or losing notes/context; editing clears custom validity and Space saves exactly one corrected draft with normal reset/focus return.');
       for(const width of [320,768,1280])for(const trigger of ['newCase','newTrail']) {
         await page.setViewportSize({width,height:900});await page.locator('#'+trigger).click();
         await page.locator('#draftTitle').fill('URL feedback fixture');await page.locator('#draftNotes').fill('Keep URL repair notes');await page.locator('#draftRelated').fill('Keep related record');
