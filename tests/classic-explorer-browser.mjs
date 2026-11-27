@@ -236,8 +236,9 @@ try {
           await page.keyboard.press('Shift+ArrowRight');assert.deepEqual(await readView(),restored,'modified arrows untouched');
           await page.keyboard.press('Enter');assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
           await page.keyboard.press('Escape');assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+          const returnedView=await readView(); // Escape may reveal a card clipped by zoom; the text-field arrow must preserve that returned view.
           await page.locator('#search').fill('Fixture');await page.locator('#search').press('ArrowLeft');
-          assert.deepEqual(await readView(),restored,'arrow in text input does not pan');
+          assert.deepEqual(await readView(),returnedView,'arrow in text input does not pan');
         }
       }
       assert.match(await page.locator('#diagramKeys').textContent(),/Home centers the focused card without changing zoom/);
@@ -318,6 +319,30 @@ try {
         assert.equal(await page.locator('#graph .node').count(),3);
       }
       console.log('PASS: zoom in/out/reset have non-overlapping 44px minimum targets within 320/768/1280px viewports; native diagram zoom status tracks native Enter/Space, wheel, existing minimum/maximum and Reset at 320/768/1280px without moving keyboard focus or changing the case/source cards.');
+      for(const width of [320,768,1280])for(const cardIndex of [0,1]) {
+        await page.setViewportSize({width,height:900});await page.locator('#resetView').click();
+        const card=page.locator('#graph .node').nth(cardIndex),cards=await page.locator('#graph').innerHTML(),hash=new URL(page.url()).hash;
+        await card.press('Enter');assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+        await page.locator('#graph').hover();
+        for(let i=0;i<6;i++) {
+          await page.mouse.wheel(0,-100);
+          await page.waitForFunction(expected=>Math.abs(Number(document.querySelector('#graph').getAttribute('viewBox').split(' ')[2])-expected)<1e-7,760*.89**(i+1));
+        }
+        const before=await readView(),zoom=await page.locator('#zoomStatus').textContent();
+        const rect=await card.locator('rect').first().evaluate(el=>{const r=el.getBBox();return {x:r.x,y:r.y,width:r.width,height:r.height}});
+        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'wheel changes the view while inspected details keep keyboard focus');
+        if(cardIndex)assert.ok(rect.y+rect.height<before[1],'zoom fixture moves source card entirely outside diagram view');
+        await page.keyboard.press('Escape');
+        const recovered=await readView();assert.deepEqual(recovered.slice(2),before.slice(2),'return preserves current zoom');
+        assert.equal(await page.locator('#zoomStatus').textContent(),zoom);assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+        if(cardIndex){assert.ok(Math.abs(recovered[0]+recovered[2]/2-rect.x-rect.width/2)<1e-7);assert.ok(Math.abs(recovered[1]+recovered[3]/2-rect.y-rect.height/2)<1e-7)}
+        else assert.deepEqual(recovered,before,'already-visible case card does not recenter the view');
+        assert.ok(await card.locator('rect').first().evaluate(el=>{const r=el.getBoundingClientRect(),g=el.closest('svg').getBoundingClientRect();return r.left>=g.left&&r.right<=g.right&&r.top>=g.top&&r.bottom<=g.bottom&&r.top>=0&&r.bottom<=innerHeight}),'returned card is within both diagram and visible page');
+        assert.equal(await page.locator('#graph').innerHTML(),cards,'card coordinates/content unchanged');assert.equal(new URL(page.url()).hash,hash);
+        await page.keyboard.press('Enter');await page.keyboard.press('Escape');assert.deepEqual(await readView(),recovered,'visible return keeps the recovered view');
+        await page.locator('#resetView').click();
+      }
+      console.log('PASS: after native wheel zoom with details focused, Escape reveals an off-view source card without resetting zoom at 320/768/1280px; visible case cards do not recenter, exact evidence/hash/focus remain, and repeated inspection/return stays stable.');
 
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
