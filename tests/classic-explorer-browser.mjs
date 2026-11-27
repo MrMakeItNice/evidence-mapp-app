@@ -1072,6 +1072,8 @@ try {
           await page.keyboard.press('Escape');
           assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
           await page.keyboard.press('Enter');await page.keyboard.press('Tab');
+          assert.equal(await page.getByRole('button',{name:'Return to diagram card',exact:true}).evaluate(el=>el===document.activeElement),true,'selected-case details include the visible return control');
+          await page.keyboard.press('Tab');
           assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'Tab leaves selected-case details');
         }
         await page.locator('#search').fill('Fixture investigation');
