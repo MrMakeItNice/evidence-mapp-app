@@ -1009,6 +1009,8 @@ try {
         assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
         assert.equal(await page.locator('#graph .node').first().getAttribute('aria-label'),'Related fixture investigation');
         await page.keyboard.press('Enter');await page.keyboard.press('Tab');
+        assert.equal(await page.getByRole('button',{name:'Return to diagram card',exact:true}).evaluate(el=>el===document.activeElement),true,'Tab reaches visible return action in current-case details');
+        await page.keyboard.press('Tab');
         assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'Tab can leave current-case details');
         await page.keyboard.press('Escape');
         assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'Escape outside inspector is untouched');
