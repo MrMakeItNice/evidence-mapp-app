@@ -641,6 +641,30 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('#graph .node').nth(0).evaluate(el=>el===document.activeElement),true);
       console.log('PASS: keyboard inspection focuses visible details heading, Tab reaches source link, Escape returns to originating case/source, pointer focus and modified keys remain unchanged.');
+      const unavailableRefsStart=references.length,unavailableCasesStart=cases.length,sharedUrl=references[0].url;
+      references.push({case_id:9090,title:'Unindexed case citation fixture',url:sharedUrl});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});const card=page.locator('#graph .node').nth(1),graphHtml=await page.locator('#graph').innerHTML(),hash=new URL(page.url()).hash;
+        await card.press('Enter');assert.equal(await page.locator('#detail h3').count(),0,'unindexed reference does not imply a navigable related-case section');
+        assert.equal(await page.locator('#detail ul').count(),0,'no empty related-case list');
+        assert.match(await page.locator('#detail').textContent(),/No other published case in this index cites this exact URL/);
+        assert.equal(await page.locator('#detail a').getAttribute('href'),sharedUrl);assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+        await page.keyboard.press('Tab');assert.equal(await page.locator('#detail a').evaluate(el=>el===document.activeElement),true);await page.keyboard.press('Escape');assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#graph').innerHTML(),graphHtml);assert.equal(new URL(page.url()).hash,hash);
+      }
+      cases.push({id:93,title:'Loaded matching fixture'});
+      references.push({case_id:93,title:'Loaded shared citation',url:sharedUrl},{case_id:93,title:'Repeated loaded citation',url:sharedUrl});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});await page.locator('#graph .node').nth(1).press('Enter');
+        assert.equal(await page.locator('#detail h3').textContent(),'Other cases citing this exact URL');assert.equal(await page.locator('#detail li button').count(),1,'only loaded case appears once despite repeated/unknown references');
+        await page.locator('#detail').getByRole('button',{name:'Loaded matching fixture · Case #93',exact:true}).press('Space');await page.waitForFunction(()=>location.hash==='#case=93');
+        assert.equal(await page.locator('#detail h2').textContent(),'Loaded matching fixture');await page.keyboard.press('Escape');assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+        await page.goto('https://classic.example/connection-explorer.html#case=1');await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      }
+      references.splice(unavailableRefsStart);cases.splice(unavailableCasesStart);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      console.log('PASS: references to unindexed cases yield the scoped no-related-case message without empty heading/list; mixed loaded/unknown references show one deduplicated navigable case with exact URL, heading focus, Tab/Space/Escape and unchanged source cards at 320/768/1280px.');
       const exactRefsStart=references.length,exactCasesStart=cases.length;
       const exactFixtures=[
         [90,'Record one','https://records.example/document?id=1#page=2'],
