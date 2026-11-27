@@ -194,7 +194,8 @@ try {
             if(key)await page.keyboard.press(key);
             const card=page.locator('#graph .node').nth(index);
             assert.equal(await card.evaluate(el=>el===document.activeElement),true,'native Tab/Shift+Tab reaches the expected card');
-            assert.ok(await card.evaluate(el=>{const r=el.querySelector('rect').getBoundingClientRect(),g=el.ownerSVGElement.getBoundingClientRect();return r.left>=g.left-1&&r.right<=g.right+1&&r.top>=g.top-1&&r.bottom<=g.bottom+1&&r.top>=-1&&r.bottom<=innerHeight+1}),`keyboard card fully visible at ${width}px, zoom clicks ${zoomClicks}`);
+            const visible=await card.evaluate(el=>{const r=el.querySelector('rect').getBoundingClientRect(),g=el.ownerSVGElement.getBoundingClientRect();return {ok:r.left>=g.left-1&&r.right<=g.right+1&&r.top>=g.top-1&&r.bottom<=g.bottom+1&&r.top>=-1&&r.bottom<=innerHeight+1,rect:r.toJSON(),graph:g.toJSON(),height:innerHeight}});
+            assert.ok(visible.ok,`keyboard card ${index} fully visible at ${width}px, zoom clicks ${zoomClicks}: ${JSON.stringify(visible)}`);
             assert.deepEqual((await readView()).slice(2),start.slice(2),'keyboard reveal preserves zoom');
             assert.equal(await page.locator('#zoomStatus').textContent(),zoomText);
             assert.equal(await page.locator('#graph').innerHTML(),cards);
