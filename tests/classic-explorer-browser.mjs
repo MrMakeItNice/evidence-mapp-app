@@ -440,6 +440,42 @@ try {
         assert.equal(await page.locator('#graph .node').count(),3);
       }
       console.log('PASS: zoom in/out/reset have non-overlapping 44px minimum targets within 320/768/1280px viewports; native diagram zoom status tracks native Enter/Space, wheel, existing minimum/maximum and Reset at 320/768/1280px without moving keyboard focus or changing the case/source cards.');
+      for(const forcedColors of ['none','active']) {
+        await page.emulateMedia({forcedColors});
+        for(const width of [320,768,1280]) {
+          await page.setViewportSize({width,height:900});await page.locator('#resetView').click();
+          const cards=await page.locator('#graph').innerHTML(),hash=new URL(page.url()).hash,requests=caseRequests;
+          for(const [id,other,clicks,status] of [['zoomIn','zoomOut',5,'Diagram zoom: 304% (maximum).'],['zoomOut','zoomIn',9,'Diagram zoom: 54% (minimum).']]) {
+            await page.locator('#resetView').click();
+            assert.equal(await page.locator('#zoomIn').getAttribute('aria-disabled'),'false');assert.equal(await page.locator('#zoomOut').getAttribute('aria-disabled'),'false');
+            const button=page.locator('#'+id);
+            for(let i=0;i<clicks;i++)await button.press('Enter');
+            assert.equal(await button.getAttribute('aria-disabled'),'true');assert.equal(await page.locator('#'+other).getAttribute('aria-disabled'),'false');
+            assert.equal(await button.evaluate(el=>el===document.activeElement&&!el.disabled&&getComputedStyle(el).cursor==='default'&&getComputedStyle(el).borderStyle==='dashed'),true,'unavailable direction stays focused and uses distinct non-busy styling');
+            const tree=await cdp.send('Accessibility.getFullAXTree');
+            assert.ok(tree.nodes.some(n=>!n.ignored&&n.role?.value==='button'&&n.name?.value===(id==='zoomIn'?'Zoom in':'Zoom out')&&n.properties?.some(p=>p.name==='disabled'&&p.value?.value===true)),'native accessibility tree exposes disabled zoom direction');
+            const capped=await page.locator('#graph').getAttribute('viewBox');
+            for(const key of ['Enter','Space']) {await button.press(key);assert.equal(await page.locator('#graph').getAttribute('viewBox'),capped);assert.equal(await page.locator('#zoomStatus').textContent(),status)}
+            const box=await button.boundingBox();await page.mouse.click(box.x+box.width/2,box.y+box.height/2);
+            assert.equal(await page.locator('#graph').getAttribute('viewBox'),capped,'native pointer cannot exceed limit');
+            await button.press('Tab');await page.keyboard.press('Shift+Tab');assert.equal(await button.evaluate(el=>el===document.activeElement),true,'unavailable direction remains discoverable by native Tab');
+            await page.locator('#'+other).press('Space');assert.equal(await button.getAttribute('aria-disabled'),'false','reverse zoom restores availability');
+          }
+          await page.locator('#resetView').click();
+          await page.locator('#graph').hover();
+          for(const [delta,factor,id] of [[-100,.89,'zoomIn'],[100,1.12,'zoomOut']]) {
+            for(let i=0;i<20&&(await page.locator('#'+id).getAttribute('aria-disabled'))!=='true';i++) {
+              const current=(await readView())[2],expected=Math.max(250,Math.min(1400,current*factor));
+              await page.mouse.wheel(0,delta);await page.waitForFunction(w=>Number(document.querySelector('#graph').getAttribute('viewBox').split(' ')[2])===w,expected);
+            }
+            assert.equal(await page.locator('#'+id).getAttribute('aria-disabled'),'true','native wheel reaches and exposes each limit');
+          }
+          await page.locator('#resetView').click();assert.equal(await page.locator('#zoomIn').getAttribute('aria-disabled'),'false');assert.equal(await page.locator('#zoomOut').getAttribute('aria-disabled'),'false');
+          assert.equal(await page.locator('#graph').innerHTML(),cards);assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);
+        }
+      }
+      await page.emulateMedia({forcedColors:'none'});
+      console.log('PASS: zoom limits expose native disabled semantics without losing Tab focus; Enter/Space/pointer guard caps, reverse zoom/wheel/Reset restore state, and normal/forced-color styling works at 320/768/1280px without evidence/hash/refetch changes.');
       for(const width of [320,768,1280])for(const cardIndex of [0,1]) {
         await page.setViewportSize({width,height:900});await page.locator('#resetView').click();
         const card=page.locator('#graph .node').nth(cardIndex),cards=await page.locator('#graph').innerHTML(),hash=new URL(page.url()).hash;
