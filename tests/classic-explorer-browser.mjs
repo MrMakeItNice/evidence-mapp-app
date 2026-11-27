@@ -115,7 +115,7 @@ try {
           await page.setViewportSize({width,height:900});
           for(const trigger of ['newCase','newTrail']) {
             await page.locator('#'+trigger).click();
-            const notes=page.getByRole('textbox',{name:'What does this evidence show?',exact:true});
+            const notes=page.getByRole('textbox',{name:'What does this evidence show? (optional)',exact:true});
             const stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),requests=caseRequests,hash=new URL(page.url()).hash;
             await page.locator('#draftTitle').fill('Notes focus fixture');
             await page.locator('#draftTitle').press('Tab');await page.keyboard.press('Tab');await page.keyboard.press('Tab');
@@ -537,7 +537,7 @@ try {
         assert.equal(await page.locator('#graph .node').count(),3);
       }
       assert.equal(await page.locator('#draftForm').isVisible(),false,'draft form starts hidden');
-      assert.equal(await page.getByRole('textbox',{name:'Title',exact:true}).count(),0,'closed form is outside accessible controls');
+      assert.equal(await page.getByRole('textbox',{name:'Title (required)',exact:true}).count(),0,'closed form is outside accessible controls');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         for(const [trigger,title,required] of [['newCase','New case draft',false],['newTrail','New paper trail draft',true]]) {
@@ -547,10 +547,15 @@ try {
           assert.equal(await page.locator('#formHeading').textContent(),title);
           assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true);
           assert.equal(await page.locator('#draftUrl').evaluate(el=>el.required),required);
+          assert.equal(await page.getByRole('textbox',{name:'Title (required)',exact:true}).evaluate(el=>el.required),true);
+          assert.equal(await page.getByRole('textbox',{name:'Original source URL '+(required?'(required)':'(optional)'),exact:true}).evaluate(el=>el.required),required);
+          assert.equal(await page.getByRole('textbox',{name:'Related case (optional)',exact:true}).evaluate(el=>el.required),false);
+          assert.equal(await page.getByRole('textbox',{name:'What does this evidence show? (optional)',exact:true}).evaluate(el=>el.required),false);
+          assert.ok(await page.locator('#draftForm label').evaluateAll(els=>els.every(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth})),'all requirement labels wrap within the viewport');
           await page.locator('#draftTitle').fill('Unsaved fixture');
           await page.locator('#cancelDraft').focus();await page.keyboard.press('Enter');
           assert.equal(await page.locator('#draftForm').isVisible(),false);
-          assert.equal(await page.getByRole('textbox',{name:'Title',exact:true}).count(),0);
+          assert.equal(await page.getByRole('textbox',{name:'Title (required)',exact:true}).count(),0);
           assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true);
           assert.equal(await page.evaluate(()=>localStorage.length),0,'Cancel does not save a draft');
         }
@@ -566,7 +571,7 @@ try {
       await page.locator('#newTrail').click();
       assert.equal(await page.locator('#draftTitle').inputValue(),'');
       await page.locator('#cancelDraft').click();
-      console.log('PASS: draft form starts outside layout/accessibility controls; case/trail opening, keyboard Cancel and focus return work at 320/768/1280px without saving; fixture-only successful Save closes and resets the form.');
+      console.log('PASS: draft form starts outside layout/accessibility controls; required/optional visible labels match native accessible names and actual field rules at 320/768/1280px; case/trail opening, keyboard Cancel and focus return work at 320/768/1280px without saving; fixture-only successful Save closes and resets the form.');
       const draftStorageKey='evidence-atlas-connection-drafts-v1';
       const previousDrafts=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);
       const draftDestination='https://records.example/draft?record='+ 'x'.repeat(300)+'&id=42#page=7';
@@ -771,7 +776,7 @@ try {
       for(const width of [320,768,1280])for(const trigger of ['newCase','newTrail']) {
         await page.setViewportSize({width,height:900});await page.locator('#'+trigger).click();
         await page.locator('#draftTitle').fill('URL feedback fixture');await page.locator('#draftNotes').fill('Keep URL repair notes');await page.locator('#draftRelated').fill('Keep related record');
-        const field=page.getByRole('textbox',{name:'Original source URL (required for paper trails)',exact:true}),before=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),requests=caseRequests;
+        const field=page.getByRole('textbox',{name:'Original source URL '+(trigger==='newTrail'?'(required)':'(optional)'),exact:true}),before=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),requests=caseRequests;
         assert.equal(await field.getAttribute('aria-describedby'),'draftUrlHelp');assert.equal(await page.locator('#draftUrlError').isVisible(),false);
         for(const value of trigger==='newTrail'?['','not-a-url','/relative-record']:['not-a-url','/relative-record']) {
           await field.fill(value);await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
