@@ -544,6 +544,8 @@ try {
           await page.locator('#'+trigger).focus();await page.keyboard.press('Enter');
           assert.equal(await page.locator('#draftForm').isVisible(),true);
           assert.equal(await page.locator('#draftForm').evaluate(el=>getComputedStyle(el).display),'grid');
+          const actionBoxes=await page.locator('#contribute button:visible').evaluateAll(es=>es.map(el=>({...el.getBoundingClientRect().toJSON(),overflow:el.scrollWidth>el.clientWidth})));
+          for(let i=0;i<actionBoxes.length;i++){const r=actionBoxes[i];assert.ok(r.width>=44&&r.height>=44&&r.left>=0&&r.right<=width&&!r.overflow,'visible contribution actions have wrapping 44px targets within the viewport');for(let j=0;j<i;j++){const q=actionBoxes[j];assert.ok(r.left>=q.right||r.right<=q.left||r.top>=q.bottom||r.bottom<=q.top,'contribution action targets do not overlap')}}
           assert.equal(await page.locator('#formHeading').textContent(),title);
           assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true);
           assert.equal(await page.locator('#draftUrl').evaluate(el=>el.required),required);
@@ -558,6 +560,8 @@ try {
           assert.equal(await page.getByRole('textbox',{name:'Title (required)',exact:true}).count(),0);
           assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true);
           assert.equal(await page.evaluate(()=>localStorage.length),0,'Cancel does not save a draft');
+          const add=page.locator('#'+trigger),target=await add.boundingBox();await add.click({position:{x:target.width/2,y:target.height-1}});assert.equal(await page.locator('#draftForm').isVisible(),true,'lower-edge pointer activation opens the draft form');assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true);
+          await page.locator('#cancelDraft').press('Space');assert.equal(await page.locator('#draftForm').isVisible(),false);assert.equal(await add.evaluate(el=>el===document.activeElement),true);assert.equal(await page.locator('#draftTitle').inputValue(),'Unsaved fixture');assert.equal(await page.evaluate(()=>localStorage.length),0);
         }
       }
       await page.locator('#newCase').click();
@@ -571,7 +575,7 @@ try {
       await page.locator('#newTrail').click();
       assert.equal(await page.locator('#draftTitle').inputValue(),'');
       await page.locator('#cancelDraft').click();
-      console.log('PASS: draft form starts outside layout/accessibility controls; required/optional visible labels match native accessible names and actual field rules at 320/768/1280px; case/trail opening, keyboard Cancel and focus return work at 320/768/1280px without saving; fixture-only successful Save closes and resets the form.');
+      console.log('PASS: draft form starts outside layout/accessibility controls; required/optional visible labels match native accessible names and actual field rules at 320/768/1280px; visible contribution actions have non-overlapping 44px targets, lower-edge pointer opening and Enter/Space Cancel retain focus/text without saving at 320/768/1280px; fixture-only successful Save closes and resets the form.');
       const draftStorageKey='evidence-atlas-connection-drafts-v1';
       const previousDrafts=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);
       const draftDestination='https://records.example/draft?record='+ 'x'.repeat(300)+'&id=42#page=7';
@@ -725,7 +729,7 @@ try {
         assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),before);
         await page.locator('#draftTitle').fill('Edited recovery fixture');await page.locator('#draftNotes').fill('Updated notes after failed Save');
         const recovery=page.getByRole('button',{name:'Download unsaved draft',exact:true});
-        assert.ok(await recovery.evaluate(el=>el.getBoundingClientRect().right<=innerWidth),'recovery action fits phone/tablet/desktop');
+        assert.ok(await recovery.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.left>=0&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth}),'unsaved recovery has a wrapping 44px target at phone/tablet/desktop widths');
         const downloadCount=draftDownloads;
         await page.locator('#draftTitle').fill('   ');await recovery.press('Enter');
         assert.equal(draftDownloads,downloadCount);assert.equal(await page.locator('#draftTitle').getAttribute('aria-invalid'),'true');
