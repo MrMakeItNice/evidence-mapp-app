@@ -1200,6 +1200,18 @@ try {
         const caseTitle=await page.locator('#detail h2').textContent(),caseHash=new URL(page.url()).hash;
         await page.locator('#search').fill('SearchMatch');
         assert.equal(await page.locator('#results button').count(),15);
+        const targetRects=await page.locator('#results button').evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}}));
+        for(const r of targetRects)assert.ok(r.width>=44&&r.height>=44,'search result target is at least 44px');
+        for(let i=0;i<targetRects.length;i++)for(let j=i+1;j<targetRects.length;j++){
+          const a=targetRects[i],b=targetRects[j];assert.ok(a.right<=b.left||b.right<=a.left||a.bottom<=b.top||b.bottom<=a.top,'search result targets do not overlap');
+        }
+        for(let i=0;i<15;i++){
+          await page.keyboard.press('Tab');
+          const result=page.locator('#results button').nth(i);
+          assert.equal(await result.evaluate(el=>el===document.activeElement),true,'Tab reaches every result in order');
+          assert.ok(await result.evaluate(el=>{const r=el.getBoundingClientRect(),p=el.parentElement.getBoundingClientRect();return r.top>=p.top-1&&r.bottom<=p.bottom+1&&r.left>=0&&r.right<=innerWidth}),'keyboard reveals complete target within scrollable results');
+        }
+        await page.locator('#search').focus();
         assert.equal(await page.locator('#search-status').textContent(),'15 of 20 matching published cases shown. Refine your search to find other cases.');
         assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
         assert.ok(await page.locator('#search-status').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth));
@@ -1242,12 +1254,13 @@ try {
           assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'Tab leaves selected-case details');
         }
         await page.locator('#search').fill('Fixture investigation');
-        await page.locator('#results button').first().click();
+        await page.locator('#results button').first().click({position:{x:12,y:42}});
         assert.equal(await page.locator('#detail h2').textContent(),'Fixture investigation');
         assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'pointer selection also avoids removed-control focus');
         await page.keyboard.press('Escape');
         assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
       }
+      console.log('PASS: search results have non-overlapping 44px targets, native Tab reveals all 15 scrollable results and lower-edge pointer clicks open the exact case at 320/768/1280px.');
       console.log('PASS: search-result Enter/Space and pointer selection focus the opened investigation heading; removed result is detached, heading is visible with keyboard outline, Escape reaches the live case card and Tab can leave details at 320/768/1280px.');
       const duplicateTitle='Duplicate investigation '+ 'x'.repeat(120);
       cases.push({id:23,title:duplicateTitle,summary:'First distinct record'}, {id:24,title:duplicateTitle,summary:'Second distinct record'});
