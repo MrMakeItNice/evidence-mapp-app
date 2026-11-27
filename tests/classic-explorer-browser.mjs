@@ -816,11 +816,19 @@ try {
           assert.equal(await card.evaluate(el=>el===document.activeElement),true,'native Tab reaches sources in named citation order');
           await page.keyboard.press(i%2?'Space':'Enter');
           assert.equal(await page.locator('#detail h2').textContent(),i===3?'Source document':'Repeated archive title');
+          const context='Citation '+(i+1)+' of 4 in Fixture investigation · Case #1.';
+          assert.equal(await page.locator('#citationContext').textContent(),context);assert.equal(await page.locator('#detail h2').getAttribute('aria-describedby'),'citationContext');
+          assert.equal(await page.locator('#citationContext').count(),1,'one current citation context, no stale duplicates');
+          const inspectedTree=await cdp.send('Accessibility.getFullAXTree');
+          assert.ok(inspectedTree.nodes.some(n=>!n.ignored&&n.role?.value==='heading'&&n.name?.value===(i===3?'Source document':'Repeated archive title')&&n.description?.value===context),'native heading keeps its source name and adds exact citation/case description');
+
           if(i===2){assert.equal(await page.locator('#detail a').count(),0);assert.doesNotMatch(await page.locator('#detail').textContent(),/user:secret/)}
           else assert.equal(await page.locator('#detail a').getAttribute('href'),i===0?'https://records.example/a':i===1?'https://records.example/b':'https://records.example/untitled?id=4#page=8');
           await page.keyboard.press('Escape');assert.equal(await card.evaluate(el=>el===document.activeElement),true);
           if(i<3)await page.keyboard.press('Tab');
         }
+        await page.locator('#graph .node').first().press('Enter');
+        assert.equal(await page.locator('#citationContext').count(),0,'case inspection clears source context');assert.equal(await page.locator('#detail h2').getAttribute('aria-describedby'),null,'case heading has no stale source description');
         assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);
       }
       references.splice(0,references.length,...namedRefs);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
@@ -846,6 +854,7 @@ try {
           if(pos===3)assert.equal(await button.evaluate(el=>el===document.activeElement),true,'native Tab reaches first repeated-title control');
           assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();return r.height>=44&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth}),'long unique label wraps within viewport');
           await button.press(key);assert.equal(await page.locator('#detail h2').textContent(),pos===5?'Source document':listTitle);
+          assert.equal(await page.locator('#citationContext').textContent(),'Citation '+pos+' of 11 in Fixture investigation · Case #1.','list inspection retains exact numbered source context beyond diagram limit');
           if(pos===10){assert.equal(await page.locator('#detail a').count(),0);assert.doesNotMatch(await page.locator('#detail').textContent(),/user:secret/)}
           else assert.equal(await page.locator('#detail a').getAttribute('href'),'https://records.example/list?id='+row+'#page='+row);
           await page.getByRole('button',{name:'Return to citation list',exact:true}).press('Enter');
@@ -911,7 +920,7 @@ try {
         assert.equal(await page.locator('#graph').innerHTML(),graphHtml);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(caseRequests,requests);
         await summary.press('Space');assert.equal(await disclosure.getAttribute('open'),null);await summary.press('Enter');
         await tail.focus();await page.goto('https://classic.example/connection-explorer.html#case=94');await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Short citation case');
-        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'case hash switch restores focus from a removed citation link');assert.equal(await disclosure.isVisible(),false);assert.equal(await disclosure.locator('li').count(),0,'case change removes old citation destinations');
+        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'case hash switch restores focus from a removed citation link');assert.equal(await page.locator('#citationContext').count(),0,'case switch removes old citation context');assert.equal(await page.locator('#detail h2').getAttribute('aria-describedby'),null);assert.equal(await disclosure.isVisible(),false);assert.equal(await disclosure.locator('li').count(),0,'case change removes old citation destinations');
         await page.goto('https://classic.example/connection-explorer.html#case=1');await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===9);assert.equal(await disclosure.getAttribute('open'),null);
       }
       console.log('PASS: complete-list citations beyond the diagram limit support native Enter/Space/pointer inspection, exact URL and shared-case context, safe blocked-URL feedback, visible Escape return including collapsed lists, and related-case focus reset at 320/768/1280px.');
@@ -1231,7 +1240,8 @@ try {
         let size=await pageWidth();assert.ok(size.content<=size.viewport,'case selection confirmation fits the page');
         await page.keyboard.press('Escape');await page.keyboard.press('Tab');await page.keyboard.press('Enter');
         assert.equal(await page.locator('#detail h2').textContent(),longSourceTitle);
-        assert.ok((await page.locator('#detail p').first().textContent()).includes(longPublisher));
+        assert.equal(await page.locator('#citationContext').textContent(),'Citation 1 of 1 in '+longCaseTitle+' · Case #25.');assert.ok(await page.locator('#citationContext').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'full long case context wraps without clipping');
+        assert.ok((await page.locator('#detail p:not(.citation-context)').first().textContent()).includes(longPublisher));
         assert.ok(await page.locator('#detail').evaluate(el=>el.scrollWidth<=el.clientWidth),'complete source title and publisher wrap');
         size=await pageWidth();assert.ok(size.content<=size.viewport,'source inspector fits the page');
         await page.keyboard.press('Tab');
@@ -1241,6 +1251,7 @@ try {
         assert.equal(await page.locator('#graph .node').nth(1).evaluate(el=>el===document.activeElement),true,'Escape returns to the source card');
       }
       console.log('PASS: long case/source headings, summaries, publishers and search confirmations reflow without page overflow at 320/768/1280px; full text, indexed URL, keyboard focus, Tab and Escape are preserved.');
+      console.log('PASS: source inspector visibly identifies citation position/total and case; native heading description retains exact context for repeated/untitled/blocked/tail records, long case text wraps, and case inspection/navigation clear stale source context at 320/768/1280px.');
       await page.goto('https://classic.example/connection-explorer.html#case=24');
       await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===2);
       const idSearchRequests=caseRequests;
