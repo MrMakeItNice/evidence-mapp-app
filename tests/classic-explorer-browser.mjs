@@ -19,6 +19,7 @@ try {
     await page.route('**/*',async route=>{
       const u=new URL(route.request().url());
       if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:ignoreHashNavigation?html.replace("window.addEventListener('hashchange',navigateFromHash);",''):unwrappedDetails?html.replace('.detail,#search-status{min-width:0;overflow-wrap:anywhere}',''):html});
+      if(u.origin==='https://classic.example'&&['/discover.html','/paper-trails.html','/evidence-board.html'].includes(u.pathname))return route.fulfill({contentType:'text/html',body:'<h1>Navigation destination fixture</h1>'});
       if(u.origin==='https://classic.example'&&u.pathname==='/paper-trails-data.json'){if(pauseRefs)await new Promise(resolve=>{releaseRefs=resolve;refsPaused()});if(route.request().failure())return;return route.fulfill({json:{references}})}
       if(u.hostname==='nxlffnplqdobfqxogmxo.supabase.co'&&u.pathname==='/functions/v1/evidence-atlas/api/cases'){
         caseRequests++;
@@ -47,6 +48,39 @@ try {
       console.log('PASS: baseline reproduces image wrapper; Chromium retains focusable card buttons despite the image role.');
     } else {
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='search'&&n.name?.value==='Published investigations'),'native accessibility tree exposes the named search landmark');
+      const nav=page.getByRole('navigation',{name:'Explorer navigation',exact:true});
+      const navLabels=['Home','Paper Trails','New Evidence Board'],navPaths=['/discover.html','/paper-trails.html','/evidence-board.html'];
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        assert.equal(await nav.getByRole('link').count(),3);
+        const boxes=await nav.getByRole('link').evaluateAll(es=>es.map(e=>({text:e.textContent,href:e.getAttribute('href'),...e.getBoundingClientRect().toJSON()})));
+        for(let i=0;i<3;i++) {
+          assert.equal(boxes[i].text,navLabels[i]);assert.equal(boxes[i].href,'.'+navPaths[i]);
+          assert.ok(boxes[i].width>=44&&boxes[i].height>=44,'header links have at least 44px targets');
+          assert.ok(boxes[i].left>=0&&boxes[i].right<=width,'header targets stay within viewport');
+          for(let j=0;j<i;j++)assert.ok(boxes[i].left>=boxes[j].right||boxes[i].right<=boxes[j].left||boxes[i].top>=boxes[j].bottom||boxes[i].bottom<=boxes[j].top,'header targets do not overlap');
+        }
+        assert.ok(await page.locator('header').evaluate(el=>el.scrollWidth<=el.clientWidth),'header wraps without horizontal overflow');
+        await nav.getByRole('link',{name:'Home',exact:true}).focus();
+        for(let i=0;i<3;i++) {
+          if(i)await page.keyboard.press('Tab');
+          assert.equal(await nav.getByRole('link',{name:navLabels[i],exact:true}).evaluate(el=>el===document.activeElement&&el.matches(':focus-visible')&&parseFloat(getComputedStyle(el).outlineWidth)>=3),true,'native keyboard order retains visible focus');
+        }
+        await page.keyboard.press('Shift+Tab');assert.equal(await nav.getByRole('link',{name:'Paper Trails',exact:true}).evaluate(el=>el===document.activeElement),true);
+      }
+      for(let i=0;i<3;i++) {
+        await nav.getByRole('link',{name:navLabels[i],exact:true}).press('Enter');
+        await page.waitForURL('https://classic.example'+navPaths[i]);
+        assert.equal(await page.locator('h1').textContent(),'Navigation destination fixture');
+        await page.goto('https://classic.example/connection-explorer.html#case=1');
+        await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      }
+      await page.setViewportSize({width:320,height:900});
+      await nav.getByRole('link',{name:'New Evidence Board',exact:true}).click();
+      await page.waitForURL('https://classic.example/evidence-board.html');
+      await page.goto('https://classic.example/connection-explorer.html#case=1');
+      await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      console.log('PASS: named Classic header navigation has non-overlapping 44px targets and visible native Tab/Shift+Tab order at 320/768/1280px; Enter reaches all three existing destinations and phone pointer click reaches the board fixture.');
       const searchRegion=page.getByRole('search',{name:'Published investigations',exact:true});
       assert.equal(await page.getByRole('search').count(),1,'one focused search landmark, not a landmark for every control');
       assert.equal(await searchRegion.evaluate(el=>el.tagName),'SEARCH');
