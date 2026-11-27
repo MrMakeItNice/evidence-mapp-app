@@ -781,7 +781,7 @@ try {
         await page.getByRole('button',{name:'Save private draft',exact:true}).press('Space');
         const stored=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),draftStorageKey);
         assert.equal(stored.length,JSON.parse(before).length+1);assert.equal(stored.at(-1).url,destination);assert.equal(stored.at(-1).notes,'Keep URL repair notes');assert.equal(await page.locator('#draftForm').isVisible(),false);
-        assert.equal(await page.locator('#draftUrlError').isVisible(),false);assert.equal(await field.getAttribute('aria-describedby'),'draftUrlHelp');assert.equal(caseRequests,requests);
+        assert.equal(await page.locator('#draftUrlError').isVisible(),false);assert.equal(await page.locator('#draftUrl').getAttribute('aria-describedby'),'draftUrlHelp');assert.equal(caseRequests,requests);
         await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:before});await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       }
       await page.locator('#newTrail').click();await page.locator('#draftTitle').fill('Optional URL mode fixture');await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
