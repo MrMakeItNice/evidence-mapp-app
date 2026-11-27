@@ -560,7 +560,7 @@ try {
           assert.equal(await page.getByRole('textbox',{name:'Title (required)',exact:true}).count(),0);
           assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true);
           assert.equal(await page.evaluate(()=>localStorage.length),0,'Cancel does not save a draft');
-          const add=page.locator('#'+trigger),target=await add.boundingBox();await add.click({position:{x:target.width/2,y:target.height-1}});assert.equal(await page.locator('#draftForm').isVisible(),true,'lower-edge pointer activation opens the draft form');assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true);
+          const add=page.locator('#'+trigger),target=await add.boundingBox();await add.click({position:{x:target.width/2,y:target.height-3}});assert.equal(await page.locator('#draftForm').isVisible(),true,'lower-edge pointer activation opens the draft form');assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true);
           await page.locator('#cancelDraft').press('Space');assert.equal(await page.locator('#draftForm').isVisible(),false);assert.equal(await add.evaluate(el=>el===document.activeElement),true);assert.equal(await page.locator('#draftTitle').inputValue(),'Unsaved fixture');assert.equal(await page.evaluate(()=>localStorage.length),0);
         }
       }
