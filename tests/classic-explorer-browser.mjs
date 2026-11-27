@@ -641,6 +641,33 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('#graph .node').nth(0).evaluate(el=>el===document.activeElement),true);
       console.log('PASS: keyboard inspection focuses visible details heading, Tab reaches source link, Escape returns to originating case/source, pointer focus and modified keys remain unchanged.');
+      const completeStart=references.length,completeCaseStart=cases.length;
+      const tailUrl='https://records.example/complete?id=9#page=7';
+      for(let i=0;i<7;i++)references.push({case_id:1,title:'Complete citation '+i,publisher:'Fixture archive',url:i===6?tailUrl:'https://records.example/complete?id='+i});
+      references.push({case_id:1,title:'Repeated complete record',url:tailUrl},{case_id:1,title:'Blocked credential fixture',url:'https://user:secret@records.example/private'},{case_id:1,title:'Blocked script fixture',url:'javascript:alert(1)'});
+      cases.push({id:94,title:'Short citation case'});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===9);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        assert.match(await page.locator('#status').textContent(),/^8 of 11 unique public source records shown/);
+        const disclosure=page.locator('#allSources'),summary=disclosure.locator('summary');
+        assert.equal(await summary.textContent(),'View all 11 indexed citations');assert.equal(await disclosure.getAttribute('open'),null);
+        assert.equal(await disclosure.getByRole('link').count(),0,'closed disclosure hides its links from role navigation');
+        const graphHtml=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox'),requests=caseRequests;
+        await summary.press('Enter');assert.equal(await disclosure.locator('li').count(),11);assert.equal(await disclosure.getByRole('link').count(),9,'unsafe records have no actionable link');
+        assert.doesNotMatch(await disclosure.textContent(),/user:secret|javascript:alert/);
+        const tail=disclosure.locator('a').last();assert.equal(await tail.getAttribute('href'),tailUrl);assert.match(await tail.textContent(),/opens in new tab/);assert.equal(await tail.getAttribute('rel'),'noopener noreferrer');assert.equal(await tail.getAttribute('target'),'_blank');
+        assert.ok(await disclosure.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'full destination list wraps');
+        await summary.press('Tab');assert.equal(await disclosure.locator('a').first().evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#graph').innerHTML(),graphHtml);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(caseRequests,requests);
+        await summary.press('Space');assert.equal(await disclosure.getAttribute('open'),null);await summary.press('Enter');
+        await tail.focus();await page.goto('https://classic.example/connection-explorer.html#case=94');await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Short citation case');
+        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'case hash switch restores focus from a removed citation link');assert.equal(await disclosure.isVisible(),false);assert.equal(await disclosure.locator('li').count(),0,'case change removes old citation destinations');
+        await page.goto('https://classic.example/connection-explorer.html#case=1');await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===9);assert.equal(await disclosure.getAttribute('open'),null);
+      }
+      references.splice(completeStart);cases.splice(completeCaseStart);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      assert.equal(await page.locator('#allSources').isVisible(),false);
+      console.log('PASS: cases over eight citations retain eight diagram cards plus a native complete-list disclosure at 320/768/1280px; 11 distinct records/9 safe full links, exact tail query/fragment, true-repeat dedup, keyboard Enter/Space/Tab, no unsafe URL echo, wrapping and hash-switch focus cleanup pass without graph/view/refetch changes.');
       const unavailableRefsStart=references.length,unavailableCasesStart=cases.length,sharedUrl=references[0].url;
       references.push({case_id:9090,title:'Unindexed case citation fixture',url:sharedUrl});
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
