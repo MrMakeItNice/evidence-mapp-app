@@ -1313,6 +1313,12 @@ try {
   });
   await touch.goto('https://classic.example/connection-explorer.html');await touch.waitForFunction(()=>document.querySelectorAll('#graph .node').length===1);
   const touchCards=await touch.locator('#graph').innerHTML(),touchHash=new URL(touch.url()).hash;
+  await touch.locator('#graph .node').tap();
+  await touch.getByRole('button',{name:'Return to diagram card',exact:true}).tap();
+  assert.equal(await touch.locator('#graph .node').evaluate(el=>el===document.activeElement),true,'native emulated touch return restores diagram card focus');
+  assert.ok(await touch.locator('#graph .node').evaluate(el=>{const r=el.querySelector('rect').getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight}),'touch return reveals card');
+  assert.equal(await touch.locator('#graph').getAttribute('viewBox'),'0 0 760 520');assert.equal(await touch.locator('#graph').innerHTML(),touchCards);assert.equal(new URL(touch.url()).hash,touchHash);
+  console.log('PASS: phone emulated touch inspects a card and activates visible Return, restoring the exact card and preserving view/evidence/case.');
   await touch.locator('#search').fill('Touch');await touch.getByRole('button',{name:'Clear search',exact:true}).tap();
   assert.equal(await touch.locator('#search').inputValue(),'');assert.equal(await touch.locator('#search').evaluate(el=>el===document.activeElement),true);assert.equal(await touch.locator('#graph').innerHTML(),touchCards);assert.equal(new URL(touch.url()).hash,touchHash);
   console.log('PASS: phone emulated touch Clear search resets input with focus return while preserving the current graph/case.');
