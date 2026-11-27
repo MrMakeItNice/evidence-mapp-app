@@ -109,7 +109,8 @@ try {
           else if(origin==='heading')await card.press('Enter');
           else{await source.press('Enter');await page.keyboard.press('Tab');assert.equal(await page.locator('#detail a').evaluate(el=>el===document.activeElement),true)}
           await page.keyboard.press(modifier+'+k');
-          assert.ok(await page.locator('#search').evaluate(el=>el===document.activeElement&&el.selectionStart===0&&el.selectionEnd===el.value.length&&el.getBoundingClientRect().top>=0&&el.getBoundingClientRect().bottom<=innerHeight),'shortcut reveals/focuses search and selects its current text');
+          const shortcutState=await page.locator('#search').evaluate(el=>({focused:el===document.activeElement,start:el.selectionStart,end:el.selectionEnd,length:el.value.length,top:el.getBoundingClientRect().top,bottom:el.getBoundingClientRect().bottom,height:innerHeight}));
+          assert.ok(shortcutState.focused&&shortcutState.start===0&&shortcutState.end===shortcutState.length&&shortcutState.top>=0&&shortcutState.bottom<=shortcutState.height,'shortcut state '+JSON.stringify({width,modifier,origin,...shortcutState}));
           assert.equal(await page.locator('#search').inputValue(),'Fixture');assert.equal(await page.locator('#results button').count(),1);
           assert.equal(await page.locator('#graph').innerHTML(),cards);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);
         }
