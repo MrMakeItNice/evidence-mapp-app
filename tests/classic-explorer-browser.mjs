@@ -647,6 +647,26 @@ try {
       await page.evaluate(({key,value})=>{Storage.prototype.setItem=window.fixtureSetItem;delete window.fixtureSetItem;localStorage.setItem(key,value)},{key:draftStorageKey,value:previousDrafts});
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       console.log('PASS: native Enter/Space draft deletion retains named next/previous focus and visible outline at 320/768/1280px; last removal focuses Add case with normal Tab continuation and accurate status; storage failure preserves all drafts, row controls and focus without page errors.');
+      const exportBefore=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);let emptyExportDownloads=0;const trackEmptyExport=()=>emptyExportDownloads++;page.on('download',trackEmptyExport);
+      for(const width of [320,768,1280])for(const raw of [null,'[]']) {
+        await page.setViewportSize({width,height:900});await page.evaluate(({key,raw})=>raw===null?localStorage.removeItem(key):localStorage.setItem(key,raw),{key:draftStorageKey,raw});await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+        await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Unfinished export fixture');await page.locator('#draftNotes').fill('Retain unfinished notes');
+        const requests=caseRequests,hash=new URL(page.url()).hash;
+        for(const key of ['Enter','Space']) {
+          await page.getByRole('button',{name:'Export my drafts',exact:true}).press(key);
+          assert.equal(await page.locator('#draftStatus').textContent(),'No saved drafts to export. Add and save a private draft first; unfinished form text is not included.');assert.equal(await page.locator('#draftStatus').getAttribute('role'),'status');
+          assert.ok(await page.locator('#draftStatus').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth));
+          assert.equal(await page.locator('#exportDrafts').evaluate(el=>el===document.activeElement),true);
+          assert.equal(await page.locator('#draftTitle').inputValue(),'Unfinished export fixture');assert.equal(await page.locator('#draftNotes').inputValue(),'Retain unfinished notes');assert.equal(await page.locator('#draftForm').isVisible(),true);
+          assert.equal(await page.evaluate(k=>localStorage.getItem(k),draftStorageKey),raw);assert.equal(caseRequests,requests);assert.equal(new URL(page.url()).hash,hash);
+        }
+      }
+      assert.equal(emptyExportDownloads,0,'missing/empty storage never downloads an empty archive');
+      await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:exportBefore});await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      const exportDownload=page.waitForEvent('download');await page.locator('#exportDrafts').press('Space');const exported=await exportDownload;
+      assert.deepEqual(JSON.parse(await readFile(await exported.path(),'utf8')),{format:'evidence-atlas-drafts-v1',drafts:JSON.parse(exportBefore)});assert.equal(exported.suggestedFilename(),'evidence-atlas-drafts.json');
+      assert.equal(await page.locator('#draftStatus').textContent(),'Private draft export download requested. Submission and publication require review.');assert.equal(await page.evaluate(k=>localStorage.getItem(k),draftStorageKey),exportBefore);page.off('download',trackEmptyExport);
+      console.log('PASS: empty/missing draft exports show wrapping status guidance and retain native Enter/Space focus, unfinished form text, stored bytes, case and request count at 320/768/1280px without downloads; populated export retains exact archive bytes/filename and reports download requested.');
       let draftDownloads=0;page.on('download',()=>draftDownloads++);
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
