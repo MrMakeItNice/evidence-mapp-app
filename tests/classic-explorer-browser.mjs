@@ -1062,6 +1062,20 @@ try {
         assert.equal(await page.locator('#detail a').evaluate(el=>el===document.activeElement),true);
         await page.keyboard.press('Escape');
       }
+      const sourceTargetRequests=[],sourceTargetRoute=async route=>{if(route.request().isNavigationRequest()){sourceTargetRequests.push(route.request().url());return route.fulfill({contentType:'text/html',body:'<h1>Indexed destination fixture</h1>'})}return route.fulfill({status:204})};
+      await page.context().route('https://records.example/**',sourceTargetRoute);
+      for(const width of [320,768,1280])for(const [index,url] of [[1,'https://records.example/a'],[3,destination]]) {
+        await page.setViewportSize({width,height:900});const card=page.locator('#graph .node').nth(index);await card.press('Enter');await page.keyboard.press('Tab');const link=page.locator('#detail>a');
+        assert.equal(await link.evaluate(el=>el===document.activeElement&&el.matches(':focus-visible')&&parseFloat(getComputedStyle(el).outlineWidth)>=3),true);
+        const target=await link.evaluate(el=>{const r=el.getBoundingClientRect();return {width:r.width,height:r.height,left:r.left,right:r.right,viewport:innerWidth,overflow:el.scrollWidth>el.clientWidth}});
+        assert.ok(target.width>=44&&target.height>=44&&target.left>=0&&target.right<=target.viewport&&!target.overflow,'source action has a wrapping 44px target inside the viewport');
+        const hash=new URL(page.url()).hash,view=await readView(),requests=caseRequests,popupReady=page.context().waitForEvent('page');
+        await link.click({position:{x:target.width/2,y:target.height-3}});const popup=await popupReady;await popup.waitForLoadState('domcontentloaded');assert.equal(popup.url(),url);assert.equal(await popup.locator('h1').textContent(),'Indexed destination fixture');await popup.close();
+        assert.equal(new URL(page.url()).hash,hash);assert.deepEqual(await readView(),view);assert.equal(caseRequests,requests);assert.equal(await link.getAttribute('rel'),'noopener noreferrer');
+        await link.focus();await page.keyboard.press('Escape');assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+      }
+      await page.context().unroute('https://records.example/**',sourceTargetRoute);assert.equal(sourceTargetRequests.length,6);
+      console.log('PASS: source preview actions have non-overflowing 44px targets and visible native Tab focus at 320/768/1280px; lower-padding pointer clicks open exact short/query/fragment destinations in intercepted new tabs without changing case/view/public requests; Escape returns to the card.');
       for(let i=4;i<7;i++) {
         await page.locator('#graph .node').nth(i).focus();await page.keyboard.press('Enter');
         assert.equal(await page.locator('#detail a').count(),0);
