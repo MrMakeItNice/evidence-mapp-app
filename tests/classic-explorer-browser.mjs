@@ -184,6 +184,36 @@ try {
       assert.match(await page.locator('#diagramKeys').textContent(),/Escape stops an active drag/);
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
+        for(const zoomClicks of [1,5]) {
+          await page.locator('#resetView').click();
+          for(let i=0;i<zoomClicks;i++)await page.locator('#zoomIn').click();
+          const start=await readView(),cards=await page.locator('#graph').innerHTML(),hash=new URL(page.url()).hash,zoomText=await page.locator('#zoomStatus').textContent();
+          await page.locator('#resetView').press('Tab');
+          assert.deepEqual(await readView(),start,'already visible case keeps its position on keyboard entry');
+          for(const [index,key] of [[0,null],[1,'Tab'],[2,'Tab'],[1,'Shift+Tab'],[0,'Shift+Tab']]) {
+            if(key)await page.keyboard.press(key);
+            const card=page.locator('#graph .node').nth(index);
+            assert.equal(await card.evaluate(el=>el===document.activeElement),true,'native Tab/Shift+Tab reaches the expected card');
+            assert.ok(await card.evaluate(el=>{const r=el.querySelector('rect').getBoundingClientRect(),g=el.ownerSVGElement.getBoundingClientRect();return r.left>=g.left-1&&r.right<=g.right+1&&r.top>=g.top-1&&r.bottom<=g.bottom+1&&r.top>=-1&&r.bottom<=innerHeight+1}),`keyboard card fully visible at ${width}px, zoom clicks ${zoomClicks}`);
+            assert.deepEqual((await readView()).slice(2),start.slice(2),'keyboard reveal preserves zoom');
+            assert.equal(await page.locator('#zoomStatus').textContent(),zoomText);
+            assert.equal(await page.locator('#graph').innerHTML(),cards);
+            assert.equal(new URL(page.url()).hash,hash);
+          }
+        }
+        await page.locator('#resetView').click();await page.locator('#zoomIn').click();
+        await page.locator('#graph').scrollIntoViewIfNeeded();
+        const beforePointer=await readView();
+        const point=await page.locator('#graph .node').nth(1).evaluate(el=>{const r=el.querySelector('rect').getBoundingClientRect(),g=el.ownerSVGElement.getBoundingClientRect();return {x:(Math.max(r.left,g.left)+Math.min(r.right,g.right))/2,y:(Math.max(r.top,g.top)+Math.min(r.bottom,g.bottom))/2}});
+        await page.mouse.click(point.x,point.y);
+        assert.equal(await page.locator('#detail h2').textContent(),'Fixture source A');
+        assert.deepEqual(await readView(),beforePointer,'pointer inspection does not recenter a partially clipped source card');
+      }
+      await page.locator('#resetView').click();
+      console.log('PASS: native Tab/Shift+Tab reveals cards at 125%/maximum zoom across 320/768/1280px, preserving zoom/evidence; pointer inspection preserves view.');
+
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
         for(const zoomed of [false,true]) {
           await page.locator('#resetView').click();if(zoomed)await page.locator('#zoomIn').click();
           await page.locator('#graph').scrollIntoViewIfNeeded();
