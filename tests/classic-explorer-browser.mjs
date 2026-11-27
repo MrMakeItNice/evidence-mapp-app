@@ -310,6 +310,12 @@ try {
       assert.equal(await page.getByRole('button',{name:'Move view left',exact:true}).count(),0,'collapsed controls are outside accessible buttons');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
+        const disclosure=page.locator('#panTools summary'),beforeDisclosure=await readView(),disclosureHash=new URL(page.url()).hash;
+        const target=await disclosure.evaluate(el=>{const r=el.getBoundingClientRect();return {width:r.width,height:r.height,left:r.left,right:r.right,viewport:innerWidth,display:getComputedStyle(el).display}});
+        assert.ok(target.width>=44&&target.height>=44&&target.left>=0&&target.right<=target.viewport,'pan disclosure has a complete 44px target within the viewport');assert.equal(target.display,'list-item','native disclosure marker retained');
+        await disclosure.click({position:{x:target.width/2,y:target.height-3}});assert.equal(await page.locator('#panLeft').isVisible(),true,'new lower padding is clickable');
+        assert.deepEqual(await readView(),beforeDisclosure);assert.equal(new URL(page.url()).hash,disclosureHash);
+        await disclosure.press('Space');assert.equal(await page.locator('#panLeft').isVisible(),false);assert.equal(await disclosure.evaluate(el=>el===document.activeElement),true);
         await page.locator('#panTools summary').press('Enter');
         assert.equal(await page.locator('#panLeft').isVisible(),true);
         for(const zoomed of [false,true]) {
@@ -331,7 +337,7 @@ try {
         await page.locator('#panTools summary').press('Enter');
         assert.equal(await page.locator('#panLeft').isVisible(),false);
       }
-      console.log('PASS: compact movement disclosure opens/closes by keyboard; four single-click pan buttons preserve zoom/cards/hash at 100%/125% and 320/768/1280px, have 44px targets, support Space, and Reset restores the view.');
+      console.log('PASS: 44px native movement disclosure fits 320/768/1280px, lower-padding pointer activation opens it, Space closes with retained focus and no view/hash change; disclosure opens/closes by keyboard; four single-click pan buttons preserve zoom/cards/hash at 100%/125% and 320/768/1280px, have 44px targets, support Space, and Reset restores the view.');
 
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
