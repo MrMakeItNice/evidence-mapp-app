@@ -127,8 +127,9 @@ try {
             await page.keyboard.type('Evidence notes fixture');await page.keyboard.press('Enter');await page.keyboard.type('Uncertainty retained.');
             assert.equal(await notes.inputValue(),'Evidence notes fixture\nUncertainty retained.','Enter edits multiline notes without submitting');
             await page.keyboard.press('Tab');assert.equal(await page.getByRole('button',{name:'Save private draft',exact:true}).evaluate(el=>el===document.activeElement),true);
-            await page.waitForFunction(()=>getComputedStyle(document.querySelector('#draftNotes')).outlineWidth!=='3px',{},{timeout:5000});
-            assert.equal(await notes.evaluate(el=>el.matches(':focus-visible')),false,'notes ring clears on blur');
+            const blurred=await notes.evaluate(el=>({focused:el===document.activeElement,visible:el.matches(':focus-visible'),outline:getComputedStyle(el).outline}));
+            assert.equal(blurred.focused,false);assert.equal(blurred.visible,false,'notes lose focus-visible on blur');
+            assert.equal(await notes.evaluate(el=>getComputedStyle(el).outlineStyle),'none','no outline is drawn on blurred notes: '+JSON.stringify(blurred));
             await page.keyboard.press('Shift+Tab');assert.equal(await notes.evaluate(el=>el===document.activeElement&&getComputedStyle(el).outlineWidth==='3px'),true,'reverse Tab restores visible notes focus');
             assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored,'focus and typing do not persist draft');
             assert.equal(caseRequests,requests);assert.equal(new URL(page.url()).hash,hash);
