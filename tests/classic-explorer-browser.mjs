@@ -48,6 +48,7 @@ try {
       console.log('PASS: baseline reproduces image wrapper; Chromium retains focusable card buttons despite the image role.');
     } else {
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='search'&&n.name?.value==='Published investigations'),'native accessibility tree exposes the named search landmark');
+      assert.equal(await page.title(),'Case #1: Fixture investigation | Evidence Atlas','initial case has a descriptive native document title');
       const nav=page.getByRole('navigation',{name:'Explorer navigation',exact:true});
       const navLabels=['Home','Paper Trails','New Evidence Board'],navPaths=['/discover.html','/paper-trails.html','/evidence-board.html'];
       for(const width of [320,768,1280]) {
@@ -1057,7 +1058,7 @@ try {
         await page.setViewportSize({width,height:900});
         await page.locator('#graph .node').nth(3).focus();await page.keyboard.press('Enter');
         assert.equal(await page.locator('#detail .indexed-url').textContent(),'Indexed URL: '+destination);
-        assert.equal(await page.locator('#detail a').getAttribute('href'),destination);
+        assert.equal(await page.locator('#detail a').getAttribute('href'),destination);assert.equal(await page.title(),'Case #1: Fixture investigation | Evidence Atlas','source preview keeps the owning investigation in the tab title');
         assert.match(await page.locator('#detail a').textContent(),/records.example.*opens in new tab/);
         assert.equal(await page.locator('#detail a').getAttribute('target'),'_blank');
         assert.equal(await page.locator('#detail a').getAttribute('rel'),'noopener noreferrer');
@@ -1119,7 +1120,7 @@ try {
         await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Fixture investigation');
         await page.goForward();
         await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Related fixture investigation');
-        assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: Related fixture investigation · Case #2. Search again to find another case.');
+        assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: Related fixture investigation · Case #2. Search again to find another case.');assert.equal(await page.title(),'Case #2: Related fixture investigation | Evidence Atlas','history navigation updates the tab identity');
         await page.locator('#draftTitle').click();
         await page.goto('https://classic.example/connection-explorer.html#case=1');
         await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Fixture investigation');
@@ -1128,7 +1129,7 @@ try {
         await page.goto('https://classic.example/connection-explorer.html#case=999999');
         await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('No published investigation matches'));
         assert.equal(await page.locator('#detail h2').textContent(),'Fixture investigation');
-        assert.equal(await page.locator('#graph').getAttribute('viewBox'),view,'unknown case preserves the current graph');
+        assert.equal(await page.locator('#graph').getAttribute('viewBox'),view,'unknown case preserves the current graph');assert.equal(await page.title(),'Case #1: Fixture investigation | Evidence Atlas','unknown in-session link retains the displayed case title');
         await page.goBack();
         await page.waitForFunction(()=>document.querySelector('#search-status').textContent.startsWith('Opened investigation: Fixture investigation · Case #1.'));
         assert.equal(await page.locator('#graph').getAttribute('viewBox'),view,'returning to the already open case preserves its view');
@@ -1141,7 +1142,7 @@ try {
       console.log('PASS: hash links and browser Back/Forward restore the matching investigation at 320/768/1280px without data refetch or changing private drafts; explorer focus/Escape recover, draft focus is retained, and unknown case links are explained without fabricated records.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});await page.goto('https://classic.example/connection-explorer.html#case=999999');await page.reload();await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Investigation unavailable');
-        assert.equal(new URL(page.url()).hash,'#case=999999','initial unavailable link is never rewritten to the first case');assert.equal(await page.locator('#graph .node').count(),0);assert.equal(await page.locator('#detail a').count(),0);assert.equal(await page.locator('#allSources').isVisible(),false);assert.equal(await page.locator('#allSourcesList li').count(),0);
+        assert.equal(new URL(page.url()).hash,'#case=999999','initial unavailable link is never rewritten to the first case');assert.equal(await page.title(),'Investigation unavailable | Evidence Atlas');assert.equal(await page.locator('#graph .node').count(),0);assert.equal(await page.locator('#detail a').count(),0);assert.equal(await page.locator('#allSources').isVisible(),false);assert.equal(await page.locator('#allSourcesList li').count(),0);
         assert.equal(await page.locator('#search').isEnabled(),true);assert.equal(await page.locator('#retryLoad').isVisible(),false);assert.match(await page.locator('#search-status').textContent(),/loaded index.*Search published cases/);assert.equal(await page.locator('#search-status').getAttribute('role'),'status');assert.equal(await page.locator('#status').textContent(),'The requested investigation is not in the loaded public index.');assert.equal(await page.locator('#status').getAttribute('role'),'status');
         assert.ok(await page.locator('#detail').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth));
         await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Keep direct-link recovery notes');await page.locator('#draftNotes').fill('Unfinished recovery evidence');const saved=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),requests=caseRequests;
@@ -1182,6 +1183,7 @@ try {
       pauseCases=true;
       const paused=new Promise(resolve=>casesPaused=resolve);
       await page.reload();await paused;
+      assert.equal(await page.title(),'Loading investigations | Evidence Atlas');
       assert.equal(await page.locator('#search').isDisabled(),true,'loading search cannot report a false no-match');
       assert.equal(await page.locator('#search-status').textContent(),'Loading published case search…');
       assert.equal(await page.locator('#results button').count(),0);
@@ -1215,7 +1217,7 @@ try {
       assert.equal(await page.locator('#search-status').textContent(),'1 matching published case.');
       await page.locator('#results button').press('Enter');
       assert.equal(new URL(page.url()).hash,'#case=22');
-      assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: SearchMatch 20 · Case #22. Search again to find another case.');
+      assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: SearchMatch 20 · Case #22. Search again to find another case.');assert.equal(await page.title(),'Case #22: SearchMatch 20 | Evidence Atlas','search selection updates browser tab title');
       assert.equal(await page.locator('#results button').count(),0);
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
@@ -1385,6 +1387,7 @@ try {
       console.log('PASS: exact bare/#/Case-ID queries find and keyboard-open the correct equal-title record at 320/768/1280px with heading focus and Escape return; persistent instructions wrap, ID prefixes do not match other IDs, numeric title matches and existing title/selection behavior remain intact.');
       rejectCases=true;await page.reload();
       await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('unavailable'));
+      assert.equal(await page.title(),'Connection unavailable | Evidence Atlas');
       assert.equal(await page.locator('#search').isDisabled(),true);
       assert.equal(await page.locator('#search-status').textContent(),'Published case search is unavailable. Retry loading investigations.');
       assert.equal(await page.locator('#graph').evaluate(el=>{const event=new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true});el.dispatchEvent(event);return event.defaultPrevented}),false,'unavailable search shortcut is not intercepted');
@@ -1407,6 +1410,7 @@ try {
         rejectCases=false;pauseCases=true;
         const retryPaused=new Promise(resolve=>casesPaused=resolve),beforeRequests=caseRequests;
         await page.locator('#retryLoad').press('Enter');await retryPaused;
+        assert.equal(await page.title(),'Loading investigations | Evidence Atlas','retry clears stale error title');
         assert.equal(await page.locator('#retryLoad').getAttribute('aria-disabled'),'true');
         assert.equal(await page.locator('#retryLoad').textContent(),'Retrying…');
         assert.equal(await page.locator('#retryLoad').evaluate(el=>el===document.activeElement),true);
@@ -1416,6 +1420,7 @@ try {
         assert.equal(await page.locator('#retryLoad').isVisible(),false);
         assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
         assert.equal(new URL(page.url()).hash,'#case=24');
+        assert.equal(await page.title(),'Case #24: '+duplicateTitle+' | Evidence Atlas','recovery restores exact public investigation title');
         assert.equal(await page.locator('#graph .node').count(),2,'recovery restores actual indexed case/source only');
         assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),'Second distinct source');
         assert.equal(await page.locator('#draftTitle').inputValue(),'Preserve unfinished retry draft');
@@ -1463,7 +1468,7 @@ try {
       rejectCases=false;const emptyCaseSnapshot=cases.splice(0);
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});await page.reload();
-        await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='No published investigations');
+        await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='No published investigations');assert.equal(await page.title(),'No published investigations | Evidence Atlas');
         assert.equal(await page.locator('#search').isDisabled(),true,'empty index cannot offer misleading searches');
         assert.equal(await page.locator('#search-status').textContent(),'No published cases available. Retry loading investigations.');
         assert.equal(await page.locator('#search-status').getAttribute('role'),'status');
@@ -1487,9 +1492,11 @@ try {
         const stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
         cases.push(...emptyCaseSnapshot);pauseCases=true;const recoveryPaused=new Promise(resolve=>casesPaused=resolve),beforeRecovery=caseRequests;
         await retry.press('Enter');await recoveryPaused;
+        assert.equal(await page.title(),'Loading investigations | Evidence Atlas');
         assert.equal(await retry.getAttribute('aria-disabled'),'true');assert.equal(await page.locator('#draftTitle').inputValue(),'Keep empty-index draft');
         pauseCases=false;releaseCases();await page.waitForFunction(()=>!document.querySelector('#search').disabled);
         assert.equal(caseRequests,beforeRecovery+1);assert.equal(await retry.isVisible(),false);assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.title(),'Case #24: '+duplicateTitle+' | Evidence Atlas');
         assert.equal(new URL(page.url()).hash,hash);assert.equal(hash,'#case=24');assert.equal(await page.locator('#graph .node').count(),2,'recovery restores exact requested published case/source');
         assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),'Second distinct source');
         assert.equal(await page.locator('#draftTitle').inputValue(),'Keep empty-index draft');assert.equal(await page.locator('#draftNotes').inputValue(),'Keep unfinished research notes');assert.equal(await page.locator('#draftForm').isVisible(),true);
@@ -1499,6 +1506,7 @@ try {
       cases.push(...emptyCaseSnapshot);
       console.log('PASS: successful empty index has explicit non-error guidance, disabled search and native Tab/Space/Enter retry at 320/768/1280px; repeated empty results keep retry focus, busy retries deduplicate, and later recovery restores exact case/source/search focus without reload or lost draft text/storage.');
       console.log('PASS: loading, unavailable and empty published-data states stay distinct; search counts, 15-of-20 truncation, no-match and selected-case feedback work at 320/768/1280px without query updates stealing focus or changing the case.');
+      console.log('PASS: native document titles identify initial/search/history investigations and preserve owning case during source inspection; loading, unavailable-link, empty-index, connection-error and retry recovery titles pass without private draft text at 320/768/1280px.');
       console.log('PASS: named group exposes all case/source buttons; native Tab, Enter/Space inspection and Tab exit work at 320/768/1280px.');
     }
     assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);
