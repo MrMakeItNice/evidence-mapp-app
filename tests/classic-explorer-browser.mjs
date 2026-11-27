@@ -825,6 +825,37 @@ try {
       }
       references.splice(0,references.length,...namedRefs);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       console.log('PASS: native AX and Tab/Enter/Space/Escape distinguish same-title and untitled citation cards at 320/768/1280px; numbering follows unique URLs, exact destinations remain separate and unsafe credentials are not exposed.');
+      const listIdentityStart=references.length,listTitle='Repeated list title '+('long record '.repeat(16)).trim();
+      for(let i=0;i<9;i++)references.push({case_id:1,title:i===2?undefined:listTitle,url:i===7?'https://user:secret@records.example/blocked':'https://records.example/list?id='+i+'#page='+i});
+      references.push({case_id:1,title:'True list duplicate excluded',url:'https://records.example/list?id=0#page=0'});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===9);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        const list=page.locator('#allSources'),summary=list.locator('summary');await summary.press('Enter');
+        assert.equal(await list.getByRole('button').count(),11,'numbered list retains every unique indexed citation');
+        const labels=await list.getByRole('button').allTextContents();assert.equal(new Set(labels).size,11,'same-title list controls have distinct visible names');
+        const tree=await cdp.send('Accessibility.getFullAXTree'),names=tree.nodes.filter(n=>!n.ignored&&n.role?.value==='button').map(n=>n.name?.value);
+        for(const label of labels)assert.equal(names.filter(n=>n===label).length,1,'native accessible name exactly matches unique visible button text');
+        assert.equal(await page.locator('#graph').getByRole('button',{name:listTitle+' · Citation 3 of 11',exact:true}).count(),1,'list numbers match diagram citation positions');
+        assert.equal(await page.locator('#graph').getByRole('button',{name:listTitle+' · Citation 11 of 11',exact:true}).count(),0,'tail fixture is beyond diagram limit');
+        const graph=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox'),hash=new URL(page.url()).hash,requests=caseRequests;
+        await summary.press('Tab');for(let i=0;i<4;i++)await page.keyboard.press('Tab');
+        for(const [pos,row,key] of [[3,0,'Enter'],[4,1,'Space'],[5,2,'Enter'],[10,7,'Space'],[11,8,'Enter']]) {
+          const label='Inspect citation: '+(pos===5?'Source document':listTitle)+' · Citation '+pos+' of 11';
+          const button=list.getByRole('button',{name:label,exact:true});
+          if(pos===3)assert.equal(await button.evaluate(el=>el===document.activeElement),true,'native Tab reaches first repeated-title control');
+          assert.ok(await button.evaluate(el=>{const r=el.getBoundingClientRect();return r.height>=44&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth}),'long unique label wraps within viewport');
+          await button.press(key);assert.equal(await page.locator('#detail h2').textContent(),pos===5?'Source document':listTitle);
+          if(pos===10){assert.equal(await page.locator('#detail a').count(),0);assert.doesNotMatch(await page.locator('#detail').textContent(),/user:secret/)}
+          else assert.equal(await page.locator('#detail a').getAttribute('href'),'https://records.example/list?id='+row+'#page='+row);
+          await page.getByRole('button',{name:'Return to citation list',exact:true}).press('Enter');
+          assert.equal(await button.evaluate(el=>el===document.activeElement),true,'visible Return restores exact numbered control');
+        }
+        assert.equal(await page.locator('#graph').innerHTML(),graph);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);
+        assert.doesNotMatch(await list.textContent(),/user:secret/);await summary.press('Space');
+      }
+      references.splice(listIdentityStart);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      console.log('PASS: same-title complete-list inspection controls have unique matching visible/native AX citation positions at 320/768/1280px; long labels wrap, duplicates deduplicate, Enter/Space opens exact tail/untitled/blocked records and Return reaches the exact origin without graph/view/hash/refetch changes.');
       const completeStart=references.length,completeCaseStart=cases.length;
       const tailUrl='https://records.example/complete?id=9#page=7';
       for(let i=0;i<7;i++)references.push({case_id:1,title:'Complete citation '+i,publisher:'Fixture archive',url:i===6?tailUrl:'https://records.example/complete?id='+i});
@@ -845,7 +876,7 @@ try {
         const tail=disclosure.locator('a').last();assert.equal(await tail.getAttribute('href'),tailUrl);assert.match(await tail.textContent(),/opens in new tab/);assert.equal(await tail.getAttribute('rel'),'noopener noreferrer');assert.equal(await tail.getAttribute('target'),'_blank');
         assert.ok(await disclosure.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'full destination list wraps');
         await summary.press('Tab');assert.equal(await disclosure.getByRole('button').first().evaluate(el=>el===document.activeElement),true);
-        const inspectTail=disclosure.getByRole('button',{name:'Inspect citation: Complete citation 6',exact:true});
+        const inspectTail=disclosure.getByRole('button',{name:'Inspect citation: Complete citation 6 · Citation 9 of 11',exact:true});
         assert.equal(await disclosure.getByRole('button').count(),11,'all unique citations have in-page inspection');
         for(const key of ['Enter','Space']) {
           await inspectTail.press(key);
@@ -865,7 +896,7 @@ try {
           assert.equal(await inspectTail.evaluate(el=>el===document.activeElement),true,'visible return restores exact tail citation control');assert.notEqual(await disclosure.getAttribute('open'),null);
         }
 
-        await disclosure.getByRole('button',{name:'Inspect citation: Blocked credential fixture',exact:true}).press('Enter');
+        await disclosure.getByRole('button',{name:'Inspect citation: Blocked credential fixture · Citation 10 of 11',exact:true}).press('Enter');
         assert.equal(await page.locator('#detail a').count(),0);assert.doesNotMatch(await page.locator('#detail').textContent(),/user:secret|javascript:alert/);
         assert.match(await page.locator('#detail').textContent(),/No safe HTTP/);await page.keyboard.press('Escape');
         await inspectTail.press('Enter');await summary.click();assert.equal(await disclosure.getAttribute('open'),null);
