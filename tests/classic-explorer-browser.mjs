@@ -760,6 +760,35 @@ try {
         }
       }
       console.log('PASS: native Enter rejects whitespace-only case/trail titles with a visible linked error and field focus at 320/768/1280px without saving or losing notes/context; editing clears custom validity and Space saves exactly one corrected draft with normal reset/focus return.');
+      for(const width of [320,768,1280])for(const trigger of ['newCase','newTrail']) {
+        await page.setViewportSize({width,height:900});await page.locator('#'+trigger).click();
+        await page.locator('#draftTitle').fill('URL feedback fixture');await page.locator('#draftNotes').fill('Keep URL repair notes');await page.locator('#draftRelated').fill('Keep related record');
+        const field=page.getByRole('textbox',{name:'Original source URL (required for paper trails)',exact:true}),before=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),requests=caseRequests;
+        assert.equal(await field.getAttribute('aria-describedby'),'draftUrlHelp');assert.equal(await page.locator('#draftUrlError').isVisible(),false);
+        for(const value of trigger==='newTrail'?['','not-a-url','/relative-record']:['not-a-url','/relative-record']) {
+          await field.fill(value);await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
+          const message=value?'Enter a complete URL, such as https://example.org/record.':'Enter the original source URL for this paper trail.';
+          assert.equal(await field.evaluate(el=>el===document.activeElement),true,'native validation focuses the existing invalid URL field');
+          assert.equal(await field.getAttribute('aria-invalid'),'true');assert.equal(await field.getAttribute('aria-describedby'),'draftUrlHelp draftUrlError');
+          assert.equal(await page.locator('#draftUrlError').textContent(),message);assert.equal(await page.locator('#draftUrlError').isVisible(),true);assert.equal(await field.evaluate(el=>el.validationMessage),message);
+          assert.ok(await page.locator('#draftUrlError').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'persistent URL feedback wraps');
+          await field.press('Tab');assert.equal(await page.locator('#draftUrlError').isVisible(),true,'error remains after browser popup/focus leaves');
+          assert.equal(await page.locator('#draftTitle').inputValue(),'URL feedback fixture');assert.equal(await page.locator('#draftNotes').inputValue(),'Keep URL repair notes');assert.equal(await page.locator('#draftRelated').inputValue(),'Keep related record');
+          assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),before,'invalid URL cannot save a draft');
+        }
+        const destination='https://records.example/repaired?id=42#page=8';await field.fill(destination);
+        assert.equal(await field.getAttribute('aria-invalid'),null);assert.equal(await field.getAttribute('aria-describedby'),'draftUrlHelp');assert.equal(await page.locator('#draftUrlError').isVisible(),false);assert.equal(await field.evaluate(el=>el.validationMessage),'');
+        await page.getByRole('button',{name:'Save private draft',exact:true}).press('Space');
+        const stored=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),draftStorageKey);
+        assert.equal(stored.length,JSON.parse(before).length+1);assert.equal(stored.at(-1).url,destination);assert.equal(stored.at(-1).notes,'Keep URL repair notes');assert.equal(await page.locator('#draftForm').isVisible(),false);
+        assert.equal(await page.locator('#draftUrlError').isVisible(),false);assert.equal(await field.getAttribute('aria-describedby'),'draftUrlHelp');assert.equal(caseRequests,requests);
+        await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:before});await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      }
+      await page.locator('#newTrail').click();await page.locator('#draftTitle').fill('Optional URL mode fixture');await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
+      assert.equal(await page.locator('#draftUrl').getAttribute('aria-invalid'),'true');
+      await page.locator('#newCase').click();assert.equal(await page.locator('#draftUrl').getAttribute('aria-invalid'),null);assert.equal(await page.locator('#draftUrl').evaluate(el=>el.validity.valid&&!el.required),true,'switch to optional case URL clears obsolete required error');
+      await page.locator('#draftForm').evaluate(el=>el.reset());await page.locator('#cancelDraft').click();
+      console.log('PASS: native missing/malformed URL validation has persistent linked inline feedback at 320/768/1280px for case/trail forms, preserves notes/context/storage, clears on editing/reset/mode switch and saves an exact corrected query/fragment via Space without public requests.');
       await page.locator('#search').focus();
       await page.locator('#graph .node').nth(1).click();
       assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),false,'pointer inspection does not focus heading');
