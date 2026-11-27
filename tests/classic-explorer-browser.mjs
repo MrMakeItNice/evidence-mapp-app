@@ -109,6 +109,36 @@ try {
         assert.ok(await searchRegion.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'landmark preserves page reflow');
       }
       console.log('PASS: native AX exposes the single Published investigations search landmark with field/instructions/status/retry/quick suggestions, excluding diagram/private editor; no new Tab stop, filtering/Enter retain focus and case/zoom/cards at 320/768/1280px.');
+      for(const forcedColors of ['none','active']) {
+        await page.emulateMedia({forcedColors});
+        for(const width of [320,768,1280]) {
+          await page.setViewportSize({width,height:900});
+          for(const trigger of ['newCase','newTrail']) {
+            await page.locator('#'+trigger).click();
+            const notes=page.getByRole('textbox',{name:'What does this evidence show?',exact:true});
+            const stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),requests=caseRequests,hash=new URL(page.url()).hash;
+            await page.locator('#draftTitle').fill('Notes focus fixture');
+            await page.locator('#draftTitle').press('Tab');await page.keyboard.press('Tab');await page.keyboard.press('Tab');
+            assert.equal(await notes.evaluate(el=>el===document.activeElement&&el.matches(':focus-visible')),true,'native Tab reaches the labeled notes editor');
+            const ring=await notes.evaluate(el=>{const s=getComputedStyle(el);return {width:s.outlineWidth,style:s.outlineStyle,color:s.outlineColor,background:s.backgroundColor}});
+            assert.equal(ring.width,'3px');assert.equal(ring.style,'solid');assert.notEqual(ring.color,ring.background,'notes ring remains distinct in forced colors');
+            if(forcedColors==='none')assert.equal(ring.color,'rgb(100, 227, 196)','notes reuse existing mint focus color');
+            assert.ok(await notes.evaluate(el=>{const r=el.getBoundingClientRect();return r.left>=3&&r.right<=innerWidth-3}),'focus outline fits narrow viewport');
+            await page.keyboard.type('Evidence notes fixture');await page.keyboard.press('Enter');await page.keyboard.type('Uncertainty retained.');
+            assert.equal(await notes.inputValue(),'Evidence notes fixture\nUncertainty retained.','Enter edits multiline notes without submitting');
+            await page.keyboard.press('Tab');assert.equal(await page.getByRole('button',{name:'Save private draft',exact:true}).evaluate(el=>el===document.activeElement),true);
+            assert.notEqual(await notes.evaluate(el=>getComputedStyle(el).outlineWidth),'3px','notes ring clears on blur');
+            await page.keyboard.press('Shift+Tab');assert.equal(await notes.evaluate(el=>el===document.activeElement&&getComputedStyle(el).outlineWidth==='3px'),true,'reverse Tab restores visible notes focus');
+            assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored,'focus and typing do not persist draft');
+            assert.equal(caseRequests,requests);assert.equal(new URL(page.url()).hash,hash);
+            await page.locator('#cancelDraft').click();
+            assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true);
+            await page.locator('#'+trigger).click();await page.locator('#draftForm').evaluate(el=>el.reset());await page.locator('#cancelDraft').click();
+          }
+        }
+      }
+      await page.emulateMedia({forcedColors:'none'});
+      console.log('PASS: native Tab/Shift+Tab gives labeled draft notes a visible 3px focus ring in case/trail forms at 320/768/1280px and forced colors; multiline editing, blur, Cancel and no persistence/refetch remain intact.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Unfinished clear-search fixture');
