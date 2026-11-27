@@ -99,6 +99,29 @@ try {
         await page.locator('#draftTitle').fill('');await page.locator('#cancelDraft').click();
       }
       console.log('PASS: named Clear search follows suggestions, supports native Enter/Space at 320/768/1280px, clears matches/no-match/whitespace and returns input focus without changing investigation/view/evidence/private form/storage or refetching.');
+      assert.equal(await page.locator('#search').getAttribute('aria-keyshortcuts'),'Control+K Meta+K');
+      for(const width of [320,768,1280])for(const modifier of ['Control','Meta']) {
+        await page.setViewportSize({width,height:900});await page.locator('#search').fill('Fixture');
+        const card=page.locator('#graph .node').first(),source=page.locator('#graph .node').nth(1);
+        const cards=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox'),hash=new URL(page.url()).hash,requests=caseRequests;
+        for(const origin of ['card','heading','sourceLink']) {
+          if(origin==='card')await card.focus();
+          else if(origin==='heading')await card.press('Enter');
+          else{await source.press('Enter');await page.keyboard.press('Tab');assert.equal(await page.locator('#detail a').evaluate(el=>el===document.activeElement),true)}
+          await page.keyboard.press(modifier+'+k');
+          assert.ok(await page.locator('#search').evaluate(el=>el===document.activeElement&&el.selectionStart===0&&el.selectionEnd===el.value.length&&el.getBoundingClientRect().top>=0&&el.getBoundingClientRect().bottom<=innerHeight),'shortcut reveals/focuses search and selects its current text');
+          assert.equal(await page.locator('#search').inputValue(),'Fixture');assert.equal(await page.locator('#results button').count(),1);
+          assert.equal(await page.locator('#graph').innerHTML(),cards);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);
+        }
+        await page.keyboard.type('No shortcut match');assert.equal(await page.locator('#search').inputValue(),'No shortcut match','typing replaces selected query');assert.equal(await page.locator('#results button').count(),0);
+        await page.locator('#search').fill('');
+      }
+      const guardResults=await page.evaluate(()=>{
+        const graph=document.querySelector('#graph'),detail=document.querySelector('#detail'),editor=document.createElement('div');editor.contentEditable='true';detail.append(editor);
+        const send=(el,options)=>{const event=new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true,...options});el.dispatchEvent(event);return event.defaultPrevented};
+        const results=[send(document.querySelector('#draftTitle')),send(editor),send(graph,{isComposing:true}),send(graph,{shiftKey:true}),send(graph,{altKey:true}),send(graph,{ctrlKey:false}),send(graph,{metaKey:true}),send(document.body)];editor.remove();return results;
+      });assert.deepEqual(guardResults,Array(8).fill(false),'editing/composition/unsupported modifiers/outside scope are not intercepted');
+      console.log('PASS: native Control+K/Meta+K from diagram cards, details headings and source links reveals/selects search at 320/768/1280px; replacement typing works without case/view/evidence/refetch changes, and synthetic editing/composition/modifier/scope guards remain untouched.');
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='group'&&n.name?.value==='Interactive case and source connection diagram'));
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});await page.reload();
@@ -915,7 +938,7 @@ try {
       await page.goto('https://classic.example/connection-explorer.html#case=24');
       await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===2);
       const idSearchRequests=caseRequests;
-      assert.equal(await page.locator('#searchHelp').textContent(),'Search by title or exact case ID, such as #42.');
+      assert.equal(await page.locator('#searchHelp').textContent(),'Search by title or exact case ID, such as #42. From the diagram or details, Ctrl+K (Command+K on Mac) focuses search.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         assert.ok(await page.locator('#searchHelp').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'persistent search instructions wrap');
@@ -954,6 +977,7 @@ try {
       await page.waitForFunction(()=>document.querySelector('#search-status').textContent.includes('unavailable'));
       assert.equal(await page.locator('#search').isDisabled(),true);
       assert.equal(await page.locator('#search-status').textContent(),'Published case search is unavailable. Retry loading investigations.');
+      assert.equal(await page.locator('#graph').evaluate(el=>{const event=new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true});el.dispatchEvent(event);return event.defaultPrevented}),false,'unavailable search shortcut is not intercepted');
       assert.equal(await page.locator('#results button').count(),0);
       assert.equal(await page.locator('#graph .node').count(),0,'failure does not fabricate records');
       assert.match(await page.locator('#status').textContent(),/Could not load the public investigation data/);
