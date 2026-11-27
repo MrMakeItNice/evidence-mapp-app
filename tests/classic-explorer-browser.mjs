@@ -778,7 +778,7 @@ try {
         await page.setViewportSize({width,height:900});await page.locator('#resetView').click();await page.locator('#zoomIn').click();
         const card=page.locator('#graph .node').nth(index),cards=await page.locator('#graph').innerHTML(),hash=new URL(page.url()).hash,requests=caseRequests;
         for(const action of ['Enter','Space','pointer']) {
-          await card.press('Enter');const view=await readView(),heading=await page.locator('#detail h2').textContent();
+          await card.press('Enter');const view=await readView(),heading=await page.locator('#detail h2').textContent(),wasVisible=await card.evaluate(el=>{const r=el.querySelector('rect').getBBox(),v=el.ownerSVGElement.viewBox.baseVal;return r.x>=v.x&&r.y>=v.y&&r.x+r.width<=v.x+v.width&&r.y+r.height<=v.y+v.height});
           const back=page.getByRole('button',{name:'Return to diagram card',exact:true});
           assert.equal(await back.count(),1,'one visible return action per inspection');
           await page.locator('#detail h2').press('Tab');if(index)await page.keyboard.press('Tab');
@@ -788,7 +788,7 @@ try {
             await page.locator('#graph').hover();for(let i=0;i<6;i++)await page.mouse.wheel(0,-100);
             await page.waitForFunction(w=>Number(document.querySelector('#graph').getAttribute('viewBox').split(' ')[2])<w,view[2]);
             const zoomed=(await readView()).slice(2);await back.click();assert.deepEqual((await readView()).slice(2),zoomed,'pointer return preserves wheel-adjusted zoom');
-          } else {await back.press(action);assert.deepEqual(await readView(),view,'already-visible card return preserves diagram view')}
+          } else {await back.press(action);assert.deepEqual((await readView()).slice(2),view.slice(2),'return preserves diagram zoom');if(wasVisible)assert.deepEqual(await readView(),view,'already-visible card return preserves diagram view')}
           assert.equal(await card.evaluate(el=>el===document.activeElement),true);
           assert.ok(await card.evaluate(el=>{const r=el.querySelector('rect').getBoundingClientRect(),g=el.ownerSVGElement.getBoundingClientRect();return r.left>=g.left-1&&r.right<=g.right+1&&r.top>=g.top-1&&r.bottom<=g.bottom+1&&r.top>=-1&&r.bottom<=innerHeight+1}),'return reveals original diagram card');
           assert.equal(await page.locator('#detail h2').textContent(),heading,'return retains preview content');
