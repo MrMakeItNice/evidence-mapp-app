@@ -36,7 +36,7 @@ try {
     const cdp=await page.context().newCDPSession(page);
     const {nodes}=await cdp.send('Accessibility.getFullAXTree');
     const exposed=nodes.filter(n=>!n.ignored&&n.role?.value==='button').map(n=>n.name?.value);
-    for(const name of [cases[0].title,...references.map(r=>r.title)])
+    for(const name of [cases[0].title,'Fixture source A · Citation 1 of 2','Fixture source B · Citation 2 of 2'])
       assert.equal(exposed.includes(name),true, name+' native accessibility-tree exposure');
     if(baseline) {
       assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='search'),false,'baseline search input alone is not a search landmark');
@@ -796,6 +796,35 @@ try {
         }
       }
       console.log('PASS: visible Return to diagram card supports native Tab/Enter/Space and pointer at 320/768/1280px, returns to the exact case/source card and preserves zoom/evidence/preview/hash without refetching.');
+      const namedRefs=references.map(r=>({...r}));
+      references[0].title=references[1].title='Repeated archive title';
+      references.push({...references[0],title:'True duplicate excluded'},
+        {case_id:1,title:'Repeated archive title',url:'https://user:secret@records.example/private'},
+        {case_id:1,url:'https://records.example/untitled?id=4#page=8'});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===5);
+      const expectedLabels=['Repeated archive title · Citation 1 of 4','Repeated archive title · Citation 2 of 4','Repeated archive title · Citation 3 of 4','Source document · Citation 4 of 4'];
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        const tree=await cdp.send('Accessibility.getFullAXTree');
+        const names=tree.nodes.filter(n=>!n.ignored&&n.role?.value==='button').map(n=>n.name?.value);
+        for(const label of expectedLabels)assert.equal(names.filter(n=>n===label).length,1,'native accessibility tree distinguishes repeated/untitled citations');
+        assert.equal(await page.locator('#graph .node').count(),5,'true duplicate URL is excluded before numbering');
+        const hash=new URL(page.url()).hash,requests=caseRequests;
+        await page.locator('#resetView').press('Tab');await page.keyboard.press('Tab');
+        for(let i=0;i<4;i++) {
+          const card=page.locator('#graph').getByRole('button',{name:expectedLabels[i],exact:true});
+          assert.equal(await card.evaluate(el=>el===document.activeElement),true,'native Tab reaches sources in named citation order');
+          await page.keyboard.press(i%2?'Space':'Enter');
+          assert.equal(await page.locator('#detail h2').textContent(),i===3?'Source document':'Repeated archive title');
+          if(i===2){assert.equal(await page.locator('#detail a').count(),0);assert.doesNotMatch(await page.locator('#detail').textContent(),/user:secret/)}
+          else assert.equal(await page.locator('#detail a').getAttribute('href'),i===0?'https://records.example/a':i===1?'https://records.example/b':'https://records.example/untitled?id=4#page=8');
+          await page.keyboard.press('Escape');assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+          if(i<3)await page.keyboard.press('Tab');
+        }
+        assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);
+      }
+      references.splice(0,references.length,...namedRefs);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      console.log('PASS: native AX and Tab/Enter/Space/Escape distinguish same-title and untitled citation cards at 320/768/1280px; numbering follows unique URLs, exact destinations remain separate and unsafe credentials are not exposed.');
       const completeStart=references.length,completeCaseStart=cases.length;
       const tailUrl='https://records.example/complete?id=9#page=7';
       for(let i=0;i<7;i++)references.push({case_id:1,title:'Complete citation '+i,publisher:'Fixture archive',url:i===6?tailUrl:'https://records.example/complete?id='+i});
@@ -806,6 +835,7 @@ try {
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         assert.match(await page.locator('#status').textContent(),/^8 of 11 unique public source records shown/);
+        assert.equal(await page.locator('#graph .node').nth(8).getAttribute('aria-label'),'Complete citation 5 · Citation 8 of 11');
         const disclosure=page.locator('#allSources'),summary=disclosure.locator('summary');
         assert.equal(await summary.textContent(),'View all 11 indexed citations');assert.equal(await disclosure.getAttribute('open'),null);
         assert.equal(await disclosure.getByRole('link').count(),0,'closed disclosure hides its links from role navigation');
@@ -892,9 +922,9 @@ try {
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===6);
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
-        assert.equal(await page.getByRole('button',{name:'Repeated record one',exact:true}).count(),0,'identical serialized URL still deduplicates within a case');
+        assert.equal(await page.getByRole('button',{name:'Repeated record one'}).count(),0,'identical serialized URL still deduplicates within a case');
         for(const [id,title,url] of exactFixtures) {
-          const card=page.locator('#graph').getByRole('button',{name:title,exact:true});await card.press('Enter');
+          const card=page.locator('#graph').getByRole('button',{name:title});await card.press('Enter');
           assert.equal(await page.locator('#detail .indexed-url').textContent(),'Indexed URL: '+url);
           assert.equal(await page.locator('#detail a').getAttribute('href'),url);
           assert.equal(await page.locator('#detail h3').textContent(),'Other cases citing this exact URL');
@@ -902,7 +932,7 @@ try {
           const related=page.locator('#detail').getByRole('button',{name:'Exact URL case '+id+' · Case #'+id,exact:true});
           await related.press('Enter');await page.waitForFunction(id=>location.hash==='#case='+id,id);
           assert.equal(await page.locator('#detail h2').textContent(),'Exact URL case '+id);
-          assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),'Shared '+title);
+          assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),'Shared '+title);
           await page.keyboard.press('Escape');assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
           await page.goto('https://classic.example/connection-explorer.html#case=1');await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===6);
         }
@@ -1105,7 +1135,7 @@ try {
           assert.equal(new URL(page.url()).hash,'#case='+id);
           assert.equal(await page.locator('#detail h2').textContent(),duplicateTitle);
           assert.equal(await page.locator('#detail p').textContent(),summary);
-          assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),source);
+          assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),source);
           assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: '+label+'. Search again to find another case.');
           assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
         }
@@ -1122,7 +1152,7 @@ try {
         for(const [id,summary,key] of [[23,'First distinct record','Enter'],[24,'Second distinct record','Space']]) {
           await page.goto('https://classic.example/connection-explorer.html#case=1');await page.reload();
           await page.waitForFunction(()=>document.querySelector('#graph .node')?.getAttribute('aria-label')==='Fixture investigation');
-          await page.getByRole('button',{name:'Shared identity fixture',exact:true}).press('Enter');
+          await page.getByRole('button',{name:'Shared identity fixture'}).press('Enter');
           assert.equal(await page.locator('#detail li button').count(),2,'repeated citations do not duplicate related cases');
           for(const relatedId of [23,24]) {
             const label=duplicateTitle+' · Case #'+relatedId;
@@ -1197,7 +1227,7 @@ try {
           await page.keyboard.press('Enter');
           await page.waitForFunction(()=>location.hash==='#case=24');
           assert.equal(await page.locator('#detail p').textContent(),'Second distinct record');
-          assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),'Second distinct source');
+          assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),'Second distinct source');
           assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
           await page.keyboard.press('Escape');
           assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
@@ -1252,7 +1282,7 @@ try {
         assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
         assert.equal(new URL(page.url()).hash,'#case=24');
         assert.equal(await page.locator('#graph .node').count(),2,'recovery restores actual indexed case/source only');
-        assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),'Second distinct source');
+        assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),'Second distinct source');
         assert.equal(await page.locator('#draftTitle').inputValue(),'Preserve unfinished retry draft');
         assert.equal(await page.locator('#draftForm').isVisible(),true);
         assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),draftStorage);
@@ -1285,7 +1315,7 @@ try {
           assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
           assert.equal(new URL(page.url()).hash,'#case=24');
           assert.equal(await page.locator('#graph .node').count(),2);
-          assert.equal(await page.locator('#graph .node').nth(1).getAttribute('aria-label'),'Second distinct source');
+          assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),'Second distinct source');
           assert.equal(await page.locator('#draftTitle').inputValue(),'Keep stalled-load draft');
           assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);
           await page.clock.fastForward(15001);
