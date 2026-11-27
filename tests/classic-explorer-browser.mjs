@@ -774,6 +774,28 @@ try {
       await page.keyboard.press('Escape');
       assert.equal(await page.locator('#graph .node').nth(0).evaluate(el=>el===document.activeElement),true);
       console.log('PASS: keyboard inspection focuses visible details heading, Tab reaches source link, Escape returns to originating case/source, pointer focus and modified keys remain unchanged.');
+      for(const width of [320,768,1280])for(const index of [0,1]) {
+        await page.setViewportSize({width,height:900});await page.locator('#resetView').click();await page.locator('#zoomIn').click();
+        const card=page.locator('#graph .node').nth(index),cards=await page.locator('#graph').innerHTML(),hash=new URL(page.url()).hash,requests=caseRequests;
+        for(const action of ['Enter','Space','pointer']) {
+          await card.press('Enter');const view=await readView(),heading=await page.locator('#detail h2').textContent();
+          const back=page.getByRole('button',{name:'Return to diagram card',exact:true});
+          assert.equal(await back.count(),1,'one visible return action per inspection');
+          await page.locator('#detail h2').press('Tab');if(index)await page.keyboard.press('Tab');
+          assert.equal(await back.evaluate(el=>el===document.activeElement),true,'native Tab reaches the return control after the source link');
+          assert.ok(await back.evaluate(el=>{const r=el.getBoundingClientRect();return r.height>=44&&r.width>=44&&r.left>=0&&r.right<=innerWidth}),'return target fits phone/tablet/desktop');
+          if(action==='pointer') {
+            await page.locator('#graph').hover();for(let i=0;i<6;i++)await page.mouse.wheel(0,-100);
+            await page.waitForFunction(w=>Number(document.querySelector('#graph').getAttribute('viewBox').split(' ')[2])<w,view[2]);
+            const zoomed=(await readView()).slice(2);await back.click();assert.deepEqual((await readView()).slice(2),zoomed,'pointer return preserves wheel-adjusted zoom');
+          } else {await back.press(action);assert.deepEqual(await readView(),view,'already-visible card return preserves diagram view')}
+          assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+          assert.ok(await card.evaluate(el=>{const r=el.querySelector('rect').getBoundingClientRect(),g=el.ownerSVGElement.getBoundingClientRect();return r.left>=g.left-1&&r.right<=g.right+1&&r.top>=g.top-1&&r.bottom<=g.bottom+1&&r.top>=-1&&r.bottom<=innerHeight+1}),'return reveals original diagram card');
+          assert.equal(await page.locator('#detail h2').textContent(),heading,'return retains preview content');
+          assert.equal(await page.locator('#graph').innerHTML(),cards);assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);
+        }
+      }
+      console.log('PASS: visible Return to diagram card supports native Tab/Enter/Space and pointer at 320/768/1280px, returns to the exact case/source card and preserves zoom/evidence/preview/hash without refetching.');
       const completeStart=references.length,completeCaseStart=cases.length;
       const tailUrl='https://records.example/complete?id=9#page=7';
       for(let i=0;i<7;i++)references.push({case_id:1,title:'Complete citation '+i,publisher:'Fixture archive',url:i===6?tailUrl:'https://records.example/complete?id='+i});
@@ -805,8 +827,14 @@ try {
           assert.equal(await inspectTail.evaluate(el=>el===document.activeElement),true,'Escape returns to the exact citation-list control');
           assert.ok(await inspectTail.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.right<=innerWidth&&r.width>=44&&r.height>=44}),'return control is visible and fits viewport');
         }
-        await inspectTail.click();assert.equal(await page.locator('#detail h2').textContent(),'Complete citation 6');
-        await page.keyboard.press('Escape');
+        for(const action of ['Enter','Space','pointer']) {
+          await inspectTail.click();assert.equal(await page.locator('#detail h2').textContent(),'Complete citation 6');
+          const back=page.getByRole('button',{name:'Return to citation list',exact:true});assert.equal(await back.count(),1);
+          assert.ok(await back.evaluate(el=>{const r=el.getBoundingClientRect();return r.height>=44&&r.right<=innerWidth}),'citation-list return target fits viewport');
+          if(action==='pointer'){await summary.click();assert.equal(await disclosure.getAttribute('open'),null);await back.click()}else await back.press(action);
+          assert.equal(await inspectTail.evaluate(el=>el===document.activeElement),true,'visible return restores exact tail citation control');assert.notEqual(await disclosure.getAttribute('open'),null);
+        }
+
         await disclosure.getByRole('button',{name:'Inspect citation: Blocked credential fixture',exact:true}).press('Enter');
         assert.equal(await page.locator('#detail a').count(),0);assert.doesNotMatch(await page.locator('#detail').textContent(),/user:secret|javascript:alert/);
         assert.match(await page.locator('#detail').textContent(),/No safe HTTP/);await page.keyboard.press('Escape');
