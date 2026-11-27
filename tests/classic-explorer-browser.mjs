@@ -742,7 +742,8 @@ try {
       const tailUrl='https://records.example/complete?id=9#page=7';
       for(let i=0;i<7;i++)references.push({case_id:1,title:'Complete citation '+i,publisher:'Fixture archive',url:i===6?tailUrl:'https://records.example/complete?id='+i});
       references.push({case_id:1,title:'Repeated complete record',url:tailUrl},{case_id:1,title:'Blocked credential fixture',url:'https://user:secret@records.example/private'},{case_id:1,title:'Blocked script fixture',url:'javascript:alert(1)'});
-      cases.push({id:94,title:'Short citation case'});
+      cases.push({id:94,title:'Short citation case'},{id:95,title:'Tail citation related case'});
+      references.push({case_id:95,title:'Shared tail fixture',url:tailUrl},{case_id:95,title:'Repeated shared tail fixture',url:tailUrl});
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===9);
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
@@ -755,13 +756,40 @@ try {
         assert.doesNotMatch(await disclosure.textContent(),/user:secret|javascript:alert/);
         const tail=disclosure.locator('a').last();assert.equal(await tail.getAttribute('href'),tailUrl);assert.match(await tail.textContent(),/opens in new tab/);assert.equal(await tail.getAttribute('rel'),'noopener noreferrer');assert.equal(await tail.getAttribute('target'),'_blank');
         assert.ok(await disclosure.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'full destination list wraps');
-        await summary.press('Tab');assert.equal(await disclosure.locator('a').first().evaluate(el=>el===document.activeElement),true);
+        await summary.press('Tab');assert.equal(await disclosure.getByRole('button').first().evaluate(el=>el===document.activeElement),true);
+        const inspectTail=disclosure.getByRole('button',{name:'Inspect citation: Complete citation 6',exact:true});
+        assert.equal(await disclosure.getByRole('button').count(),11,'all unique citations have in-page inspection');
+        for(const key of ['Enter','Space']) {
+          await inspectTail.press(key);
+          assert.equal(await page.locator('#detail h2').textContent(),'Complete citation 6');
+          assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+          assert.equal(await page.locator('#detail a').getAttribute('href'),tailUrl);
+          assert.equal(await page.locator('#detail').getByRole('button',{name:'Tail citation related case · Case #95',exact:true}).count(),1,'tail inspection exposes deduplicated exact-URL case context');
+          await page.keyboard.press('Escape');
+          assert.equal(await inspectTail.evaluate(el=>el===document.activeElement),true,'Escape returns to the exact citation-list control');
+          assert.ok(await inspectTail.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.right<=innerWidth&&r.width>=44&&r.height>=44}),'return control is visible and fits viewport');
+        }
+        await inspectTail.click();assert.equal(await page.locator('#detail h2').textContent(),'Complete citation 6');
+        await page.keyboard.press('Escape');
+        await disclosure.getByRole('button',{name:'Inspect citation: Blocked credential fixture',exact:true}).press('Enter');
+        assert.equal(await page.locator('#detail a').count(),0);assert.doesNotMatch(await page.locator('#detail').textContent(),/user:secret|javascript:alert/);
+        assert.match(await page.locator('#detail').textContent(),/No safe HTTP/);await page.keyboard.press('Escape');
+        await inspectTail.press('Enter');await summary.click();assert.equal(await disclosure.getAttribute('open'),null);
+        await page.locator('#detail h2').press('Escape');assert.notEqual(await disclosure.getAttribute('open'),null,'Escape reopens collapsed list to reveal its return control');
+        assert.equal(await inspectTail.evaluate(el=>el===document.activeElement),true);
+        await inspectTail.press('Enter');await page.locator('#detail').getByRole('button',{name:'Tail citation related case · Case #95',exact:true}).press('Enter');
+        assert.equal(await page.locator('#detail h2').textContent(),'Tail citation related case');
+        await page.keyboard.press('Escape');assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true,'related-case navigation resets return target to new investigation');
+        await page.goto('https://classic.example/connection-explorer.html#case=1');await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===9);
+        await summary.press('Enter');
+
         assert.equal(await page.locator('#graph').innerHTML(),graphHtml);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(caseRequests,requests);
         await summary.press('Space');assert.equal(await disclosure.getAttribute('open'),null);await summary.press('Enter');
         await tail.focus();await page.goto('https://classic.example/connection-explorer.html#case=94');await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Short citation case');
         assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'case hash switch restores focus from a removed citation link');assert.equal(await disclosure.isVisible(),false);assert.equal(await disclosure.locator('li').count(),0,'case change removes old citation destinations');
         await page.goto('https://classic.example/connection-explorer.html#case=1');await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===9);assert.equal(await disclosure.getAttribute('open'),null);
       }
+      console.log('PASS: complete-list citations beyond the diagram limit support native Enter/Space/pointer inspection, exact URL and shared-case context, safe blocked-URL feedback, visible Escape return including collapsed lists, and related-case focus reset at 320/768/1280px.');
       references.splice(completeStart);cases.splice(completeCaseStart);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       assert.equal(await page.locator('#allSources').isVisible(),false);
       console.log('PASS: cases over eight citations retain eight diagram cards plus a native complete-list disclosure at 320/768/1280px; 11 distinct records/9 safe full links, exact tail query/fragment, true-repeat dedup, keyboard Enter/Space/Tab, no unsafe URL echo, wrapping and hash-switch focus cleanup pass without graph/view/refetch changes.');
