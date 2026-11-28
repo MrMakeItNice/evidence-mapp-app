@@ -15,7 +15,7 @@ try {
     const errors=[],unexpected=[];
     let pauseRefs=false,releaseRefs,refsPaused,pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0,unwrappedDetails=false,ignoreHashNavigation=false;
     page.on('pageerror',e=>errors.push(e.message));
-    const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('<search aria-label="Published investigations">','<div>').replace('</search>','</div>').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
+    const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('id="contribute" aria-labelledby="contributeHeading"','id="contribute"').replace('<search aria-label="Published investigations">','<div>').replace('</search>','</div>').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
     await page.route('**/*',async route=>{
       const u=new URL(route.request().url());
       if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:ignoreHashNavigation?html.replace("window.addEventListener('hashchange',navigateFromHash);",''):unwrappedDetails?html.replace('.detail,#search-status{min-width:0;overflow-wrap:anywhere}',''):html});
@@ -39,6 +39,7 @@ try {
     for(const name of [cases[0].title,'Fixture source A · Citation 1 of 2','Fixture source B · Citation 2 of 2'])
       assert.equal(exposed.includes(name),true, name+' native accessibility-tree exposure');
     if(baseline) {
+      assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='region'&&n.name?.value==='Add to your investigation'),false,'baseline contribution section lacks a named region');
       assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='search'),false,'baseline search input alone is not a search landmark');
       console.log('PASS: baseline has a search field but no native search landmark.');
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='image'&&n.name?.value==='Interactive case and source connection diagram'));
@@ -616,10 +617,21 @@ try {
       console.log('PASS: native Escape from Title/Notes/Cancel closes both inline draft types at 320/768/1280px, restores matching Add focus and reopening preserves all unfinished fields without saving/refetching/view changes; modifier/composition guards and wrapping hint pass.');
       assert.equal(await page.locator('#draftForm').isVisible(),false,'draft form starts hidden');
       assert.equal(await page.getByRole('textbox',{name:'Title (required)',exact:true}).count(),0,'closed form is outside accessible controls');
+      const contribution=page.getByRole('region',{name:'Add to your investigation',exact:true});
+      async function expectContributionRegion(){
+        const {nodes}=await cdp.send('Accessibility.getFullAXTree');
+        assert.equal(nodes.filter(n=>!n.ignored&&n.role?.value==='region'&&n.name?.value==='Add to your investigation').length,1,'native AX exposes one named contribution region');
+        assert.equal(await contribution.getAttribute('id'),'contribute');
+        assert.equal(await page.locator('#contributeHeading').count(),1);
+        assert.equal(await contribution.getByRole('heading',{name:'Add to your investigation',level:2,exact:true}).count(),1,'landmark uses the existing visible section heading');
+        assert.equal(await contribution.evaluate(el=>el.tabIndex),-1,'region adds no Tab stop');
+      }
+      await expectContributionRegion();
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         for(const [trigger,title,required] of [['newCase','New case draft',false],['newTrail','New paper trail draft',true]]) {
-          await page.locator('#'+trigger).focus();await page.keyboard.press('Enter');
+          await contribution.locator('#'+trigger).focus();await page.keyboard.press('Enter');
+          await expectContributionRegion();
           assert.equal(await page.locator('#draftForm').isVisible(),true);
           assert.equal(await page.locator('#draftForm').evaluate(el=>getComputedStyle(el).display),'grid');
           const actionBoxes=await page.locator('#contribute button:visible').evaluateAll(es=>es.map(el=>({...el.getBoundingClientRect().toJSON(),overflow:el.scrollWidth>el.clientWidth})));
@@ -654,6 +666,8 @@ try {
       assert.equal(await page.locator('#draftTitle').inputValue(),'');
       await page.locator('#cancelDraft').click();
       console.log('PASS: draft form starts outside layout/accessibility controls; required/optional visible labels match native accessible names and actual field rules at 320/768/1280px; visible contribution actions have non-overlapping 44px targets, lower-edge pointer opening and Enter/Space Cancel retain focus/text without saving at 320/768/1280px; fixture-only successful Save closes and resets the form.');
+      await expectContributionRegion();
+      console.log('PASS: native Chromium exposes one Add to your investigation region from its existing level-two heading before/after both draft types and Save at 320/768/1280px; region-scoped Enter opening and normal Cancel/Tab/focus paths remain available without adding a Tab stop.');
       const draftStorageKey='evidence-atlas-connection-drafts-v1';
       const previousDrafts=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);
       const multilineNotes='Observation.\n\nUncertainty.\n  Keep  two spaces.\n<em>Plain text, not markup</em>\n'+ 'longrecord'.repeat(45);
