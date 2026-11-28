@@ -15,7 +15,7 @@ try {
     const errors=[],unexpected=[];
     let pauseRefs=false,releaseRefs,refsPaused,pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0,unwrappedDetails=false,ignoreHashNavigation=false;
     page.on('pageerror',e=>errors.push(e.message));
-    const html=baseline?original.replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('id="contribute" aria-labelledby="contributeHeading"','id="contribute"').replace('<search aria-label="Published investigations">','<div>').replace('</search>','</div>').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
+    const html=baseline?original.replace('id="draftForm" aria-labelledby="formHeading"','id="draftForm"').replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('id="contribute" aria-labelledby="contributeHeading"','id="contribute"').replace('<search aria-label="Published investigations">','<div>').replace('</search>','</div>').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
     await page.route('**/*',async route=>{
       const u=new URL(route.request().url());
       if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:ignoreHashNavigation?html.replace("window.addEventListener('hashchange',navigateFromHash);",''):unwrappedDetails?html.replace('.detail,#search-status{min-width:0;overflow-wrap:anywhere}',''):html});
@@ -41,6 +41,7 @@ try {
     if(baseline) {
       assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='region'&&n.name?.value==='Add to your investigation'),false,'baseline contribution section lacks a named region');
       assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='search'),false,'baseline search input alone is not a search landmark');
+      assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='form'),false,'visible form heading alone does not name the baseline form landmark');
       console.log('PASS: baseline has a search field but no native search landmark.');
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='image'&&n.name?.value==='Interactive case and source connection diagram'));
       assert.equal(await page.locator('#draftForm').evaluate(el=>el.hidden),true);
@@ -73,6 +74,33 @@ try {
       cases[0].title=originalCaseTitle;references[0].title=originalSourceTitle;
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       console.log('PASS: long unbroken and wide-word case/source title previews fit card padding with ellipses at 320/768/1280px; full accessible names, keyboard inspector titles, original source URL and Escape return remain intact without private data writes.');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        const cards=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox'),hash=new URL(page.url()).hash,requests=caseRequests,stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
+        async function expectDraftLandmark(name) {
+          const {nodes:draftAX}=await cdp.send('Accessibility.getFullAXTree');
+          const forms=draftAX.filter(n=>!n.ignored&&n.role?.value==='form');
+          assert.deepEqual(forms.map(n=>n.name?.value),name?[name]:[],'native AX includes only the currently open named draft form');
+          assert.equal(await page.getByRole('form').count(),name?1:0);
+          if(name) {
+            assert.equal(await page.getByRole('form',{name,exact:true}).getAttribute('id'),'draftForm');
+            assert.equal(await page.locator('#formHeading').textContent(),name);
+            assert.equal(await page.locator('#formHeading').count(),1);
+            assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true,'entry still focuses the title, without a new Tab stop');
+          }
+        }
+        await expectDraftLandmark(null);
+        await page.locator('#newCase').press('Enter');await expectDraftLandmark('New case draft');
+        await page.keyboard.press('Tab');assert.equal(await page.locator('#draftRelated').evaluate(el=>el===document.activeElement),true);
+        await page.locator('#newTrail').press('Space');await expectDraftLandmark('New paper trail draft');
+        await page.keyboard.press('Escape');await expectDraftLandmark(null);
+        assert.equal(await page.locator('#newTrail').evaluate(el=>el===document.activeElement),true);
+        await page.locator('#newTrail').press('Enter');await expectDraftLandmark('New paper trail draft');
+        await page.locator('#cancelDraft').click();await expectDraftLandmark(null);
+        assert.equal(await page.locator('#newTrail').evaluate(el=>el===document.activeElement),true);
+        assert.equal(await page.locator('#graph').innerHTML(),cards);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);
+      }
+      console.log('PASS: native draft form landmark uses the current visible case/trail heading at 320/768/1280px; Enter/Space entry, type switching, title focus and Tab order work; Escape/Cancel remove the hidden landmark and restore entry focus without graph, hash, request or storage changes.');
       async function expectInspectorName(name){
         const {nodes}=await cdp.send('Accessibility.getFullAXTree');
         const landmarks=nodes.filter(n=>!n.ignored&&n.role?.value==='complementary');
