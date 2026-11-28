@@ -1431,6 +1431,7 @@ try {
           assert.equal(await related.evaluate(el=>el===document.activeElement),true);
           assert.equal(await related.evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
           if(action==='pointer')await related.click({position:{x:12,y:42}});else await page.keyboard.press(action);
+          await page.waitForFunction(()=>location.hash==='#case=2'&&document.querySelector('#detail h2')?.textContent==='Other');
           assert.equal(new URL(page.url()).hash,'#case=2');assert.equal(await page.locator('#detail h2').textContent(),'Other');
           assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
           await page.keyboard.press('Escape');assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
