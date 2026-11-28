@@ -327,6 +327,45 @@ try {
       console.log('PASS: native Tab/Shift+Tab exposes a 3px non-scaling full-card focus stroke on case/source cards at 320/768/1280px and 100%/125% diagram zoom, including forced colors; Enter moves focus to details, Escape restores the card ring, blur restores the normal source border and case identity is unchanged.');
       assert.equal(await page.locator('#graph').getAttribute('aria-describedby'),'diagramKeys');
       assert.match(await page.locator('#diagramKeys').textContent(),/arrow keys to pan the view/);
+      const keyboardHelp=page.locator('#keyboardHelp'),keyboardSummary=keyboardHelp.locator('summary');
+      assert.equal(await keyboardHelp.evaluate(el=>el.open),false,'keyboard guide starts collapsed');
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const forced of [false,true]) {
+          await page.emulateMedia({forcedColors:forced?'active':'none'});
+          const cards=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox'),hash=new URL(page.url()).hash,requests=caseRequests,stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
+          assert.equal(await page.locator('#diagramKeys').isVisible(),false);
+          const closedSearchTop=await page.locator('#search').evaluate(el=>el.getBoundingClientRect().top+scrollY);
+          await page.getByRole('link',{name:'New Evidence Board',exact:true}).press('Tab');
+          assert.equal(await keyboardSummary.evaluate(el=>el===document.activeElement),true,'native Tab discovers the guide before search');
+          const summaryBox=await keyboardSummary.boundingBox();
+          assert.ok(summaryBox.width>=44&&summaryBox.height>=44&&summaryBox.x>=0&&summaryBox.x+summaryBox.width<=width,'guide has a 44px target within the viewport');
+          const outline=await keyboardSummary.evaluate(el=>{const s=getComputedStyle(el);return {width:s.outlineWidth,style:s.outlineStyle}});
+          assert.equal(outline.width,'3px');assert.notEqual(outline.style,'none');
+          for(const open of [false,true,false]) {
+            if(open)await keyboardSummary.press('Enter');else if(await keyboardHelp.evaluate(el=>el.open))await keyboardSummary.press('Space');
+            assert.equal(await keyboardHelp.evaluate(el=>el.open),open);
+            assert.equal(await page.locator('#diagramKeys').isVisible(),open);
+            const {nodes:guideAX}=await cdp.send('Accessibility.getFullAXTree');
+            const summaryAX=guideAX.find(n=>!n.ignored&&n.name?.value==='Keyboard guide'&&n.properties?.some(p=>p.name==='expanded'));
+            assert.ok(summaryAX,'native summary exposes disclosure state');assert.equal(summaryAX.properties.find(p=>p.name==='expanded').value.value,open);
+            const diagramAX=guideAX.find(n=>!n.ignored&&n.role?.value==='group'&&n.name?.value==='Interactive case and source connection diagram');
+            assert.match(diagramAX?.description?.value??'',/arrow keys to pan the view/,'diagram retains its keyboard description when guide is closed or open');
+            assert.match(diagramAX.description.value,/Escape stops an active drag/);
+            if(open)assert.ok(await page.locator('#search').evaluate(el=>el.getBoundingClientRect().top+scrollY)>closedSearchTop+44,'collapsed guide saves meaningful space above search');
+          }
+          await keyboardSummary.press('Tab');assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true,'closed guide leads directly to search');
+          await keyboardSummary.scrollIntoViewIfNeeded();
+          const pointerBox=await keyboardSummary.boundingBox();
+          await page.mouse.click(pointerBox.x+pointerBox.width/2,pointerBox.y+pointerBox.height-3);
+          assert.equal(await keyboardHelp.evaluate(el=>el.open),true,'bottom padding is part of the pointer target');
+          await keyboardSummary.click();assert.equal(await keyboardHelp.evaluate(el=>el.open),false);
+          assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'guide creates no horizontal overflow');
+          assert.equal(await page.locator('#graph').innerHTML(),cards);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);
+        }
+      }
+      await page.emulateMedia({forcedColors:'none'});
+      console.log('PASS: native Keyboard guide disclosure saves space above search at 320/768/1280px; Enter/Space, Tab to search, padded pointer target, 44px sizing, focus and forced colors work; native AX expanded state and diagram instructions survive collapse without diagram, hash, request or draft-storage changes.');
       const readView=async()=> (await page.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
       assert.match(await page.locator('#diagramKeys').textContent(),/Escape stops an active drag/);
       for(const width of [320,768,1280]) {
@@ -1777,7 +1816,8 @@ try {
         assert.ok(await page.locator('#detail').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'empty guidance wraps');
         const retry=page.locator('#retryLoad'),hash=new URL(page.url()).hash;
         assert.equal(await retry.isVisible(),true);
-        await page.getByRole('link',{name:'New Evidence Board',exact:true}).press('Tab');assert.equal(await retry.evaluate(el=>el===document.activeElement),true,'native Tab skips disabled search and reaches empty-index retry');
+        await page.getByRole('link',{name:'New Evidence Board',exact:true}).press('Tab');assert.equal(await keyboardSummary.evaluate(el=>el===document.activeElement),true,'empty index retains the keyboard guide');
+        await keyboardSummary.press('Tab');assert.equal(await retry.evaluate(el=>el===document.activeElement),true,'native Tab skips disabled search and reaches empty-index retry');
         pauseCases=true;const emptyRetryPaused=new Promise(resolve=>casesPaused=resolve),before=caseRequests;
         await retry.press('Space');await emptyRetryPaused;await page.keyboard.press('Space');
         assert.equal(caseRequests,before+1,'busy empty-index retry does not duplicate requests');
