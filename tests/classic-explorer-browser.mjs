@@ -1375,6 +1375,31 @@ try {
       references.splice(exactRefsStart);cases.splice(exactCasesStart);
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       console.log('PASS: distinct query/fragment source URLs retain separate cards and exact preview links; related-case navigation excludes same-path different destinations at 320/768/1280px, while true duplicates still deduplicate and Enter/Escape retain exact case identity.');
+      const citationTargetStart=references.length,citationTargetLong='https://records.example/list-target?record='+ 'x'.repeat(300)+'&id=42#page=7';
+      for(let i=0;i<7;i++)references.push({case_id:1,title:'List target '+i,url:i===6?citationTargetLong:'https://records.example/list-target?id='+i});
+      const citationTargetRoute=async route=>route.fulfill({contentType:'text/html',body:'<h1>Citation destination fixture</h1>'});
+      await page.context().route('https://records.example/**',citationTargetRoute);
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===9);
+      for(const width of [320,768,1280])for(const forced of [false,true]) {
+        await page.setViewportSize({width,height:900});await page.emulateMedia({forcedColors:forced?'active':'none'});
+        const list=page.locator('#allSources'),summary=list.locator('summary');await summary.press('Enter');
+        const links=list.getByRole('link');assert.equal(await links.count(),9);
+        const targets=await links.evaluateAll(es=>es.map(el=>{const r=el.getBoundingClientRect();return {width:r.width,height:r.height,left:r.left,right:r.right,overflow:el.scrollWidth>el.clientWidth}}));
+        assert.ok(targets.every(r=>r.width>=44&&r.height>=44&&r.left>=0&&r.right<=width&&!r.overflow),'all citation-list links have wrapping 44px targets within viewport');
+        const graph=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox'),hash=new URL(page.url()).hash,requests=caseRequests,stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
+        for(const [index,url] of [[0,'https://records.example/a'],[8,citationTargetLong]]) {
+          const row=list.locator('li').nth(index),link=row.getByRole('link');await row.getByRole('button').press('Tab');
+          assert.equal(await link.evaluate(el=>el===document.activeElement&&el.matches(':focus-visible')&&getComputedStyle(el).outlineWidth==='3px'),true,'native Tab reaches source link with visible focus');
+          assert.equal(await link.getAttribute('href'),url);assert.equal(await link.getAttribute('target'),'_blank');assert.equal(await link.getAttribute('rel'),'noopener noreferrer');assert.match(await link.textContent(),/opens in new tab/);
+          const popupReady=page.context().waitForEvent('page');
+          if(forced)await link.press('Enter');else{const box=await link.boundingBox();await link.click({position:{x:box.width/2,y:box.height-3}})}
+          const popup=await popupReady;await popup.waitForLoadState('domcontentloaded');assert.equal(popup.url(),url);assert.equal(await popup.locator('h1').textContent(),'Citation destination fixture');await popup.close();
+        }
+        assert.equal(await page.locator('#graph').innerHTML(),graph);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);
+        assert.equal(await list.evaluate(el=>el.scrollWidth<=el.clientWidth),true);await summary.press('Space');
+      }
+      await page.emulateMedia({forcedColors:'none'});await page.context().unroute('https://records.example/**',citationTargetRoute);references.splice(citationTargetStart);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      console.log('PASS: complete citation-list source links have wrapping 44px targets at 320/768/1280px including forced colors; native Tab focus, Enter and lower-padding clicks open exact short and long query/fragment tail URLs in intercepted new tabs without diagram/hash/request/storage changes.');
       const destination='https://records.example/long?record='+ 'x'.repeat(300)+'&id=42#page=7';
       const unsafe=[{title:'Script citation',url:'javascript:alert(1)'},
         {title:'Credential citation',url:'https://user:password@records.example/private'},
