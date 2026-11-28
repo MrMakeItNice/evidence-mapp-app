@@ -723,6 +723,9 @@ try {
       const rejectedDraftUrls=['javascript:alert(1)','file:///fixture','data:text/html,fixture','/relative','https://user:password@records.example/private'];
       await page.evaluate(({key,urls})=>{const drafts=JSON.parse(localStorage.getItem(key));urls.forEach((url,i)=>drafts.push({type:'trail',title:'Legacy draft '+i,url}));localStorage.setItem(key,JSON.stringify(drafts))},{key:draftStorageKey,urls:rejectedDraftUrls});
       const legacyDrafts=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);
+      let draftSourceOpens=0;
+      const draftSourceRoute=async route=>{assert.equal(route.request().url(),draftDestination.split('#')[0]);draftSourceOpens++;await route.fulfill({contentType:'text/html',body:'<h1>Draft source destination fixture</h1>'})};
+      await page.context().route('https://records.example/**',draftSourceRoute);
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});await page.reload();
         await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
@@ -741,12 +744,33 @@ try {
         assert.equal(await page.locator('#draftList button').first().evaluate(el=>el===document.activeElement),true);
         await page.keyboard.press('Tab');
         assert.equal(await draftLink.evaluate(el=>el===document.activeElement),true,'native Tab reaches the explicitly named destination');
+        for(const forcedColors of ['none','active']) {
+          await page.emulateMedia({forcedColors});
+          const target=await draftLink.boundingBox(),del=await draftBox.getByRole('button',{name:'Delete draft: Draft destination fixture',exact:true}).boundingBox();
+          assert.ok(target.width>=44&&target.height>=44,'saved source link has a 44px target');
+          assert.ok(target.x>=0&&target.x+target.width<=width,'source target fits the viewport');
+          assert.ok(target.x+target.width<=del.x||del.x+del.width<=target.x||target.y+target.height<=del.y||del.y+del.height<=target.y,'source and Delete targets do not overlap');
+          assert.ok(await draftLink.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.matches(':focus-visible')&&getComputedStyle(el).outlineStyle==='solid'),'source link wraps and keeps a visible keyboard outline');
+        }
+        await page.emulateMedia({forcedColors:'none'});
+        const sourcePage=page.url(),requests=caseRequests;
+        for(const activation of ['keyboard','lower-edge pointer']) {
+          const opened=page.waitForEvent('popup');
+          if(activation==='keyboard')await draftLink.press('Enter');else {const r=await draftLink.boundingBox();await draftLink.click({position:{x:r.width/2,y:r.height-2}})}
+          const popup=await opened;await popup.waitForLoadState('domcontentloaded');
+          assert.equal(popup.url(),draftDestination,'source opening retains query and fragment');
+          assert.equal(await popup.locator('h1').textContent(),'Draft source destination fixture');
+          assert.equal(await popup.evaluate(()=>window.opener),null,'draft source cannot access the opener');
+          await popup.close();assert.equal(page.url(),sourcePage);assert.equal(caseRequests,requests);
+        }
         assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),legacyDrafts,'preview does not rewrite stored drafts');
       }
+      await page.context().unroute('https://records.example/**',draftSourceRoute);assert.equal(draftSourceOpens,6,'only fixture source destinations were opened');
       assert.equal(JSON.parse(safeDrafts).at(-1).url,draftDestination,'normal form Save retains the complete URL');
       await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:previousDrafts});
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       console.log('PASS: private trail form Save and native Tab expose exact host/new-tab draft destinations with query/fragment and wrapping at 320/768/1280px; unsafe/relative/credential legacy URLs are non-actionable without credential echoes or stored-draft rewrites.');
+      console.log('PASS: saved draft source links have non-overlapping wrapping 44px targets and visible keyboard outlines in normal/forced colors at 320/768/1280px; Enter and lower-edge pointer open the exact fixture URL in an isolated new tab without changing drafts, case or request count.');
       const deleteFixtures=[{type:'case',title:'First deletion fixture',notes:'Keep first'},
         {type:'trail',title:'Middle deletion fixture',notes:'Keep middle',url:'https://records.example/keep'},
         {type:'case',title:'Last deletion fixture',notes:'Keep last'}];
