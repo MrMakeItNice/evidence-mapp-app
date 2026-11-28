@@ -329,12 +329,13 @@ try {
       assert.match(await page.locator('#diagramKeys').textContent(),/arrow keys to pan the view/);
       const keyboardHelp=page.locator('#keyboardHelp'),keyboardSummary=keyboardHelp.locator('summary');
       assert.equal(await keyboardHelp.evaluate(el=>el.open),false,'keyboard guide starts collapsed');
+      assert.equal(await page.locator('#diagramKeys').textContent(),await page.locator('#keyboardGuideText').textContent(),'persistent diagram description matches the visible guide');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         for(const forced of [false,true]) {
           await page.emulateMedia({forcedColors:forced?'active':'none'});
           const cards=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox'),hash=new URL(page.url()).hash,requests=caseRequests,stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
-          assert.equal(await page.locator('#diagramKeys').isVisible(),false);
+          assert.equal(await page.locator('#keyboardGuideText').isVisible(),false);
           const closedSearchTop=await page.locator('#search').evaluate(el=>el.getBoundingClientRect().top+scrollY);
           await page.getByRole('link',{name:'New Evidence Board',exact:true}).press('Tab');
           assert.equal(await keyboardSummary.evaluate(el=>el===document.activeElement),true,'native Tab discovers the guide before search');
@@ -345,7 +346,7 @@ try {
           for(const open of [false,true,false]) {
             if(open)await keyboardSummary.press('Enter');else if(await keyboardHelp.evaluate(el=>el.open))await keyboardSummary.press('Space');
             assert.equal(await keyboardHelp.evaluate(el=>el.open),open);
-            assert.equal(await page.locator('#diagramKeys').isVisible(),open);
+            assert.equal(await page.locator('#keyboardGuideText').isVisible(),open);
             const {nodes:guideAX}=await cdp.send('Accessibility.getFullAXTree');
             const summaryAX=guideAX.find(n=>!n.ignored&&n.name?.value==='Keyboard guide'&&n.properties?.some(p=>p.name==='expanded'));
             assert.ok(summaryAX,'native summary exposes disclosure state');assert.equal(summaryAX.properties.find(p=>p.name==='expanded').value.value,open);
