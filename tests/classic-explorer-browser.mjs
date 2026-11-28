@@ -656,6 +656,42 @@ try {
       console.log('PASS: draft form starts outside layout/accessibility controls; required/optional visible labels match native accessible names and actual field rules at 320/768/1280px; visible contribution actions have non-overlapping 44px targets, lower-edge pointer opening and Enter/Space Cancel retain focus/text without saving at 320/768/1280px; fixture-only successful Save closes and resets the form.');
       const draftStorageKey='evidence-atlas-connection-drafts-v1';
       const previousDrafts=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);
+      const multilineNotes='Observation.\n\nUncertainty.\n  Keep  two spaces.\n<em>Plain text, not markup</em>\n'+ 'longrecord'.repeat(45);
+      let multilineSaved;
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:previousDrafts});
+        await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+        await page.locator('#newCase').press('Enter');
+        await page.locator('#draftTitle').fill('Multiline notes fixture');
+        await page.locator('#draftNotes').fill(multilineNotes);
+        await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
+        assert.equal(await page.locator('#draftForm').isVisible(),false);
+        assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true);
+        multilineSaved=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);
+        assert.equal(JSON.parse(multilineSaved).at(-1).notes,multilineNotes,'Save retains internal newlines, indentation and literal markup');
+        for(const reloaded of [false,true]) {
+          if(reloaded){await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3)}
+          const savedNotes=page.locator('#draftList > div').last().locator('.draft-notes');
+          assert.equal(await savedNotes.textContent(),multilineNotes);
+          assert.equal(await savedNotes.locator('*').count(),0,'saved notes stay plain text');
+          const layout=await savedNotes.evaluate(el=>{
+            const lineRect=word=>{const start=el.textContent.indexOf(word),r=document.createRange();r.setStart(el.firstChild,start);r.setEnd(el.firstChild,start+word.length);return r.getBoundingClientRect().toJSON()};
+            const first=lineRect('Observation.'),next=lineRect('Uncertainty.');
+            const r=el.getBoundingClientRect();return {gap:next.top-first.top,lineHeight:first.height,wrap:getComputedStyle(el).whiteSpace,fits:el.scrollWidth<=el.clientWidth&&r.left>=0&&r.right<=innerWidth,pageFits:document.documentElement.scrollWidth<=innerWidth};
+          });
+          assert.equal(layout.wrap,'pre-wrap');
+          assert.ok(layout.gap>=layout.lineHeight*2,'the saved blank line creates an actual visible gap');
+          assert.ok(layout.fits&&layout.pageFits,'long note words wrap without horizontal scrolling');
+          assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),multilineSaved,'review and reload never rewrite saved notes');
+        }
+      }
+      const multilineDownload=page.waitForEvent('download');await page.locator('#exportDrafts').press('Enter');const multilineExport=await multilineDownload;
+      assert.deepEqual(JSON.parse(await readFile(await multilineExport.path(),'utf8')),{format:'evidence-atlas-drafts-v1',drafts:JSON.parse(multilineSaved)},'export preserves saved multiline notes exactly');
+      assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),multilineSaved);
+      await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:previousDrafts});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      console.log('PASS: native Save preserves readable note line breaks, blank lines and indentation at 320/768/1280px before/after reload; long words reflow without horizontal scrolling, literal markup stays text, focus returns to Add case, and export/review preserve saved note bytes.');
       const draftDestination='https://records.example/draft?record='+ 'x'.repeat(300)+'&id=42#page=7';
       await page.locator('#newTrail').click();
       await page.locator('#draftTitle').fill('Draft destination fixture');
