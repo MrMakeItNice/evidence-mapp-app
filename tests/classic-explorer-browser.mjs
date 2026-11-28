@@ -1180,6 +1180,27 @@ try {
         assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true,'Escape outside inspector is untouched');
       }
       console.log('PASS: shared-citation case navigation focuses the new investigation heading, Escape reaches its live case card, and Tab leaves details at 320/768/1280px without returning to removed cards.');
+      const originalRelatedTitle=cases[1].title;cases[1].title='Other';
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for(const action of ['Enter','Space','pointer']) {
+          await page.goto('https://classic.example/connection-explorer.html#case=1');await page.reload();
+          await page.waitForFunction(()=>document.querySelector('#graph .node')?.getAttribute('aria-label')==='Fixture investigation');
+          await page.locator('#graph .node').nth(1).press('Enter');
+          const related=page.getByRole('button',{name:'Other · Case #2',exact:true}),requests=caseRequests;
+          assert.ok(await related.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.left>=0&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth}),'short related-case target is at least 44px and fits');
+          await page.keyboard.press('Tab');await page.keyboard.press('Tab');
+          assert.equal(await related.evaluate(el=>el===document.activeElement),true);
+          assert.equal(await related.evaluate(el=>getComputedStyle(el).outlineStyle),'solid');
+          if(action==='pointer')await related.click({position:{x:12,y:42}});else await page.keyboard.press(action);
+          assert.equal(new URL(page.url()).hash,'#case=2');assert.equal(await page.locator('#detail h2').textContent(),'Other');
+          assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press('Escape');assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
+          assert.equal(caseRequests,requests,'related-case navigation never refetches public data');
+        }
+      }
+      cases[1].title=originalRelatedTitle;
+      console.log('PASS: source inspector related-case buttons have 44px targets within 320/768/1280px; native Tab focus, Enter/Space and lower-edge pointer activation open the exact case with heading focus and Escape recovery without refetching.');
       pauseCases=true;
       const paused=new Promise(resolve=>casesPaused=resolve);
       await page.reload();await paused;
