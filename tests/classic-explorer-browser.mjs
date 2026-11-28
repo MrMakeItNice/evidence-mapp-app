@@ -1250,10 +1250,22 @@ try {
           assert.equal(await result.evaluate(el=>el===document.activeElement),true,'Tab reaches every result in order');
           assert.ok(await result.evaluate(el=>{const r=el.getBoundingClientRect(),p=el.parentElement.getBoundingClientRect();return r.top>=p.top-1&&r.bottom<=p.bottom+1&&r.left>=0&&r.right<=innerWidth}),'keyboard reveals complete target within scrollable results');
         }
-        await page.locator('#search').focus();
+        const resultSnapshot=await page.locator('#results').innerHTML(),viewBeforeReturn=await page.locator('#graph').getAttribute('viewBox'),requestsBeforeReturn=caseRequests;
+        const lastResult=page.locator('#results button').last();
+        for(const modifier of [{altKey:true},{ctrlKey:true},{metaKey:true},{shiftKey:true},{isComposing:true}]){
+          assert.equal(await lastResult.evaluate((el,modifier)=>{const e=new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true,...modifier});el.dispatchEvent(e);return e.defaultPrevented},modifier),false,'modified/composing Escape is not intercepted');
+          assert.equal(await lastResult.evaluate(el=>el===document.activeElement),true);
+        }
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true,'Escape returns directly from last result to search');
+        assert.deepEqual(await page.locator('#search').evaluate(el=>[el.selectionStart,el.selectionEnd]),[0,11],'query selected for replacement');
+        assert.equal(await page.locator('#search').inputValue(),'SearchMatch');
+        assert.equal(await page.locator('#results').innerHTML(),resultSnapshot,'return preserves exact result buttons');
+        assert.equal(await page.locator('#graph').getAttribute('viewBox'),viewBeforeReturn);assert.equal(caseRequests,requestsBeforeReturn);
         assert.equal(await page.locator('#search-status').textContent(),'15 of 20 matching published cases shown. Refine your search to find other cases.');
         assert.equal(await page.locator('#search').evaluate(el=>el===document.activeElement),true);
         assert.ok(await page.locator('#search-status').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth));
+        await page.keyboard.type('SearchMatch 20');assert.equal(await page.locator('#search').inputValue(),'SearchMatch 20');assert.equal(await page.locator('#results button').count(),1,'native replacement typing refines results');
         await page.locator('#search').fill('NoMatchingFixture');
         assert.equal(await page.locator('#results button').count(),0);
         assert.equal(await page.locator('#search-status').textContent(),'No matching published cases. Try another title or case ID.');
@@ -1264,6 +1276,7 @@ try {
         assert.equal(await page.locator('#detail h2').textContent(),caseTitle);
         assert.equal(new URL(page.url()).hash,caseHash,'query updates do not navigate');
       }
+      console.log('PASS: native Escape from the last of 15 search results returns/selects the query for replacement at 320/768/1280px, preserving result buttons/view/case and request count; modified/composing Escape stays untouched and replacement typing refines results.');
       await page.locator('#search').fill('SearchMatch 20');
       assert.equal(await page.locator('#search-status').textContent(),'1 matching published case.');
       await page.locator('#results button').press('Enter');
@@ -1413,7 +1426,7 @@ try {
       await page.goto('https://classic.example/connection-explorer.html#case=24');
       await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===2);
       const idSearchRequests=caseRequests;
-      assert.equal(await page.locator('#searchHelp').textContent(),'Search by title or exact case ID, such as #42. From the diagram or details, Ctrl+K (Command+K on Mac) focuses search.');
+      assert.equal(await page.locator('#searchHelp').textContent(),'Search by title or exact case ID, such as #42. From the diagram or details, Ctrl+K (Command+K on Mac) focuses search. From search results, Escape returns to search.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         assert.ok(await page.locator('#searchHelp').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'persistent search instructions wrap');
