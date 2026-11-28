@@ -41,7 +41,7 @@ try {
     if(baseline) {
       assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='region'&&n.name?.value==='Add to your investigation'),false,'baseline contribution section lacks a named region');
       assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='search'),false,'baseline search input alone is not a search landmark');
-      assert.equal(nodes.some(n=>!n.ignored&&n.role?.value==='form'),false,'visible form heading alone does not name the baseline form landmark');
+      assert.deepEqual(nodes.filter(n=>!n.ignored&&n.role?.value==='form').map(n=>n.name?.value||''),[''],'baseline form is unnamed despite its visible heading');
       console.log('PASS: baseline has a search field but no native search landmark.');
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='image'&&n.name?.value==='Interactive case and source connection diagram'));
       assert.equal(await page.locator('#draftForm').evaluate(el=>el.hidden),true);
