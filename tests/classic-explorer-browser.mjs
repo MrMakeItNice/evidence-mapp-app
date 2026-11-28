@@ -50,6 +50,29 @@ try {
     } else {
       assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='search'&&n.name?.value==='Published investigations'),'native accessibility tree exposes the named search landmark');
       assert.equal(await page.title(),'Case #1: Fixture investigation | Evidence Atlas','initial case has a descriptive native document title');
+      const originalCaseTitle=cases[0].title,originalSourceTitle=references[0].title;
+      for(const title of ['W'.repeat(180),'WWWWWW WWWWWW WWWWWW WWWWWW WWWWWW WWWWWW WWWWWW']) {
+        cases[0].title=title;references[0].title=title;
+        for(const width of [320,768,1280]) {
+          await page.setViewportSize({width,height:900});await page.reload();
+          await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+          for(const index of [0,1]) {
+            const card=page.locator('#graph .node').nth(index);
+            assert.equal(await card.getAttribute('aria-label'),title+(index?' · Citation 1 of 2':''),'full title remains the card accessible name');
+            const bounds=await card.evaluate(g=>{const r=g.querySelector('rect').getBBox();return Array.from(g.querySelectorAll('.card-title')).map(t=>{const b=t.getBBox();return {fits:b.x>=r.x+12-0.5&&b.x+b.width<=r.x+r.width-12+0.5,text:t.textContent}})});
+            assert.ok(bounds.length>0&&bounds.length<=2&&bounds.every(b=>b.fits),'rendered title lines fit inside card padding');
+            assert.ok(bounds.some(b=>b.text.endsWith('…')),'truncated title previews are marked with an ellipsis');
+            await card.press('Enter');
+            assert.equal(await page.locator('#inspectorHeading').textContent(),title,'keyboard inspection retains the complete original title');
+            if(index)assert.equal(await page.locator('#detail a').getAttribute('href'),references[0].url);
+            await page.keyboard.press('Escape');assert.equal(await card.evaluate(el=>el===document.activeElement),true);
+          }
+          assert.equal(await page.evaluate(()=>localStorage.length),0,'title fitting writes no private data');
+        }
+      }
+      cases[0].title=originalCaseTitle;references[0].title=originalSourceTitle;
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      console.log('PASS: long unbroken and wide-word case/source title previews fit card padding with ellipses at 320/768/1280px; full accessible names, keyboard inspector titles, original source URL and Escape return remain intact without private data writes.');
       async function expectInspectorName(name){
         const {nodes}=await cdp.send('Accessibility.getFullAXTree');
         const landmarks=nodes.filter(n=>!n.ignored&&n.role?.value==='complementary');
