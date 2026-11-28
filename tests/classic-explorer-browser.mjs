@@ -60,6 +60,7 @@ try {
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         await page.locator('#graph .node').nth(1).press('Enter');await expectInspectorName('Fixture source A');
+        assert.equal(await page.locator('#caseContext').count(),0,'source inspection removes stale investigation context');
         assert.equal(await page.locator('#inspectorHeading').evaluate(el=>el===document.activeElement),true);
         await page.keyboard.press('Tab');assert.equal(await page.locator('#detail a').evaluate(el=>el===document.activeElement),true);
         await page.keyboard.press('Escape');assert.equal(await page.locator('#graph .node').nth(1).evaluate(el=>el===document.activeElement),true);
@@ -912,7 +913,7 @@ try {
           if(i<3)await page.keyboard.press('Tab');
         }
         await page.locator('#graph .node').first().press('Enter');
-        assert.equal(await page.locator('#citationContext').count(),0,'case inspection clears source context');assert.equal(await page.locator('#detail h2').getAttribute('aria-describedby'),null,'case heading has no stale source description');
+        assert.equal(await page.locator('#citationContext').count(),0,'case inspection clears source context');assert.equal(await page.locator('#detail h2').getAttribute('aria-describedby'),'caseContext','case heading has no stale source description');
         assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);
       }
       references.splice(0,references.length,...namedRefs);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
@@ -1004,7 +1005,7 @@ try {
         assert.equal(await page.locator('#graph').innerHTML(),graphHtml);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(caseRequests,requests);
         await summary.press('Space');assert.equal(await disclosure.getAttribute('open'),null);await summary.press('Enter');
         await tail.focus();await page.goto('https://classic.example/connection-explorer.html#case=94');await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Short citation case');
-        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'case hash switch restores focus from a removed citation link');assert.equal(await page.locator('#citationContext').count(),0,'case switch removes old citation context');assert.equal(await page.locator('#detail h2').getAttribute('aria-describedby'),null);assert.equal(await disclosure.isVisible(),false);assert.equal(await disclosure.locator('li').count(),0,'case change removes old citation destinations');
+        assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true,'case hash switch restores focus from a removed citation link');assert.equal(await page.locator('#citationContext').count(),0,'case switch removes old citation context');assert.equal(await page.locator('#detail h2').getAttribute('aria-describedby'),'caseContext');assert.equal(await disclosure.isVisible(),false);assert.equal(await disclosure.locator('li').count(),0,'case change removes old citation destinations');
         await page.goto('https://classic.example/connection-explorer.html#case=1');await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===9);assert.equal(await disclosure.getAttribute('open'),null);
       }
       console.log('PASS: complete-list citations beyond the diagram limit support native Enter/Space/pointer inspection, exact URL and shared-case context, safe blocked-URL feedback, visible Escape return including collapsed lists, and related-case focus reset at 320/768/1280px.');
@@ -1159,7 +1160,7 @@ try {
       console.log('PASS: hash links and browser Back/Forward restore the matching investigation at 320/768/1280px without data refetch or changing private drafts; explorer focus/Escape recover, draft focus is retained, and unknown case links are explained without fabricated records.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});await page.goto('https://classic.example/connection-explorer.html#case=999999');await page.reload();await page.waitForFunction(()=>document.querySelector('#detail h2').textContent==='Investigation unavailable');
-        assert.equal(new URL(page.url()).hash,'#case=999999','initial unavailable link is never rewritten to the first case');assert.equal(await page.title(),'Investigation unavailable | Evidence Atlas');await expectInspectorName('Investigation unavailable');assert.equal(await page.locator('#graph .node').count(),0);assert.equal(await page.locator('#detail a').count(),0);assert.equal(await page.locator('#allSources').isVisible(),false);assert.equal(await page.locator('#allSourcesList li').count(),0);
+        assert.equal(new URL(page.url()).hash,'#case=999999','initial unavailable link is never rewritten to the first case');assert.equal(await page.title(),'Investigation unavailable | Evidence Atlas');assert.equal(await page.locator('#caseContext').count(),0);await expectInspectorName('Investigation unavailable');assert.equal(await page.locator('#graph .node').count(),0);assert.equal(await page.locator('#detail a').count(),0);assert.equal(await page.locator('#allSources').isVisible(),false);assert.equal(await page.locator('#allSourcesList li').count(),0);
         assert.equal(await page.locator('#search').isEnabled(),true);assert.equal(await page.locator('#retryLoad').isVisible(),false);assert.match(await page.locator('#search-status').textContent(),/loaded index.*Search published cases/);assert.equal(await page.locator('#search-status').getAttribute('role'),'status');assert.equal(await page.locator('#status').textContent(),'The requested investigation is not in the loaded public index.');assert.equal(await page.locator('#status').getAttribute('role'),'status');
         assert.ok(await page.locator('#detail').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth));
         await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Keep direct-link recovery notes');await page.locator('#draftNotes').fill('Unfinished recovery evidence');const saved=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),requests=caseRequests;
@@ -1320,12 +1321,18 @@ try {
           await page.waitForFunction(id=>location.hash==='#case='+id,id);
           assert.equal(new URL(page.url()).hash,'#case='+id);
           assert.equal(await page.locator('#detail h2').textContent(),duplicateTitle);
-          assert.equal(await page.locator('#detail p').textContent(),summary);
+          assert.equal(await page.locator('#caseContext').textContent(),'Investigation · Case #'+id);
+          assert.equal(await page.locator('#detail h2').getAttribute('aria-describedby'),'caseContext');
+          assert.ok(await page.locator('#caseContext').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'case identity wraps within inspector');
+          const {nodes:caseAX}=await cdp.send('Accessibility.getFullAXTree');
+          assert.ok(caseAX.some(n=>!n.ignored&&n.role?.value==='heading'&&n.name?.value===duplicateTitle&&n.description?.value==='Investigation · Case #'+id),'native focused heading describes exact same-title case ID');
+          assert.equal(await page.locator('#detail p:not(.case-context)').textContent(),summary);
           assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),source);
           assert.equal(await page.locator('#search-status').textContent(),'Opened investigation: '+label+'. Search again to find another case.');
           assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
         }
       }
+      console.log('PASS: visible case context and native heading description distinguish same-title investigation IDs at 320/768/1280px; search/related selection keeps exact summary/source and source/error inspection clears stale context.');
       console.log('PASS: same-title search results have distinct visible/accessibility case IDs, wrap long labels, and native Tab/Enter/Space open the exact record, summary, source and confirmation at 320/768/1280px without merging records.');
       // Equal titles in the source inspector must remain distinguishable, just like search results.
       const identityRefsStart=references.length;
@@ -1353,8 +1360,13 @@ try {
           await page.keyboard.press(key);
           await page.waitForFunction(id=>location.hash==='#case='+id,id);
           assert.equal(new URL(page.url()).hash,'#case='+id);
-          assert.equal(await page.locator('#detail p').textContent(),summary);
+          assert.equal(await page.locator('#detail p:not(.case-context)').textContent(),summary);
           assert.equal(await page.locator('#detail h2').textContent(),duplicateTitle);
+          assert.equal(await page.locator('#caseContext').textContent(),'Investigation · Case #'+id);
+          assert.equal(await page.locator('#detail h2').getAttribute('aria-describedby'),'caseContext');
+          assert.ok(await page.locator('#caseContext').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'case identity wraps within inspector');
+          const {nodes:caseAX}=await cdp.send('Accessibility.getFullAXTree');
+          assert.ok(caseAX.some(n=>!n.ignored&&n.role?.value==='heading'&&n.name?.value===duplicateTitle&&n.description?.value==='Investigation · Case #'+id),'native focused heading describes exact same-title case ID');
           assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
           await page.keyboard.press('Escape');
           assert.equal(await page.locator('#graph .node').first().evaluate(el=>el===document.activeElement),true);
@@ -1380,7 +1392,7 @@ try {
         await page.locator('#search').fill('Long investigation');
         await page.locator('#search').press('Tab');await page.keyboard.press('Enter');
         assert.equal(await page.locator('#detail h2').textContent(),longCaseTitle);
-        assert.equal(await page.locator('#detail p').textContent(),longSummary);
+        assert.equal(await page.locator('#detail p:not(.case-context)').textContent(),longSummary);
         assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
         assert.ok(await page.locator('#detail').evaluate(el=>el.scrollWidth<=el.clientWidth),'complete case title and summary wrap without clipping');
         let size=await pageWidth();assert.ok(size.content<=size.viewport,'case selection confirmation fits the page');
@@ -1414,7 +1426,7 @@ try {
           assert.equal(await result.evaluate(el=>el===document.activeElement),true);
           await page.keyboard.press('Enter');
           await page.waitForFunction(()=>location.hash==='#case=24');
-          assert.equal(await page.locator('#detail p').textContent(),'Second distinct record');
+          assert.equal(await page.locator('#detail p:not(.case-context)').textContent(),'Second distinct record');
           assert.equal((await page.locator('#graph .node').nth(1).getAttribute('aria-label')).replace(/ · Citation \d+ of \d+$/,''),'Second distinct source');
           assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),true);
           await page.keyboard.press('Escape');
@@ -1431,7 +1443,7 @@ try {
         assert.equal(await page.locator('#results').getByRole('button',{name:'SearchMatch 2 · Case #4',exact:true}).count(),1,'numeric text retains existing title matches');
         await page.locator('#search').fill('Duplicate investigation');
         assert.equal(await page.locator('#results button').count(),2,'title matching still keeps equal-title records separate');
-        assert.equal(await page.locator('#detail p').textContent(),'Second distinct record','query changes do not navigate');
+        assert.equal(await page.locator('#detail p:not(.case-context)').textContent(),'Second distinct record','query changes do not navigate');
         assert.equal(new URL(page.url()).hash,'#case=24');
       }
       assert.equal(caseRequests,idSearchRequests,'ID queries only search the loaded public index');
