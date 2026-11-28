@@ -858,11 +858,16 @@ try {
         assert.equal(await page.locator('#draftTitle').inputValue(),'Preserve unreadable-store draft');
         assert.equal(caseRequests,requests,'draft retry does not reload public data or the page');
         await page.locator('#cancelDraft').click();
-        for(const unreadable of ['', '{broken','{"unexpected":"object"}']) {
+        for(const unreadable of ['', '{broken','{"unexpected":"object"}','[null]','[7]','["text"]','[[]]','[{}]','[{"title":7}]','[{"title":"Fixture","notes":{}}]','[{"title":"Fixture","related":[]}]','[{"title":"Fixture","url":{}}]','[{"title":"Keep valid entry"},null]']) {
           await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:unreadable});
           await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
           assert.equal(await page.locator('#exportDrafts').isDisabled(),true);
           assert.match(await page.locator('#draftList').textContent(),/Saved drafts cannot be read/);
+          assert.equal(await page.locator('#search').isEnabled(),true,'malformed private entries do not block public investigation startup');
+          assert.equal(await page.locator('#draftList .draft-title').count(),0,'a malformed store is not shown as a partial or empty saved list');
+          await page.locator('#retryDrafts').press('Enter');
+          assert.equal(await page.locator('#retryDrafts').evaluate(el=>el===document.activeElement),true,'failed retry retains recovery focus');
+          assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),unreadable,'failed retry preserves the entire raw store');
           await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Do not overwrite unreadable JSON');
           await page.getByRole('button',{name:'Save private draft',exact:true}).click();
           assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),unreadable);
@@ -876,7 +881,16 @@ try {
         }
       }
       assert.equal(draftDownloads,0,'failed reads never produce a download');
+      const legacyDraftBytes='[{"title":"Legacy optional fields fixture","notes":null,"related":null,"url":null,"future":{"tag":"keep"}}]';
+      await page.evaluate(({key,raw})=>localStorage.setItem(key,raw),{key:draftStorageKey,raw:legacyDraftBytes});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
+      assert.equal(await page.getByRole('heading',{name:'Case: Legacy optional fields fixture',level:4,exact:true}).count(),1);
+      assert.equal(await page.locator('#exportDrafts').isDisabled(),false);
+      assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),legacyDraftBytes,'missing type, null optional text and unknown metadata remain readable without rewriting');
+      await page.evaluate(({key,raw})=>localStorage.setItem(key,raw),{key:draftStorageKey,raw:previousDrafts});
+      await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       console.log('PASS: blocked draft reads, invalid JSON and non-array storage show unavailable rather than empty at 320/768/1280px; export is withheld, Save cannot overwrite bytes, Retry preserves text/focus and recovers existing drafts without public refetch or empty downloads.');
+      console.log('PASS: malformed draft-array entries and mixed valid/invalid stores show recovery without blocking public startup at 320/768/1280px; failed Retry and Save preserve raw bytes/text, export stays disabled, and repaired stores recover with native focus; legacy optional/null fields and unknown metadata remain readable unchanged.');
       for(const width of [320,768,1280])for(const [trigger,type] of [['newCase','case'],['newTrail','trail']]) {
         await page.setViewportSize({width,height:900});
         const before=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),requests=caseRequests,hash=new URL(page.url()).hash;
