@@ -416,10 +416,19 @@ try {
       await page.emulateMedia({forcedColors:'none'});
       console.log('PASS: native Keyboard guide disclosure saves space above search at 320/768/1280px; Enter/Space, Tab to search, padded pointer target, 44px sizing, focus and forced colors work; native AX expanded state and diagram instructions survive collapse without diagram, hash, request or draft-storage changes.');
       const readView=async()=> (await page.locator('#graph').getAttribute('viewBox')).split(' ').map(Number);
-      await page.evaluate(()=>{window.diagramWheelChecks=[];document.querySelector('#graph').addEventListener('wheel',e=>window.diagramWheelChecks.push({ctrl:e.ctrlKey,meta:e.metaKey,prevented:e.defaultPrevented,trusted:e.isTrusted}),{passive:true})});
+      await page.evaluate(()=>{window.diagramWheelChecks=[];document.querySelector('#graph').addEventListener('wheel',e=>window.diagramWheelChecks.push({ctrl:e.ctrlKey,meta:e.metaKey,prevented:e.defaultPrevented,trusted:e.isTrusted,dx:e.deltaX,dy:e.deltaY}),{passive:true})});
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});await page.locator('#resetView').click();
         const cards=await page.locator('#graph').innerHTML(),view=await readView(),hash=new URL(page.url()).hash,requests=caseRequests,stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),status=await page.locator('#zoomStatus').textContent();
+        for(const horizontal of [-120,120]) {
+          await page.locator('#graph').hover();const before=await page.evaluate(()=>window.diagramWheelChecks.length);
+          await page.mouse.wheel(horizontal,0);await page.waitForFunction(n=>window.diagramWheelChecks.length>n,before);
+          const event=await page.evaluate(()=>window.diagramWheelChecks.at(-1));
+          assert.equal(event.trusted,true);assert.equal(event.dx,horizontal);assert.equal(event.dy,0);assert.equal(event.prevented,false,'horizontal scrolling is not consumed as diagram zoom');
+          assert.deepEqual(await readView(),view,'horizontal wheel preserves diagram view');assert.equal(await page.locator('#zoomStatus').textContent(),status);
+        }
+        const zero=await page.locator('#graph').evaluate(el=>{const e=new WheelEvent('wheel',{deltaX:0,deltaY:0,bubbles:true,cancelable:true});el.dispatchEvent(e);return e.defaultPrevented});
+        assert.equal(zero,false,'synthetic zero-delta wheel is a no-op');assert.deepEqual(await readView(),view);
         for(const modifier of ['Control','Meta']) {
           for(const delta of [-100,100]) {
             await page.locator('#graph').hover();const before=await page.evaluate(()=>window.diagramWheelChecks.length);
@@ -434,9 +443,13 @@ try {
         await page.mouse.wheel(0,-100);await page.waitForFunction(n=>window.diagramWheelChecks.length>n,before);
         const ordinary=await page.evaluate(()=>window.diagramWheelChecks.at(-1));assert.equal(ordinary.trusted,true);assert.equal(ordinary.ctrl,false);assert.equal(ordinary.meta,false);assert.equal(ordinary.prevented,true);
         assert.ok((await readView())[2]<view[2],'ordinary wheel still zooms diagram');await page.locator('#resetView').click();
+        await page.locator('#graph').hover();const positiveBefore=await page.evaluate(()=>window.diagramWheelChecks.length);
+        await page.mouse.wheel(0,100);await page.waitForFunction(n=>window.diagramWheelChecks.length>n,positiveBefore);
+        assert.ok((await readView())[2]>view[2],'positive vertical wheel still zooms out');await page.locator('#resetView').click();
+
         assert.equal(await page.locator('#graph').innerHTML(),cards);assert.deepEqual(await readView(),view);assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);
       }
-      console.log('PASS: trusted Control/Meta wheel events in both directions remain uncancelled with unchanged diagram zoom/status at 320/768/1280px; ordinary wheel still zooms and Reset restores the view without graph, hash, request or draft-storage changes. Browser page magnification and physical trackpad pinch remain manual checks.');
+      console.log('PASS: trusted horizontal wheel in both directions and synthetic zero deltas preserve diagram zoom/status; trusted vertical wheel still zooms in/out. Trusted Control/Meta wheel events in both directions remain uncancelled with unchanged diagram zoom/status at 320/768/1280px; ordinary wheel still zooms and Reset restores the view without graph, hash, request or draft-storage changes. Browser page magnification and physical trackpad pinch remain manual checks.');
 
       assert.match(await page.locator('#diagramKeys').textContent(),/Escape stops an active drag/);
       for(const width of [320,768,1280]) {
