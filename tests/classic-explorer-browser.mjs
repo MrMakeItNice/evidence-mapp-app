@@ -179,6 +179,25 @@ try {
         }
       }
       console.log('PASS: native diagonal resize drags grow notes vertically while retaining full form width at 320/768/1280px in both draft types; no page overflow, multiline editing/Tab/Escape/reopen and unchanged storage/case/view/request count pass.');
+      for(const width of [320,768,1280]){
+        await page.setViewportSize({width,height:900});
+        for(const trigger of ['newCase','newTrail']){
+          const stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),requests=caseRequests,hash=new URL(page.url()).hash;
+          await page.locator('#'+trigger).press('Enter');const notes=page.locator('#draftNotes'),count=page.locator('#draftNotesCount');
+          assert.equal(await count.textContent(),'Length: 0 / 4,000.');assert.equal(await notes.getAttribute('aria-describedby'),'draftNotesCount');assert.equal(await count.getAttribute('aria-live'),null);assert.equal(await count.getAttribute('role'),null,'counter does not announce every keystroke');
+          await notes.fill('abc');await notes.press('End');await notes.press('Enter');await page.keyboard.type('de');assert.equal(await count.textContent(),'Length: 6 / 4,000.');
+          await notes.fill('x'.repeat(4000));await page.keyboard.type('Z');assert.equal((await notes.inputValue()).length,4000,'existing native maxlength still prevents extra typing');assert.equal(await count.textContent(),'Length: 4,000 / 4,000. Limit reached.');
+          const {nodes:notesAX}=await cdp.send('Accessibility.getFullAXTree');assert.ok(notesAX.some(n=>!n.ignored&&n.role?.value==='textbox'&&n.name?.value==='What does this evidence show? (optional)'&&n.description?.value==='Length: 4,000 / 4,000. Limit reached.'),'native notes description exposes limit feedback');
+          await notes.press('Backspace');assert.equal(await count.textContent(),'Length: 3,999 / 4,000.');
+          assert.ok(await count.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'counter wraps');
+          await notes.press('Escape');await page.keyboard.press('Enter');assert.equal(await count.textContent(),'Length: 3,999 / 4,000.','reopen count matches preserved notes');
+          await notes.fill('e\u0301😀');assert.equal(await count.textContent(),'Length: 4 / 4,000.','count matches native UTF-16 rule for combining/supplementary characters');
+          await page.locator('#draftForm').evaluate(el=>el.reset());await page.waitForFunction(()=>document.querySelector('#draftNotesCount').textContent==='Length: 0 / 4,000.');
+          assert.equal(await notes.inputValue(),'');assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);assert.equal(caseRequests,requests);assert.equal(new URL(page.url()).hash,hash);
+          await page.locator('#cancelDraft').click();
+        }
+      }
+      console.log('PASS: Notes length counter/description tracks native multiline input, 4000 limit/blocked typing, deletion, UTF-16 text, Escape/reopen and reset at 320/768/1280px for both draft types without storage/refetch/case changes or keystroke live announcements.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Unfinished clear-search fixture');
