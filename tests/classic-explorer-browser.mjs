@@ -657,13 +657,14 @@ try {
       const draftStorageKey='evidence-atlas-connection-drafts-v1';
       const previousDrafts=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);
       const multilineNotes='Observation.\n\nUncertainty.\n  Keep  two spaces.\n<em>Plain text, not markup</em>\n'+ 'longrecord'.repeat(45);
+      const multilineTitle='Multiline notes <em>fixture</em> '+ 'x'.repeat(140);
       let multilineSaved;
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:previousDrafts});
         await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
         await page.locator('#newCase').press('Enter');
-        await page.locator('#draftTitle').fill('Multiline notes fixture');
+        await page.locator('#draftTitle').fill(multilineTitle);
         await page.locator('#draftNotes').fill(multilineNotes);
         await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
         assert.equal(await page.locator('#draftForm').isVisible(),false);
@@ -673,6 +674,12 @@ try {
         for(const reloaded of [false,true]) {
           if(reloaded){await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3)}
           const savedNotes=page.locator('#draftList > div').last().locator('.draft-notes');
+          const draftHeading=page.getByRole('heading',{name:'Case: '+multilineTitle,level:4,exact:true});
+          assert.equal(await draftHeading.count(),1,'each case draft exposes its exact title as a level-four heading');
+          assert.equal(await draftHeading.locator('*').count(),0,'HTML-shaped titles remain plain text');
+          assert.ok(await draftHeading.evaluate(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el),p=getComputedStyle(el.parentElement);return el.scrollWidth<=el.clientWidth&&r.left>=0&&r.right<=innerWidth&&s.fontSize===p.fontSize&&s.fontFamily===p.fontFamily&&s.fontWeight==='700'&&s.marginTop==='0px'&&s.marginBottom==='0px'}),'draft heading keeps existing bold body typography and wraps within the viewport');
+          const {nodes:draftAX}=await cdp.send('Accessibility.getFullAXTree');
+          assert.ok(draftAX.some(n=>!n.ignored&&n.role?.value==='heading'&&n.name?.value==='Case: '+multilineTitle&&n.properties?.some(p=>p.name==='level'&&p.value?.value===4)),'native AX exposes saved draft heading rank and exact name');
           assert.equal(await savedNotes.textContent(),multilineNotes);
           assert.equal(await savedNotes.locator('*').count(),0,'saved notes stay plain text');
           const layout=await savedNotes.evaluate(el=>{
@@ -692,6 +699,7 @@ try {
       await page.evaluate(({key,value})=>localStorage.setItem(key,value),{key:draftStorageKey,value:previousDrafts});
       await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#graph .node').length===3);
       console.log('PASS: native Save preserves readable note line breaks, blank lines and indentation at 320/768/1280px before/after reload; long words reflow without horizontal scrolling, literal markup stays text, focus returns to Add case, and export/review preserve saved note bytes.');
+      console.log('PASS: native Save/reload expose exact plain-text case draft titles as level-four headings in Chromium AX at 320/768/1280px; long titles reflow with existing bold body typography and no added Tab stop.');
       const draftDestination='https://records.example/draft?record='+ 'x'.repeat(300)+'&id=42#page=7';
       await page.locator('#newTrail').click();
       await page.locator('#draftTitle').fill('Draft destination fixture');
@@ -710,6 +718,7 @@ try {
         assert.equal(await draftLink.getAttribute('target'),'_blank');
         assert.equal(await draftLink.getAttribute('rel'),'noopener noreferrer');
         const draftBox=page.locator('#draftList > div').nth(1);
+        assert.equal(await draftBox.getByRole('heading',{name:'Paper trail: Draft destination fixture',level:4,exact:true}).count(),1,'paper trail titles share the saved draft heading hierarchy');
         assert.equal(await draftBox.locator('p').last().textContent(),'Draft URL: '+draftDestination);
         assert.ok(await draftBox.evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'full draft URL wraps');
         assert.equal(await page.locator('#draftList').getByText('Draft URL cannot be opened: use an absolute HTTP(S) URL without embedded credentials.',{exact:true}).count(),5);
