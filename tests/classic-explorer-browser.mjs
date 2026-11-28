@@ -618,6 +618,32 @@ try {
       assert.equal(await page.locator('#draftForm').isVisible(),false,'draft form starts hidden');
       assert.equal(await page.getByRole('textbox',{name:'Title (required)',exact:true}).count(),0,'closed form is outside accessible controls');
       const contribution=page.getByRole('region',{name:'Add to your investigation',exact:true});
+      async function expectDraftExpansion(expanded){
+        assert.equal(await page.locator('#draftForm').isVisible(),expanded);
+        assert.equal(await page.locator('#draftForm').count(),1);
+        const {nodes}=await cdp.send('Accessibility.getFullAXTree');
+        for(const [id,name] of [['newCase','+ Add case draft'],['newTrail','+ Add paper trail draft']]) {
+          const button=page.getByRole('button',{name,exact:true});
+          assert.equal(await button.getAttribute('aria-controls'),'draftForm');
+          assert.equal(await button.getAttribute('aria-expanded'),String(expanded));
+          assert.ok(nodes.some(n=>!n.ignored&&n.role?.value==='button'&&n.name?.value===name&&n.properties?.some(p=>p.name==='expanded'&&p.value?.value===expanded)),'native AX expanded state matches shared editor visibility for '+id);
+        }
+      }
+      await expectDraftExpansion(false);
+      for(const width of [320,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        await page.locator('#newCase').press('Enter');await expectDraftExpansion(true);
+        await page.locator('#draftTitle').fill('Shared editor state fixture');
+        await page.locator('#newTrail').press('Space');await expectDraftExpansion(true);
+        assert.equal(await page.locator('#formHeading').textContent(),'New paper trail draft');
+        assert.equal(await page.locator('#draftTitle').inputValue(),'Shared editor state fixture');
+        assert.equal(await page.locator('#draftTitle').evaluate(el=>el===document.activeElement),true);
+        await page.keyboard.press('Escape');await expectDraftExpansion(false);
+        assert.equal(await page.locator('#newTrail').evaluate(el=>el===document.activeElement),true);
+        await page.locator('#newCase').press('Enter');await expectDraftExpansion(true);
+        await page.locator('#cancelDraft').press('Space');await expectDraftExpansion(false);
+        assert.equal(await page.evaluate(()=>localStorage.length),0,'editor state changes do not save draft data');
+      }
       async function expectContributionRegion(){
         const {nodes}=await cdp.send('Accessibility.getFullAXTree');
         assert.equal(nodes.filter(n=>!n.ignored&&n.role?.value==='region'&&n.name?.value==='Add to your investigation').length,1,'native AX exposes one named contribution region');
@@ -632,6 +658,7 @@ try {
         for(const [trigger,title,required] of [['newCase','New case draft',false],['newTrail','New paper trail draft',true]]) {
           await contribution.locator('#'+trigger).focus();await page.keyboard.press('Enter');
           await expectContributionRegion();
+          await expectDraftExpansion(true);
           assert.equal(await page.locator('#draftForm').isVisible(),true);
           assert.equal(await page.locator('#draftForm').evaluate(el=>getComputedStyle(el).display),'grid');
           const actionBoxes=await page.locator('#contribute button:visible').evaluateAll(es=>es.map(el=>({...el.getBoundingClientRect().toJSON(),overflow:el.scrollWidth>el.clientWidth})));
@@ -646,6 +673,7 @@ try {
           assert.ok(await page.locator('#draftForm label').evaluateAll(els=>els.every(el=>{const r=el.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth})),'all requirement labels wrap within the viewport');
           await page.locator('#draftTitle').fill('Unsaved fixture');
           await page.locator('#cancelDraft').focus();await page.keyboard.press('Enter');
+          await expectDraftExpansion(false);
           assert.equal(await page.locator('#draftForm').isVisible(),false);
           assert.equal(await page.getByRole('textbox',{name:'Title (required)',exact:true}).count(),0);
           assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true);
@@ -660,6 +688,7 @@ try {
       assert.equal(await page.locator('#draftForm').isVisible(),false);
       assert.equal(await page.locator('#newCase').evaluate(el=>el===document.activeElement),true);
       assert.match(await page.locator('#draftStatus').textContent(),/saved in this browser only/);
+      await expectDraftExpansion(false);
       assert.match(await page.locator('#draftList').textContent(),/Unsaved fixture/);
       assert.equal(await page.evaluate(()=>localStorage.length),1);
       await page.locator('#newTrail').click();
@@ -667,6 +696,7 @@ try {
       await page.locator('#cancelDraft').click();
       console.log('PASS: draft form starts outside layout/accessibility controls; required/optional visible labels match native accessible names and actual field rules at 320/768/1280px; visible contribution actions have non-overlapping 44px targets, lower-edge pointer opening and Enter/Space Cancel retain focus/text without saving at 320/768/1280px; fixture-only successful Save closes and resets the form.');
       await expectContributionRegion();
+      console.log('PASS: both draft launchers expose the unique shared form relationship and native AX expanded state at 320/768/1280px; Enter/Space opening, type switching, Escape/Cancel and successful Save synchronize visibility while preserving focus and unfinished text.');
       console.log('PASS: native Chromium exposes one Add to your investigation region from its existing level-two heading before/after both draft types and Save at 320/768/1280px; region-scoped Enter opening and normal Cancel/Tab/focus paths remain available without adding a Tab stop.');
       const draftStorageKey='evidence-atlas-connection-drafts-v1';
       const previousDrafts=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey);
