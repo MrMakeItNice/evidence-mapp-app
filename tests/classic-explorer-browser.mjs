@@ -15,7 +15,7 @@ try {
     const errors=[],unexpected=[];
     let pauseRefs=false,releaseRefs,refsPaused,pauseCases=false,releaseCases,casesPaused,rejectCases=false,caseRequests=0,unwrappedDetails=false,ignoreHashNavigation=false;
     page.on('pageerror',e=>errors.push(e.message));
-    const html=baseline?original.replace('id="draftForm" aria-labelledby="formHeading"','id="draftForm"').replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('id="contribute" aria-labelledby="contributeHeading"','id="contribute"').replace('<search aria-label="Published investigations">','<div>').replace('</search>','</div>').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
+    const html=baseline?original.replace('id="draftForm" aria-labelledby="formHeading"','id="draftForm"').replace('id="graph" class="graph" role="group"','id="graph" class="graph" role="img"').replace('id="contribute" aria-labelledby="contributeHeading"','id="contribute"').replace('<search aria-label="Published investigations" id="investigationSearch" tabindex="-1">','<div>').replace('</search>','</div>').replace('hidden style="margin-top:15px;gap:12px"','hidden style="margin-top:15px;display:grid;gap:12px"'):original;
     await page.route('**/*',async route=>{
       const u=new URL(route.request().url());
       if(u.origin==='https://classic.example'&&u.pathname==='/connection-explorer.html')return route.fulfill({contentType:'text/html',body:ignoreHashNavigation?html.replace("window.addEventListener('hashchange',navigateFromHash);",''):unwrappedDetails?html.replace('.detail,#search-status{min-width:0;overflow-wrap:anywhere}',''):html});
@@ -321,6 +321,26 @@ try {
         assert.equal(await page.locator('#graph .node').count(),3);
       }
       console.log('PASS: first-Tab skip link appears on focus, Enter focuses and reveals the evidence diagram, Tab reaches its first card, Enter/Escape still work, and case hash/zoom remain unchanged at 320/768/1280px.');
+      async function skipToSearch(nextId) {
+        await page.locator('#skipDiagram').press('Tab');
+        const skip=page.locator('#skipSearch');assert.equal(await skip.evaluate(el=>el===document.activeElement),true,'search skip is the second native Tab stop');
+        assert.ok(await skip.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.right<=innerWidth}),'focused search skip is visible');
+        const hash=new URL(page.url()).hash,requests=caseRequests;
+        await skip.press('Enter');
+        const region=page.getByRole('search',{name:'Published investigations',exact:true});
+        assert.equal(await region.evaluate(el=>el===document.activeElement&&el.tabIndex===-1&&getComputedStyle(el).outlineWidth==='3px'),true,'skip focuses the existing named search region');
+        assert.ok(await region.evaluate(el=>{const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight}),'search instructions and status are brought into view');
+        await page.keyboard.press('Tab');assert.equal(await page.locator('#'+nextId).evaluate(el=>el===document.activeElement),true,'Tab continues to the actionable search control');
+        assert.equal(new URL(page.url()).hash,hash);assert.equal(caseRequests,requests);
+      }
+      for(const width of [320,768,1280])for(const forced of [false,true]) {
+        await page.setViewportSize({width,height:900});await page.emulateMedia({forcedColors:forced?'active':'none'});
+        const graph=await page.locator('#graph').innerHTML(),view=await page.locator('#graph').getAttribute('viewBox'),stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
+        await skipToSearch('search');assert.equal(await page.locator('#graph').innerHTML(),graph);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);
+      }
+      await page.emulateMedia({forcedColors:'none'});
+      console.log('PASS: second-Tab search skip reveals/focuses the existing named search region, preserves case/view/graph/requests/private storage, and Tab reaches search at 320/768/1280px including forced colors.');
+
       for(const forced of [false,true]) {
         await page.emulateMedia({forcedColors:forced?'active':'none'});
         for(const width of [320,768,1280]) {
@@ -1819,6 +1839,7 @@ try {
         await page.waitForFunction(()=>document.querySelector('#retryLoad').hidden===false);
         await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Preserve unfinished retry draft');
         const draftStorage=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1'));
+        await skipToSearch('retryLoad');
         rejectCases=false;pauseCases=true;
         const retryPaused=new Promise(resolve=>casesPaused=resolve),beforeRequests=caseRequests;
         await page.locator('#retryLoad').press('Enter');await retryPaused;
@@ -1891,7 +1912,7 @@ try {
         assert.doesNotMatch(await page.locator('#detail').textContent(),/Connection unavailable|How to explore/);
         assert.ok(await page.locator('#detail').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'empty guidance wraps');
         const retry=page.locator('#retryLoad'),hash=new URL(page.url()).hash;
-        assert.equal(await retry.isVisible(),true);
+        assert.equal(await retry.isVisible(),true);await skipToSearch('retryLoad');
         await page.getByRole('link',{name:'New Evidence Board',exact:true}).press('Tab');assert.equal(await keyboardSummary.evaluate(el=>el===document.activeElement),true,'empty index retains the keyboard guide');
         await keyboardSummary.press('Tab');assert.equal(await retry.evaluate(el=>el===document.activeElement),true,'native Tab skips disabled search and reaches empty-index retry');
         pauseCases=true;const emptyRetryPaused=new Promise(resolve=>casesPaused=resolve),before=caseRequests;
