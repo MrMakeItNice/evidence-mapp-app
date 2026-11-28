@@ -160,6 +160,25 @@ try {
       }
       await page.emulateMedia({forcedColors:'none'});
       console.log('PASS: native Tab/Shift+Tab gives labeled draft notes a visible 3px focus ring in case/trail forms at 320/768/1280px and forced colors; multiline editing, blur, Cancel and no persistence/refetch remain intact.');
+      for(const width of [320,768,1280]){
+        await page.setViewportSize({width,height:900});
+        for(const trigger of ['newCase','newTrail']){
+          await page.locator('#'+trigger).press('Enter');const notes=page.locator('#draftNotes');
+          await notes.fill('Resize fixture');await notes.scrollIntoViewIfNeeded();
+          const before=await notes.boundingBox(),stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),requests=caseRequests,hash=new URL(page.url()).hash,view=await page.locator('#graph').getAttribute('viewBox');
+          assert.equal(await notes.evaluate(el=>getComputedStyle(el).resize),'vertical');
+          await page.mouse.move(before.x+before.width-3,before.y+before.height-3);await page.mouse.down();await page.mouse.move(before.x+before.width-43,before.y+before.height+57,{steps:8});await page.mouse.up();
+          const after=await notes.boundingBox();assert.ok(after.height>=before.height+30,'native resize grip can grow the notes editor vertically');assert.ok(Math.abs(after.width-before.width)<=1,'diagonal resize drag cannot narrow editor');
+          assert.ok(await notes.evaluate(el=>el.getBoundingClientRect().right<=innerWidth&&document.documentElement.scrollWidth<=innerWidth),'resized editor stays within page width');
+          await notes.press('End');await notes.press('Enter');await page.keyboard.type('After resizing');assert.equal(await notes.inputValue(),'Resize fixture\nAfter resizing');
+          await notes.press('Tab');assert.equal(await page.getByRole('button',{name:'Save private draft',exact:true}).evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press('Escape');assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true);
+          await page.keyboard.press('Enter');assert.equal(await notes.inputValue(),'Resize fixture\nAfter resizing','reopening preserves resized editor notes');
+          assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);assert.equal(caseRequests,requests);assert.equal(new URL(page.url()).hash,hash);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);
+          await notes.evaluate(el=>el.style.removeProperty('height'));await page.locator('#draftForm').evaluate(el=>el.reset());await page.locator('#cancelDraft').click();
+        }
+      }
+      console.log('PASS: native diagonal resize drags grow notes vertically while retaining full form width at 320/768/1280px in both draft types; no page overflow, multiline editing/Tab/Escape/reopen and unchanged storage/case/view/request count pass.');
       for(const width of [320,768,1280]) {
         await page.setViewportSize({width,height:900});
         await page.locator('#newCase').click();await page.locator('#draftTitle').fill('Unfinished clear-search fixture');
