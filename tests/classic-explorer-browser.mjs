@@ -555,6 +555,27 @@ try {
         assert.equal(await page.locator('#detail a').evaluate(el=>el===document.activeElement),true);
         assert.equal(await page.locator('#graph .node').count(),3);
       }
+      for(const width of [320,768,1280]){
+        await page.setViewportSize({width,height:900});
+        for(const trigger of ['newCase','newTrail']){
+          for(const origin of ['draftTitle','draftNotes','cancelDraft']){
+            const stored=await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),requests=caseRequests,hash=new URL(page.url()).hash,view=await page.locator('#graph').getAttribute('viewBox');
+            await page.locator('#'+trigger).press('Enter');await page.locator('#draftTitle').fill('Unfinished Escape fixture');await page.locator('#draftRelated').fill('Case #1');await page.locator('#draftUrl').fill('https://records.example/unfinished');await page.locator('#draftNotes').fill('Keep multiline notes\nfor later editing');
+            assert.ok(await page.locator('#draftCloseHelp').evaluate(el=>el.scrollWidth<=el.clientWidth&&el.getBoundingClientRect().right<=innerWidth),'draft exit hint wraps');
+            await page.locator('#'+origin).focus();
+            for(const modifier of [{altKey:true},{ctrlKey:true},{metaKey:true},{shiftKey:true},{isComposing:true}]){
+              assert.equal(await page.locator('#'+origin).evaluate((el,modifier)=>{const e=new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true,...modifier});el.dispatchEvent(e);return e.defaultPrevented},modifier),false);
+              assert.equal(await page.locator('#draftForm').isVisible(),true,'modified/composing Escape keeps editor open');
+            }
+            await page.keyboard.press('Escape');assert.equal(await page.locator('#draftForm').isVisible(),false);
+            assert.equal(await page.locator('#'+trigger).evaluate(el=>el===document.activeElement),true,'Escape restores matching Add focus');
+            assert.equal(await page.evaluate(()=>localStorage.getItem('evidence-atlas-connection-drafts-v1')),stored);assert.equal(caseRequests,requests);assert.equal(new URL(page.url()).hash,hash);assert.equal(await page.locator('#graph').getAttribute('viewBox'),view);
+            await page.keyboard.press('Enter');assert.equal(await page.locator('#draftTitle').inputValue(),'Unfinished Escape fixture');assert.equal(await page.locator('#draftRelated').inputValue(),'Case #1');assert.equal(await page.locator('#draftUrl').inputValue(),'https://records.example/unfinished');assert.equal(await page.locator('#draftNotes').inputValue(),'Keep multiline notes\nfor later editing');
+            await page.locator('#draftForm').evaluate(el=>el.reset());await page.locator('#cancelDraft').click();
+          }
+        }
+      }
+      console.log('PASS: native Escape from Title/Notes/Cancel closes both inline draft types at 320/768/1280px, restores matching Add focus and reopening preserves all unfinished fields without saving/refetching/view changes; modifier/composition guards and wrapping hint pass.');
       assert.equal(await page.locator('#draftForm').isVisible(),false,'draft form starts hidden');
       assert.equal(await page.getByRole('textbox',{name:'Title (required)',exact:true}).count(),0,'closed form is outside accessible controls');
       for(const width of [320,768,1280]) {
