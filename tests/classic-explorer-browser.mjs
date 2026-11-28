@@ -936,6 +936,14 @@ try {
         const recovery=page.getByRole('button',{name:'Download unsaved draft',exact:true});
         assert.ok(await recovery.evaluate(el=>{const r=el.getBoundingClientRect();return r.width>=44&&r.height>=44&&r.left>=0&&r.right<=innerWidth&&el.scrollWidth<=el.clientWidth}),'unsaved recovery has a wrapping 44px target at phone/tablet/desktop widths');
         const downloadCount=draftDownloads;
+        for(const unsupported of ['file:///fixture','https://user:password@records.example/private']) {
+          await page.locator('#draftUrl').fill(unsupported);await recovery.press('Enter');
+          assert.equal(draftDownloads,downloadCount,'backup download also rejects unsupported source destinations');
+          assert.equal(await page.locator('#draftUrl').evaluate(el=>el===document.activeElement),true);
+          assert.equal(await page.locator('#draftUrlError').textContent(),'Use an absolute HTTP(S) source URL without embedded credentials.');
+          assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),before);
+        }
+        await page.locator('#draftUrl').fill('https://records.example/unsaved?version=1#notes');
         await page.locator('#draftTitle').fill('   ');await recovery.press('Enter');
         assert.equal(draftDownloads,downloadCount);assert.equal(await page.locator('#draftTitle').getAttribute('aria-invalid'),'true');
         await page.locator('#draftTitle').fill('Edited recovery fixture');
@@ -1007,9 +1015,10 @@ try {
         await page.locator('#draftTitle').fill('URL feedback fixture');await page.locator('#draftNotes').fill('Keep URL repair notes');await page.locator('#draftRelated').fill('Keep related record');
         const field=page.getByRole('textbox',{name:'Original source URL '+(trigger==='newTrail'?'(required)':'(optional)'),exact:true}),before=await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),requests=caseRequests;
         assert.equal(await field.getAttribute('aria-describedby'),'draftUrlHelp');assert.equal(await page.locator('#draftUrlError').isVisible(),false);
-        for(const value of trigger==='newTrail'?['','not-a-url','/relative-record']:['not-a-url','/relative-record']) {
+        const unsupported=['javascript:alert(1)','data:text/html,fixture','file:///fixture','mailto:fixture@example.org','https://user:password@records.example/private'];
+        for(const value of [...(trigger==='newTrail'?['']:[]),'not-a-url','/relative-record',...unsupported]) {
           await field.fill(value);await page.getByRole('button',{name:'Save private draft',exact:true}).press('Enter');
-          const message=value?'Enter a complete URL, such as https://example.org/record.':'Enter the original source URL for this paper trail.';
+          const message=unsupported.includes(value)?'Use an absolute HTTP(S) source URL without embedded credentials.':value?'Enter a complete URL, such as https://example.org/record.':'Enter the original source URL for this paper trail.';
           assert.equal(await field.evaluate(el=>el===document.activeElement),true,'native validation focuses the existing invalid URL field');
           assert.equal(await field.getAttribute('aria-invalid'),'true');assert.equal(await field.getAttribute('aria-describedby'),'draftUrlHelp draftUrlError');
           assert.equal(await page.locator('#draftUrlError').textContent(),message);assert.equal(await page.locator('#draftUrlError').isVisible(),true);assert.equal(await field.evaluate(el=>el.validationMessage),message);
@@ -1017,8 +1026,9 @@ try {
           await field.press('Tab');assert.equal(await page.locator('#draftUrlError').isVisible(),true,'error remains after browser popup/focus leaves');
           assert.equal(await page.locator('#draftTitle').inputValue(),'URL feedback fixture');assert.equal(await page.locator('#draftNotes').inputValue(),'Keep URL repair notes');assert.equal(await page.locator('#draftRelated').inputValue(),'Keep related record');
           assert.equal(await page.evaluate(key=>localStorage.getItem(key),draftStorageKey),before,'invalid URL cannot save a draft');
+          assert.ok(!(await page.locator('#draftUrlError').textContent()).includes('user:password'),'guidance does not echo embedded credentials');
         }
-        const destination='https://records.example/repaired?id=42#page=8';await field.fill(destination);
+        const destination=(trigger==='newCase'?'http:':'https:')+'//records.example/repaired?id=42#page=8';await field.fill(destination);
         assert.equal(await field.getAttribute('aria-invalid'),null);assert.equal(await field.getAttribute('aria-describedby'),'draftUrlHelp');assert.equal(await page.locator('#draftUrlError').isVisible(),false);assert.equal(await field.evaluate(el=>el.validationMessage),'');
         await page.getByRole('button',{name:'Save private draft',exact:true}).press('Space');
         const stored=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),draftStorageKey);
@@ -1031,6 +1041,7 @@ try {
       await page.locator('#newCase').click();assert.equal(await page.locator('#draftUrl').getAttribute('aria-invalid'),null);assert.equal(await page.locator('#draftUrl').evaluate(el=>el.validity.valid&&!el.required),true,'switch to optional case URL clears obsolete required error');
       await page.locator('#draftForm').evaluate(el=>el.reset());await page.locator('#cancelDraft').click();
       console.log('PASS: native missing/malformed URL validation has persistent linked inline feedback at 320/768/1280px for case/trail forms, preserves notes/context/storage, clears on editing/reset/mode switch and saves an exact corrected query/fragment via Space without public requests.');
+      console.log('PASS: new case/trail Save rejects non-HTTP(S) and credential-bearing source URLs with linked inline guidance and URL focus at 320/768/1280px; backup download uses the same guard, editing clears errors, corrected query/fragment saves exactly, and existing stored legacy drafts remain unchanged.');
       await page.locator('#search').focus();
       await page.locator('#graph .node').nth(1).click();
       assert.equal(await page.locator('#detail h2').evaluate(el=>el===document.activeElement),false,'pointer inspection does not focus heading');
