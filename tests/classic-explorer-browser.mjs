@@ -155,7 +155,7 @@ try {
       const searchRegion=page.getByRole('search',{name:'Published investigations',exact:true});
       assert.equal(await page.getByRole('search').count(),1,'one focused search landmark, not a landmark for every control');
       assert.equal(await searchRegion.evaluate(el=>el.tagName),'SEARCH');
-      assert.equal(await searchRegion.getAttribute('tabindex'),null,'landmark adds no artificial keyboard stop');
+      assert.equal(await searchRegion.getAttribute('tabindex'),'-1','skip target is programmatically focusable without joining sequential Tab order');
       assert.equal(await searchRegion.locator('#searchHelp').count(),1);
       assert.equal(await searchRegion.locator('#search-status').count(),1);
       assert.equal(await searchRegion.locator('#retryLoad').count(),1);
